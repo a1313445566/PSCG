@@ -1,0 +1,327 @@
+{
+  "subjects": [
+    {
+      "id": 1,
+      "name": "语文",
+      "subcategories": [
+        { "id": 11, "name": "古诗" },
+        { "id": 12, "name": "多音字" },
+        { "id": 13, "name": "成语" },
+        { "id": 14, "name": "阅读" }
+      ]
+    },
+    {
+      "id": 2,
+      "name": "数学",
+      "subcategories": [
+        { "id": 21, "name": "加减法" },
+        { "id": 22, "name": "乘除法" },
+        { "id": 23, "name": "几何" },
+        { "id": 24, "name": "应用题" }
+      ]
+    },
+    {
+      "id": 3,
+      "name": "英语",
+      "subcategories": [
+        { "id": 31, "name": "单词" },
+        { "id": 32, "name": "语法" },
+        { "id": 33, "name": "听力" },
+        { "id": 34, "name": "阅读" }
+      ]
+    }
+  ],
+  "questions": [
+    {
+      "id": 1,
+      "subjectId": 1,
+      "subcategoryId": 11,
+      "type": "single",
+      "content": "下列哪个是李白的诗句？",
+      "options": ["A. 床前明月光，疑是地上霜", "B. 春眠不觉晓，处处闻啼鸟", "C. 锄禾日当午，汗滴禾下土", "D. 离离原上草，一岁一枯荣"],
+      "answer": "A",
+      "explanation": "\"床前明月光，疑是地上霜\"是李白《静夜思》中的诗句。"
+    },
+    {
+      "id": 2,
+      "subjectId": 1,
+      "subcategoryId": 11,
+      "type": "single",
+      "content": "《春晓》的作者是谁？",
+      "options": ["A. 李白", "B. 杜甫", "C. 孟浩然", "D. 王维"],
+      "answer": "C",
+      "explanation": "《春晓》的作者是孟浩然。"
+    },
+    {
+      "id": 3,
+      "subjectId": 1,
+      "subcategoryId": 12,
+      "type": "single",
+      "content": "下列哪个是多音字？",
+      "options": ["A. 一", "B. 二", "C. 三", "D. 四"],
+      "answer": "A",
+      "explanation": "\"一\"是多音字，有yī、yí、yì三种读音。"
+    },
+    {
+      "id": 4,
+      "subjectId": 1,
+      "subcategoryId": 12,
+      "type": "single",
+      "content": "\"好\"字在\"好人\"中读什么音？",
+      "options": ["A. hǎo", "B. hào", "C. háo", "D. hāo"],
+      "answer": "A",
+      "explanation": "\"好人\"中的\"好\"读hǎo。"
+    },
+    {
+      "id": 5,
+      "subjectId": 1,
+      "subcategoryId": 13,
+      "type": "single",
+      "content": "下列哪个成语使用正确？",
+      "options": ["A. 守株待兔", "B. 画蛇添足", "C. 井底之蛙", "D. 以上都正确"],
+      "answer": "D",
+      "explanation": "三个成语都使用正确。"
+    },
+    {
+      "id": 6,
+      "subjectId": 1,
+      "subcategoryId": 13,
+      "type": "single",
+      "content": "下列哪个成语的意思是形容人很多？",
+      "options": ["A. 人山人海", "B. 鸟语花香", "C. 山清水秀", "D. 风和日丽"],
+      "answer": "A",
+      "explanation": "\"人山人海\"形容人很多，像山和海一样。"
+    },
+    {
+      "id": 7,
+      "subjectId": 1,
+      "subcategoryId": 14,
+      "type": "single",
+      "content": "下列哪个句子是比喻句？",
+      "options": ["A. 他长得很高", "B. 太阳像个大火球", "C. 小鸟在唱歌", "D. 花儿开了"],
+      "answer": "B",
+      "explanation": "\"太阳像个大火球\"是比喻句，将太阳比作大火球。"
+    },
+    {
+      "id": 8,
+      "subjectId": 1,
+      "subcategoryId": 14,
+      "type": "single",
+      "content": "下列哪个句子是拟人句？",
+      "options": ["A. 月亮像个大圆盘", "B. 小鸟在枝头唱歌", "C. 星星闪闪发光", "D. 太阳升起来了"],
+      "answer": "B",
+      "explanation": "\"小鸟在枝头唱歌\"是拟人句，将小鸟当作人来写，赋予它唱歌的能力。"
+    },
+    {
+      "id": 9,
+      "subjectId": 2,
+      "subcategoryId": 21,
+      "type": "single",
+      "content": "25+36=？",
+      "options": ["A. 51", "B. 61", "C. 71", "D. 81"],
+      "answer": "B",
+      "explanation": "25+36=61。"
+    },
+    {
+      "id": 10,
+      "subjectId": 2,
+      "subcategoryId": 21,
+      "type": "single",
+      "content": "100-25=？",
+      "options": ["A. 75", "B. 80", "C. 85", "D. 90"],
+      "answer": "A",
+      "explanation": "100-25=75。"
+    },
+    {
+      "id": 11,
+      "subjectId": 2,
+      "subcategoryId": 22,
+      "type": "single",
+      "content": "2+3×4=？",
+      "options": ["A. 20", "B. 14", "C. 11", "D. 16"],
+      "answer": "B",
+      "explanation": "根据运算顺序，先乘后加，3×4=12，2+12=14。"
+    },
+    {
+      "id": 12,
+      "subjectId": 2,
+      "subcategoryId": 22,
+      "type": "single",
+      "content": "36÷4=？",
+      "options": ["A. 7", "B. 8", "C. 9", "D. 10"],
+      "answer": "C",
+      "explanation": "36÷4=9。"
+    },
+    {
+      "id": 13,
+      "subjectId": 2,
+      "subcategoryId": 22,
+      "type": "single",
+      "content": "5×7=？",
+      "options": ["A. 30", "B. 35", "C. 40", "D. 45"],
+      "answer": "B",
+      "explanation": "5×7=35。"
+    },
+    {
+      "id": 14,
+      "subjectId": 2,
+      "subcategoryId": 22,
+      "type": "single",
+      "content": "48÷6=？",
+      "options": ["A. 6", "B. 7", "C. 8", "D. 9"],
+      "answer": "C",
+      "explanation": "48÷6=8。"
+    },
+    {
+      "id": 15,
+      "subjectId": 2,
+      "subcategoryId": 23,
+      "type": "single",
+      "content": "一个正方形的边长是4厘米，它的面积是多少？",
+      "options": ["A. 16平方厘米", "B. 12平方厘米", "C. 8平方厘米", "D. 20平方厘米"],
+      "answer": "A",
+      "explanation": "正方形面积=边长×边长=4×4=16平方厘米。"
+    },
+    {
+      "id": 16,
+      "subjectId": 2,
+      "subcategoryId": 23,
+      "type": "single",
+      "content": "一个长方形的长是6厘米，宽是4厘米，它的周长是多少？",
+      "options": ["A. 10厘米", "B. 20厘米", "C. 24厘米", "D. 30厘米"],
+      "answer": "B",
+      "explanation": "长方形周长=(长+宽)×2=(6+4)×2=20厘米。"
+    },
+    {
+      "id": 17,
+      "subjectId": 2,
+      "subcategoryId": 23,
+      "type": "single",
+      "content": "一个三角形的内角和是多少度？",
+      "options": ["A. 90度", "B. 180度", "C. 270度", "D. 360度"],
+      "answer": "B",
+      "explanation": "三角形的内角和是180度。"
+    },
+    {
+      "id": 18,
+      "subjectId": 2,
+      "subcategoryId": 24,
+      "type": "single",
+      "content": "小明有10元钱，买了一本书花了6元，他还剩多少钱？",
+      "options": ["A. 3元", "B. 4元", "C. 5元", "D. 6元"],
+      "answer": "B",
+      "explanation": "10-6=4元。"
+    },
+    {
+      "id": 19,
+      "subjectId": 2,
+      "subcategoryId": 24,
+      "type": "single",
+      "content": "班级里有30个学生，每6人一组，可以分成几组？",
+      "options": ["A. 4组", "B. 5组", "C. 6组", "D. 7组"],
+      "answer": "B",
+      "explanation": "30÷6=5组。"
+    },
+    {
+      "id": 20,
+      "subjectId": 3,
+      "subcategoryId": 31,
+      "type": "single",
+      "content": "What is the English word for \"猫\"?",
+      "options": ["A. Dog", "B. Cat", "C. Bird", "D. Fish"],
+      "answer": "B",
+      "explanation": "\"猫\"的英语单词是\"Cat\"。"
+    },
+    {
+      "id": 21,
+      "subjectId": 3,
+      "subcategoryId": 31,
+      "type": "single",
+      "content": "What is the English word for \"书\"?",
+      "options": ["A. Pen", "B. Pencil", "C. Book", "D. Paper"],
+      "answer": "C",
+      "explanation": "\"书\"的英语单词是\"Book\"。"
+    },
+    {
+      "id": 22,
+      "subjectId": 3,
+      "subcategoryId": 31,
+      "type": "single",
+      "content": "What do you use to write?",
+      "options": ["A. Knife", "B. Fork", "C. Spoon", "D. Pen"],
+      "answer": "D",
+      "explanation": "我们用笔来写字。"
+    },
+    {
+      "id": 23,
+      "subjectId": 3,
+      "subcategoryId": 32,
+      "type": "single",
+      "content": "How do you say \"你好\" in English?",
+      "options": ["A. Goodbye", "B. Hello", "C. Thank you", "D. Sorry"],
+      "answer": "B",
+      "explanation": "\"你好\"的英语是\"Hello\"。"
+    },
+    {
+      "id": 24,
+      "subjectId": 3,
+      "subcategoryId": 32,
+      "type": "single",
+      "content": "What is 5+3 in English?",
+      "options": ["A. Five plus three", "B. Five minus three", "C. Five times three", "D. Five divided by three"],
+      "answer": "A",
+      "explanation": "5+3的英语是\"Five plus three\"。"
+    },
+    {
+      "id": 25,
+      "subjectId": 3,
+      "subcategoryId": 33,
+      "type": "listening",
+      "content": "Which animal has a long trunk?",
+      "options": ["A. Elephant", "B. Lion", "C. Tiger", "D. Monkey"],
+      "answer": "A",
+      "explanation": "大象有长长的鼻子。",
+      "audio": "elephant.mp3"
+    },
+    {
+      "id": 26,
+      "subjectId": 3,
+      "subcategoryId": 34,
+      "type": "single",
+      "content": "What is the capital of China?",
+      "options": ["A. Shanghai", "B. Beijing", "C. Guangzhou", "D. Shenzhen"],
+      "answer": "B",
+      "explanation": "中国的首都是北京。"
+    },
+    {
+      "id": 27,
+      "subjectId": 3,
+      "subcategoryId": 34,
+      "type": "single",
+      "content": "How many days are there in a week?",
+      "options": ["A. 5", "B. 6", "C. 7", "D. 8"],
+      "answer": "C",
+      "explanation": "一周有7天。"
+    },
+    {
+      "id": 28,
+      "subjectId": 3,
+      "subcategoryId": 34,
+      "type": "single",
+      "content": "Which color is the sky?",
+      "options": ["A. Red", "B. Green", "C. Blue", "D. Yellow"],
+      "answer": "C",
+      "explanation": "天空是蓝色的。"
+    },
+    {
+      "id": 29,
+      "subjectId": 3,
+      "subcategoryId": 34,
+      "type": "single",
+      "content": "How many months are there in a year?",
+      "options": ["A. 10", "B. 11", "C. 12", "D. 13"],
+      "answer": "C",
+      "explanation": "一年有12个月。"
+    }
+  ]
+}

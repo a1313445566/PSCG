@@ -1,0 +1,218 @@
+// 使用 API 与后端通信
+
+const API_BASE_URL = 'http://localhost:3000/api'
+
+// 初始化数据库
+export const initDatabase = async () => {
+  // 后端会自动初始化数据库
+  return true
+}
+
+// 获取所有学科
+export const getSubjects = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subjects`)
+    if (!response.ok) {
+      throw new Error('获取学科失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('获取学科失败:', error)
+    return []
+  }
+}
+
+// 获取所有题目
+export const getQuestions = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions`)
+    if (!response.ok) {
+      throw new Error('获取题目失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('获取题目失败:', error)
+    return []
+  }
+}
+
+// 添加学科
+export const addSubject = async (name) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subjects`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    })
+    if (!response.ok) {
+      throw new Error('添加学科失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('添加学科失败:', error)
+    return null
+  }
+}
+
+// 删除学科
+export const deleteSubject = async (subjectId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('删除学科失败')
+    }
+    return true
+  } catch (error) {
+    console.error('删除学科失败:', error)
+    return false
+  }
+}
+
+// 添加子分类
+export const addSubcategory = async (subjectId, name) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subcategories`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ subject_id: subjectId, name })
+    })
+    if (!response.ok) {
+      throw new Error('添加子分类失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('添加子分类失败:', error)
+    return null
+  }
+}
+
+// 删除子分类
+export const deleteSubcategory = async (subcategoryId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subcategories/${subcategoryId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('删除子分类失败')
+    }
+    return true
+  } catch (error) {
+    console.error('删除子分类失败:', error)
+    return false
+  }
+}
+
+// 添加题目
+export const addQuestion = async (question) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(question)
+    })
+    if (!response.ok) {
+      throw new Error('添加题目失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('添加题目失败:', error)
+    return null
+  }
+}
+
+// 更新题目
+export const updateQuestion = async (updatedQuestion) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions/${updatedQuestion.id}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(updatedQuestion)
+    })
+    if (!response.ok) {
+      throw new Error('更新题目失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('更新题目失败:', error)
+    return null
+  }
+}
+
+// 删除题目
+export const deleteQuestion = async (questionId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/questions/${questionId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('删除题目失败')
+    }
+    return true
+  } catch (error) {
+    console.error('删除题目失败:', error)
+    return false
+  }
+}
+
+// 清空所有数据
+export const clearAllData = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/data`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('清空数据失败')
+    }
+    return true
+  } catch (error) {
+    console.error('清空数据失败:', error)
+    return false
+  }
+}
+
+// 关闭数据库连接
+export const closeDatabase = async () => {
+  // 不需要关闭API连接
+  return true
+}
+
+// 导入本地数据到SQL数据库
+export const importLocalData = async () => {
+  try {
+    // 从localStorage获取数据
+    const storedData = localStorage.getItem('quiz_data')
+    if (!storedData) {
+      throw new Error('localStorage中没有数据')
+    }
+    
+    const data = JSON.parse(storedData)
+    
+    // 发送数据到后端API
+    const response = await fetch(`${API_BASE_URL}/import-local-data`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ data })
+    })
+    
+    if (!response.ok) {
+      throw new Error('导入数据失败')
+    }
+    
+    return await response.json()
+  } catch (error) {
+    console.error('导入本地数据失败:', error)
+    return { success: false, error: error.message }
+  }
+}
