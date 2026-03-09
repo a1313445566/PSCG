@@ -1,6 +1,12 @@
 // 使用 API 与后端通信
+// 自动检测当前环境：开发环境使用localhost，生产环境使用远程服务器
+const isDevelopment = import.meta.env.DEV;
+const API_BASE_URL = isDevelopment 
+  ? import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+  : import.meta.env.VITE_API_URL || 'http://10.78.127.23:3001/api';
 
-const API_BASE_URL = 'http://localhost:3000/api'
+// 导出API基础URL供其他模块使用
+export const getApiBaseUrl = () => API_BASE_URL;
 
 // 初始化数据库
 export const initDatabase = async () => {

@@ -27,6 +27,20 @@
 - **图片显示**：支持题目和答案中的图片显示
 - **答题功能**：支持多种题型的答题操作
 
+## 环境变量配置
+
+项目使用环境变量来管理API地址，方便在不同环境间切换：
+
+### 开发环境 (`env.development`)
+```
+VITE_API_URL=http://localhost:3000/api
+```
+
+### 生产环境 (`env.production`)
+```
+VITE_API_URL=http://10.78.127.23:3001/api
+```
+
 ## 安装与运行
 
 ### 开发环境
@@ -53,17 +67,42 @@
 5. **访问项目**
    - 前端：`http://localhost:5173`
    - 后端：`http://localhost:3000`
+   - 后台管理：`http://localhost:5173/admin`
+   - 管理密码：`xgsy8188`
 
 ### 生产环境部署
 
-1. **使用一键部署脚本**
-   - Linux：`./deploy.sh`
-   - Windows：`deploy.bat`
+1. **上传项目文件**
+   - 将项目文件上传到服务器
+   - 确保 `audio/` 和 `images/` 目录存在且有写入权限
 
-2. **配置 Nginx 反向代理**
+2. **安装依赖**
+   ```bash
+   cd /www/wwwroot/您的域名
+   npm install
+   ```
+
+3. **构建前端**
+   ```bash
+   npm run build
+   ```
+
+4. **启动服务**
+   ```bash
+   # 使用PM2启动服务
+   pm2 start server.cjs --name "quiz-app"
+   
+   # 保存PM2配置
+   pm2 save
+   
+   # 设置PM2自启动
+   pm2 startup
+   ```
+
+5. **配置 Nginx 反向代理**
    - 目标 URL：`http://127.0.0.1:3000`
 
-3. **访问项目**
+6. **访问项目**
    - 前端：`http://您的域名`
    - 后台：`http://您的域名/admin`
    - 管理密码：`xgsy8188`
@@ -77,10 +116,13 @@ web2.0/
 │   ├── stores/         # 状态管理
 │   ├── utils/          # 工具函数
 │   └── router/         # 路由配置
+├── public/             # 静态资源
 ├── server.cjs          # 后端服务器
 ├── package.json        # 项目配置
 ├── deploy.sh           # Linux 部署脚本
 ├── deploy.bat          # Windows 部署脚本
+├── .env.development    # 开发环境配置
+├── .env.production     # 生产环境配置
 └── quiz.db             # SQLite 数据库 (需要上传到Git仓库)
 ```
 
@@ -90,6 +132,22 @@ web2.0/
 - 检查防火墙设置，确保端口 3000 可以访问
 - 定期备份 `quiz.db` 数据库文件
 - 如遇到问题，可查看 PM2 日志排查错误：`pm2 logs quiz-app`
+- 如需更改API地址，只需修改对应环境的 `.env` 文件
+
+## 常见问题
+
+### 1. 前端无法连接到后端
+- 检查API地址配置是否正确
+- 确保后端服务正在运行
+- 检查防火墙设置
+
+### 2. 图片上传失败
+- 确保 `images/` 目录存在且有写入权限
+- 检查服务器磁盘空间
+
+### 3. 音频播放失败
+- 确保 `audio/` 目录存在且有写入权限
+- 检查音频文件格式是否正确
 
 ## 许可证
 

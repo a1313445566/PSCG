@@ -362,6 +362,7 @@
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
 import { useQuestionStore } from '../stores/questionStore'
+import { getApiBaseUrl } from '../utils/database'
 import { ElTabs, ElTabPane, ElInput, ElButton, ElTable, ElTableColumn, ElSelect, ElOption, ElDialog, ElForm, ElFormItem, ElPagination, ElCheckbox, ElCheckboxGroup, ElUpload, ElMessage, ElMessageBox, ElTooltip } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import 'element-plus/dist/index.css'
@@ -658,7 +659,7 @@ const saveQuestion = async () => {
             const dataUrl = srcMatch[1]
             // 上传DataURL到服务器
             try {
-              const response = await fetch('http://localhost:3000/api/upload-data-url', {
+              const response = await fetch(`${getApiBaseUrl()}/upload-data-url`, {
                 method: 'POST',
                 headers: {
                   'Content-Type': 'application/json'
@@ -668,7 +669,7 @@ const saveQuestion = async () => {
               if (response.ok) {
                 const result = await response.json()
                 // 替换DataURL为服务器路径
-                processedOption = processedOption.replace(dataUrl, `http://localhost:3000/${result.filePath}`)
+                processedOption = processedOption.replace(dataUrl, `${getApiBaseUrl().replace('/api', '')}/${result.filePath}`)
               }
             } catch (error) {
               console.error('上传DataURL失败:', error)
@@ -703,7 +704,7 @@ const saveQuestion = async () => {
       const formData = new FormData()
       formData.append('audio', selectedAudioFile.value)
       
-      const response = await fetch('http://localhost:3000/api/upload-audio', {
+      const response = await fetch(`${getApiBaseUrl()}/upload-audio`, {
         method: 'POST',
         body: formData
       })
@@ -728,7 +729,7 @@ const saveQuestion = async () => {
       const formData = new FormData()
       formData.append('image', selectedImageFile.value)
       
-      const response = await fetch('http://localhost:3000/api/upload-image', {
+      const response = await fetch(`${getApiBaseUrl()}/upload-image`, {
         method: 'POST',
         body: formData
       })
@@ -855,14 +856,14 @@ const handleImageChange = (file) => {
 
 // 处理粘贴事件
 const handlePaste = (event) => {
-  // 首先阻止默认粘贴行为
-  event.preventDefault();
-  
   const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+  let hasImage = false;
+  
   for (const item of items) {
     if (item.type.indexOf('image') === 0) {
+      hasImage = true;
+      event.preventDefault();
       const blob = item.getAsFile();
-      // 使用DataURL显示图片，不立即上传
       const reader = new FileReader();
       reader.onload = function(e) {
         const img = document.createElement('img');
@@ -870,7 +871,6 @@ const handlePaste = (event) => {
         img.style.maxWidth = '100%';
         img.style.maxHeight = '200px';
         event.target.appendChild(img);
-        // 更新form.options[index]的值
         event.target.blur();
       };
       reader.readAsDataURL(blob);
