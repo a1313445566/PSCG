@@ -29,6 +29,11 @@ package-lock.json
 # Test files
 test-*.js
 
+# Compressed files
+*.zip
+*.rar
+*.7z
+
 # Environment variables
 .env
 .env.local
