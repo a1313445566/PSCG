@@ -53,21 +53,28 @@ VITE_API_URL=http://您的域名:3001/api
    cd web2.0
    ```
 
-2. **安装依赖**
+2. **安装系统依赖**
+   ```bash
+   # 安装 Python 依赖（用于编译 sqlite3）
+   sudo apt-get update
+   sudo apt-get install -y python3-venv python3-dev build-essential
+   ```
+
+3. **安装项目依赖**
    ```bash
    npm install
    ```
 
-3. **启动开发服务器**
+4. **启动开发服务器**
    - 前端：`npm run dev`
    - 后端：`npm run server`
 
-4. **数据库说明**
+5. **数据库说明**
    - 数据库文件 `quiz.db` 已包含在Git仓库中
    - 首次运行时会自动创建必要的表结构
    - 外键约束启用失败时会自动降级处理，确保系统正常运行
 
-5. **访问项目**
+6. **访问项目**
    - 前端：`http://localhost:5173`
    - 后端：`http://localhost:3001`
    - 后台管理：`http://localhost:5173/admin`
@@ -79,18 +86,25 @@ VITE_API_URL=http://您的域名:3001/api
    - 将项目文件上传到服务器
    - 确保 `audio/` 和 `images/` 目录存在且有写入权限
 
-2. **安装依赖**
+2. **安装系统依赖**
+   ```bash
+   # 安装 Python 依赖（用于编译 sqlite3）
+   sudo apt-get update
+   sudo apt-get install -y python3-venv python3-dev build-essential
+   ```
+
+3. **安装项目依赖**
    ```bash
    cd /www/wwwroot/您的域名
    npm install
    ```
 
-3. **构建前端**
+4. **构建前端**
    ```bash
    npm run build
    ```
 
-4. **启动服务**
+5. **启动服务**
    ```bash
    # 使用PM2启动服务
    pm2 start server.cjs --name "quiz-app"
@@ -102,10 +116,10 @@ VITE_API_URL=http://您的域名:3001/api
    pm2 startup
    ```
 
-5. **配置 Nginx 反向代理**
+6. **配置 Nginx 反向代理**
    - 目标 URL：`http://127.0.0.1:3001`
 
-6. **访问项目**
+7. **访问项目**
    - 前端：`http://您的域名`
    - 后台：`http://您的域名/admin`
    - 管理密码：`xgsy8188`
