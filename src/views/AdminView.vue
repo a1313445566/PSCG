@@ -735,40 +735,70 @@ const parseBatchQuestions = () => {
   
   const questions = []
   
-  // 使用更简单的方法：按题目分割文本
-  // 匹配题目模式：数字+标点+题目内容+答案括号
-  // 支持中文和英语题格式
-  const questionRegex = /(\d+[.、]\s*)(.+?)([\(（]\s*[A-Za-z]*\s*[\)）])/gs
-  const matches = text.matchAll(questionRegex)
+  // 按题目分割文本，支持多种格式
+  const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0)
   
-  let lastIndex = 0
-  for (const match of matches) {
-    const questionText = match[2].trim()
-    const answer = match[3].match(/[A-Za-z]+/)[0] || ''
+  let currentQuestion = null
+  let inOptions = false
+  
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]
     
-    // 提取选项
-    const optionsStart = match.index + match[0].length
-    const nextMatch = text.slice(optionsStart).match(/\d+[.、]\s*|$/)
-    const optionsEnd = nextMatch ? optionsStart + nextMatch.index : text.length
-    const optionsText = text.slice(optionsStart, optionsEnd)
+    // 检查是否是新题目
+    // 模式1: 数字+标点+题目内容+答案括号 (如: 1. 题目内容(A))
+    // 模式2: 题目内容+答案括号 (如: 题目内容(A))
+    const numberedQuestionMatch = line.match(/^(\d+[.、]\s*)(.+?)([\(（]\s*[A-Za-z]*\s*[\)）])$/)
+    const unnumberedQuestionMatch = line.match(/^(.+?)([\(（]\s*[A-Za-z]*\s*[\)）])$/)
     
-    // 解析选项
-    const options = []
-    const optionRegex = /([A-Za-z][\.\、．]?\s*[^\n]+)/g
-    const optionMatches = optionsText.matchAll(optionRegex)
-    for (const optionMatch of optionMatches) {
-      options.push(optionMatch[1].trim())
+    if (numberedQuestionMatch) {
+      // 保存当前题目（如果存在）
+      if (currentQuestion) {
+        questions.push(currentQuestion)
+      }
+      
+      // 创建新题目
+      const questionText = numberedQuestionMatch[2].trim()
+      const answerMatch = numberedQuestionMatch[3].match(/[A-Za-z]+/)
+      const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+      
+      currentQuestion = {
+        content: questionText + numberedQuestionMatch[3],
+        answer: answer,
+        options: []
+      }
+      inOptions = true
+    } else if (unnumberedQuestionMatch) {
+      // 保存当前题目（如果存在）
+      if (currentQuestion) {
+        questions.push(currentQuestion)
+      }
+      
+      // 创建新题目（无编号）
+      const questionText = unnumberedQuestionMatch[1].trim()
+      const answerMatch = unnumberedQuestionMatch[2].match(/[A-Za-z]+/)
+      const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+      
+      currentQuestion = {
+        content: questionText + unnumberedQuestionMatch[2],
+        answer: answer,
+        options: []
+      }
+      inOptions = true
+    } else if (inOptions && currentQuestion) {
+      // 检查是否是选项（以字母+标点开头）
+      const optionMatch = line.match(/^([A-Za-z][\.\、．]?\s*.*)$/)
+      if (optionMatch) {
+        currentQuestion.options.push(optionMatch[1].trim())
+      } else {
+        // 如果不是选项，可能是题目内容的延续（多行题目）
+        currentQuestion.content += ' ' + line
+      }
     }
-    
-    // 创建题目对象，保留完整的题目内容（包括括号）
-    const question = {
-      content: questionText + match[3],
-      answer: answer.toUpperCase(), // 统一转换为大写
-      options: options
-    }
-    
-    questions.push(question)
-    lastIndex = optionsEnd
+  }
+  
+  // 保存最后一个题目
+  if (currentQuestion) {
+    questions.push(currentQuestion)
   }
   
   parsedQuestions.value = questions

@@ -23,7 +23,8 @@ const db = new sqlite3.Database('./quiz.db', (err) => {
     // 启用外键约束
     db.run('PRAGMA foreign_keys = ON', (err) => {
       if (err) {
-        console.error('启用外键约束失败:', err)
+        console.warn('外键约束启用失败，继续创建表:', err)
+        createTables()
       } else {
         console.log('外键约束已启用')
         createTables()
