@@ -6,7 +6,7 @@ const path = require('path')
 const fs = require('fs')
 
 const app = express()
-const port = 3000
+const port = 3001
 
 // 中间件
 app.use(cors())
@@ -20,7 +20,15 @@ const db = new sqlite3.Database('./quiz.db', (err) => {
     console.error('数据库连接失败:', err)
   } else {
     console.log('数据库连接成功')
-    createTables()
+    // 启用外键约束
+    db.run('PRAGMA foreign_keys = ON', (err) => {
+      if (err) {
+        console.error('启用外键约束失败:', err)
+      } else {
+        console.log('外键约束已启用')
+        createTables()
+      }
+    })
   }
 })
 
@@ -30,11 +38,34 @@ const createTables = () => {
   db.run(`
     CREATE TABLE IF NOT EXISTS subjects (
       id INTEGER PRIMARY KEY,
-      name TEXT NOT NULL
+      name TEXT NOT NULL,
+      icon_index INTEGER DEFAULT 0
     )
   `, (err) => {
     if (err) {
       console.error('创建学科表失败:', err)
+    } else {
+      // 检查是否需要添加icon_index列（对于已存在的表）
+      db.all(`PRAGMA table_info(subjects)`, (err, columns) => {
+        if (err) {
+          console.error('检查学科表结构失败:', err)
+          return
+        }
+        if (columns && Array.isArray(columns)) {
+          const hasIconIndex = columns.some(col => col.name === 'icon_index')
+          if (!hasIconIndex) {
+            db.run(`ALTER TABLE subjects ADD COLUMN icon_index INTEGER DEFAULT 0`, (err) => {
+              if (err) {
+                console.error('添加icon_index列失败:', err)
+              } else {
+                console.log('成功添加icon_index列到subjects表')
+              }
+            })
+          }
+        } else {
+          console.error('检查学科表结构时返回了无效的列信息')
+        }
+      })
     }
   })
   
@@ -44,11 +75,34 @@ const createTables = () => {
       id INTEGER PRIMARY KEY,
       subject_id INTEGER NOT NULL,
       name TEXT NOT NULL,
+      icon_index INTEGER DEFAULT 0,
       FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE
     )
   `, (err) => {
     if (err) {
       console.error('创建子分类表失败:', err)
+    } else {
+      // 检查是否需要添加icon_index列（对于已存在的表）
+      db.all(`PRAGMA table_info(subcategories)`, (err, columns) => {
+        if (err) {
+          console.error('检查子分类表结构失败:', err)
+          return
+        }
+        if (columns && Array.isArray(columns)) {
+          const hasIconIndex = columns.some(col => col.name === 'icon_index')
+          if (!hasIconIndex) {
+            db.run(`ALTER TABLE subcategories ADD COLUMN icon_index INTEGER DEFAULT 0`, (err) => {
+              if (err) {
+                console.error('添加icon_index列失败:', err)
+              } else {
+                console.log('成功添加icon_index列到subcategories表')
+              }
+            })
+          }
+        } else {
+          console.error('检查子分类表结构时返回了无效的列信息')
+        }
+      })
     }
   })
   
@@ -97,15 +151,28 @@ app.get('/api/subjects', (req, res) => {
     
     for (const subject of subjectList) {
       subject.subcategories = []
-      subjects.push(subject)
+      // 转换字段名，保持前后端一致性
+      const formattedSubject = {
+        id: subject.id,
+        name: subject.name,
+        iconIndex: subject.icon_index || 0,
+        subcategories: []
+      }
+      subjects.push(formattedSubject)
       
       // 获取每个学科的子分类
       db.all('SELECT * FROM subcategories WHERE subject_id = ?', [subject.id], (err, subcategories) => {
         if (err) {
           console.error('获取子分类失败:', err)
-          subject.subcategories = []
+          formattedSubject.subcategories = []
         } else {
-          subject.subcategories = subcategories
+          // 转换子分类字段名，保持前后端一致性
+          formattedSubject.subcategories = subcategories.map(subcat => ({
+            id: subcat.id,
+            subject_id: subcat.subject_id,
+            name: subcat.name,
+            iconIndex: subcat.icon_index || 0
+          }))
         }
         
         subjectsProcessed++
@@ -167,9 +234,9 @@ app.get('/api/questions', (req, res) => {
 
 // 添加学科
 app.post('/api/subjects', (req, res) => {
-  const { name } = req.body
+  const { name, iconIndex = 0 } = req.body
   
-  db.run('INSERT INTO subjects (name) VALUES (?)', [name], function(err) {
+  db.run('INSERT INTO subjects (name, icon_index) VALUES (?, ?)', [name, iconIndex], function(err) {
     if (err) {
       res.status(500).json({ error: '添加学科失败' })
       return
@@ -178,7 +245,44 @@ app.post('/api/subjects', (req, res) => {
     res.json({
       id: this.lastID,
       name,
+      iconIndex,
       subcategories: []
+    })
+  })
+})
+
+// 更新学科
+app.put('/api/subjects/:id', (req, res) => {
+  const { id } = req.params
+  const { name, iconIndex = 0 } = req.body
+  
+  db.run('UPDATE subjects SET name = ?, icon_index = ? WHERE id = ?', [name, iconIndex, id], function(err) {
+    if (err) {
+      res.status(500).json({ error: '更新学科失败' })
+      return
+    }
+    
+    // 获取更新后的学科信息
+    db.get('SELECT * FROM subjects WHERE id = ?', [id], (err, subject) => {
+      if (err) {
+        res.status(500).json({ error: '获取学科信息失败' })
+        return
+      }
+      
+      // 获取学科的子分类
+      db.all('SELECT * FROM subcategories WHERE subject_id = ?', [id], (err, subcategories) => {
+        if (err) {
+          console.error('获取子分类失败:', err)
+          subcategories = []
+        }
+        
+        res.json({
+          id: subject.id,
+          name: subject.name,
+          iconIndex: subject.icon_index || 0,
+          subcategories
+        })
+      })
     })
   })
 })
@@ -199,9 +303,9 @@ app.delete('/api/subjects/:id', (req, res) => {
 
 // 添加子分类
 app.post('/api/subcategories', (req, res) => {
-  const { subject_id, name } = req.body
+  const { subject_id, name, iconIndex = 0 } = req.body
   
-  db.run('INSERT INTO subcategories (subject_id, name) VALUES (?, ?)', [subject_id, name], function(err) {
+  db.run('INSERT INTO subcategories (subject_id, name, icon_index) VALUES (?, ?, ?)', [subject_id, name, iconIndex], function(err) {
     if (err) {
       res.status(500).json({ error: '添加子分类失败' })
       return
@@ -209,7 +313,27 @@ app.post('/api/subcategories', (req, res) => {
     
     res.json({
       id: this.lastID,
-      name
+      name,
+      iconIndex
+    })
+  })
+})
+
+// 更新子分类
+app.put('/api/subcategories/:id', (req, res) => {
+  const { id } = req.params
+  const { name, iconIndex = 0 } = req.body
+  
+  db.run('UPDATE subcategories SET name = ?, icon_index = ? WHERE id = ?', [name, iconIndex, id], function(err) {
+    if (err) {
+      res.status(500).json({ error: '更新子分类失败' })
+      return
+    }
+    
+    res.json({
+      id: parseInt(id),
+      name,
+      iconIndex
     })
   })
 })

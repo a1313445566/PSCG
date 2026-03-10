@@ -2,7 +2,7 @@
 // 自动检测当前环境：开发环境使用localhost，生产环境使用远程服务器
 const isDevelopment = import.meta.env.DEV;
 const API_BASE_URL = isDevelopment 
-  ? import.meta.env.VITE_API_URL || 'http://localhost:3000/api'
+  ? import.meta.env.VITE_API_URL || 'http://localhost:3001/api'
   : import.meta.env.VITE_API_URL || 'http://10.78.127.23:3001/api';
 
 // 导出API基础URL供其他模块使用
@@ -43,14 +43,14 @@ export const getQuestions = async () => {
 }
 
 // 添加学科
-export const addSubject = async (name) => {
+export const addSubject = async (name, iconIndex = 0) => {
   try {
     const response = await fetch(`${API_BASE_URL}/subjects`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ name })
+      body: JSON.stringify({ name, iconIndex })
     })
     if (!response.ok) {
       throw new Error('添加学科失败')
@@ -58,6 +58,26 @@ export const addSubject = async (name) => {
     return await response.json()
   } catch (error) {
     console.error('添加学科失败:', error)
+    return null
+  }
+}
+
+// 更新学科
+export const updateSubject = async (subjectId, name, iconIndex = 0) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, iconIndex })
+    })
+    if (!response.ok) {
+      throw new Error('更新学科失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('更新学科失败:', error)
     return null
   }
 }
@@ -79,14 +99,14 @@ export const deleteSubject = async (subjectId) => {
 }
 
 // 添加子分类
-export const addSubcategory = async (subjectId, name) => {
+export const addSubcategory = async (subjectId, name, iconIndex = 0) => {
   try {
     const response = await fetch(`${API_BASE_URL}/subcategories`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ subject_id: subjectId, name })
+      body: JSON.stringify({ subject_id: subjectId, name, iconIndex })
     })
     if (!response.ok) {
       throw new Error('添加子分类失败')
@@ -94,6 +114,26 @@ export const addSubcategory = async (subjectId, name) => {
     return await response.json()
   } catch (error) {
     console.error('添加子分类失败:', error)
+    return null
+  }
+}
+
+// 更新子分类
+export const updateSubcategory = async (subcategoryId, name, iconIndex = 0) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/subcategories/${subcategoryId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name, iconIndex })
+    })
+    if (!response.ok) {
+      throw new Error('更新子分类失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('更新子分类失败:', error)
     return null
   }
 }

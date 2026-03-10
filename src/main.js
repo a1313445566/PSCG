@@ -3,7 +3,6 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import { useQuestionStore } from './stores/questionStore'
-import { seedTestData } from './utils/seedData'
 
 const app = createApp(App)
 const pinia = createPinia()
@@ -14,8 +13,6 @@ app.use(router)
 // 初始化数据库
 const questionStore = useQuestionStore()
 questionStore.initialize().then(() => {
-  // 添加测试数据
-  seedTestData()
   // 重新加载数据到 store
   questionStore.loadData()
   app.mount('#app')

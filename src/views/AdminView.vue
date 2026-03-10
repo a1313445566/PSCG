@@ -36,20 +36,43 @@
       <el-tab-pane label="学科管理" name="subjects">
         <div class="subject-management">
           <div class="add-subject">
-            <el-input v-model="newSubjectName" placeholder="输入学科名称" style="width: 300px; margin-right: 10px;"></el-input>
+            <el-input v-model="newSubjectName" placeholder="输入学科名称" style="width: 200px; margin-right: 10px;"></el-input>
+            <el-select v-model="newSubjectIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
+              <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+            </el-select>
             <el-button type="primary" @click="addSubject">添加学科</el-button>
             <el-button type="warning" @click="importLocalData">导入本地数据</el-button>
           </div>
           
           <el-table :data="subjects" style="margin-top: 20px;">
             <el-table-column prop="id" label="ID" width="80"></el-table-column>
-            <el-table-column prop="name" label="学科名称"></el-table-column>
+            <el-table-column label="图标" width="80">
+              <template #default="{ row }">
+                <span class="subject-icon">{{ subjectIcons[row.iconIndex || 0] }}</span>
+              </template>
+            </el-table-column>
+            <el-table-column label="学科名称">
+              <template #default="{ row }">
+                <div v-if="editingSubjectId === row.id" class="subject-edit">
+                  <el-input v-model="editingSubjectName" placeholder="输入学科名称" style="width: 200px; margin-right: 10px;"></el-input>
+                  <el-select v-model="editingSubjectIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
+                    <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+                  </el-select>
+                  <el-button type="primary" size="small" @click="saveSubjectEdit(row.id)">保存</el-button>
+                  <el-button size="small" @click="cancelSubjectEdit">取消</el-button>
+                </div>
+                <div v-else class="subject-info">
+                  <span>{{ row.name }}</span>
+                  <el-button type="text" size="small" @click="editSubject(row)">编辑</el-button>
+                </div>
+              </template>
+            </el-table-column>
             <el-table-column label="子分类数量" width="120">
               <template #default="{ row }">
                 {{ row.subcategories ? row.subcategories.length : 0 }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="200">
+            <el-table-column label="操作" width="150">
               <template #default="{ row }">
                 <el-button type="primary" size="small" @click="manageSubcategories(row)">管理子分类</el-button>
                 <el-button type="danger" size="small" @click="deleteSubject(row.id)">删除</el-button>
@@ -81,6 +104,7 @@
             </div>
             <div class="action-buttons">
               <el-button type="primary" @click="showAddQuestionDialog">添加题目</el-button>
+              <el-button type="success" @click="batchAddDialogVisible = true">批量添加题目</el-button>
               <el-button type="danger" @click="batchDeleteQuestions" :disabled="selectedQuestions.length === 0">批量删除</el-button>
             </div>
           </div>
@@ -172,17 +196,40 @@
     <el-dialog
       v-model="subcategoryDialogVisible"
       :title="`管理 ${currentSubjectForSubcategory?.name} 的子分类`"
-      width="600px"
+      width="700px"
     >
       <div class="subcategory-management">
         <div class="add-subcategory">
-          <el-input v-model="newSubcategoryName" placeholder="输入子分类名称" style="width: 300px; margin-right: 10px;"></el-input>
+          <el-input v-model="newSubcategoryName" placeholder="输入子分类名称" style="width: 200px; margin-right: 10px;"></el-input>
+          <el-select v-model="newSubcategoryIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
+            <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+          </el-select>
           <el-button type="primary" @click="addSubcategory">添加子分类</el-button>
         </div>
         
         <el-table :data="currentSubjectForSubcategory?.subcategories" style="margin-top: 20px;">
           <el-table-column prop="id" label="ID" width="80"></el-table-column>
-          <el-table-column prop="name" label="子分类名称"></el-table-column>
+          <el-table-column label="图标" width="80">
+            <template #default="{ row }">
+              <span class="subcategory-icon">{{ subjectIcons[row.iconIndex || 0] }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column label="子分类名称">
+            <template #default="{ row }">
+              <div v-if="editingSubcategoryId === row.id" class="subcategory-edit">
+                <el-input v-model="editingSubcategoryName" placeholder="输入子分类名称" style="width: 200px; margin-right: 10px;"></el-input>
+                <el-select v-model="editingSubcategoryIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
+                  <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+                </el-select>
+                <el-button type="primary" size="small" @click="saveSubcategoryEdit(row.id)">保存</el-button>
+                <el-button size="small" @click="cancelSubcategoryEdit">取消</el-button>
+              </div>
+              <div v-else class="subcategory-info">
+                <span>{{ row.name }}</span>
+                <el-button type="text" size="small" @click="editSubcategory(row)">编辑</el-button>
+              </div>
+            </template>
+          </el-table-column>
           <el-table-column label="操作" width="120">
             <template #default="{ row }">
               <el-button type="danger" size="small" @click="deleteSubcategory(row.id)">删除</el-button>
@@ -194,6 +241,79 @@
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="subcategoryDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
+    
+    <!-- 批量添加题目对话框 -->
+    <el-dialog
+      v-model="batchAddDialogVisible"
+      title="批量添加题目"
+      width="1000px"
+    >
+      <div class="batch-add-management">
+        <div class="batch-add-layout">
+          <!-- 左侧输入区域 -->
+          <div class="input-section">
+            <el-form label-width="100px">
+              <el-form-item label="学科">
+                <el-select v-model="batchSubjectId" placeholder="选择学科" style="width: 100%;" @change="updateBatchSubcategories">
+                  <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="子分类">
+                <el-select v-model="batchSubcategoryId" placeholder="选择子分类" style="width: 100%;">
+                  <el-option v-for="subcategory in batchSubcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="题目类型">
+                <el-select v-model="batchQuestionType" placeholder="选择题目类型" style="width: 100%;">
+                  <el-option label="单选题" value="single"></el-option>
+                  <el-option label="多选题" value="multiple"></el-option>
+                  <el-option label="判断题" value="judgment"></el-option>
+                </el-select>
+              </el-form-item>
+              <el-form-item label="题目文本">
+                <el-input
+                  v-model="batchQuestionText"
+                  type="textarea"
+                  :rows="15"
+                  placeholder="请粘贴题目文本，格式如下：\n下面语句中加点的词语运用不恰当的一项是(B)\nA. 选项1\nB. 选项2\nC. 选项3\nD. 选项4"
+                  style="width: 100%;"
+                ></el-input>
+              </el-form-item>
+            </el-form>
+          </div>
+          
+          <!-- 右侧预览区域 -->
+          <div class="preview-section">
+            <h3>题目预览</h3>
+            <div v-if="parsedQuestions.length > 0" class="preview-content">
+              <div v-for="(question, index) in parsedQuestions" :key="index" class="preview-question">
+                <div class="preview-question-content">
+                  <span class="question-number">{{ index + 1 }}. </span>
+                  <span v-html="formatQuestionContent(question.content, question.answer)"></span>
+                </div>
+                <div class="preview-options">
+                  <div v-for="(option, optIndex) in question.options" :key="optIndex" class="preview-option">
+                    {{ option }}
+                    <span v-if="option.trim().startsWith(question.answer + '.') || option.trim().startsWith(question.answer + '、') || option.trim().startsWith(question.answer + '．') || option.trim().startsWith(question.answer.toLowerCase() + '.') || option.trim().startsWith(question.answer.toLowerCase() + '、') || option.trim().startsWith(question.answer.toLowerCase() + '．')" class="correct-answer-tag">(正确答案)</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div v-else class="preview-empty">
+              <p>请输入题目文本并点击"解析题目"按钮</p>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="batchAddDialogVisible = false">取消</el-button>
+          <el-button type="primary" @click="parseBatchQuestions">解析题目</el-button>
+          <el-button type="success" @click="saveBatchQuestions" :disabled="parsedQuestions.length === 0">批量添加</el-button>
         </span>
       </template>
     </el-dialog>
@@ -372,16 +492,46 @@ const store = useQuestionStore()
 
 const activeTab = ref('subjects')
 const newSubjectName = ref('')
+const newSubjectIcon = ref(0)
 const subjects = computed(() => store.subjects)
 const questions = computed(() => store.questions)
 const filterSubjectId = ref('')
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 
+// 学科编辑相关
+const editingSubjectId = ref(null)
+const editingSubjectName = ref('')
+const editingSubjectIcon = ref(0)
+
+// 学科图标
+const subjectIcons = ['📚', '🔢', '🌍', '⚡', '🎨', '🎵', '⚽', '🔬']
+
 // 子分类管理相关
 const subcategoryDialogVisible = ref(false)
 const currentSubjectForSubcategory = ref(null)
 const newSubcategoryName = ref('')
+const newSubcategoryIcon = ref(0)
+
+// 子分类编辑相关
+const editingSubcategoryId = ref(null)
+const editingSubcategoryName = ref('')
+const editingSubcategoryIcon = ref(0)
+
+// 批量添加题目相关
+const batchAddDialogVisible = ref(false)
+const batchSubjectId = ref('')
+const batchSubcategoryId = ref('')
+const batchQuestionType = ref('single')
+const batchQuestionText = ref('')
+const parsedQuestions = ref([])
+
+// 批量添加时的子分类列表
+const batchSubcategories = computed(() => {
+  if (!batchSubjectId.value) return []
+  const subject = subjects.value.find(s => s.id === batchSubjectId.value)
+  return subject ? subject.subcategories : []
+})
 
 // 题目管理相关
 const searchKeyword = ref('')
@@ -492,15 +642,46 @@ const filteredQuestions = computed(() => {
 
 const addSubject = () => {
   if (newSubjectName.value.trim()) {
-    store.addSubject(newSubjectName.value.trim())
+    store.addSubject(newSubjectName.value.trim(), newSubjectIcon.value)
     newSubjectName.value = ''
+    newSubjectIcon.value = 0
   }
 }
 
-const deleteSubject = (subjectId) => {
-  if (confirm('确定要删除该学科吗？删除后相关题目也会被删除。')) {
-    store.deleteSubject(subjectId)
+// 编辑学科
+const editSubject = (subject) => {
+  editingSubjectId.value = subject.id
+  editingSubjectName.value = subject.name
+  editingSubjectIcon.value = subject.iconIndex || 0
+}
+
+// 保存学科编辑
+const saveSubjectEdit = (subjectId) => {
+  if (editingSubjectName.value.trim()) {
+    store.updateSubject(subjectId, editingSubjectName.value.trim(), editingSubjectIcon.value)
+    cancelSubjectEdit()
   }
+}
+
+// 取消学科编辑
+const cancelSubjectEdit = () => {
+  editingSubjectId.value = null
+  editingSubjectName.value = ''
+  editingSubjectIcon.value = 0
+}
+
+const deleteSubject = (subjectId) => {
+  ElMessageBox.confirm('确定要删除该学科吗？删除后相关题目也会被删除。', '删除确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+  .then(() => {
+    store.deleteSubject(subjectId)
+  })
+  .catch(() => {
+    // 取消删除
+  })
 }
 
 // 子分类管理方法
@@ -511,17 +692,156 @@ const manageSubcategories = (subject) => {
 
 const addSubcategory = () => {
   if (newSubcategoryName.value.trim() && currentSubjectForSubcategory.value) {
-    store.addSubcategory(currentSubjectForSubcategory.value.id, newSubcategoryName.value.trim())
+    store.addSubcategory(currentSubjectForSubcategory.value.id, newSubcategoryName.value.trim(), newSubcategoryIcon.value)
     newSubcategoryName.value = ''
+    newSubcategoryIcon.value = 0
   }
 }
 
+// 编辑子分类
+const editSubcategory = (subcategory) => {
+  editingSubcategoryId.value = subcategory.id
+  editingSubcategoryName.value = subcategory.name
+  editingSubcategoryIcon.value = subcategory.iconIndex || 0
+}
+
+// 保存子分类编辑
+const saveSubcategoryEdit = (subcategoryId) => {
+  if (editingSubcategoryName.value.trim() && currentSubjectForSubcategory.value) {
+    store.updateSubcategory(currentSubjectForSubcategory.value.id, subcategoryId, editingSubcategoryName.value.trim(), editingSubcategoryIcon.value)
+    cancelSubcategoryEdit()
+  }
+}
+
+// 取消子分类编辑
+const cancelSubcategoryEdit = () => {
+  editingSubcategoryId.value = null
+  editingSubcategoryName.value = ''
+  editingSubcategoryIcon.value = 0
+}
+
+// 更新批量添加时的子分类列表
+const updateBatchSubcategories = () => {
+  batchSubcategoryId.value = ''
+}
+
+// 解析批量添加的题目
+const parseBatchQuestions = () => {
+  const text = batchQuestionText.value
+  if (!text) {
+    ElMessage.error('请输入题目文本')
+    return
+  }
+  
+  const questions = []
+  
+  // 使用更简单的方法：按题目分割文本
+  // 匹配题目模式：数字+标点+题目内容+答案括号
+  // 支持中文和英语题格式
+  const questionRegex = /(\d+[.、]\s*)(.+?)([\(（]\s*[A-Za-z]*\s*[\)）])/gs
+  const matches = text.matchAll(questionRegex)
+  
+  let lastIndex = 0
+  for (const match of matches) {
+    const questionText = match[2].trim()
+    const answer = match[3].match(/[A-Za-z]+/)[0] || ''
+    
+    // 提取选项
+    const optionsStart = match.index + match[0].length
+    const nextMatch = text.slice(optionsStart).match(/\d+[.、]\s*|$/)
+    const optionsEnd = nextMatch ? optionsStart + nextMatch.index : text.length
+    const optionsText = text.slice(optionsStart, optionsEnd)
+    
+    // 解析选项
+    const options = []
+    const optionRegex = /([A-Za-z][\.\、．]?\s*[^\n]+)/g
+    const optionMatches = optionsText.matchAll(optionRegex)
+    for (const optionMatch of optionMatches) {
+      options.push(optionMatch[1].trim())
+    }
+    
+    // 创建题目对象，保留完整的题目内容（包括括号）
+    const question = {
+      content: questionText + match[3],
+      answer: answer.toUpperCase(), // 统一转换为大写
+      options: options
+    }
+    
+    questions.push(question)
+    lastIndex = optionsEnd
+  }
+  
+  parsedQuestions.value = questions
+  
+  if (questions.length > 0) {
+    ElMessage.success(`成功解析 ${questions.length} 道题目`)
+  } else {
+    ElMessage.error('未解析到题目，请检查格式')
+  }
+}
+
+// 保存批量添加的题目
+const saveBatchQuestions = async () => {
+  if (parsedQuestions.value.length === 0) {
+    ElMessage.error('请先解析题目')
+    return
+  }
+  
+  if (!batchSubjectId.value || !batchSubcategoryId.value) {
+    ElMessage.error('请选择学科和子分类')
+    return
+  }
+  
+  let successCount = 0
+  
+  for (const question of parsedQuestions.value) {
+    // 从题目内容中移除答案部分，然后添加带两个空格的括号
+    let contentWithoutAnswer = question.content
+    // 匹配并移除答案括号部分，如：(A)、( A )、(     )、（A）、（ A ）、（     ）、(a)、( a )等
+    contentWithoutAnswer = contentWithoutAnswer.replace(/\s*[\(（]\s*[A-Za-z]*\s*[\)）]/, ' (  )')
+    
+    const questionData = {
+      subjectId: batchSubjectId.value,
+      subcategoryId: batchSubcategoryId.value,
+      type: batchQuestionType.value,
+      content: contentWithoutAnswer,
+      options: question.options,
+      correctAnswer: question.answer,
+      explanation: ''
+    }
+    
+    try {
+      await store.addQuestion(questionData)
+      successCount++
+    } catch (error) {
+      console.error('添加题目失败:', error)
+    }
+  }
+  
+  ElMessage.success(`成功添加 ${successCount} 道题目`)
+  batchAddDialogVisible.value = false
+  // 重置表单
+  batchSubjectId.value = ''
+  batchSubcategoryId.value = ''
+  batchQuestionType.value = 'single'
+  batchQuestionText.value = ''
+  parsedQuestions.value = []
+}
+
 const deleteSubcategory = (subcategoryId) => {
-  if (confirm('确定要删除该子分类吗？删除后相关题目也会被删除。')) {
+  ElMessageBox.confirm('确定要删除该子分类吗？删除后相关题目也会被删除。', '删除确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+  .then(() => {
     if (currentSubjectForSubcategory.value) {
       store.deleteSubcategory(currentSubjectForSubcategory.value.id, subcategoryId)
     }
-  }
+  })
+  .catch(() => {
+    // 取消删除
+  })
 }
 
 // 题目管理方法
@@ -532,12 +852,20 @@ const handleSelectionChange = (selection) => {
 const batchDeleteQuestions = () => {
   if (selectedQuestions.value.length === 0) return
   
-  if (confirm(`确定要删除选中的 ${selectedQuestions.value.length} 道题目吗？`)) {
+  ElMessageBox.confirm(`确定要删除选中的 ${selectedQuestions.value.length} 道题目吗？`, '删除确认', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'warning',
+  })
+  .then(() => {
     selectedQuestions.value.forEach(question => {
       store.deleteQuestion(question.id)
     })
     selectedQuestions.value = []
-  }
+  })
+  .catch(() => {
+    // 取消删除
+  })
 }
 
 const showAddQuestionDialog = () => {
@@ -913,6 +1241,12 @@ const hasValidImage = (content) => {
   return imgRegex.test(content);
 }
 
+// 格式化题目内容，在预览时特殊显示正确答案
+const formatQuestionContent = (content, answer) => {
+  // 直接返回题目内容，因为我们现在在选项后面添加正确答案标记
+  return content;
+}
+
 // 清理内容，移除所有HTML标签和残留的图片代码
 const cleanContent = (content) => {
   if (typeof content !== 'string') return '';
@@ -975,6 +1309,25 @@ watch(dialogVisible, (newValue) => {
   }
 })
 
+// 监听批量添加题目文本变化，实现实时预览
+watch(batchQuestionText, (newValue) => {
+  if (batchAddDialogVisible && newValue) {
+    parseBatchQuestions()
+  }
+})
+
+// 监听批量添加对话框关闭事件，清空输入字段
+watch(batchAddDialogVisible, (newValue) => {
+  if (!newValue) {
+    // 对话框关闭时清空所有字段
+    batchSubjectId.value = ''
+    batchSubcategoryId.value = ''
+    batchQuestionType.value = 'single'
+    batchQuestionText.value = ''
+    parsedQuestions.value = []
+  }
+})
+
 onMounted(() => {
   // 初始化数据
 })
@@ -1018,6 +1371,190 @@ onMounted(() => {
 
 .add-subject {
   margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subject-edit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px;
+  background-color: #f0f9ff;
+  border-radius: 4px;
+}
+
+.subject-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.subject-icon {
+  font-size: 24px;
+  margin-right: 5px;
+}
+
+.subcategory-icon {
+  font-size: 24px;
+  margin-right: 5px;
+}
+
+.add-subcategory {
+  margin-bottom: 20px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.subcategory-edit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+  padding: 10px;
+  background-color: #f0f9ff;
+  border-radius: 4px;
+}
+
+.subcategory-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.batch-add-management {
+  padding: 20px;
+}
+
+.batch-add-layout {
+  display: flex;
+  gap: 20px;
+  height: 500px;
+}
+
+.input-section {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.preview-section {
+  flex: 1;
+  padding: 20px;
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.preview-section h3 {
+  margin-bottom: 15px;
+  color: #6a11cb;
+  flex-shrink: 0;
+}
+
+.preview-content {
+  flex: 1;
+  overflow-y: auto;
+}
+
+.preview-question {
+  background-color: white;
+  padding: 15px;
+  border-radius: 8px;
+  margin-bottom: 15px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.preview-question-content {
+  margin-bottom: 10px;
+  line-height: 1.5;
+}
+
+.question-number {
+  font-weight: bold;
+  color: #6a11cb;
+}
+
+.question-answer {
+  font-weight: bold;
+  color: #4caf50;
+  margin-left: 10px;
+}
+
+.preview-options {
+  margin-left: 20px;
+}
+
+.preview-option {
+  margin-bottom: 5px;
+  line-height: 1.4;
+}
+
+.answer-highlight {
+  background-color: #ffeb3b;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-weight: bold;
+  border: 2px solid #fbc02d;
+  font-size: 14px;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  display: inline-block;
+  margin: 0 2px;
+}
+
+.correct-answer-tag {
+  background-color: #4caf50;
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: bold;
+  margin-left: 10px;
+  display: inline-block;
+}
+
+.preview-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #999;
+  text-align: center;
+}
+
+.batch-add-management .el-form-item {
+  margin-bottom: 20px;
+}
+
+.batch-add-management .el-textarea {
+  resize: vertical;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .batch-add-layout {
+    flex-direction: column;
+    height: auto;
+  }
+  
+  .input-section,
+  .preview-section {
+    flex: none;
+    height: 400px;
+  }
 }
 
 .question-management {

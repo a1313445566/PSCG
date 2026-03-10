@@ -10,7 +10,9 @@ import {
   addQuestion, 
   updateQuestion, 
   deleteQuestion,
-  importLocalData
+  importLocalData,
+  updateSubject as updateSubjectApi,
+  updateSubcategory as updateSubcategoryApi
 } from '../utils/database'
 
 export const useQuestionStore = defineStore('question', {
@@ -196,10 +198,20 @@ export const useQuestionStore = defineStore('question', {
       }
     },
     
-    async addSubject(subjectName) {
-      const newSubject = await addSubject(subjectName)
+    async addSubject(subjectName, iconIndex = 0) {
+      const newSubject = await addSubject(subjectName, iconIndex)
       if (newSubject) {
         this.subjects.push(newSubject)
+      }
+    },
+    
+    async updateSubject(subjectId, subjectName, iconIndex = 0) {
+      const result = await updateSubjectApi(subjectId, subjectName, iconIndex)
+      if (result) {
+        const index = this.subjects.findIndex(s => s.id === subjectId)
+        if (index !== -1) {
+          this.subjects[index] = result
+        }
       }
     },
     
@@ -211,12 +223,25 @@ export const useQuestionStore = defineStore('question', {
       }
     },
     
-    async addSubcategory(subjectId, name) {
-      const newSubcategory = await addSubcategory(subjectId, name)
+    async addSubcategory(subjectId, name, iconIndex = 0) {
+      const newSubcategory = await addSubcategory(subjectId, name, iconIndex)
       if (newSubcategory) {
         const subject = this.subjects.find(s => s.id === subjectId)
         if (subject) {
           subject.subcategories.push(newSubcategory)
+        }
+      }
+    },
+    
+    async updateSubcategory(subjectId, subcategoryId, name, iconIndex = 0) {
+      const result = await updateSubcategoryApi(subcategoryId, name, iconIndex)
+      if (result) {
+        const subject = this.subjects.find(s => s.id === subjectId)
+        if (subject) {
+          const index = subject.subcategories.findIndex(sc => sc.id === subcategoryId)
+          if (index !== -1) {
+            subject.subcategories[index] = result
+          }
         }
       }
     },

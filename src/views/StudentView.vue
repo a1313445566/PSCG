@@ -15,8 +15,8 @@
           class="subject-card"
           @click="selectSubject(subject.id)"
         >
-          <div class="subject-icon" :class="'subject-' + subject.id">
-            {{ subjectIcons[subject.id - 1] }}
+          <div class="subject-icon" :class="'subject-' + (subject.iconIndex + 1)">
+            {{ subjectIcons[subject.iconIndex || 0] }}
           </div>
           <div class="subject-name">{{ subject.name }}</div>
         </div>
@@ -67,7 +67,7 @@
               <div v-html="question.content"></div>
               <!-- 音频播放器 -->
               <div v-if="question.audio" class="question-audio">
-                <audio controls :src="`http://localhost:3000/${question.audio}`">
+                <audio controls :src="`/audio/${question.audio}`">
                   您的浏览器不支持音频播放。
                 </audio>
               </div>
@@ -119,7 +119,7 @@
             <div v-html="question.content"></div>
             <!-- 音频播放器 -->
             <div v-if="question.audio" class="question-audio">
-              <audio controls :src="`http://localhost:3000/${question.audio}`">
+              <audio controls :src="`/audio/${question.audio}`">
                 您的浏览器不支持音频播放。
               </audio>
             </div>
@@ -200,7 +200,7 @@ const totalQuestions = computed(() => currentQuestions.value.length)
 const wrongQuestions = ref([])
 
 // 学科图标
-const subjectIcons = ['📚', '🔢', '🌍']
+const subjectIcons = ['📚', '🔢', '🌍', '⚡', '🎨', '🎵', '⚽', '🔬']
 
 // 结果图标
 const resultIcon = computed(() => {
@@ -465,6 +465,26 @@ onMounted(async () => {
 
 .subject-3 {
   color: #45b7d1;
+}
+
+.subject-4 {
+  color: #ff9800;
+}
+
+.subject-5 {
+  color: #9c27b0;
+}
+
+.subject-6 {
+  color: #4caf50;
+}
+
+.subject-7 {
+  color: #2196f3;
+}
+
+.subject-8 {
+  color: #f44336;
 }
 
 .subject-name {
