@@ -1,8 +1,61 @@
 <template>
   <div class="student-container">
     <div class="game-header">
-      <h1 class="game-title">🏆 小学刷题闯关 🏆</h1>
+      <div class="game-title-container">
+        <div class="trophies">🏆🏆🏆</div>
+        <h1 class="game-title">{{ interfaceName }}</h1>
+      </div>
       <div class="game-logo">🎮</div>
+    </div>
+    
+    <!-- 用户信息 -->
+    <div class="user-leaderboard-section">
+      <div class="user-leaderboard-content">
+        <div v-if="currentStudentId" class="user-info-bottom">
+          <div class="user-info-details">
+            <span class="student-id-bottom">学号: {{ currentStudentId }}</span>
+            <span v-if="currentUserName" class="user-info-item">姓名: {{ currentUserName }}</span>
+            <span v-if="currentUserGrade" class="user-info-item">年级: {{ currentUserGrade }}年级</span>
+            <span v-if="currentUserClass" class="user-info-item">班级: {{ currentUserClass }}班</span>
+          </div>
+          <el-button type="primary" @click="logout" class="logout-btn-bottom">退出登录</el-button>
+        </div>
+        <div v-else class="login-form-bottom">
+          <el-form @submit.prevent="saveStudentId" class="login-form">
+            <div class="form-container">
+              <div class="form-row">
+                <el-form-item class="form-item">
+                  <span style="font-family: 'Comic Sans MS', 'Arial', sans-serif; font-weight: bold; color: #6a11cb; font-size: 18px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); padding-right: 10px; margin-right: 5px; transition: all 0.3s ease; cursor: pointer; display: inline-block; width: 60px; text-align: right;" onmouseover="this.style.color='#2575fc'; this.style.textShadow='2px 2px 6px rgba(37, 117, 252, 0.4)';" onmouseout="this.style.color='#6a11cb'; this.style.textShadow='2px 2px 4px rgba(0, 0, 0, 0.2)';">学号</span>
+                  <el-input v-model="inputStudentId" placeholder="请输入学号" style="width: 100px;"></el-input>
+                </el-form-item>
+                <el-form-item class="form-item">
+                  <span style="font-family: 'Comic Sans MS', 'Arial', sans-serif; font-weight: bold; color: #6a11cb; font-size: 18px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); padding-right: 10px; margin-right: 5px; transition: all 0.3s ease; cursor: pointer; display: inline-block; width: 60px; text-align: right;" onmouseover="this.style.color='#2575fc'; this.style.textShadow='2px 2px 6px rgba(37, 117, 252, 0.4)';" onmouseout="this.style.color='#6a11cb'; this.style.textShadow='2px 2px 4px rgba(0, 0, 0, 0.2)';">姓名</span>
+                  <el-input v-model="inputName" placeholder="可选" style="width: 120px;"></el-input>
+                </el-form-item>
+              </div>
+              <div class="form-row">
+                <el-form-item class="form-item">
+                  <span style="font-family: 'Comic Sans MS', 'Arial', sans-serif; font-weight: bold; color: #6a11cb; font-size: 18px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); padding-right: 10px; margin-right: 5px; transition: all 0.3s ease; cursor: pointer; display: inline-block; width: 60px; text-align: right;" onmouseover="this.style.color='#2575fc'; this.style.textShadow='2px 2px 6px rgba(37, 117, 252, 0.4)';" onmouseout="this.style.color='#6a11cb'; this.style.textShadow='2px 2px 4px rgba(0, 0, 0, 0.2)';">年级</span>
+                  <el-select v-model="inputGrade" placeholder="选择年级" style="width: 100px;">
+                    <el-option v-for="grade in grades" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
+                  </el-select>
+                </el-form-item>
+                <el-form-item class="form-item">
+                  <span style="font-family: 'Comic Sans MS', 'Arial', sans-serif; font-weight: bold; color: #6a11cb; font-size: 18px; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); padding-right: 10px; margin-right: 5px; transition: all 0.3s ease; cursor: pointer; display: inline-block; width: 60px; text-align: right;" onmouseover="this.style.color='#2575fc'; this.style.textShadow='2px 2px 6px rgba(37, 117, 252, 0.4)';" onmouseout="this.style.color='#6a11cb'; this.style.textShadow='2px 2px 4px rgba(0, 0, 0, 0.2)';">班级</span>
+                  <el-select v-model="inputClass" placeholder="选择班级" style="width: 100px;">
+                    <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
+                  </el-select>
+                </el-form-item>
+              </div>
+            </div>
+            <div class="submit-container">
+              <el-form-item class="form-item submit-item">
+                <el-button type="primary" @click="saveStudentId">登录</el-button>
+              </el-form-item>
+            </div>
+          </el-form>
+        </div>
+      </div>
     </div>
     
     <!-- 学科选择 -->
@@ -19,6 +72,43 @@
             {{ subjectIcons[subject.iconIndex || 0] }}
           </div>
           <div class="subject-name">{{ subject.name }}</div>
+        </div>
+      </div>
+      
+      <!-- 排行榜展示 -->
+      <div class="leaderboard-section">
+        <div class="leaderboard-header-container">
+          <h2 class="section-title">🏆 排行榜 Top 10</h2>
+          <div class="leaderboard-link-full-container">
+            <router-link to="/leaderboard" class="leaderboard-link-full">查看完整排行榜</router-link>
+          </div>
+        </div>
+        <div class="leaderboard-list">
+          <div v-if="leaderboardData.length > 0" class="leaderboard-table">
+            <div class="leaderboard-header">
+              <div class="rank-col">排名</div>
+              <div class="student-col">学号</div>
+              <div class="name-col">姓名</div>
+              <div class="grade-col">年级</div>
+              <div class="class-col">班级</div>
+              <div class="score-col">正确率</div>
+              <div class="questions-col">答题数</div>
+            </div>
+            <div v-for="(item, index) in leaderboardData" :key="item.user_id" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId }">
+              <div class="rank-col">
+                <span class="rank-number">{{ index + 1 }}</span>
+              </div>
+              <div class="student-col">{{ item.student_id }}</div>
+              <div class="name-col">{{ item.name || '未知' }}</div>
+              <div class="grade-col">{{ item.grade || '-' }}年级</div>
+              <div class="class-col">{{ item.class || '-' }}班</div>
+              <div class="score-col">{{ Math.round(item.avg_accuracy) }}%</div>
+              <div class="questions-col">{{ item.total_questions }}</div>
+            </div>
+          </div>
+          <div v-else class="leaderboard-empty">
+            <p>暂无排行数据</p>
+          </div>
         </div>
       </div>
     </div>
@@ -161,16 +251,22 @@
         </div>
       </div>
     </div>
+    
+
   </div>
 </template>
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useQuestionStore } from '../stores/questionStore'
-import { ElButton } from 'element-plus'
+import { ElButton, ElDialog, ElForm, ElFormItem, ElInput, ElMessage, ElSelect, ElOption } from 'element-plus'
 import 'element-plus/dist/index.css'
+import { getApiBaseUrl } from '../utils/database'
 
 const store = useQuestionStore()
+
+// 界面名称
+const interfaceName = ref(localStorage.getItem('interfaceName') || '小学刷题闯关')
 
 const selectedSubjectId = ref(null)
 const selectedSubcategoryId = ref(null)
@@ -181,6 +277,60 @@ const currentSubject = computed(() => {
 const currentQuestions = computed(() => store.currentQuestions)
 const userAnswers = computed(() => store.userAnswers)
 const score = computed(() => store.score)
+
+// 学号输入相关
+const inputStudentId = ref('')
+const inputName = ref('')
+const inputGrade = ref(null)
+const inputClass = ref(null)
+const currentUserId = ref(localStorage.getItem('userId'))
+const currentStudentId = ref(localStorage.getItem('studentId'))
+const currentUserName = ref(localStorage.getItem('userName'))
+const currentUserGrade = ref(localStorage.getItem('userGrade'))
+const currentUserClass = ref(localStorage.getItem('userClass'))
+const startTime = ref(null)
+
+// 年级和班级数据
+const grades = ref([])
+const classes = ref([])
+
+// 加载年级和班级数据
+const loadGradesAndClasses = async () => {
+  try {
+    // 获取年级列表
+    const gradesResponse = await fetch(`${getApiBaseUrl()}/grades`)
+    if (gradesResponse.ok) {
+      const serverGrades = await gradesResponse.json()
+      // 确保包含所有年级（1-6年级）
+      const allGrades = [1, 2, 3, 4, 5, 6]
+      grades.value = allGrades
+    } else {
+      // 失败时使用默认数据
+      grades.value = [1, 2, 3, 4, 5, 6]
+    }
+    
+    // 获取班级列表
+    const classesResponse = await fetch(`${getApiBaseUrl()}/classes`)
+    if (classesResponse.ok) {
+      const serverClasses = await classesResponse.json()
+      // 确保包含所有班级（1-10班）
+      const allClasses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      classes.value = allClasses
+    } else {
+      // 失败时使用默认数据
+      classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
+  } catch (error) {
+    console.error('加载年级和班级数据失败:', error)
+    // 失败时使用默认数据
+    grades.value = [1, 2, 3, 4, 5, 6]
+    classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  }
+}
+
+// 排行榜数据
+const leaderboardData = ref([])
+
 const getSubjectName = (subjectId) => {
   const subject = subjects.value.find(s => s.id === subjectId)
   return subject ? subject.name : ''
@@ -213,16 +363,32 @@ const resultIcon = computed(() => {
 })
 
 const selectSubject = (subjectId) => {
+  // 检查是否已登录
+  if (!currentUserId.value) {
+    // 提示用户在首页的登录表单中登录
+    ElMessage.warning('请先在首页的登录表单中登录')
+    return
+  }
+  
   selectedSubjectId.value = subjectId
   selectedSubcategoryId.value = null
 }
 
 const selectSubcategory = (subcategoryId) => {
+  // 检查是否已有学号
+  if (!currentUserId.value) {
+    // 提示用户在首页的登录表单中登录
+    ElMessage.warning('请先在首页的登录表单中登录')
+    return
+  }
+  
   // 随机生成3到5之间的题目数量
   const randomCount = Math.floor(Math.random() * 3) + 3
   // 生成题目
   store.generateQuestionsBySubcategory(selectedSubjectId.value, subcategoryId, randomCount)
   selectedSubcategoryId.value = subcategoryId
+  // 记录开始时间
+  startTime.value = Date.now()
   // 检查生成的题目
   setTimeout(() => {
     console.log('Generated questions:', store.currentQuestions)
@@ -235,7 +401,7 @@ const selectOption = (questionId, option) => {
   store.submitAnswer(questionId, option)
 }
 
-const submitAnswers = () => {
+const submitAnswers = async () => {
   // 验证是否所有题目都已作答
   const allAnswered = currentQuestions.value.every(question => userAnswers.value[question.id] !== undefined)
   if (!allAnswered) {
@@ -245,6 +411,81 @@ const submitAnswers = () => {
   
   store.calculateScore()
   wrongQuestions.value = currentQuestions.value.filter(q => userAnswers.value[q.id] !== q.answer)
+  
+  // 保存答题记录
+  console.log('开始保存答题记录，currentUserId:', currentUserId.value, 'startTime:', startTime.value)
+  console.log('selectedSubjectId:', selectedSubjectId.value, 'selectedSubcategoryId:', selectedSubcategoryId.value)
+  console.log('totalQuestions:', totalQuestions.value, 'score:', score.value)
+  
+  if (currentUserId.value && startTime.value) {
+    const timeSpent = Math.round((Date.now() - startTime.value) / 1000) // 秒
+    console.log('开始保存整体答题记录，timeSpent:', timeSpent)
+    try {
+      // 保存整体答题记录
+      const apiUrl = `${getApiBaseUrl()}/answer-records`
+      console.log('保存答题记录API URL:', apiUrl)
+      const answerRecordResponse = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          userId: currentUserId.value,
+          subjectId: selectedSubjectId.value,
+          subcategoryId: selectedSubcategoryId.value,
+          totalQuestions: totalQuestions.value,
+          correctCount: score.value,
+          timeSpent: timeSpent
+        })
+      })
+      console.log('整体答题记录保存响应:', answerRecordResponse.status)
+      
+      // 检查响应状态
+      if (!answerRecordResponse.ok) {
+        const errorData = await answerRecordResponse.json()
+        console.error('保存答题记录失败:', errorData)
+      } else {
+        const successData = await answerRecordResponse.json()
+        console.log('保存答题记录成功:', successData)
+        
+        // 保存每道题的答题记录
+        console.log('开始保存每道题的答题记录，题目数量:', currentQuestions.value.length)
+        for (const question of currentQuestions.value) {
+          const userAnswer = userAnswers.value[question.id]
+          const isCorrect = userAnswer === question.answer
+          console.log('保存题目:', question.id, '答案:', userAnswer, '是否正确:', isCorrect)
+          
+          const questionAttemptResponse = await fetch(`${getApiBaseUrl()}/question-attempts`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              userId: currentUserId.value,
+              questionId: question.id,
+              subjectId: selectedSubjectId.value,
+              subcategoryId: selectedSubcategoryId.value,
+              userAnswer: userAnswer,
+              answerRecordId: successData.recordId // 传递答题记录ID
+            })
+          })
+          console.log('题目答题记录保存响应:', questionAttemptResponse.status)
+        }
+      }
+      
+      console.log('答题记录已保存')
+      // 重新获取排行榜数据
+      await fetchLeaderboardData()
+    } catch (error) {
+      console.error('保存答题记录失败:', error)
+      ElMessage.error('保存答题记录失败，请检查网络连接')
+    }
+  } else {
+    // 如果没有用户ID，提示用户输入学号
+    console.log('没有用户ID或startTime，无法保存答题记录')
+    ElMessage.warning('请先输入学号以保存答题记录')
+    showStudentIdDialog.value = true
+  }
 }
 
 const getEncouragement = () => {
@@ -291,12 +532,123 @@ const generateNewQuestions = () => {
   store.userAnswers = {}
   store.score = null
   wrongQuestions.value = []
+  // 记录开始时间
+  startTime.value = Date.now()
+}
+
+const saveStudentId = async () => {
+  if (!inputStudentId.value.trim()) {
+    ElMessage.error('请输入学号')
+    return
+  }
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/users/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        studentId: inputStudentId.value.trim(),
+        name: inputName.value.trim(),
+        grade: inputGrade.value,
+        class: inputClass.value
+      })
+    })
+    
+    if (response.ok) {
+        const data = await response.json()
+        currentUserId.value = data.userId
+        currentStudentId.value = data.studentId
+        currentUserName.value = inputName.value.trim()
+        currentUserGrade.value = inputGrade.value
+        currentUserClass.value = inputClass.value
+        localStorage.setItem('userId', data.userId)
+        localStorage.setItem('studentId', data.studentId)
+        localStorage.setItem('userName', inputName.value.trim())
+        localStorage.setItem('userGrade', inputGrade.value)
+        localStorage.setItem('userClass', inputClass.value)
+        ElMessage.success('登录成功')
+        
+        // 重新获取排行榜数据
+        await fetchLeaderboardData()
+        
+        // 检查是否有临时保存的学科ID
+        const tempSubjectId = localStorage.getItem('tempSubjectId')
+        if (tempSubjectId) {
+          // 选择学科
+          selectedSubjectId.value = parseInt(tempSubjectId)
+          selectedSubcategoryId.value = null
+          // 清除临时保存的学科ID
+          localStorage.removeItem('tempSubjectId')
+        } else {
+          // 检查是否有临时保存的子分类ID
+          const tempSubcategoryId = localStorage.getItem('tempSubcategoryId')
+          if (tempSubcategoryId && selectedSubjectId.value) {
+            // 继续生成题目
+            const randomCount = Math.floor(Math.random() * 3) + 3
+            store.generateQuestionsBySubcategory(selectedSubjectId.value, parseInt(tempSubcategoryId), randomCount)
+            selectedSubcategoryId.value = parseInt(tempSubcategoryId)
+            startTime.value = Date.now()
+            // 清除临时保存的子分类ID
+            localStorage.removeItem('tempSubcategoryId')
+          }
+        }
+      } else {
+      ElMessage.error('登录失败')
+    }
+  } catch (error) {
+    console.error('登录失败:', error)
+    ElMessage.error('登录失败')
+  }
+}
+
+
+
+// 退出登录
+const logout = () => {
+  // 清除本地存储
+  localStorage.removeItem('userId')
+  localStorage.removeItem('studentId')
+  localStorage.removeItem('userName')
+  localStorage.removeItem('userGrade')
+  localStorage.removeItem('userClass')
+  // 重置状态
+  currentUserId.value = null
+  currentStudentId.value = null
+  currentUserName.value = null
+  currentUserGrade.value = null
+  currentUserClass.value = null
+  // 重置其他状态
+  backToSubjects()
+  ElMessage.success('已退出登录')
+}
+
+// 获取排行榜数据
+const fetchLeaderboardData = async () => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=10`)
+    if (response.ok) {
+      const data = await response.json()
+      leaderboardData.value = data
+    }
+  } catch (error) {
+    console.error('获取排行榜数据失败:', error)
+  }
 }
 
 onMounted(async () => {
   // 初始化数据
   await store.initialize()
   console.log('Data loaded:', store.questions)
+  
+  // 加载年级和班级数据
+  await loadGradesAndClasses()
+  
+  // 获取排行榜数据
+  await fetchLeaderboardData()
+  
+  // 不再自动弹出登录框，改为在选择学科时检查
 })
 </script>
 
@@ -346,7 +698,7 @@ onMounted(async () => {
   justify-content: center;
   align-items: center;
   margin-bottom: 40px;
-  padding: 25px;
+  padding: 20px 30px;
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
   border-radius: 20px;
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.2);
@@ -354,12 +706,17 @@ onMounted(async () => {
   z-index: 1;
 }
 
-.game-logo {
-  position: absolute;
-  right: 25px;
-  font-size: 48px;
+.game-title-container {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  justify-content: center;
+  width: 100%;
+}
+
+.trophies {
+  font-size: 24px;
   animation: bounce 2s infinite;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 .game-title {
@@ -367,20 +724,290 @@ onMounted(async () => {
   font-weight: bold;
   color: white;
   text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+  margin: 0;
+}
+
+/* 用户信息和排行榜区域 */
+.user-leaderboard-section {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  background: transparent;
+  border-radius: 15px;
+  padding: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.user-leaderboard-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.user-info-bottom {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  flex-wrap: wrap;
+}
+
+.user-info-details {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  flex-wrap: wrap;
+}
+
+.student-id-bottom {
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  color: #6a11cb;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  padding-right: 15px;
+  margin-right: 10px;
+  border-right: 2px solid rgba(106, 17, 203, 0.3);
+}
+
+.user-info-item {
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  font-size: 18px;
+  font-weight: bold;
+  color: #6a11cb;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  padding-right: 15px;
+  margin-right: 10px;
+  border-right: 2px solid rgba(106, 17, 203, 0.3);
+}
+
+.user-info-item:last-child {
+  border-right: none;
+  padding-right: 0;
+  margin-right: 0;
+}
+
+.logout-btn-bottom {
+  border-radius: 25px;
+  font-weight: bold;
+  padding: 10px 25px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  font-size: 16px;
+}
+
+.logout-btn-bottom:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(106, 17, 203, 0.4);
+}
+
+.login-form-bottom {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+.login-form {
+  padding: 30px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 20px;
+}
+
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+  margin-bottom: 20px;
+  flex-wrap: wrap;
+}
+
+.form-row:last-child {
+  margin-bottom: 0;
+}
+
+.form-item {
+  margin-bottom: 0 !important;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.form-container {
+  display: flex;
+  flex-direction: column;
   gap: 15px;
 }
 
-.game-title::before, .game-title::after {
-  content: '🏆';
-  font-size: 28px;
-  animation: rotate 3s linear infinite;
+.submit-container {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+}
+
+.submit-item {
+  margin-left: 0 !important;
+}
+
+.login-form .el-select {
+  min-width: 100px;
+  border-radius: 15px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.login-form .el-select:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.login-form .el-select .el-input__inner {
+  border-radius: 15px;
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  font-size: 16px;
+  color: #333;
+  padding: 10px 15px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.login-form .el-select .el-input__inner:focus {
+  border-color: #6a11cb;
+  box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+  color: #6a11cb;
+  font-weight: bold;
+}
+
+/* 确保样式能够正确应用到表单标签 */
+.login-form .el-form-item .el-form-item__label {
+  font-family: 'Comic Sans MS', 'Arial', sans-serif !important;
+  font-weight: bold !important;
+  color: #6a11cb !important;
+  font-size: 18px !important;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2) !important;
+  padding-right: 10px !important;
+  margin-right: 5px !important;
+  border-right: 2px solid rgba(106, 17, 203, 0.3) !important;
+  transition: all 0.3s ease !important;
+  width: auto !important;
+  min-width: 60px !important;
+  line-height: 40px !important;
+  height: 40px !important;
+}
+
+.login-form .el-form-item .el-form-item__label:hover {
+  color: #2575fc !important;
+  text-shadow: 2px 2px 6px rgba(37, 117, 252, 0.4) !important;
+  border-right-color: rgba(37, 117, 252, 0.5) !important;
+}
+
+.login-form .el-input {
+  border-radius: 15px;
+  box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+}
+
+.login-form .el-input:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+.login-form .el-input__inner {
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  font-size: 16px;
+  color: #333;
+  padding: 10px 15px;
+  border: 2px solid #e9ecef;
+  transition: all 0.3s ease;
+}
+
+.login-form .el-input__inner:focus {
+  border-color: #6a11cb;
+  box-shadow: 0 0 0 2px rgba(106, 17, 203, 0.2);
+  color: #6a11cb;
+  font-weight: bold;
+}
+
+.login-form .el-button {
+  border-radius: 25px;
+  font-weight: bold;
+  padding: 10px 25px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  border: none;
+  color: white;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  transition: all 0.3s ease;
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  font-size: 16px;
+}
+
+.login-form .el-button:hover {
+  transform: translateY(-3px) scale(1.05);
+  box-shadow: 0 8px 25px rgba(106, 17, 203, 0.4);
+}
+
+.leaderboard-link-bottom {
+  display: flex;
+  align-items: center;
+}
+
+.leaderboard-link-full {
+  display: inline-block;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #ff9800 0%, #f57c00 100%);
+  color: white;
+  text-decoration: none;
+  border-radius: 25px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-link-full:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
+}
+
+/* 响应式设计 */
+@media (max-width: 768px) {
+  .user-leaderboard-content {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .user-info-bottom {
+    justify-content: center;
+  }
+  
+  .leaderboard-link-bottom {
+    justify-content: center;
+  }
 }
 
 .game-logo {
+  position: relative;
   font-size: 48px;
   animation: bounce 2s infinite;
+  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
 }
 
 @keyframes bounce {
@@ -416,6 +1043,7 @@ onMounted(async () => {
 
 /* 学科选择 */
 .subject-selection {
+  margin-top: 0;
   margin-bottom: 40px;
 }
 
@@ -496,6 +1124,141 @@ onMounted(async () => {
   background-color: rgba(255, 255, 255, 0.8);
   border-radius: 12px;
   box-shadow: 0 3px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* 排行榜样式 */
+.leaderboard-section {
+  margin-top: 60px;
+  background: rgba(255, 255, 255, 0.8);
+  border-radius: 20px;
+  padding: 30px;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  backdrop-filter: blur(10px);
+}
+
+.leaderboard-header-container {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.leaderboard-header-container .section-title {
+  margin-bottom: 0;
+}
+
+.leaderboard-link-full-container {
+  display: flex;
+  align-items: center;
+}
+
+.leaderboard-table {
+  background-color: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.leaderboard-header {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 80px 80px 120px 100px;
+  background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
+  color: white;
+  font-weight: bold;
+  padding: 15px;
+  text-align: center;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 80px 1fr 100px 80px 80px 120px 100px;
+  padding: 15px;
+  text-align: center;
+  border-bottom: 1px solid #f0f0f0;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-row:hover {
+  background-color: #f8f5ff;
+}
+
+.leaderboard-row.current-user {
+  background-color: #e3f2fd;
+  border-left: 4px solid #2196f3;
+}
+
+.rank-number {
+  display: inline-block;
+  width: 30px;
+  height: 30px;
+  line-height: 30px;
+  border-radius: 50%;
+  background-color: #6a11cb;
+  color: white;
+  font-weight: bold;
+  font-size: 14px;
+}
+
+.leaderboard-row:nth-child(2) .rank-number {
+  background-color: #ffd700;
+}
+
+.leaderboard-row:nth-child(3) .rank-number {
+  background-color: #c0c0c0;
+}
+
+.leaderboard-row:nth-child(4) .rank-number {
+  background-color: #cd7f32;
+}
+
+.leaderboard-empty {
+  text-align: center;
+  padding: 40px;
+  color: #999;
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+  .leaderboard-header,
+  .leaderboard-row {
+    grid-template-columns: 60px 1fr 80px 60px 60px 100px 80px;
+  }
+  
+  .leaderboard-section {
+    padding: 20px;
+  }
+  
+  .leaderboard-header,
+  .leaderboard-row {
+    padding: 10px;
+  }
+}
+
+@media (max-width: 768px) {
+  .leaderboard-header,
+  .leaderboard-row {
+    grid-template-columns: 50px 1fr 70px 50px 50px 80px 70px;
+    font-size: 14px;
+  }
+  
+  .leaderboard-section {
+    padding: 15px;
+  }
+  
+  .leaderboard-header,
+  .leaderboard-row {
+    padding: 8px;
+  }
+  
+  .rank-number {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 12px;
+  }
 }
 
 /* 子分类选择 */
@@ -1101,6 +1864,25 @@ onMounted(async () => {
   background-color: #7c27ce;
   transform: translateY(-3px);
   box-shadow: 0 8px 25px rgba(106, 17, 203, 0.4);
+}
+
+.leaderboard-link {
+  display: inline-block;
+  padding: 10px 20px;
+  background-color: #ff9800;
+  color: white;
+  text-decoration: none;
+  border-radius: 25px;
+  font-weight: bold;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 152, 0, 0.3);
+  margin-right: 10px;
+}
+
+.leaderboard-link:hover {
+  background-color: #ffad33;
+  transform: translateY(-3px);
+  box-shadow: 0 8px 25px rgba(255, 152, 0, 0.4);
 }
 
 /* 响应式设计 */

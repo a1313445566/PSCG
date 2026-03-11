@@ -21,6 +21,8 @@
 - **音频管理**：支持音频文件上传、播放和删除
 - **图片管理**：支持图片上传和显示
 - **题目列表**：直观显示题目信息，包括图片和音频指示器
+- **数据管理**：支持数据备份、恢复和导出
+- **错误率分析**：展示错误率较高的题目，支持分页和筛选
 
 ### 2. 学生答题系统
 - **题目展示**：清晰展示题目内容、选项和多媒体资源
@@ -28,6 +30,12 @@
 - **图片显示**：支持题目和答案中的图片显示
 - **答题功能**：支持多种题型的答题操作
 - **错题回顾**：答题完成后显示错题并提供解析
+
+### 3. 排行榜系统
+- **个人成绩**：展示学生个人答题记录和成绩
+- **班级排行榜**：按班级展示学生成绩排名
+- **学科排行榜**：按学科展示学生成绩排名
+- **筛选功能**：支持按年级、班级、学科进行筛选
 
 ## 环境变量配置
 
@@ -53,32 +61,25 @@ VITE_API_URL=http://您的域名:3001/api
    cd web2.0
    ```
 
-2. **安装系统依赖**
-   ```bash
-   # 安装 Python 依赖（用于编译 sqlite3）
-   sudo apt-get update
-   sudo apt-get install -y python3-venv python3-dev build-essential
-   ```
-
-3. **安装项目依赖**
+2. **安装项目依赖**
    ```bash
    npm install
    ```
 
-4. **启动开发服务器**
+3. **启动开发服务器**
    - 前端：`npm run dev`
    - 后端：`npm run server`
 
-5. **数据库说明**
-   - 数据库文件 `quiz.db` 已包含在Git仓库中
+4. **数据库说明**
+   - 数据库文件 `quiz.db` 已包含在项目中
    - 首次运行时会自动创建必要的表结构
-   - 外键约束启用失败时会自动降级处理，确保系统正常运行
+   - 已添加外键约束，确保数据一致性
 
-6. **访问项目**
+5. **访问项目**
    - 前端：`http://localhost:5173`
    - 后端：`http://localhost:3001`
    - 后台管理：`http://localhost:5173/admin`
-   - 管理密码：`xgsy8188`
+   - 排行榜页面：`http://localhost:5173/leaderboard`
 
 ### 生产环境部署
 
@@ -86,25 +87,18 @@ VITE_API_URL=http://您的域名:3001/api
    - 将项目文件上传到服务器
    - 确保 `audio/` 和 `images/` 目录存在且有写入权限
 
-2. **安装系统依赖**
-   ```bash
-   # 安装 Python 依赖（用于编译 sqlite3）
-   sudo apt-get update
-   sudo apt-get install -y python3-venv python3-dev build-essential
-   ```
-
-3. **安装项目依赖**
+2. **安装项目依赖**
    ```bash
    cd /www/wwwroot/您的域名
    npm install
    ```
 
-4. **构建前端**
+3. **构建前端**
    ```bash
    npm run build
    ```
 
-5. **启动服务**
+4. **启动服务**
    ```bash
    # 使用PM2启动服务
    pm2 start server.cjs --name "quiz-app"
@@ -116,13 +110,13 @@ VITE_API_URL=http://您的域名:3001/api
    pm2 startup
    ```
 
-6. **配置 Nginx 反向代理**
+5. **配置 Nginx 反向代理**
    - 目标 URL：`http://127.0.0.1:3001`
 
-7. **访问项目**
+6. **访问项目**
    - 前端：`http://您的域名`
    - 后台：`http://您的域名/admin`
-   - 管理密码：`xgsy8188`
+   - 排行榜：`http://您的域名/leaderboard`
 
 ## 项目结构
 
@@ -131,20 +125,24 @@ web2.0/
 ├── src/                # 前端源码
 │   ├── views/          # 页面组件
 │   │   ├── AdminView.vue     # 后台管理页面
-│   │   └── StudentView.vue   # 学生答题页面
+│   │   ├── StudentView.vue   # 学生答题页面
+│   │   └── LeaderboardView.vue # 排行榜页面
 │   ├── stores/         # 状态管理
 │   │   └── questionStore.js  # 题目状态管理
 │   ├── utils/          # 工具函数
 │   │   └── database.js        # API 调用工具
-│   └── router/         # 路由配置
-│       └── index.js           # 路由定义
+│   ├── router/         # 路由配置
+│   │   └── index.js           # 路由定义
+│   ├── assets/         # 静态资源
+│   ├── App.vue         # 根组件
+│   ├── main.js         # 入口文件
+│   └── style.css       # 全局样式
 ├── public/             # 静态资源
 ├── server.cjs          # 后端服务器
 ├── package.json        # 项目配置
-├── deploy.sh           # Linux 部署脚本
-├── deploy.bat          # Windows 部署脚本
 ├── .env.development    # 开发环境配置
 ├── .env.production     # 生产环境配置
+├── vite.config.js      # Vite 配置
 └── quiz.db             # SQLite 数据库
 ```
 
@@ -189,14 +187,25 @@ D. 选项4
 ### 2. 图片上传失败
 - 确保 `images/` 目录存在且有写入权限
 - 检查服务器磁盘空间
+- 检查文件类型是否符合要求（支持JPEG、PNG、GIF、WebP）
 
 ### 3. 音频播放失败
 - 确保 `audio/` 目录存在且有写入权限
-- 检查音频文件格式是否正确
+- 检查音频文件格式是否正确（支持MP3、WAV、OGG）
 
 ### 4. 批量添加题目解析失败
 - 检查题目格式是否正确
 - 确保题目内容、选项和答案格式符合要求
+
+### 5. 排行榜数据不显示
+- 确保学生已完成答题
+- 检查数据库中是否有答题记录
+
+## 安全配置
+
+- **文件上传**：已添加文件类型白名单和大小限制（最大10MB）
+- **数据库**：已添加外键约束，确保数据一致性
+- **CORS**：已配置CORS中间件，支持跨域请求
 
 ## 许可证
 

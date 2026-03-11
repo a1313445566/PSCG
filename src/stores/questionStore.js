@@ -27,7 +27,10 @@ export const useQuestionStore = defineStore('question', {
   }),
   getters: {
     getQuestionsBySubject: (state) => (subjectId) => {
-      return state.questions.filter(q => q.subjectId === subjectId)
+      return state.questions.filter(q => {
+        const qSubjectId = q.subjectId || q.subject_id
+        return qSubjectId === subjectId
+      })
     },
     getSubjectName: (state) => (subjectId) => {
       const subject = state.subjects.find(s => s.id === subjectId)
@@ -76,15 +79,21 @@ export const useQuestionStore = defineStore('question', {
     
     generateQuestionsBySubcategory(subjectId, subcategoryId, count = 3) {
       // 过滤出该子分类的题目，并排除已经做对的题目
-      const subjectQuestions = this.questions.filter(q => 
-        q.subjectId === subjectId && 
-        q.subcategoryId === subcategoryId &&
-        !this.correctQuestions.includes(q.id)
-      )
+      const subjectQuestions = this.questions.filter(q => {
+        const qSubjectId = q.subjectId || q.subject_id
+        const qSubcategoryId = q.subcategoryId || q.subcategory_id
+        return qSubjectId === subjectId && 
+               qSubcategoryId === subcategoryId &&
+               !this.correctQuestions.includes(q.id)
+      })
       
       // 如果没有足够的新题目，使用所有题目（包括已做对的）
       const availableQuestions = subjectQuestions.length > 0 ? subjectQuestions : 
-        this.questions.filter(q => q.subjectId === subjectId && q.subcategoryId === subcategoryId)
+        this.questions.filter(q => {
+          const qSubjectId = q.subjectId || q.subject_id
+          const qSubcategoryId = q.subcategoryId || q.subcategory_id
+          return qSubjectId === subjectId && qSubcategoryId === subcategoryId
+        })
       
       const shuffled = availableQuestions.sort(() => 0.5 - Math.random())
       // 确保不超过实际题目数量
@@ -121,11 +130,14 @@ export const useQuestionStore = defineStore('question', {
           shuffledOptions
         }
         
+        // 获取正确答案，支持两种命名格式
+        const answer = question.answer || question.correct_answer || ''
+        
         // 更新答案标签，确保与新的选项顺序匹配
         // 首先找到原始答案对应的选项内容
         let originalAnswerContent = ''
         for (const [content, label] of originalOptionsMap.entries()) {
-          if (label === question.answer) {
+          if (label === answer) {
             originalAnswerContent = content
             break
           }

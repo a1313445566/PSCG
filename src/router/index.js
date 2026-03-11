@@ -14,6 +14,11 @@ const routes = [
     path: '/admin',
     name: 'Admin',
     component: () => import('../views/AdminView.vue')
+  },
+  {
+    path: '/leaderboard',
+    name: 'Leaderboard',
+    component: () => import('../views/LeaderboardView.vue')
   }
 ]
 
