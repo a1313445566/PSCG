@@ -404,7 +404,7 @@ const selectSubject = (subjectId) => {
   selectedSubcategoryId.value = null
 }
 
-const selectSubcategory = (subcategoryId) => {
+const selectSubcategory = async (subcategoryId) => {
   // 检查是否已有学号
   if (!currentUserId.value) {
     // 提示用户在首页的登录表单中登录
@@ -412,10 +412,39 @@ const selectSubcategory = (subcategoryId) => {
     return
   }
   
-  // 随机生成3到5之间的题目数量
-  const randomCount = Math.floor(Math.random() * 3) + 3
-  // 生成题目
-  store.generateQuestionsBySubcategory(selectedSubjectId.value, subcategoryId, randomCount)
+  // 读取设置
+  let randomizeAnswers = true
+  let fixedQuestionCount = false
+  let minCount = 3
+  let maxCount = 5
+  let fixedCount = 3
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/settings`)
+    if (response.ok) {
+      const settings = await response.json()
+      randomizeAnswers = settings.randomizeAnswers !== 'false'
+      fixedQuestionCount = settings.fixedQuestionCount === 'true'
+      // 处理带引号的字符串格式
+      minCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
+      maxCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
+      fixedCount = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+    }
+  } catch (error) {
+    console.error('加载设置失败:', error)
+  }
+  
+  console.log('答案随机排序设置:', randomizeAnswers)
+  
+  // 确定题目数量
+  let questionCount
+  if (fixedQuestionCount) {
+    questionCount = fixedCount
+  } else {
+    questionCount = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount
+  }
+  // 生成题目，传递随机排序设置
+  store.generateQuestionsBySubcategory(selectedSubjectId.value, subcategoryId, questionCount, randomizeAnswers)
   selectedSubcategoryId.value = subcategoryId
   // 记录开始时间
   startTime.value = Date.now()
@@ -485,6 +514,28 @@ const submitAnswers = async () => {
           const isCorrect = userAnswer === question.answer
           console.log('保存题目:', question.id, '答案:', userAnswer, '是否正确:', isCorrect)
           
+          // 保存用户选择的选项内容，而不是标签
+          let selectedOptionContent = ''
+          if (question.shuffledOptions) {
+            for (const option of question.shuffledOptions) {
+              if (option.charAt(0) === userAnswer) {
+                selectedOptionContent = option.substring(2).trim()
+                break
+              }
+            }
+          }
+          
+          // 保存正确答案的选项内容
+          let correctOptionContent = ''
+          if (question.shuffledOptions) {
+            for (const option of question.shuffledOptions) {
+              if (option.charAt(0) === question.answer) {
+                correctOptionContent = option.substring(2).trim()
+                break
+              }
+            }
+          }
+          
           const questionAttemptResponse = await fetch(`${getApiBaseUrl()}/question-attempts`, {
             method: 'POST',
             headers: {
@@ -496,6 +547,10 @@ const submitAnswers = async () => {
               subjectId: selectedSubjectId.value,
               subcategoryId: selectedSubcategoryId.value,
               userAnswer: userAnswer,
+              userAnswerContent: selectedOptionContent,
+              correctAnswer: question.answer,
+              correctAnswerContent: correctOptionContent,
+              isCorrect: userAnswer === question.answer,
               answerRecordId: successData.recordId // 传递答题记录ID
             })
           })
@@ -553,11 +608,40 @@ const backToSubjects = () => {
   wrongQuestions.value = []
 }
 
-const generateNewQuestions = () => {
-  // 随机生成3到5之间的题目数量
-  const randomCount = Math.floor(Math.random() * 3) + 3
-  // 生成新的题目
-  store.generateQuestionsBySubcategory(selectedSubjectId.value, selectedSubcategoryId.value, randomCount)
+const generateNewQuestions = async () => {
+  // 读取设置
+  let randomizeAnswers = true
+  let fixedQuestionCount = false
+  let minCount = 3
+  let maxCount = 5
+  let fixedCount = 3
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/settings`)
+    if (response.ok) {
+      const settings = await response.json()
+      randomizeAnswers = settings.randomizeAnswers !== 'false'
+      fixedQuestionCount = settings.fixedQuestionCount === 'true'
+      // 处理带引号的字符串格式
+      minCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
+      maxCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
+      fixedCount = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+    }
+  } catch (error) {
+    console.error('加载设置失败:', error)
+  }
+  
+  console.log('答案随机排序设置:', randomizeAnswers)
+  
+  // 确定题目数量
+  let questionCount
+  if (fixedQuestionCount) {
+    questionCount = fixedCount
+  } else {
+    questionCount = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount
+  }
+  // 生成新的题目，传递随机排序设置
+  store.generateQuestionsBySubcategory(selectedSubjectId.value, selectedSubcategoryId.value, questionCount, randomizeAnswers)
   // 重置答题状态
   store.userAnswers = {}
   store.score = null

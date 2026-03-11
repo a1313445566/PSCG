@@ -77,28 +77,36 @@ export const useQuestionStore = defineStore('question', {
       this.score = null
     },
     
-    generateQuestionsBySubcategory(subjectId, subcategoryId, count = 3) {
-      // 过滤出该子分类的题目，并排除已经做对的题目
-      const subjectQuestions = this.questions.filter(q => {
+    generateQuestionsBySubcategory(subjectId, subcategoryId, count = 3, randomizeAnswers = true) {
+      // 过滤出该子分类的题目
+      const allSubjectQuestions = this.questions.filter(q => {
         const qSubjectId = q.subjectId || q.subject_id
         const qSubcategoryId = q.subcategoryId || q.subcategory_id
-        return qSubjectId === subjectId && 
-               qSubcategoryId === subcategoryId &&
-               !this.correctQuestions.includes(q.id)
+        return qSubjectId === subjectId && qSubcategoryId === subcategoryId
       })
       
-      // 如果没有足够的新题目，使用所有题目（包括已做对的）
-      const availableQuestions = subjectQuestions.length > 0 ? subjectQuestions : 
-        this.questions.filter(q => {
-          const qSubjectId = q.subjectId || q.subject_id
-          const qSubcategoryId = q.subcategoryId || q.subcategory_id
-          return qSubjectId === subjectId && qSubcategoryId === subcategoryId
-        })
+      // 过滤出未做对的题目
+      const subjectQuestions = allSubjectQuestions.filter(q => !this.correctQuestions.includes(q.id))
+      
+      // 确定使用哪些题目
+      let availableQuestions = subjectQuestions
+      // 如果未做对的题目数量不足，使用所有题目（包括已做对的）
+      if (subjectQuestions.length < count) {
+        availableQuestions = allSubjectQuestions
+      }
+      
+      // 确保至少有一个题目
+      if (availableQuestions.length === 0) {
+        this.currentQuestions = []
+        this.userAnswers = {}
+        this.score = null
+        return 0
+      }
       
       const shuffled = availableQuestions.sort(() => 0.5 - Math.random())
-      // 确保不超过实际题目数量
-      const actualCount = Math.min(count, availableQuestions.length)
-      // 对每个题目的选项进行随机排序，但保持选项标签（A、B、C、D）固定
+      // 确保不超过实际题目数量，但至少生成一个题目
+      const actualCount = Math.max(1, Math.min(count, availableQuestions.length))
+      // 对每个题目的选项进行排序
       this.currentQuestions = shuffled.slice(0, actualCount).map(question => {
         // 提取选项内容（处理有或没有A、B、C、D标签的情况）
         const optionContents = question.options.map(option => {
@@ -109,15 +117,17 @@ export const useQuestionStore = defineStore('question', {
           return option
         })
         
-        // 保存原始选项内容和答案的映射关系
-        const originalOptionsMap = new Map()
-        for (let i = 0; i < optionContents.length; i++) {
-          const label = String.fromCharCode(65 + i)
-          originalOptionsMap.set(optionContents[i], label)
-        }
+        // 保存原始选项索引和内容的映射关系
+        const originalOptions = optionContents.map((content, index) => ({
+          content,
+          index
+        }))
         
-        // 随机排序选项内容
-        const shuffledContents = optionContents.sort(() => 0.5 - Math.random())
+        // 根据设置决定是否随机排序选项内容
+        let shuffledContents = optionContents
+        if (randomizeAnswers) {
+          shuffledContents = [...optionContents].sort(() => 0.5 - Math.random())
+        }
         // 重新添加标签
         const shuffledOptions = shuffledContents.map((content, index) => {
           const label = String.fromCharCode(65 + index) // A, B, C, D...
@@ -133,22 +143,16 @@ export const useQuestionStore = defineStore('question', {
         // 获取正确答案，支持两种命名格式
         const answer = question.answer || question.correct_answer || ''
         
-        // 更新答案标签，确保与新的选项顺序匹配
-        // 首先找到原始答案对应的选项内容
-        let originalAnswerContent = ''
-        for (const [content, label] of originalOptionsMap.entries()) {
-          if (label === answer) {
-            originalAnswerContent = content
-            break
-          }
-        }
-        
-        // 然后找到新的选项顺序中对应的标签
-        if (originalAnswerContent) {
-          for (let i = 0; i < shuffledContents.length; i++) {
-            if (shuffledContents[i] === originalAnswerContent) {
-              newQuestion.answer = String.fromCharCode(65 + i)
-              break
+        // 只有在随机排序时才更新答案标签
+        if (randomizeAnswers && answer) {
+          // 计算原始答案的索引
+          const originalAnswerIndex = answer.charCodeAt(0) - 65
+          if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
+            const originalAnswerContent = optionContents[originalAnswerIndex]
+            // 找到新的选项顺序中对应的标签
+            const newIndex = shuffledContents.indexOf(originalAnswerContent)
+            if (newIndex !== -1) {
+              newQuestion.answer = String.fromCharCode(65 + newIndex)
             }
           }
         }

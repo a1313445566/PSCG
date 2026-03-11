@@ -10,15 +10,17 @@ const port = 3001;
 app.use(cors());
 app.use(express.json({ encoding: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' }));
-app.use(express.static(path.join(__dirname, 'dist')));
-app.use('/audio', express.static(path.join(__dirname, 'audio')));
-app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // 设置响应编码为 UTF-8
 app.use((req, res, next) => {
   res.setHeader('Content-Type', 'application/json; charset=utf-8');
   next();
 });
+
+// 静态文件服务 - 放在API路由之后
+app.use(express.static(path.join(__dirname, 'dist')));
+app.use('/audio', express.static(path.join(__dirname, 'audio')));
+app.use('/images', express.static(path.join(__dirname, 'images')));
 
 // 数据库连接
 const db = new sqlite3.Database('./quiz.db', (err) => {
@@ -64,6 +66,9 @@ const createTables = () => {
     
     // 创建题目答题记录表
     db.run(`CREATE TABLE IF NOT EXISTS question_attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, question_id INTEGER NOT NULL, subject_id INTEGER NOT NULL, subcategory_id INTEGER, user_answer TEXT NOT NULL, is_correct INTEGER NOT NULL, answer_record_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE, FOREIGN KEY (answer_record_id) REFERENCES answer_records(id) ON DELETE CASCADE)`);
+    
+    // 创建设置表
+    db.run(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
     
     // 初始化默认年级数据
     initializeDefaultGrades();
@@ -587,6 +592,63 @@ app.post('/api/data/clear-records', (req, res) => {
         res.json({ success: true, message: '用户答题记录清空成功' });
       });
     });
+  });
+});
+
+// 设置相关API
+// 获取所有设置
+app.get('/api/settings', (req, res) => {
+  db.all('SELECT key, value FROM settings', (err, settings) => {
+    if (err) {
+      console.error('获取设置失败:', err);
+      res.status(500).json({ error: '获取设置失败' });
+      return;
+    }
+    
+    const settingsObj = {};
+    settings.forEach(setting => {
+      settingsObj[setting.key] = setting.value;
+    });
+    
+    res.json(settingsObj);
+  });
+});
+
+// 保存设置
+app.post('/api/settings', (req, res) => {
+  const settings = req.body;
+  
+  if (!settings || typeof settings !== 'object') {
+    res.status(400).json({ error: '设置数据格式错误' });
+    return;
+  }
+  
+  db.serialize(() => {
+    let count = 0;
+    const total = Object.keys(settings).length;
+    
+    if (total === 0) {
+      res.json({ success: true, message: '设置保存成功' });
+      return;
+    }
+    
+    for (const [key, value] of Object.entries(settings)) {
+      // 使用UPSERT操作：如果键存在则更新，不存在则插入
+      db.run(
+        'INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = CURRENT_TIMESTAMP',
+        [key, value, value],
+        (err) => {
+          if (err) {
+            console.error('保存设置失败:', err);
+          }
+          
+          count++;
+          if (count === total) {
+            res.json({ success: true, message: '设置保存成功' });
+          }
+        }
+      );
+    }
   });
 });
 
