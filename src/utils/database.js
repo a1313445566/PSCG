@@ -269,3 +269,31 @@ export const importLocalData = async () => {
     return { success: false, error: error.message }
   }
 }
+
+// 获取所有年级
+export const getGrades = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/grades`)
+    if (!response.ok) {
+      throw new Error('获取年级失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('获取年级失败:', error)
+    return []
+  }
+}
+
+// 获取所有班级
+export const getClasses = async () => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/classes`)
+    if (!response.ok) {
+      throw new Error('获取班级失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('获取班级失败:', error)
+    return []
+  }
+}

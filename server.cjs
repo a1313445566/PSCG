@@ -2,6 +2,8 @@ const express = require('express');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
+const PDFDocument = require('pdfkit');
+const XLSX = require('xlsx');
 
 const app = express();
 const port = 3001;
@@ -1291,7 +1293,7 @@ app.get('/api/question-attempts/:userId', (req, res) => {
 
 // 错误率较高的题目API
 app.get('/api/error-prone-questions', (req, res) => {
-  const { subjectId, grade, class: className } = req.query;
+  const { subjectId, grade, class: className, subcategoryIds } = req.query;
   
   let query = `
     SELECT q.id, q.subject_id, q.content, q.type,
@@ -1310,6 +1312,14 @@ app.get('/api/error-prone-questions', (req, res) => {
   if (subjectId) {
     query += ' AND q.subject_id = ?';
     params.push(subjectId);
+  }
+  
+  if (subcategoryIds) {
+    const subcategoryArray = Array.isArray(subcategoryIds) ? subcategoryIds : [subcategoryIds];
+    if (subcategoryArray.length > 0) {
+      query += ' AND q.subcategory_id IN (' + subcategoryArray.map(() => '?').join(', ') + ')';
+      params.push(...subcategoryArray);
+    }
   }
   
   if (grade) {
@@ -1333,6 +1343,865 @@ app.get('/api/error-prone-questions', (req, res) => {
     res.json(questions);
   });
 });
+
+// 数据分析API
+app.get('/api/analysis', (req, res) => {
+  const { studentId, grade, class: className, subjectId, subcategoryIds, startDate, endDate } = req.query;
+  
+  // 构建基础查询条件
+  let whereClause = 'WHERE 1=1';
+  let errorWhereClause = 'WHERE 1=1';
+  const params = [];
+  
+  if (studentId) {
+    whereClause += ' AND u.student_id = ?';
+    errorWhereClause += ' AND u.student_id = ?';
+    params.push(studentId);
+  }
+  
+  if (grade) {
+    whereClause += ' AND u.grade = ?';
+    errorWhereClause += ' AND u.grade = ?';
+    params.push(grade);
+  }
+  
+  if (className) {
+    whereClause += ' AND u.class = ?';
+    errorWhereClause += ' AND u.class = ?';
+    params.push(className);
+  }
+  
+  if (subjectId) {
+    whereClause += ' AND ar.subject_id = ?';
+    errorWhereClause += ' AND qa.subject_id = ?';
+    params.push(subjectId);
+  }
+  
+  if (subcategoryIds) {
+    const subcategoryArray = Array.isArray(subcategoryIds) ? subcategoryIds : [subcategoryIds];
+    if (subcategoryArray.length > 0) {
+      whereClause += ' AND ar.subcategory_id IN (' + subcategoryArray.map(() => '?').join(', ') + ')';
+      errorWhereClause += ' AND qa.subcategory_id IN (' + subcategoryArray.map(() => '?').join(', ') + ')';
+      params.push(...subcategoryArray);
+    }
+  }
+  
+  if (startDate) {
+    whereClause += ' AND ar.created_at >= ?';
+    errorWhereClause += ' AND qa.created_at >= ?';
+    params.push(startDate);
+  }
+  
+  if (endDate) {
+    whereClause += ' AND ar.created_at <= ?';
+    errorWhereClause += ' AND qa.created_at <= ?';
+    params.push(endDate);
+  }
+  
+  // 基础统计查询
+  const basicStatsQuery = `
+    SELECT
+      COUNT(DISTINCT u.id) as totalUsers,
+      COUNT(DISTINCT ar.id) as totalSessions,
+      SUM(ar.total_questions) as totalQuestions,
+      SUM(ar.correct_count) as totalCorrect,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as overallAccuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+  `;
+  
+  // 按年级分析查询
+  const gradeAnalysisQuery = `
+    SELECT
+      u.grade,
+      COUNT(DISTINCT u.id) as users,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY u.grade
+    ORDER BY u.grade
+  `;
+  
+  // 按学科分析查询
+  const subjectAnalysisQuery = `
+    SELECT
+      s.name as subject,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    INNER JOIN subjects s ON ar.subject_id = s.id
+    ${whereClause}
+    GROUP BY ar.subject_id, s.name
+    ORDER BY s.name
+  `;
+  
+  // 按时间趋势分析查询
+  const timeAnalysisQuery = `
+    SELECT
+      DATE(ar.created_at) as date,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY DATE(ar.created_at)
+    ORDER BY date
+  `;
+  
+  // 按班级分析查询
+  const classAnalysisQuery = `
+    SELECT
+      u.class as class_num,
+      COUNT(DISTINCT u.id) as users,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY u.class
+    ORDER BY u.class
+  `;
+  
+  // 按子分类分析查询
+  const subcategoryAnalysisQuery = `
+    SELECT
+      sc.name as subcategory,
+      s.name as subject,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    INNER JOIN subjects s ON ar.subject_id = s.id
+    LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id
+    ${whereClause}
+    GROUP BY ar.subcategory_id, sc.name, s.name
+    ORDER BY s.name, sc.name
+  `;
+  
+  // 答题时间分析查询
+  const timeSpentAnalysisQuery = `
+    SELECT
+      CASE
+        WHEN time_spent < 30 THEN '0-30秒'
+        WHEN time_spent < 60 THEN '30-60秒'
+        WHEN time_spent < 120 THEN '1-2分钟'
+        WHEN time_spent < 300 THEN '2-5分钟'
+        ELSE '5分钟以上'
+      END as time_range,
+      COUNT(*) as sessions,
+      SUM(total_questions) as questions,
+      SUM(correct_count) as correct,
+      CASE WHEN SUM(total_questions) > 0 THEN
+        (SUM(correct_count) * 100.0) / SUM(total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY time_range
+    ORDER BY MIN(time_spent)
+  `;
+  
+  // 错题分析查询
+  const errorAnalysisQuery = `
+    SELECT
+      s.name as subject,
+      COUNT(qa.id) as total_attempts,
+      SUM(CASE WHEN qa.is_correct = 0 THEN 1 ELSE 0 END) as error_count,
+      CASE WHEN COUNT(qa.id) > 0 THEN
+        (SUM(CASE WHEN qa.is_correct = 0 THEN 1 ELSE 0 END) * 100.0) / COUNT(qa.id)
+      ELSE 0 END as error_rate
+    FROM question_attempts qa
+    INNER JOIN users u ON qa.user_id = u.id
+    INNER JOIN subjects s ON qa.subject_id = s.id
+    ${errorWhereClause}
+    GROUP BY qa.subject_id, s.name
+    ORDER BY error_rate DESC
+  `;
+  
+  db.serialize(() => {
+    let analysisData = {
+      totalUsers: 0,
+      totalSessions: 0,
+      totalQuestions: 0,
+      totalCorrect: 0,
+      overallAccuracy: 0,
+      gradeAnalysisList: [],
+      subjectAnalysisList: [],
+      timeAnalysisList: [],
+      classAnalysisList: [],
+      subcategoryAnalysisList: [],
+      timeSpentAnalysisList: [],
+      errorAnalysisList: [],
+      errorProneQuestions: []
+    };
+    
+    // 执行基础统计查询
+    db.get(basicStatsQuery, params, (err, stats) => {
+      if (err) {
+        console.error('获取基础统计失败:', err);
+        res.status(500).json({ error: '获取分析数据失败' });
+        return;
+      }
+      
+      if (stats) {
+        analysisData = {
+          totalUsers: stats.totalUsers || 0,
+          totalSessions: stats.totalSessions || 0,
+          totalQuestions: stats.totalQuestions || 0,
+          totalCorrect: stats.totalCorrect || 0,
+          overallAccuracy: stats.overallAccuracy || 0,
+          gradeAnalysisList: [],
+          subjectAnalysisList: [],
+          timeAnalysisList: [],
+          classAnalysisList: [],
+          subcategoryAnalysisList: [],
+          timeSpentAnalysisList: [],
+          errorAnalysisList: []
+        };
+      }
+      
+      // 执行按年级分析查询
+      db.all(gradeAnalysisQuery, params, (err, gradeData) => {
+        if (err) {
+          console.error('获取年级分析失败:', err);
+          res.status(500).json({ error: '获取分析数据失败' });
+          return;
+        }
+        
+        analysisData.gradeAnalysisList = gradeData || [];
+        
+        // 执行按学科分析查询
+        db.all(subjectAnalysisQuery, params, (err, subjectData) => {
+          if (err) {
+            console.error('获取学科分析失败:', err);
+            res.status(500).json({ error: '获取分析数据失败' });
+            return;
+          }
+          
+          analysisData.subjectAnalysisList = subjectData || [];
+          
+          // 执行按时间趋势分析查询
+          db.all(timeAnalysisQuery, params, (err, timeData) => {
+            if (err) {
+              console.error('获取时间趋势分析失败:', err);
+              res.status(500).json({ error: '获取分析数据失败' });
+              return;
+            }
+            
+            analysisData.timeAnalysisList = timeData || [];
+            
+            // 执行按班级分析查询
+            db.all(classAnalysisQuery, params, (err, classData) => {
+              if (err) {
+                console.error('获取班级分析失败:', err);
+                res.status(500).json({ error: '获取分析数据失败' });
+                return;
+              }
+              
+              analysisData.classAnalysisList = classData || [];
+              
+              // 执行按子分类分析查询
+              db.all(subcategoryAnalysisQuery, params, (err, subcategoryData) => {
+                if (err) {
+                  console.error('获取子分类分析失败:', err);
+                  res.status(500).json({ error: '获取分析数据失败' });
+                  return;
+                }
+                
+                analysisData.subcategoryAnalysisList = subcategoryData || [];
+                
+                // 执行答题时间分析查询
+                db.all(timeSpentAnalysisQuery, params, (err, timeSpentData) => {
+                  if (err) {
+                    console.error('获取答题时间分析失败:', err);
+                    res.status(500).json({ error: '获取分析数据失败' });
+                    return;
+                  }
+                  
+                  analysisData.timeSpentAnalysisList = timeSpentData || [];
+                  
+                  // 执行错题分析查询
+                  db.all(errorAnalysisQuery, params, (err, errorData) => {
+                    if (err) {
+                      console.error('获取错题分析失败:', err);
+                      res.status(500).json({ error: '获取分析数据失败' });
+                      return;
+                    }
+                    
+                    analysisData.errorAnalysisList = errorData || [];
+                    
+                    // 执行错误率较高的题目查询
+                    let errorProneQuery = `
+                      SELECT q.id, q.subject_id, q.content, q.type,
+                             COUNT(qa.id) as total_attempts,
+                             SUM(qa.is_correct) as correct_count,
+                             s.name as subject_name
+                      FROM questions q
+                      LEFT JOIN question_attempts qa ON q.id = qa.question_id
+                      LEFT JOIN users u ON qa.user_id = u.id
+                      LEFT JOIN subjects s ON q.subject_id = s.id
+                      WHERE 1=1
+                    `;
+                    
+                    if (subjectId) {
+                      errorProneQuery += ' AND q.subject_id = ?';
+                    }
+                    
+                    if (grade) {
+                      errorProneQuery += ' AND u.grade = ?';
+                    }
+                    
+                    if (className) {
+                      errorProneQuery += ' AND u.class = ?';
+                    }
+                    
+                    if (startDate) {
+                      errorProneQuery += ' AND qa.created_at >= ?';
+                    }
+                    
+                    if (endDate) {
+                      errorProneQuery += ' AND qa.created_at <= ?';
+                    }
+                    
+                    errorProneQuery += ' GROUP BY q.id HAVING total_attempts >= 3 ORDER BY (total_attempts - correct_count) DESC LIMIT 20';
+                    
+                    db.all(errorProneQuery, params, (err, errorProneData) => {
+                      if (err) {
+                        console.error('获取错误率较高的题目失败:', err);
+                        res.status(500).json({ error: '获取分析数据失败' });
+                        return;
+                      }
+                      
+                      analysisData.errorProneQuestions = errorProneData || [];
+                      res.json(analysisData);
+                    });
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+// 分析报告下载API
+app.get('/api/analysis/download', (req, res) => {
+  const { type, studentId, grade, class: className, subjectId, subcategoryIds, startDate, endDate } = req.query;
+  
+  // 构建基础查询条件
+  let whereClause = 'WHERE 1=1';
+  let errorWhereClause = 'WHERE 1=1';
+  const params = [];
+  
+  if (studentId) {
+    whereClause += ' AND u.student_id = ?';
+    errorWhereClause += ' AND u.student_id = ?';
+    params.push(studentId);
+  }
+  
+  if (grade) {
+    whereClause += ' AND u.grade = ?';
+    errorWhereClause += ' AND u.grade = ?';
+    params.push(grade);
+  }
+  
+  if (className) {
+    whereClause += ' AND u.class = ?';
+    errorWhereClause += ' AND u.class = ?';
+    params.push(className);
+  }
+  
+  if (subjectId) {
+    whereClause += ' AND ar.subject_id = ?';
+    errorWhereClause += ' AND qa.subject_id = ?';
+    params.push(subjectId);
+  }
+  
+  if (subcategoryIds) {
+    const subcategoryArray = Array.isArray(subcategoryIds) ? subcategoryIds : [subcategoryIds];
+    if (subcategoryArray.length > 0) {
+      whereClause += ' AND ar.subcategory_id IN (' + subcategoryArray.map(() => '?').join(', ') + ')';
+      errorWhereClause += ' AND qa.subcategory_id IN (' + subcategoryArray.map(() => '?').join(', ') + ')';
+      params.push(...subcategoryArray);
+    }
+  }
+  
+  if (startDate) {
+    whereClause += ' AND ar.created_at >= ?';
+    errorWhereClause += ' AND qa.created_at >= ?';
+    params.push(startDate);
+  }
+  
+  if (endDate) {
+    whereClause += ' AND ar.created_at <= ?';
+    errorWhereClause += ' AND qa.created_at <= ?';
+    params.push(endDate);
+  }
+  
+  // 基础统计查询
+  const basicStatsQuery = `
+    SELECT
+      COUNT(DISTINCT u.id) as totalUsers,
+      COUNT(DISTINCT ar.id) as totalSessions,
+      SUM(ar.total_questions) as totalQuestions,
+      SUM(ar.correct_count) as totalCorrect,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as overallAccuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+  `;
+  
+  // 按年级分析查询
+  const gradeAnalysisQuery = `
+    SELECT
+      u.grade,
+      COUNT(DISTINCT u.id) as users,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY u.grade
+    ORDER BY u.grade
+  `;
+  
+  // 按学科分析查询
+  const subjectAnalysisQuery = `
+    SELECT
+      s.name as subject,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    INNER JOIN subjects s ON ar.subject_id = s.id
+    ${whereClause}
+    GROUP BY ar.subject_id, s.name
+    ORDER BY s.name
+  `;
+  
+  // 按时间趋势分析查询
+  const timeAnalysisQuery = `
+    SELECT
+      DATE(ar.created_at) as date,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY DATE(ar.created_at)
+    ORDER BY date
+  `;
+  
+  // 按班级分析查询
+  const classAnalysisQuery = `
+    SELECT
+      u.class as class_num,
+      COUNT(DISTINCT u.id) as users,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY u.class
+    ORDER BY u.class
+  `;
+  
+  // 按子分类分析查询
+  const subcategoryAnalysisQuery = `
+    SELECT
+      sc.name as subcategory,
+      s.name as subject,
+      COUNT(DISTINCT ar.id) as sessions,
+      SUM(ar.total_questions) as questions,
+      SUM(ar.correct_count) as correct,
+      CASE WHEN SUM(ar.total_questions) > 0 THEN
+        (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    INNER JOIN subjects s ON ar.subject_id = s.id
+    LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id
+    ${whereClause}
+    GROUP BY ar.subcategory_id, sc.name, s.name
+    ORDER BY s.name, sc.name
+  `;
+  
+  // 答题时间分析查询
+  const timeSpentAnalysisQuery = `
+    SELECT
+      CASE
+        WHEN time_spent < 30 THEN '0-30秒'
+        WHEN time_spent < 60 THEN '30-60秒'
+        WHEN time_spent < 120 THEN '1-2分钟'
+        WHEN time_spent < 300 THEN '2-5分钟'
+        ELSE '5分钟以上'
+      END as time_range,
+      COUNT(*) as sessions,
+      SUM(total_questions) as questions,
+      SUM(correct_count) as correct,
+      CASE WHEN SUM(total_questions) > 0 THEN
+        (SUM(correct_count) * 100.0) / SUM(total_questions)
+      ELSE 0 END as accuracy
+    FROM answer_records ar
+    INNER JOIN users u ON ar.user_id = u.id
+    ${whereClause}
+    GROUP BY time_range
+    ORDER BY MIN(time_spent)
+  `;
+  
+  // 错题分析查询
+  const errorAnalysisQuery = `
+    SELECT
+      s.name as subject,
+      COUNT(qa.id) as total_attempts,
+      SUM(CASE WHEN qa.is_correct = 0 THEN 1 ELSE 0 END) as error_count,
+      CASE WHEN COUNT(qa.id) > 0 THEN
+        (SUM(CASE WHEN qa.is_correct = 0 THEN 1 ELSE 0 END) * 100.0) / COUNT(qa.id)
+      ELSE 0 END as error_rate
+    FROM question_attempts qa
+    INNER JOIN users u ON qa.user_id = u.id
+    INNER JOIN subjects s ON qa.subject_id = s.id
+    ${errorWhereClause}
+    GROUP BY qa.subject_id, s.name
+    ORDER BY error_rate DESC
+  `;
+  
+  db.serialize(() => {
+    let analysisData = {
+      totalUsers: 0,
+      totalSessions: 0,
+      totalQuestions: 0,
+      totalCorrect: 0,
+      overallAccuracy: 0,
+      gradeAnalysisList: [],
+      subjectAnalysisList: [],
+      timeAnalysisList: []
+    };
+    
+    // 执行基础统计查询
+    db.get(basicStatsQuery, params, (err, stats) => {
+      if (err) {
+        console.error('获取基础统计失败:', err);
+        res.status(500).json({ error: '获取分析数据失败' });
+        return;
+      }
+      
+      if (stats) {
+        analysisData = {
+          totalUsers: stats.totalUsers || 0,
+          totalSessions: stats.totalSessions || 0,
+          totalQuestions: stats.totalQuestions || 0,
+          totalCorrect: stats.totalCorrect || 0,
+          overallAccuracy: stats.overallAccuracy || 0,
+          gradeAnalysisList: [],
+          subjectAnalysisList: [],
+          timeAnalysisList: [],
+          classAnalysisList: [],
+          subcategoryAnalysisList: [],
+          timeSpentAnalysisList: [],
+          errorAnalysisList: []
+        };
+      }
+      
+      // 执行年级分析查询
+      db.all(gradeAnalysisQuery, params, (err, gradeData) => {
+        if (err) {
+          console.error('获取年级分析失败:', err);
+          res.status(500).json({ error: '获取分析数据失败' });
+          return;
+        }
+        
+        analysisData.gradeAnalysisList = gradeData || [];
+        
+        // 执行学科分析查询
+        db.all(subjectAnalysisQuery, params, (err, subjectData) => {
+          if (err) {
+            console.error('获取学科分析失败:', err);
+            res.status(500).json({ error: '获取分析数据失败' });
+            return;
+          }
+          
+          analysisData.subjectAnalysisList = subjectData || [];
+          
+          // 执行时间趋势分析查询
+          db.all(timeAnalysisQuery, params, (err, timeData) => {
+            if (err) {
+              console.error('获取时间趋势分析失败:', err);
+              res.status(500).json({ error: '获取分析数据失败' });
+              return;
+            }
+            
+            analysisData.timeAnalysisList = timeData || [];
+            
+            // 执行按班级分析查询
+            db.all(classAnalysisQuery, params, (err, classData) => {
+              if (err) {
+                console.error('获取班级分析失败:', err);
+                res.status(500).json({ error: '获取分析数据失败' });
+                return;
+              }
+              
+              analysisData.classAnalysisList = classData || [];
+              
+              // 执行按子分类分析查询
+              db.all(subcategoryAnalysisQuery, params, (err, subcategoryData) => {
+                if (err) {
+                  console.error('获取子分类分析失败:', err);
+                  res.status(500).json({ error: '获取分析数据失败' });
+                  return;
+                }
+                
+                analysisData.subcategoryAnalysisList = subcategoryData || [];
+                
+                // 执行答题时间分析查询
+                db.all(timeSpentAnalysisQuery, params, (err, timeSpentData) => {
+                  if (err) {
+                    console.error('获取答题时间分析失败:', err);
+                    res.status(500).json({ error: '获取分析数据失败' });
+                    return;
+                  }
+                  
+                  analysisData.timeSpentAnalysisList = timeSpentData || [];
+                  
+                  // 执行错题分析查询
+                  db.all(errorAnalysisQuery, params, (err, errorData) => {
+                    if (err) {
+                      console.error('获取错题分析失败:', err);
+                      res.status(500).json({ error: '获取分析数据失败' });
+                      return;
+                    }
+                    
+                    analysisData.errorAnalysisList = errorData || [];
+                    
+                    if (type === 'pdf') {
+                      generatePDFReport(analysisData, res);
+                    } else if (type === 'excel') {
+                      generateExcelReport(analysisData, res);
+                    } else {
+                      res.status(400).json({ error: '无效的报告类型' });
+                    }
+                  });
+                });
+              });
+            });
+          });
+        });
+      });
+    });
+  });
+});
+
+// 生成PDF报告
+function generatePDFReport(analysisData, res) {
+  const PDFDocument = require('pdfkit');
+  const doc = new PDFDocument({ margin: 50 });
+  
+  // 设置响应头
+  res.setHeader('Content-Type', 'application/pdf');
+  res.setHeader('Content-Disposition', 'attachment; filename=analysis_report.pdf');
+  
+  // 连接PDF流到响应
+  doc.pipe(res);
+  
+  // 标题
+  doc.fontSize(20).text('小学各学科数据分析报告', { align: 'center' });
+  doc.moveDown(2);
+  
+  // 总体统计
+  doc.fontSize(16).text('一、总体统计', { underline: true });
+  doc.moveDown(0.5);
+  doc.fontSize(12).text(`总用户数: ${analysisData.totalUsers}`);
+  doc.text(`总答题次数: ${analysisData.totalSessions}`);
+  doc.text(`总答题数: ${analysisData.totalQuestions}`);
+  doc.text(`总正确数: ${analysisData.totalCorrect}`);
+  doc.text(`总体正确率: ${analysisData.overallAccuracy.toFixed(1)}%`);
+  doc.moveDown(2);
+  
+  // 学科分析
+  doc.fontSize(16).text('二、学科分析', { underline: true });
+  doc.moveDown(0.5);
+  analysisData.subjectAnalysisList.forEach(item => {
+    doc.fontSize(12).text(`${item.subject}: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
+  });
+  doc.moveDown(2);
+  
+  // 年级分析
+  doc.fontSize(16).text('三、年级分析', { underline: true });
+  doc.moveDown(0.5);
+  analysisData.gradeAnalysisList.forEach(item => {
+    doc.fontSize(12).text(`${item.grade}年级: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
+  });
+  doc.moveDown(2);
+  
+  // 时间趋势分析
+  doc.fontSize(16).text('四、时间趋势分析', { underline: true });
+  doc.moveDown(0.5);
+  analysisData.timeAnalysisList.forEach(item => {
+    doc.fontSize(12).text(`${item.date}: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
+  });
+  
+  // 班级分析
+  doc.fontSize(16).text('五、班级分析', { underline: true });
+  doc.moveDown(0.5);
+  analysisData.classAnalysisList.forEach(item => {
+    doc.fontSize(12).text(`${item.class}班: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
+  });
+  
+  // 子分类分析
+  doc.fontSize(16).text('六、子分类分析', { underline: true });
+  doc.moveDown(0.5);
+  analysisData.subcategoryAnalysisList.forEach(item => {
+    doc.fontSize(12).text(`${item.subject} - ${item.subcategory || '未分类'}: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
+  });
+  
+  // 答题时间分析
+  doc.fontSize(16).text('七、答题时间分析', { underline: true });
+  doc.moveDown(0.5);
+  analysisData.timeSpentAnalysisList.forEach(item => {
+    doc.fontSize(12).text(`${item.time_range}: 正确率 ${item.accuracy.toFixed(1)}%, 答题次数 ${item.sessions}`);
+  });
+  
+  // 错题分析
+  doc.fontSize(16).text('八、错题分析', { underline: true });
+  doc.moveDown(0.5);
+  analysisData.errorAnalysisList.forEach(item => {
+    doc.fontSize(12).text(`${item.subject}: 错误率 ${item.error_rate.toFixed(1)}%, 错题数 ${item.error_count}, 总尝试次数 ${item.total_attempts}`);
+  });
+  
+  // 结束PDF生成
+  doc.end();
+}
+
+// 生成Excel报告
+function generateExcelReport(analysisData, res) {
+  const XLSX = require('xlsx');
+  // 创建工作簿
+  const wb = XLSX.utils.book_new();
+  
+  // 总体统计工作表
+  const statsData = [
+    ['统计项目', '数值'],
+    ['总用户数', analysisData.totalUsers],
+    ['总答题次数', analysisData.totalSessions],
+    ['总答题数', analysisData.totalQuestions],
+    ['总正确数', analysisData.totalCorrect],
+    ['总体正确率', `${analysisData.overallAccuracy.toFixed(1)}%`]
+  ];
+  const statsWs = XLSX.utils.aoa_to_sheet(statsData);
+  XLSX.utils.book_append_sheet(wb, statsWs, '总体统计');
+  
+  // 学科分析工作表
+  const subjectData = [['学科', '答题次数', '答题数', '正确数', '正确率']];
+  analysisData.subjectAnalysisList.forEach(item => {
+    subjectData.push([item.subject, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+  });
+  const subjectWs = XLSX.utils.aoa_to_sheet(subjectData);
+  XLSX.utils.book_append_sheet(wb, subjectWs, '学科分析');
+  
+  // 年级分析工作表
+  const gradeData = [['年级', '用户数', '答题次数', '答题数', '正确数', '正确率']];
+  analysisData.gradeAnalysisList.forEach(item => {
+    gradeData.push([`${item.grade}年级`, item.users, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+  });
+  const gradeWs = XLSX.utils.aoa_to_sheet(gradeData);
+  XLSX.utils.book_append_sheet(wb, gradeWs, '年级分析');
+  
+  // 时间趋势分析工作表
+  const timeData = [['日期', '答题次数', '答题数', '正确数', '正确率']];
+  analysisData.timeAnalysisList.forEach(item => {
+    timeData.push([item.date, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+  });
+  const timeWs = XLSX.utils.aoa_to_sheet(timeData);
+  XLSX.utils.book_append_sheet(wb, timeWs, '时间趋势');
+  
+  // 班级分析工作表
+  const classData = [['班级', '用户数', '答题次数', '答题数', '正确数', '正确率']];
+  analysisData.classAnalysisList.forEach(item => {
+    classData.push([`${item.class}班`, item.users, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+  });
+  const classWs = XLSX.utils.aoa_to_sheet(classData);
+  XLSX.utils.book_append_sheet(wb, classWs, '班级分析');
+  
+  // 子分类分析工作表
+  const subcategoryData = [['学科', '子分类', '答题次数', '答题数', '正确数', '正确率']];
+  analysisData.subcategoryAnalysisList.forEach(item => {
+    subcategoryData.push([item.subject, item.subcategory || '未分类', item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+  });
+  const subcategoryWs = XLSX.utils.aoa_to_sheet(subcategoryData);
+  XLSX.utils.book_append_sheet(wb, subcategoryWs, '子分类分析');
+  
+  // 答题时间分析工作表
+  const timeSpentData = [['时间范围', '答题次数', '答题数', '正确数', '正确率']];
+  analysisData.timeSpentAnalysisList.forEach(item => {
+    timeSpentData.push([item.time_range, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+  });
+  const timeSpentWs = XLSX.utils.aoa_to_sheet(timeSpentData);
+  XLSX.utils.book_append_sheet(wb, timeSpentWs, '答题时间分析');
+  
+  // 错题分析工作表
+  const errorData = [['学科', '总尝试次数', '错题数', '错误率']];
+  analysisData.errorAnalysisList.forEach(item => {
+    errorData.push([item.subject, item.total_attempts, item.error_count, `${item.error_rate.toFixed(1)}%`]);
+  });
+  const errorWs = XLSX.utils.aoa_to_sheet(errorData);
+  XLSX.utils.book_append_sheet(wb, errorWs, '错题分析');
+  
+  // 生成Excel文件
+  const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });
+  
+  // 设置响应头
+  res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+  res.setHeader('Content-Disposition', 'attachment; filename=analysis_report.xlsx');
+  
+  // 发送Excel文件
+  res.send(excelBuffer);
+}
 
 // 用户登录API
 app.post('/api/users/login', (req, res) => {

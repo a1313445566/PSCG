@@ -297,7 +297,7 @@
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="subcategoryName" label="子分类" width="100" align="center">
+              <el-table-column prop="subcategoryName" label="子分类" width="150" align="center">
                 <template #default="{ row }">
                   <span class="subcategory-text">{{ row.subcategoryName || '-' }}</span>
                 </template>
@@ -422,53 +422,16 @@
             </div>
           </div>
           
-          <!-- 数据统计分析 -->
-          <div class="stats-overview" style="margin-bottom: 30px;">
-            <h3>数据统计概览</h3>
-            <el-row :gutter="20">
-              <el-col :span="6">
-                <el-card shadow="hover">
-                  <div class="stats-item">
-                    <div class="stats-value">{{ totalUsers }}</div>
-                    <div class="stats-label">总用户数</div>
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :span="6">
-                <el-card shadow="hover">
-                  <div class="stats-item">
-                    <div class="stats-value">{{ totalSessions }}</div>
-                    <div class="stats-label">总答题次数</div>
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :span="6">
-                <el-card shadow="hover">
-                  <div class="stats-item">
-                    <div class="stats-value">{{ totalQuestions }}</div>
-                    <div class="stats-label">总答题数</div>
-                  </div>
-                </el-card>
-              </el-col>
-              <el-col :span="6">
-                <el-card shadow="hover">
-                  <div class="stats-item">
-                    <div class="stats-value">{{ Math.round(overallAccuracy) }}%</div>
-                    <div class="stats-label">平均正确率</div>
-                  </div>
-                </el-card>
-              </el-col>
-            </el-row>
-          </div>
+
           
           <h3>用户答题统计</h3>
           <el-table :data="paginatedUserStats" stripe style="width: 100%">
-            <el-table-column label="学号" width="120" align="center">
+            <el-table-column label="学号" width="80" align="center">
               <template #default="{ row }">
                 {{ row.student_id || row.user_id || '未设置' }}
               </template>
             </el-table-column>
-            <el-table-column prop="name" label="姓名" width="100" align="center">
+            <el-table-column prop="name" label="姓名" width="80" align="center">
               <template #default="{ row }">
                 {{ row.name || '未设置' }}
               </template>
@@ -483,17 +446,17 @@
                 {{ row.class || '未设置' }}
               </template>
             </el-table-column>
-            <el-table-column label="答题次数" width="100" align="center">
+            <el-table-column label="答题次数" width="80" align="center">
               <template #default="{ row }">
                 {{ row.total_sessions || 0 }}
               </template>
             </el-table-column>
-            <el-table-column label="答题总数" width="100" align="center">
+            <el-table-column label="答题总数" width="80" align="center">
               <template #default="{ row }">
                 {{ row.total_questions || 0 }}
               </template>
             </el-table-column>
-            <el-table-column label="正确数" width="100" align="center">
+            <el-table-column label="正确数" width="80" align="center">
               <template #default="{ row }">
                 {{ row.correct_count || 0 }}
               </template>
@@ -528,44 +491,44 @@
           
           <h3 style="margin-top: 30px;">最近答题记录</h3>
           <el-table :data="paginatedRecentRecords" stripe style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
-            <el-table-column label="学号" width="120" align="center">
+            <el-table-column prop="id" label="ID" width="60" align="center"></el-table-column>
+            <el-table-column label="学号" width="80" align="center">
               <template #default="{ row }">
                 {{ row.student_id || row.user_id || '未设置' }}
               </template>
             </el-table-column>
-            <el-table-column prop="user_name" label="姓名" width="100" align="center">
+            <el-table-column prop="user_name" label="姓名" width="80" align="center">
               <template #default="{ row }">
                 {{ row.user_name || '未设置' }}
               </template>
             </el-table-column>
             <el-table-column prop="subject_name" label="学科" width="100" align="center"></el-table-column>
-            <el-table-column prop="subcategory_name" label="子分类" width="100" align="center">
+            <el-table-column prop="subcategory_name" label="子分类" width="180" align="center">
               <template #default="{ row }">
                 {{ row.subcategory_name || '全部' }}
               </template>
             </el-table-column>
-            <el-table-column label="成绩" width="100" align="center">
+            <el-table-column label="成绩" width="80" align="center">
               <template #default="{ row }">
                 {{ row.correct_count }} / {{ row.total_questions }}
               </template>
             </el-table-column>
-            <el-table-column label="正确率" width="100" align="center">
+            <el-table-column label="正确率" width="80" align="center">
               <template #default="{ row }">
                 {{ Math.round(row.correct_count / row.total_questions * 100) }}%
               </template>
             </el-table-column>
-            <el-table-column label="用时(秒)" width="100" align="center">
+            <el-table-column label="用时(秒)" width="80" align="center">
               <template #default="{ row }">
                 {{ row.time_spent || 0 }}
               </template>
             </el-table-column>
-            <el-table-column prop="created_at" label="时间" width="150" align="center">
+            <el-table-column prop="created_at" label="时间" width="140" align="center">
               <template #default="{ row }">
                 {{ formatDate(row.created_at) }}
               </template>
             </el-table-column>
-            <el-table-column label="操作" width="120" align="center">
+            <el-table-column label="操作" width="100" align="center">
               <template #default="{ row }">
                 <el-button type="primary" size="small" @click="openUserDetailDialog(row)">查看记录</el-button>
               </template>
@@ -585,258 +548,17 @@
             />
           </div>
           
-          <h3 style="margin-top: 30px;">错误率较高的题目</h3>
-          <div style="margin-bottom: 20px; padding: 15px; background-color: #f0f9ff; border-radius: 4px; border-left: 4px solid #409eff;">
-            <span style="font-weight: bold; color: #409eff;">说明：</span> 
-            本列表显示被尝试至少3次的题目，按错误次数降序排列。错误率计算公式：(1 - 正确次数/总尝试次数) × 100%。
-            若列表数据较少，可能是因为大部分题目被尝试的次数不足3次，或错误次数较少。
-          </div>
-          <el-table :data="paginatedErrorProneQuestions" stripe style="width: 100%">
-            <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
-            <el-table-column prop="subject_name" label="学科" width="100" align="center"></el-table-column>
-            <el-table-column prop="content" label="题目内容" min-width="300" align="center">
-              <template #default="{ row }">
-                <el-tooltip :content="row.content" placement="top" effect="dark">
-                  <div class="question-content-preview">{{ row.content.replace(/<[^>]*>/g, '').substring(0, 50) }}{{ row.content.length > 50 ? '...' : '' }}</div>
-                </el-tooltip>
-              </template>
-            </el-table-column>
-            <el-table-column label="错误率" width="100" align="center">
-              <template #default="{ row }">
-                <div style="display: flex; align-items: center;">
-                  <el-progress :percentage="Math.round((1 - (row.correct_count / row.total_attempts)) * 100)" :color="getErrorRateColor(row.correct_count / row.total_attempts)" style="flex: 1; margin-right: 10px;"></el-progress>
-                  <span>{{ Math.round((1 - (row.correct_count / row.total_attempts)) * 100) }}%</span>
-                </div>
-              </template>
-            </el-table-column>
-            <el-table-column label="总尝试次数" width="100" align="center">
-              <template #default="{ row }">
-                {{ row.total_attempts || 0 }}
-              </template>
-            </el-table-column>
-            <el-table-column label="正确次数" width="100" align="center">
-              <template #default="{ row }">
-                {{ row.correct_count || 0 }}
-              </template>
-            </el-table-column>
-          </el-table>
-          
-          <!-- 错误率较高的题目分页 -->
-          <div class="pagination" style="margin-top: 20px; text-align: right;">
-            <el-pagination
-              v-model:current-page="errorProneCurrentPage"
-              v-model:page-size="errorPronePageSize"
-              :page-sizes="[10, 20, 50]"
-              layout="total, sizes, prev, pager, next, jumper"
-              :total="errorProneTotal"
-              @size-change="handleErrorProneSizeChange"
-              @current-change="handleErrorProneCurrentChange"
-            />
-          </div>
+
         </div>
       </el-tab-pane>
       
 
 
+
+      
       <!-- 数据分析 -->
       <el-tab-pane label="数据分析" name="analysis">
-        <div class="analysis-management">
-          <!-- 筛选区域 -->
-          <div class="filter-section" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px;">
-            <div style="display: flex; align-items: center; gap: 15px; overflow-x: auto; padding-bottom: 5px;">
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">学号</label>
-                <el-input v-model="filterStudentId" placeholder="输入学号" style="width: 180px;"></el-input>
-              </div>
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">年级</label>
-                <el-select v-model="filterGrade" placeholder="选择年级" style="width: 120px;" @change="handleGradeChange">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option v-for="grade in gradesList" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
-                </el-select>
-              </div>
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">班级</label>
-                <el-select v-model="filterClass" placeholder="选择班级" style="width: 120px;">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option v-for="classNum in classesList" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
-                </el-select>
-              </div>
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">学科</label>
-                <el-select v-model="filterSubject" placeholder="选择学科" style="width: 150px;">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
-                </el-select>
-              </div>
-              <div style="display: flex; align-items: center; gap: 5px; white-space: nowrap;">
-                <label style="font-weight: 500; width: 70px;">时间范围</label>
-                <el-select v-model="filterTimeRange" placeholder="选择时间" style="width: 140px;">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option label="今日" value="today"></el-option>
-                  <el-option label="近一周" value="week"></el-option>
-                  <el-option label="近一月" value="month"></el-option>
-                </el-select>
-              </div>
-            </div>
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-              <el-button type="primary" @click="applyFilters">应用筛选</el-button>
-              <el-button @click="resetFilters">重置</el-button>
-              <el-button type="success" @click="generateReport">生成分析报告</el-button>
-            </div>
-          </div>
-          
-          <!-- 实时分析结果 -->
-          <div class="analysis-results" style="margin-bottom: 30px;">
-            <h3>实时数据分析</h3>
-            
-            <!-- 基础统计 -->
-            <div class="analysis-section" style="margin-bottom: 20px;">
-              <h4>基础统计</h4>
-              <el-row :gutter="20">
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ analysisData.totalUsers }}</div>
-                      <div class="stats-label">总用户数</div>
-                    </div>
-                  </el-card>
-                </el-col>
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ analysisData.totalSessions }}</div>
-                      <div class="stats-label">总答题次数</div>
-                    </div>
-                  </el-card>
-                </el-col>
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ analysisData.totalQuestions }}</div>
-                      <div class="stats-label">总答题数</div>
-                    </div>
-                  </el-card>
-                </el-col>
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ Math.round(analysisData.overallAccuracy) }}%</div>
-                      <div class="stats-label">平均正确率</div>
-                    </div>
-                  </el-card>
-                </el-col>
-              </el-row>
-            </div>
-            
-            <!-- 按年级分析 -->
-            <div class="analysis-section" style="margin-bottom: 20px;">
-              <h4>按年级分析</h4>
-              <el-table :data="analysisData.gradeAnalysisList" stripe style="width: 100%">
-                <el-table-column prop="grade" label="年级" width="100" align="center"></el-table-column>
-                <el-table-column prop="users" label="用户数" width="100" align="center"></el-table-column>
-                <el-table-column prop="sessions" label="答题次数" width="100" align="center"></el-table-column>
-                <el-table-column prop="questions" label="答题数" width="100" align="center"></el-table-column>
-                <el-table-column label="正确率" width="120" align="center">
-                  <template #default="{ row }">
-                    <el-progress 
-                      :percentage="Math.round(row.accuracy)" 
-                      :color="getProgressColor(row.accuracy)"
-                    ></el-progress>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-            
-            <!-- 按学科分析 -->
-            <div class="analysis-section" style="margin-bottom: 20px;">
-              <h4>按学科分析</h4>
-              <el-table :data="analysisData.subjectAnalysisList" stripe style="width: 100%">
-                <el-table-column prop="subject" label="学科" width="150" align="center"></el-table-column>
-                <el-table-column prop="sessions" label="答题次数" width="100" align="center"></el-table-column>
-                <el-table-column prop="questions" label="答题数" width="100" align="center"></el-table-column>
-                <el-table-column label="正确率" width="120" align="center">
-                  <template #default="{ row }">
-                    <el-progress 
-                      :percentage="Math.round(row.accuracy)" 
-                      :color="getProgressColor(row.accuracy)"
-                    ></el-progress>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-            
-            <!-- 时间趋势分析 -->
-            <div class="analysis-section" style="margin-bottom: 20px;">
-              <h4>时间趋势分析</h4>
-              <el-table :data="analysisData.timeAnalysisList" stripe style="width: 100%">
-                <el-table-column prop="date" label="日期" width="120" align="center"></el-table-column>
-                <el-table-column prop="sessions" label="答题次数" width="100" align="center"></el-table-column>
-                <el-table-column prop="questions" label="答题数" width="100" align="center"></el-table-column>
-                <el-table-column label="正确率" width="120" align="center">
-                  <template #default="{ row }">
-                    <el-progress 
-                      :percentage="Math.round(row.accuracy)" 
-                      :color="getProgressColor(row.accuracy)"
-                    ></el-progress>
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-            
-            <!-- 错误率较高的题目 -->
-            <div class="analysis-section" style="margin-bottom: 20px;">
-              <h4>错误率较高的题目</h4>
-              <div style="margin-bottom: 10px; padding: 10px; background-color: #f0f9ff; border-radius: 4px; border-left: 4px solid #409eff;">
-                <span style="font-weight: bold; color: #409eff;">说明：</span> 
-                本列表显示被尝试至少3次的题目，按错误次数降序排列。错误率计算公式：(1 - 正确次数/总尝试次数) × 100%。
-                若列表数据较少，可能是因为大部分题目被尝试的次数不足3次，或错误次数较少。
-              </div>
-              <el-table :data="errorProneQuestions" stripe style="width: 100%">
-                <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
-                <el-table-column prop="subject_name" label="学科" width="100" align="center"></el-table-column>
-                <el-table-column prop="content" label="题目内容" min-width="300" align="center">
-                  <template #default="{ row }">
-                    <el-tooltip :content="row.content" placement="top" effect="dark">
-                      <div class="question-content-preview">{{ row.content.replace(/<[^>]*>/g, '').substring(0, 50) }}{{ row.content.length > 50 ? '...' : '' }}</div>
-                    </el-tooltip>
-                  </template>
-                </el-table-column>
-                <el-table-column label="错误率" width="100" align="center">
-                  <template #default="{ row }">
-                    <div style="display: flex; align-items: center;">
-                      <el-progress :percentage="Math.round((1 - (row.correct_count / row.total_attempts)) * 100)" :color="getErrorRateColor(row.correct_count / row.total_attempts)" style="flex: 1; margin-right: 10px;"></el-progress>
-                      <span>{{ Math.round((1 - (row.correct_count / row.total_attempts)) * 100) }}%</span>
-                    </div>
-                  </template>
-                </el-table-column>
-                <el-table-column label="总尝试次数" width="100" align="center">
-                  <template #default="{ row }">
-                    {{ row.total_attempts || 0 }}
-                  </template>
-                </el-table-column>
-                <el-table-column label="正确次数" width="100" align="center">
-                  <template #default="{ row }">
-                    {{ row.correct_count || 0 }}
-                  </template>
-                </el-table-column>
-              </el-table>
-            </div>
-            
-            <!-- 数据分析分页 -->
-            <div class="pagination" style="margin-top: 20px; text-align: right;">
-              <el-pagination
-                v-model:current-page="analysisCurrentPage"
-                v-model:page-size="analysisPageSize"
-                :page-sizes="[10, 20, 50]"
-                layout="total, sizes, prev, pager, next, jumper"
-                :total="analysisTotal"
-                @size-change="handleAnalysisSizeChange"
-                @current-change="handleAnalysisCurrentChange"
-              />
-            </div>
-          </div>
-        </div>
+        <AnalysisView />
       </el-tab-pane>
       
       <!-- 数据管理 -->
@@ -1818,12 +1540,14 @@
 </style>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestionStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
-import { ElTabs, ElTabPane, ElInput, ElButton, ElTable, ElTableColumn, ElSelect, ElOption, ElDialog, ElForm, ElFormItem, ElPagination, ElCheckbox, ElUpload, ElMessage, ElMessageBox, ElTooltip, ElRow, ElCol, ElCard, ElProgress, ElTag, ElInputNumber } from 'element-plus'
+import { ElTabs, ElTabPane, ElInput, ElButton, ElTable, ElTableColumn, ElSelect, ElOption, ElDialog, ElForm, ElFormItem, ElPagination, ElCheckbox, ElUpload, ElMessage, ElMessageBox, ElTooltip, ElRow, ElCol, ElCard, ElProgress, ElTag, ElInputNumber, ElIcon } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
+import AnalysisView from './AnalysisView.vue'
+
 import 'element-plus/dist/index.css'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
@@ -1970,10 +1694,7 @@ const leaderboardCurrentPage = ref(1)
 const leaderboardPageSize = ref(10)
 const leaderboardTotal = ref(0)
 
-// 数据分析分页相关
-const analysisCurrentPage = ref(1)
-const analysisPageSize = ref(10)
-const analysisTotal = ref(0)
+
 
 // 密码验证相关
 const isAuthenticated = ref(false)
@@ -2814,25 +2535,7 @@ const handleLeaderboardCurrentChange = (current) => {
   leaderboardCurrentPage.value = current
 }
 
-// 数据分析分页事件处理
-const handleAnalysisSizeChange = (size) => {
-  analysisPageSize.value = size
-  analysisCurrentPage.value = 1 // 重置到第一页
-}
 
-const handleAnalysisCurrentChange = (current) => {
-  analysisCurrentPage.value = current
-}
-
-// 错误率较高的题目分页事件处理
-const handleErrorProneSizeChange = (size) => {
-  errorPronePageSize.value = size
-  errorProneCurrentPage.value = 1 // 重置到第一页
-}
-
-const handleErrorProneCurrentChange = (current) => {
-  errorProneCurrentPage.value = current
-}
 
 // 导入本地数据
 const importLocalData = async () => {
@@ -3322,12 +3025,7 @@ const handleGradeChange = async () => {
   }
 }
 
-// 错误率较高的题目
-const errorProneQuestions = ref([])
-// 错误率较高的题目分页
-const errorProneCurrentPage = ref(1)
-const errorPronePageSize = ref(10)
-const errorProneTotal = ref(0)
+
 
 // 用户详情和答题记录对话框
 const userDetailDialogVisible = ref(false)
@@ -3338,115 +3036,7 @@ const activeUserDetailTab = ref('records')
 const dialogSource = ref('') // 记录对话框的来源：'userStats' 或 'recentRecords'
 const currentAnswerRecordId = ref(null) // 当前答题记录的ID
 
-// 实时分析数据
-const analysisData = computed(() => {
-  // 基础统计
-  const totalUsers = filteredUserStats.value.length
-  const totalSessions = filteredUserStats.value.reduce((sum, user) => sum + (user.total_sessions || 0), 0)
-  const totalQuestions = filteredUserStats.value.reduce((sum, user) => sum + (user.total_questions || 0), 0)
-  const totalCorrect = filteredUserStats.value.reduce((sum, user) => sum + (user.correct_count || 0), 0)
-  const overallAccuracy = totalQuestions > 0 ? (totalCorrect / totalQuestions) * 100 : 0
-  
-  // 按年级分析
-  const gradeAnalysis = {}
-  filteredUserStats.value.forEach(user => {
-    const grade = user.grade || '未设置'
-    if (!gradeAnalysis[grade]) {
-      gradeAnalysis[grade] = {
-        users: 0,
-        sessions: 0,
-        questions: 0,
-        correct: 0
-      }
-    }
-    gradeAnalysis[grade].users++
-    gradeAnalysis[grade].sessions += user.total_sessions || 0
-    gradeAnalysis[grade].questions += user.total_questions || 0
-    gradeAnalysis[grade].correct += user.correct_count || 0
-  })
-  
-  // 转换为数组格式
-  const gradeAnalysisList = Object.entries(gradeAnalysis).map(([grade, data]) => {
-    const accuracy = data.questions > 0 ? (data.correct / data.questions) * 100 : 0
-    return {
-      grade,
-      users: data.users,
-      sessions: data.sessions,
-      questions: data.questions,
-      correct: data.correct,
-      accuracy
-    }
-  })
-  
-  // 按学科分析
-  const subjectAnalysis = {}
-  filteredRecentRecords.value.forEach(record => {
-    const subject = record.subject_name || '未设置'
-    if (!subjectAnalysis[subject]) {
-      subjectAnalysis[subject] = {
-        sessions: 0,
-        questions: 0,
-        correct: 0
-      }
-    }
-    subjectAnalysis[subject].sessions++
-    subjectAnalysis[subject].questions += record.total_questions || 0
-    subjectAnalysis[subject].correct += record.correct_count || 0
-  })
-  
-  // 转换为数组格式
-  const subjectAnalysisList = Object.entries(subjectAnalysis).map(([subject, data]) => {
-    const accuracy = data.questions > 0 ? (data.correct / data.questions) * 100 : 0
-    return {
-      subject,
-      sessions: data.sessions,
-      questions: data.questions,
-      correct: data.correct,
-      accuracy
-    }
-  })
-  
-  // 时间趋势分析
-  const timeAnalysis = {}
-  filteredRecentRecords.value.forEach(record => {
-    const date = new Date(record.created_at).toISOString().split('T')[0]
-    if (!timeAnalysis[date]) {
-      timeAnalysis[date] = {
-        sessions: 0,
-        questions: 0,
-        correct: 0
-      }
-    }
-    timeAnalysis[date].sessions++
-    timeAnalysis[date].questions += record.total_questions || 0
-    timeAnalysis[date].correct += record.correct_count || 0
-  })
-  
-  // 转换为数组格式并排序
-  const timeAnalysisList = Object.entries(timeAnalysis)
-    .map(([date, data]) => {
-      const accuracy = data.questions > 0 ? (data.correct / data.questions) * 100 : 0
-      return {
-        date,
-        sessions: data.sessions,
-        questions: data.questions,
-        correct: data.correct,
-        accuracy
-      }
-    })
-    .sort((a, b) => new Date(a.date) - new Date(b.date))
-  
-  return {
-    totalUsers,
-    totalSessions,
-    totalQuestions,
-    totalCorrect,
-    overallAccuracy,
-    gradeAnalysisList,
-    subjectAnalysisList,
-    timeAnalysisList
-  }
-})
+
 
 // 获取用户统计数据
 const fetchUserStats = async (grade = '', className = '') => {
@@ -3525,11 +3115,8 @@ const fetchRecentRecords = async () => {
 const applyFilters = () => {
   // 重置分页到第一页
   leaderboardCurrentPage.value = 1
-  analysisCurrentPage.value = 1
-  errorProneCurrentPage.value = 1
   fetchUserStats(filterGrade.value, filterClass.value, filterSubject.value)
   fetchRecentRecords()
-  fetchErrorProneQuestions()
 }
 
 // 重置筛选
@@ -3612,48 +3199,15 @@ const filteredRecentRecords = computed(() => {
 // 分页后的最近答题记录
 const paginatedRecentRecords = computed(() => {
   const filtered = filteredRecentRecords.value
-  analysisTotal.value = filtered.length
-  const start = (analysisCurrentPage.value - 1) * analysisPageSize.value
-  const end = start + analysisPageSize.value
+  leaderboardTotal.value = filtered.length
+  const start = (leaderboardCurrentPage.value - 1) * leaderboardPageSize.value
+  const end = start + leaderboardPageSize.value
   return filtered.slice(start, end)
 })
 
-// 分页后的错误率较高的题目
-const paginatedErrorProneQuestions = computed(() => {
-  errorProneTotal.value = errorProneQuestions.value.length
-  const start = (errorProneCurrentPage.value - 1) * errorPronePageSize.value
-  const end = start + errorPronePageSize.value
-  return errorProneQuestions.value.slice(start, end)
-})
 
-// 获取错误率较高的题目
-const fetchErrorProneQuestions = async () => {
-  try {
-    let url = `${getApiBaseUrl()}/error-prone-questions`
-    
-    // 添加筛选条件
-    const params = new URLSearchParams()
-    if (filterSubject.value) params.append('subjectId', filterSubject.value)
-    if (filterGrade.value) params.append('grade', filterGrade.value)
-    if (filterClass.value) params.append('class', filterClass.value)
-    
-    if (params.toString()) {
-      url += '?' + params.toString()
-    }
-    
-    const response = await fetch(url)
-    if (response.ok) {
-      const data = await response.json()
-      errorProneQuestions.value = data
-    } else {
-      console.error('获取错误率较高的题目失败，响应状态:', response.status)
-      errorProneQuestions.value = []
-    }
-  } catch (error) {
-    console.error('获取错误率较高的题目失败:', error)
-    errorProneQuestions.value = []
-  }
-}
+
+
 
 // 加载用户的答题记录
 const loadUserRecords = async (userId) => {
@@ -3847,7 +3401,6 @@ const clearLeaderboard = async () => {
       // 重新加载数据
       await fetchUserStats()
       await fetchRecentRecords()
-      await fetchErrorProneQuestions()
     } else {
       ElMessage.error('清空排行榜数据失败')
     }
@@ -3857,125 +3410,38 @@ const clearLeaderboard = async () => {
   }
 }
 
-// 生成分析报告
-const generateReport = () => {
-  // 使用已有的analysisData计算属性
-  const reportData = {
-    ...analysisData.value,
-    gradeAnalysis: Object.fromEntries(
-      analysisData.value.gradeAnalysisList.map(item => [item.grade, {
-        users: item.users,
-        sessions: item.sessions,
-        questions: item.questions,
-        correct: item.correct
-      }])
-    ),
-    subjectAnalysis: Object.fromEntries(
-      analysisData.value.subjectAnalysisList.map(item => [item.subject, {
-        sessions: item.sessions,
-        questions: item.questions,
-        correct: item.correct
-      }])
-    ),
-    timeAnalysis: Object.fromEntries(
-      analysisData.value.timeAnalysisList.map(item => [item.date, {
-        sessions: item.sessions,
-        questions: item.questions,
-        correct: item.correct
-      }])
-    ),
-    errorProneQuestions: errorProneQuestions.value.slice(0, 10) // 取前10个错误率最高的题目
-  };
-  
-  // 生成报告内容
-  const reportContent = generateReportContent(reportData)
-  
-  // 下载报告
-  downloadReport(reportContent)
-}
 
-// 生成报告内容
-const generateReportContent = (reportData) => {
-  const now = new Date().toLocaleString('zh-CN');
-  let content = `# 答题数据分析报告\n`;
-  content += `生成时间: ${now}\n\n`;
-  
-  // 基础统计
-  content += `## 一、基础统计\n`;
-  content += `- 总用户数: ${reportData.totalUsers}\n`;
-  content += `- 总答题次数: ${reportData.totalSessions}\n`;
-  content += `- 总答题数: ${reportData.totalQuestions}\n`;
-  content += `- 总正确数: ${reportData.totalCorrect}\n`;
-  content += `- 平均正确率: ${reportData.overallAccuracy.toFixed(2)}%\n\n`;
-  
-  // 按年级分析
-  content += `## 二、按年级分析\n`;
-  Object.entries(reportData.gradeAnalysis).forEach(([grade, data]) => {
-    const accuracy = data.questions > 0 ? (data.correct / data.questions) * 100 : 0;
-    content += `- ${grade}年级: ${data.users}人, ${data.sessions}次答题, ${data.questions}题, 正确率: ${accuracy.toFixed(2)}%\n`;
-  });
-  content += `\n`;
-  
-  // 按学科分析
-  content += `## 三、按学科分析\n`;
-  Object.entries(reportData.subjectAnalysis).forEach(([subject, data]) => {
-    const accuracy = data.questions > 0 ? (data.correct / data.questions) * 100 : 0;
-    content += `- ${subject}: ${data.sessions}次答题, ${data.questions}题, 正确率: ${accuracy.toFixed(2)}%\n`;
-  });
-  content += `\n`;
-  
-  // 时间趋势分析
-  content += `## 四、时间趋势分析\n`;
-  Object.entries(reportData.timeAnalysis).sort().forEach(([date, data]) => {
-    const accuracy = data.questions > 0 ? (data.correct / data.questions) * 100 : 0;
-    content += `- ${date}: ${data.sessions}次答题, ${data.questions}题, 正确率: ${accuracy.toFixed(2)}%\n`;
-  });
-  content += `\n`;
-  
-  // 错误率较高的题目
-  content += `## 五、错误率较高的题目\n`;
-  reportData.errorProneQuestions.forEach((question, index) => {
-    const errorRate = question.total_attempts > 0 ? (1 - (question.correct_count / question.total_attempts)) * 100 : 0;
-    content += `${index + 1}. ID: ${question.id}, 学科: ${question.subject_name}, 错误率: ${errorRate.toFixed(2)}%, 总尝试: ${question.total_attempts}, 正确: ${question.correct_count}\n`;
-    content += `   题目: ${question.content.replace(/<[^>]*>/g, '').substring(0, 100)}${question.content.length > 100 ? '...' : ''}\n`;
-  });
-  
-  return content;
-};
 
-// 下载报告
-const downloadReport = (content) => {
-  const blob = new Blob([content], { type: 'text/plain;charset=utf-8' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = `答题分析报告_${new Date().toISOString().split('T')[0]}.txt`;
-  document.body.appendChild(a);
-  a.click();
-  document.body.removeChild(a);
-  URL.revokeObjectURL(url);
-  
-  ElMessage.success('分析报告已生成并下载');
-}
 
-// 统计数据
-const totalUsers = computed(() => {
-  return filteredUserStats.value.length
-})
 
-const totalSessions = computed(() => {
-  return filteredUserStats.value.reduce((sum, user) => sum + (user.total_sessions || 0), 0)
-})
 
-const totalQuestions = computed(() => {
-  return filteredUserStats.value.reduce((sum, user) => sum + (user.total_questions || 0), 0)
-})
 
-const overallAccuracy = computed(() => {
-  const totalCorrect = filteredUserStats.value.reduce((sum, user) => sum + (user.correct_count || 0), 0)
-  const totalQs = totalQuestions.value
-  return totalQs > 0 ? (totalCorrect / totalQs) * 100 : 0
-})
+
+
+
+
+
+    
+
+
+
+
+
+
+
+    
+
+
+
+
+
+
+
+
+
+
+
+
 
 // 格式化日期
 const formatDate = (dateString) => {
@@ -3996,14 +3462,6 @@ const getProgressColor = (accuracy) => {
   if (accuracy >= 90) return '#67c23a'
   if (accuracy >= 70) return '#e6a23c'
   return '#f56c6c'
-}
-
-// 获取错误率颜色
-const getErrorRateColor = (accuracy) => {
-  if (!accuracy) return '#f56c6c'
-  if (accuracy <= 0.3) return '#f56c6c'
-  if (accuracy <= 0.6) return '#e6a23c'
-  return '#67c23a'
 }
 
 // 数据管理相关功能
