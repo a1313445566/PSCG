@@ -1,4 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import StudentView from '../views/StudentView.vue'
+import AdminView from '../views/AdminView.vue'
+import LeaderboardView from '../views/LeaderboardView.vue'
 
 const routes = [
   {
@@ -8,17 +11,17 @@ const routes = [
   {
     path: '/student',
     name: 'Student',
-    component: () => import('../views/StudentView.vue')
+    component: StudentView
   },
   {
     path: '/admin',
     name: 'Admin',
-    component: () => import('../views/AdminView.vue')
+    component: AdminView
   },
   {
     path: '/leaderboard',
     name: 'Leaderboard',
-    component: () => import('../views/LeaderboardView.vue')
+    component: LeaderboardView
   }
 ]
 
@@ -26,5 +29,7 @@ const router = createRouter({
   history: createWebHashHistory(),
   routes
 })
+
+
 
 export default router

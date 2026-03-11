@@ -39,23 +39,120 @@ const db = new sqlite3.Database('./quiz.db', (err) => {
 
 // 创建表结构
 const createTables = () => {
-  // 创建学科表
-  db.run(`CREATE TABLE IF NOT EXISTS subjects (id INTEGER PRIMARY KEY, name TEXT NOT NULL, icon_index INTEGER DEFAULT 0)`);
-  
-  // 创建子分类表
-  db.run(`CREATE TABLE IF NOT EXISTS subcategories (id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL, name TEXT NOT NULL, icon_index INTEGER DEFAULT 0, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE)`);
-  
-  // 创建题目表
-  db.run(`CREATE TABLE IF NOT EXISTS questions (id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL, subcategory_id INTEGER NOT NULL, content TEXT NOT NULL, type TEXT NOT NULL, options TEXT NOT NULL, correct_answer TEXT NOT NULL, explanation TEXT, audio_url TEXT, image_url TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE)`);
-  
-  // 创建用户表
-  db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id TEXT UNIQUE NOT NULL, name TEXT, grade INTEGER, class INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-  
-  // 创建答题记录表
-  db.run(`CREATE TABLE IF NOT EXISTS answer_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, subject_id INTEGER NOT NULL, subcategory_id INTEGER, total_questions INTEGER NOT NULL, correct_count INTEGER NOT NULL, time_spent INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE)`);
-  
-  // 创建题目答题记录表
-  db.run(`CREATE TABLE IF NOT EXISTS question_attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, question_id INTEGER NOT NULL, subject_id INTEGER NOT NULL, subcategory_id INTEGER, user_answer TEXT NOT NULL, is_correct INTEGER NOT NULL, answer_record_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE, FOREIGN KEY (answer_record_id) REFERENCES answer_records(id) ON DELETE CASCADE)`);
+  // 使用serialize确保表创建顺序执行
+  db.serialize(() => {
+    // 创建学科表
+    db.run(`CREATE TABLE IF NOT EXISTS subjects (id INTEGER PRIMARY KEY, name TEXT NOT NULL, icon_index INTEGER DEFAULT 0)`);
+    
+    // 创建子分类表
+    db.run(`CREATE TABLE IF NOT EXISTS subcategories (id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL, name TEXT NOT NULL, icon_index INTEGER DEFAULT 0, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE)`);
+    
+    // 创建题目表
+    db.run(`CREATE TABLE IF NOT EXISTS questions (id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL, subcategory_id INTEGER NOT NULL, content TEXT NOT NULL, type TEXT NOT NULL, options TEXT NOT NULL, correct_answer TEXT NOT NULL, explanation TEXT, audio_url TEXT, image_url TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE)`);
+    
+    // 创建年级表
+    db.run(`CREATE TABLE IF NOT EXISTS grades (id INTEGER PRIMARY KEY, name TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    
+    // 创建班级表
+    db.run(`CREATE TABLE IF NOT EXISTS classes (id INTEGER PRIMARY KEY, name TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    
+    // 创建用户表
+    db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id TEXT UNIQUE NOT NULL, name TEXT, grade INTEGER, class INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+    
+    // 创建答题记录表
+    db.run(`CREATE TABLE IF NOT EXISTS answer_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, subject_id INTEGER NOT NULL, subcategory_id INTEGER, total_questions INTEGER NOT NULL, correct_count INTEGER NOT NULL, time_spent INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE)`);
+    
+    // 创建题目答题记录表
+    db.run(`CREATE TABLE IF NOT EXISTS question_attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, question_id INTEGER NOT NULL, subject_id INTEGER NOT NULL, subcategory_id INTEGER, user_answer TEXT NOT NULL, is_correct INTEGER NOT NULL, answer_record_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE, FOREIGN KEY (answer_record_id) REFERENCES answer_records(id) ON DELETE CASCADE)`);
+    
+    // 初始化默认年级数据
+    initializeDefaultGrades();
+    
+    // 初始化默认班级数据
+    initializeDefaultClasses();
+    
+    // 初始化默认学科数据
+    initializeDefaultSubjects();
+  });
+};
+
+// 初始化默认年级数据
+const initializeDefaultGrades = () => {
+  // 检查是否已有年级数据
+  db.get('SELECT COUNT(*) as count FROM grades', (err, result) => {
+    if (err) {
+      console.error('检查年级数据失败:', err);
+      return;
+    }
+    
+    if (result.count === 0) {
+      // 插入默认年级数据
+      const defaultGrades = ['1年级', '2年级', '3年级', '4年级', '5年级', '6年级'];
+      defaultGrades.forEach((grade, index) => {
+        db.run('INSERT INTO grades (id, name) VALUES (?, ?)', [index + 1, grade], (err) => {
+          if (err) {
+            console.error('插入年级数据失败:', err);
+          }
+        });
+      });
+    }
+  });
+};
+
+// 初始化默认班级数据
+const initializeDefaultClasses = () => {
+  // 检查是否已有班级数据
+  db.get('SELECT COUNT(*) as count FROM classes', (err, result) => {
+    if (err) {
+      console.error('检查班级数据失败:', err);
+      return;
+    }
+    
+    if (result.count === 0) {
+      // 插入默认班级数据
+      const defaultClasses = ['1班', '2班', '3班', '4班', '5班', '6班', '7班', '8班', '9班', '10班'];
+      defaultClasses.forEach((className, index) => {
+        db.run('INSERT INTO classes (id, name) VALUES (?, ?)', [index + 1, className], (err) => {
+          if (err) {
+            console.error('插入班级数据失败:', err);
+          }
+        });
+      });
+    }
+  });
+};
+
+// 初始化默认学科数据
+const initializeDefaultSubjects = () => {
+  // 检查是否已有学科数据
+  db.get('SELECT COUNT(*) as count FROM subjects', (err, result) => {
+    if (err) {
+      console.error('检查学科数据失败:', err);
+      return;
+    }
+    
+    if (result.count === 0) {
+      // 插入默认学科数据
+      const defaultSubjects = [
+        { id: 1, name: '语文', icon_index: 0 },
+        { id: 2, name: '数学', icon_index: 1 },
+        { id: 3, name: '英语', icon_index: 2 },
+        { id: 4, name: '物理', icon_index: 3 },
+        { id: 5, name: '化学', icon_index: 4 },
+        { id: 6, name: '生物', icon_index: 5 },
+        { id: 7, name: '历史', icon_index: 6 },
+        { id: 8, name: '地理', icon_index: 7 },
+        { id: 9, name: '政治', icon_index: 8 }
+      ];
+      defaultSubjects.forEach((subject) => {
+        db.run('INSERT INTO subjects (id, name, icon_index) VALUES (?, ?, ?)', [subject.id, subject.name, subject.icon_index], (err) => {
+          if (err) {
+            console.error('插入学科数据失败:', err);
+          }
+        });
+      });
+    }
+  });
 };
 
 // 数据管理API
@@ -444,7 +541,23 @@ app.post('/api/data/clear-all', (req, res) => {
                   return;
                 }
                 
-                res.json({ success: true, message: '所有数据清空成功' });
+                db.run('DELETE FROM grades', (err) => {
+                  if (err) {
+                    console.error('删除年级数据失败:', err);
+                    res.status(500).json({ error: '清空数据失败' });
+                    return;
+                  }
+                  
+                  db.run('DELETE FROM classes', (err) => {
+                    if (err) {
+                      console.error('删除班级数据失败:', err);
+                      res.status(500).json({ error: '清空数据失败' });
+                      return;
+                    }
+                    
+                    res.json({ success: true, message: '所有数据清空成功' });
+                  });
+                });
               });
             });
           });
@@ -609,34 +722,228 @@ app.get('/api/questions', (req, res) => {
 
 // 年级相关API
 app.get('/api/grades', (req, res) => {
-  // 返回默认的1-6年级
-  res.json([1, 2, 3, 4, 5, 6]);
+  db.all('SELECT * FROM grades ORDER BY id', (err, grades) => {
+    if (err) {
+      console.error('获取年级失败:', err);
+      res.status(500).json({ error: '获取年级失败' });
+      return;
+    }
+    res.json(grades);
+  });
+});
+
+app.post('/api/grades', (req, res) => {
+  const { name } = req.body;
+  
+  if (!name) {
+    res.status(400).json({ error: '年级名称不能为空' });
+    return;
+  }
+  
+  db.run('INSERT INTO grades (name) VALUES (?)', [name], function(err) {
+    if (err) {
+      console.error('添加年级失败:', err);
+      res.status(500).json({ error: '添加年级失败' });
+      return;
+    }
+    // 返回新添加的年级
+    db.get('SELECT * FROM grades WHERE id = ?', [this.lastID], (err, grade) => {
+      if (err) {
+        console.error('获取新年级失败:', err);
+        res.status(500).json({ error: '添加年级失败' });
+        return;
+      }
+      res.json(grade);
+    });
+  });
+});
+
+app.put('/api/grades/:id', (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  
+  if (!name) {
+    res.status(400).json({ error: '年级名称不能为空' });
+    return;
+  }
+  
+  db.run('UPDATE grades SET name = ? WHERE id = ?', [name, id], function(err) {
+    if (err) {
+      console.error('更新年级失败:', err);
+      res.status(500).json({ error: '更新年级失败' });
+      return;
+    }
+    res.json({ success: true });
+  });
+});
+
+app.delete('/api/grades/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.run('DELETE FROM grades WHERE id = ?', [id], function(err) {
+    if (err) {
+      console.error('删除年级失败:', err);
+      res.status(500).json({ error: '删除年级失败' });
+      return;
+    }
+    res.json({ success: true });
+  });
 });
 
 app.post('/api/grades/init', (req, res) => {
-  // 初始化年级数据，这里只是返回成功，因为年级数据是动态生成的
-  res.json({ success: true, message: '年级数据初始化成功' });
+  // 初始化年级数据
+  db.serialize(() => {
+    // 先清空现有数据
+    db.run('DELETE FROM grades', (err) => {
+      if (err) {
+        console.error('清空年级数据失败:', err);
+        res.status(500).json({ error: '初始化年级数据失败' });
+        return;
+      }
+      
+      // 插入默认年级数据
+      const defaultGrades = ['1年级', '2年级', '3年级', '4年级', '5年级', '6年级'];
+      let count = 0;
+      
+      defaultGrades.forEach((grade, index) => {
+        db.run('INSERT INTO grades (id, name) VALUES (?, ?)', [index + 1, grade], (err) => {
+          if (err) {
+            console.error('插入年级数据失败:', err);
+          }
+          count++;
+          
+          if (count === defaultGrades.length) {
+            res.json({ success: true, message: '年级数据初始化成功' });
+          }
+        });
+      });
+    });
+  });
 });
 
 app.post('/api/grades/clear', (req, res) => {
-  // 清空年级数据，这里只是返回成功
-  res.json({ success: true, message: '年级数据清空成功' });
+  // 清空年级数据
+  db.run('DELETE FROM grades', (err) => {
+    if (err) {
+      console.error('清空年级数据失败:', err);
+      res.status(500).json({ error: '清空年级数据失败' });
+      return;
+    }
+    res.json({ success: true, message: '年级数据清空成功' });
+  });
 });
 
 // 班级相关API
 app.get('/api/classes', (req, res) => {
-  // 返回默认的1-10班级
-  res.json([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  db.all('SELECT * FROM classes ORDER BY id', (err, classes) => {
+    if (err) {
+      console.error('获取班级失败:', err);
+      res.status(500).json({ error: '获取班级失败' });
+      return;
+    }
+    res.json(classes);
+  });
+});
+
+app.post('/api/classes', (req, res) => {
+  const { name } = req.body;
+  
+  if (!name) {
+    res.status(400).json({ error: '班级名称不能为空' });
+    return;
+  }
+  
+  db.run('INSERT INTO classes (name) VALUES (?)', [name], function(err) {
+    if (err) {
+      console.error('添加班级失败:', err);
+      res.status(500).json({ error: '添加班级失败' });
+      return;
+    }
+    // 返回新添加的班级
+    db.get('SELECT * FROM classes WHERE id = ?', [this.lastID], (err, classItem) => {
+      if (err) {
+        console.error('获取新班级失败:', err);
+        res.status(500).json({ error: '添加班级失败' });
+        return;
+      }
+      res.json(classItem);
+    });
+  });
+});
+
+app.put('/api/classes/:id', (req, res) => {
+  const { id } = req.params;
+  const { name } = req.body;
+  
+  if (!name) {
+    res.status(400).json({ error: '班级名称不能为空' });
+    return;
+  }
+  
+  db.run('UPDATE classes SET name = ? WHERE id = ?', [name, id], function(err) {
+    if (err) {
+      console.error('更新班级失败:', err);
+      res.status(500).json({ error: '更新班级失败' });
+      return;
+    }
+    res.json({ success: true });
+  });
+});
+
+app.delete('/api/classes/:id', (req, res) => {
+  const { id } = req.params;
+  
+  db.run('DELETE FROM classes WHERE id = ?', [id], function(err) {
+    if (err) {
+      console.error('删除班级失败:', err);
+      res.status(500).json({ error: '删除班级失败' });
+      return;
+    }
+    res.json({ success: true });
+  });
 });
 
 app.post('/api/classes/init', (req, res) => {
-  // 初始化班级数据，这里只是返回成功
-  res.json({ success: true, message: '班级数据初始化成功' });
+  // 初始化班级数据
+  db.serialize(() => {
+    // 先清空现有数据
+    db.run('DELETE FROM classes', (err) => {
+      if (err) {
+        console.error('清空班级数据失败:', err);
+        res.status(500).json({ error: '初始化班级数据失败' });
+        return;
+      }
+      
+      // 插入默认班级数据
+      const defaultClasses = ['1班', '2班', '3班', '4班', '5班', '6班', '7班', '8班', '9班', '10班'];
+      let count = 0;
+      
+      defaultClasses.forEach((className, index) => {
+        db.run('INSERT INTO classes (id, name) VALUES (?, ?)', [index + 1, className], (err) => {
+          if (err) {
+            console.error('插入班级数据失败:', err);
+          }
+          count++;
+          
+          if (count === defaultClasses.length) {
+            res.json({ success: true, message: '班级数据初始化成功' });
+          }
+        });
+      });
+    });
+  });
 });
 
 app.post('/api/classes/clear', (req, res) => {
-  // 清空班级数据，这里只是返回成功
-  res.json({ success: true, message: '班级数据清空成功' });
+  // 清空班级数据
+  db.run('DELETE FROM classes', (err) => {
+    if (err) {
+      console.error('清空班级数据失败:', err);
+      res.status(500).json({ error: '清空班级数据失败' });
+      return;
+    }
+    res.json({ success: true, message: '班级数据清空成功' });
+  });
 });
 
 // 排行榜相关API

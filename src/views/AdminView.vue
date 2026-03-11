@@ -24,9 +24,7 @@
     <div class="admin-header" v-if="isAuthenticated">
       <h1 class="title">题库管理系统</h1>
       <div class="header-buttons">
-        <router-link to="/" class="back-home-btn">
-          <el-button type="primary">返回首页</el-button>
-        </router-link>
+        <el-button type="primary" @click="backToHome" class="action-btn">🏠 返回首页</el-button>
         <el-button type="danger" @click="logout">退出登录</el-button>
       </div>
     </div>
@@ -102,25 +100,73 @@
           <div class="setting-card">
             <h3 class="setting-title">年级班级管理</h3>
             <div style="padding: 20px;">
-              <!-- 年级管理 -->
-              <div class="grade-management" style="margin-bottom: 30px;">
-                <h4 class="sub-setting-title">年级管理</h4>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                  <el-button type="primary" @click="initGrades">初始化年级数据</el-button>
-                  <el-button type="warning" @click="clearGrades">清空年级数据</el-button>
-                </div>
-                <p style="color: #666;">年级数据会自动从用户注册信息中提取，点击初始化按钮可添加默认的1-6年级数据</p>
-              </div>
-              
-              <!-- 班级管理 -->
-              <div class="class-management">
-                <h4 class="sub-setting-title">班级管理</h4>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 10px;">
-                  <el-button type="primary" @click="initClasses">初始化班级数据</el-button>
-                  <el-button type="warning" @click="clearClasses">清空班级数据</el-button>
-                </div>
-                <p style="color: #666;">班级数据会自动从用户注册信息中提取，点击初始化按钮可添加默认的1-10班级数据</p>
-              </div>
+              <el-row :gutter="20">
+                <!-- 年级管理 -->
+                <el-col :span="12">
+                  <div class="grade-management">
+                    <h4 class="sub-setting-title">年级管理</h4>
+                    <div class="add-grade" style="margin-bottom: 20px;">
+                      <el-input v-model="newGradeName" placeholder="输入年级名称" style="width: 200px; margin-right: 10px;"></el-input>
+                      <el-button type="primary" @click="addGrade">添加年级</el-button>
+                    </div>
+                    <el-table :data="grades" style="width: 100%;">
+                      <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                      <el-table-column label="年级名称">
+                        <template #default="{ row }">
+                          <div v-if="editingGradeId === row.id" class="grade-edit">
+                            <el-input v-model="editingGradeName" placeholder="输入年级名称" style="width: 200px; margin-right: 10px;"></el-input>
+                            <el-button type="primary" size="small" @click="saveGradeEdit(row.id)">保存</el-button>
+                            <el-button size="small" @click="cancelGradeEdit">取消</el-button>
+                          </div>
+                          <div v-else class="grade-info">
+                            <span>{{ row.name }}</span>
+                            <el-button type="text" size="small" @click="editGrade(row)">编辑</el-button>
+                          </div>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="操作" width="120">
+                        <template #default="{ row }">
+                          <el-button type="danger" size="small" @click="deleteGrade(row.id)">删除</el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                    <p style="color: #666; margin-top: 10px;">年级数据会自动从用户注册信息中提取，也可以手动添加和管理年级数据</p>
+                  </div>
+                </el-col>
+                
+                <!-- 班级管理 -->
+                <el-col :span="12">
+                  <div class="class-management">
+                    <h4 class="sub-setting-title">班级管理</h4>
+                    <div class="add-class" style="margin-bottom: 20px;">
+                      <el-input v-model="newClassName" placeholder="输入班级名称" style="width: 200px; margin-right: 10px;"></el-input>
+                      <el-button type="primary" @click="addClass">添加班级</el-button>
+                    </div>
+                    <el-table :data="classes" style="width: 100%;">
+                      <el-table-column prop="id" label="ID" width="80"></el-table-column>
+                      <el-table-column label="班级名称">
+                        <template #default="{ row }">
+                          <div v-if="editingClassId === row.id" class="class-edit">
+                            <el-input v-model="editingClassName" placeholder="输入班级名称" style="width: 200px; margin-right: 10px;"></el-input>
+                            <el-button type="primary" size="small" @click="saveClassEdit(row.id)">保存</el-button>
+                            <el-button size="small" @click="cancelClassEdit">取消</el-button>
+                          </div>
+                          <div v-else class="class-info">
+                            <span>{{ row.name }}</span>
+                            <el-button type="text" size="small" @click="editClass(row)">编辑</el-button>
+                          </div>
+                        </template>
+                      </el-table-column>
+                      <el-table-column label="操作" width="120">
+                        <template #default="{ row }">
+                          <el-button type="danger" size="small" @click="deleteClass(row.id)">删除</el-button>
+                        </template>
+                      </el-table-column>
+                    </el-table>
+                    <p style="color: #666; margin-top: 10px;">班级数据会自动从用户注册信息中提取，也可以手动添加和管理班级数据</p>
+                  </div>
+                </el-col>
+              </el-row>
             </div>
           </div>
         </div>
@@ -249,14 +295,14 @@
                 <label style="font-weight: 500; width: 60px;">年级</label>
                 <el-select v-model="filterGrade" placeholder="选择年级" style="width: 120px;" @change="handleGradeChange">
                   <el-option label="全部" value=""></el-option>
-                  <el-option v-for="grade in grades" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
+                  <el-option v-for="grade in gradesList" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
                 </el-select>
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-weight: 500; width: 60px;">班级</label>
                 <el-select v-model="filterClass" placeholder="选择班级" style="width: 120px;">
                   <el-option label="全部" value=""></el-option>
-                  <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
+                  <el-option v-for="classNum in classesList" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
                 </el-select>
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
@@ -504,14 +550,14 @@
                 <label style="font-weight: 500; width: 60px;">年级</label>
                 <el-select v-model="filterGrade" placeholder="选择年级" style="width: 120px;" @change="handleGradeChange">
                   <el-option label="全部" value=""></el-option>
-                  <el-option v-for="grade in grades" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
+                  <el-option v-for="grade in gradesList" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
                 </el-select>
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-weight: 500; width: 60px;">班级</label>
                 <el-select v-model="filterClass" placeholder="选择班级" style="width: 120px;">
                   <el-option label="全部" value=""></el-option>
-                  <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
+                  <el-option v-for="classNum in classesList" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
                 </el-select>
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
@@ -725,6 +771,8 @@
                 <el-button type="danger" @click="confirmClearAllData">清空所有数据</el-button>
                 <el-button type="warning" @click="confirmClearUserRecords">清空用户答题记录</el-button>
                 <el-button type="info" @click="confirmClearLeaderboard">清空排行榜数据</el-button>
+                <el-button type="danger" @click="clearGrades">清空年级数据</el-button>
+                <el-button type="danger" @click="clearClasses">清空班级数据</el-button>
               </div>
               <p style="color: #666;">数据清理操作将永久删除相应的数据，请谨慎操作。建议在清理前先备份数据。</p>
             </div>
@@ -1227,6 +1275,7 @@
 
 <script setup>
 import { ref, computed, onMounted, watch, nextTick } from 'vue'
+import { useRouter } from 'vue-router'
 import { useQuestionStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
 import { ElTabs, ElTabPane, ElInput, ElButton, ElTable, ElTableColumn, ElSelect, ElOption, ElDialog, ElForm, ElFormItem, ElPagination, ElCheckbox, ElCheckboxGroup, ElUpload, ElMessage, ElMessageBox, ElTooltip, ElRow, ElCol, ElCard, ElProgress, ElTag } from 'element-plus'
@@ -1235,6 +1284,7 @@ import 'element-plus/dist/index.css'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
 const store = useQuestionStore()
+const router = useRouter()
 
 const activeTab = ref('basic-settings')
 const newSubjectName = ref('')
@@ -1271,6 +1321,18 @@ const subcategoryDialogVisible = ref(false)
 const currentSubjectForSubcategory = ref(null)
 const newSubcategoryName = ref('')
 const newSubcategoryIcon = ref(0)
+
+// 年级管理相关
+const grades = ref([])
+const newGradeName = ref('')
+const editingGradeId = ref(null)
+const editingGradeName = ref('')
+
+// 班级管理相关
+const classes = ref([])
+const newClassName = ref('')
+const editingClassId = ref(null)
+const editingClassName = ref('')
 
 // 子分类编辑相关
 const editingSubcategoryId = ref(null)
@@ -1342,12 +1404,20 @@ const logout = () => {
   sessionStorage.removeItem('adminAuthenticated')
 }
 
+const backToHome = () => {
+  router.push('/')
+}
+
 // 初始化时检查登录状态
-onMounted(() => {
+onMounted(async () => {
   // 检查sessionStorage中的登录状态
   if (sessionStorage.getItem('adminAuthenticated') === 'true') {
     isAuthenticated.value = true
     passwordDialogVisible.value = false
+    // 加载年级和班级数据
+    await loadGrades()
+    await loadClasses()
+    await loadGradesAndClasses()
   }
 })
 
@@ -2140,21 +2210,260 @@ const importLocalData = async () => {
   }
 }
 
-// 初始化年级数据
-const initGrades = async () => {
-  if (confirm('确定要初始化年级数据吗？这将会添加1-6年级的数据。')) {
-    try {
-      const response = await fetch(`${getApiBaseUrl()}/grades/init`, {
-        method: 'POST'
-      })
-      if (response.ok) {
-        ElMessage.success('年级数据初始化成功！')
+// 加载年级数据
+const loadGrades = async () => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/grades`)
+    if (response.ok) {
+      const data = await response.json()
+      // 确保数据格式正确，每个对象都有id属性
+      if (Array.isArray(data)) {
+        grades.value = data.map((grade, index) => ({
+          id: grade.id || index + 1,
+          name: grade.name || grade
+        }))
       } else {
-        ElMessage.error('年级数据初始化失败')
+        // 如果返回的数据不是数组，显示空数组
+        grades.value = []
+      }
+    } else {
+      // 如果API请求失败，显示空数组
+      grades.value = []
+    }
+  } catch (error) {
+    console.error('加载年级数据失败:', error)
+    // 如果发生错误，显示空数组
+    grades.value = []
+  }
+}
+
+// 加载班级数据
+const loadClasses = async () => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/classes`)
+    if (response.ok) {
+      const data = await response.json()
+      // 确保数据格式正确，每个对象都有id属性
+      if (Array.isArray(data)) {
+        classes.value = data.map((classItem, index) => ({
+          id: classItem.id || index + 1,
+          name: classItem.name || classItem
+        }))
+      } else {
+        // 如果返回的数据不是数组，显示空数组
+        classes.value = []
+      }
+    } else {
+      // 如果API请求失败，显示空数组
+      classes.value = []
+    }
+  } catch (error) {
+    console.error('加载班级数据失败:', error)
+    // 如果发生错误，显示空数组
+    classes.value = []
+  }
+}
+
+// 添加年级
+const addGrade = async () => {
+  if (!newGradeName.value) {
+    ElMessage.error('请输入年级名称')
+    return
+  }
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/grades`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: newGradeName.value })
+    })
+    
+    if (response.ok) {
+      ElMessage.success('年级添加成功！')
+      newGradeName.value = ''
+      await loadGrades()
+      await loadGradesAndClasses()
+    } else {
+      ElMessage.error('年级添加失败')
+    }
+  } catch (error) {
+    console.error('添加年级失败:', error)
+    ElMessage.error('年级添加失败')
+  }
+}
+
+// 编辑年级
+const editGrade = (grade) => {
+  editingGradeId.value = grade.id
+  editingGradeName.value = grade.name
+}
+
+// 保存年级编辑
+const saveGradeEdit = async (gradeId) => {
+  if (!gradeId) {
+    ElMessage.error('年级ID无效')
+    return
+  }
+  if (!editingGradeName.value) {
+    ElMessage.error('请输入年级名称')
+    return
+  }
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/grades/${gradeId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: editingGradeName.value })
+    })
+    
+    if (response.ok) {
+      ElMessage.success('年级更新成功！')
+      cancelGradeEdit()
+      await loadGrades()
+      await loadGradesAndClasses()
+    } else {
+      ElMessage.error('年级更新失败')
+    }
+  } catch (error) {
+    console.error('更新年级失败:', error)
+    ElMessage.error('年级更新失败')
+  }
+}
+
+// 取消年级编辑
+const cancelGradeEdit = () => {
+  editingGradeId.value = null
+  editingGradeName.value = ''
+}
+
+// 删除年级
+const deleteGrade = async (gradeId) => {
+  if (!gradeId) {
+    ElMessage.error('年级ID无效')
+    return
+  }
+  if (confirm('确定要删除这个年级吗？')) {
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/grades/${gradeId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        ElMessage.success('年级删除成功！')
+        await loadGrades()
+        await loadGradesAndClasses()
+      } else {
+        ElMessage.error('年级删除失败')
       }
     } catch (error) {
-      console.error('初始化年级数据失败:', error)
-      ElMessage.error('年级数据初始化失败')
+      console.error('删除年级失败:', error)
+      ElMessage.error('年级删除失败')
+    }
+  }
+}
+
+// 添加班级
+const addClass = async () => {
+  if (!newClassName.value) {
+    ElMessage.error('请输入班级名称')
+    return
+  }
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/classes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: newClassName.value })
+    })
+    
+    if (response.ok) {
+      ElMessage.success('班级添加成功！')
+      newClassName.value = ''
+      await loadClasses()
+      await loadGradesAndClasses()
+    } else {
+      ElMessage.error('班级添加失败')
+    }
+  } catch (error) {
+    console.error('添加班级失败:', error)
+    ElMessage.error('班级添加失败')
+  }
+}
+
+// 编辑班级
+const editClass = (classItem) => {
+  editingClassId.value = classItem.id
+  editingClassName.value = classItem.name
+}
+
+// 保存班级编辑
+const saveClassEdit = async (classId) => {
+  if (!classId) {
+    ElMessage.error('班级ID无效')
+    return
+  }
+  if (!editingClassName.value) {
+    ElMessage.error('请输入班级名称')
+    return
+  }
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/classes/${classId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name: editingClassName.value })
+    })
+    
+    if (response.ok) {
+      ElMessage.success('班级更新成功！')
+      cancelClassEdit()
+      await loadClasses()
+      await loadGradesAndClasses()
+    } else {
+      ElMessage.error('班级更新失败')
+    }
+  } catch (error) {
+    console.error('更新班级失败:', error)
+    ElMessage.error('班级更新失败')
+  }
+}
+
+// 取消班级编辑
+const cancelClassEdit = () => {
+  editingClassId.value = null
+  editingClassName.value = ''
+}
+
+// 删除班级
+const deleteClass = async (classId) => {
+  if (!classId) {
+    ElMessage.error('班级ID无效')
+    return
+  }
+  if (confirm('确定要删除这个班级吗？')) {
+    try {
+      const response = await fetch(`${getApiBaseUrl()}/classes/${classId}`, {
+        method: 'DELETE'
+      })
+      
+      if (response.ok) {
+        ElMessage.success('班级删除成功！')
+        await loadClasses()
+        await loadGradesAndClasses()
+      } else {
+        ElMessage.error('班级删除失败')
+      }
+    } catch (error) {
+      console.error('删除班级失败:', error)
+      ElMessage.error('班级删除失败')
     }
   }
 }
@@ -2168,31 +2477,14 @@ const clearGrades = async () => {
       })
       if (response.ok) {
         ElMessage.success('年级数据清空成功！')
+        await loadGrades()
+        await loadGradesAndClasses()
       } else {
         ElMessage.error('年级数据清空失败')
       }
     } catch (error) {
       console.error('清空年级数据失败:', error)
       ElMessage.error('年级数据清空失败')
-    }
-  }
-}
-
-// 初始化班级数据
-const initClasses = async () => {
-  if (confirm('确定要初始化班级数据吗？这将会添加1-10班级的数据。')) {
-    try {
-      const response = await fetch(`${getApiBaseUrl()}/classes/init`, {
-        method: 'POST'
-      })
-      if (response.ok) {
-        ElMessage.success('班级数据初始化成功！')
-      } else {
-        ElMessage.error('班级数据初始化失败')
-      }
-    } catch (error) {
-      console.error('初始化班级数据失败:', error)
-      ElMessage.error('班级数据初始化失败')
     }
   }
 }
@@ -2206,6 +2498,8 @@ const clearClasses = async () => {
       })
       if (response.ok) {
         ElMessage.success('班级数据清空成功！')
+        await loadClasses()
+        await loadGradesAndClasses()
       } else {
         ElMessage.error('班级数据清空失败')
       }
@@ -2275,8 +2569,8 @@ const filterSubject = ref('')
 const filterTimeRange = ref('')
 
 // 年级和班级数据（与首页排行榜保持一致）
-const grades = ref([])
-const classes = ref([])
+const gradesList = ref([])
+const classesList = ref([])
 
 // 加载年级和班级数据
 const loadGradesAndClasses = async () => {
@@ -2285,45 +2579,108 @@ const loadGradesAndClasses = async () => {
     const gradesResponse = await fetch(`${getApiBaseUrl()}/grades`)
     if (gradesResponse.ok) {
       const serverGrades = await gradesResponse.json()
-      // 确保包含所有年级（1-6年级）
-      const allGrades = [1, 2, 3, 4, 5, 6]
-      grades.value = allGrades
+      grades.value = serverGrades
+      // 更新gradesList，提取年级数值
+      if (Array.isArray(serverGrades)) {
+        if (serverGrades.length > 0) {
+          gradesList.value = serverGrades.map(grade => {
+            if (typeof grade === 'object' && grade.name) {
+              // 从年级名称中提取数字，如"1年级" -> 1
+              const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
+              return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
+            } else if (typeof grade === 'number') {
+              return grade
+            } else {
+              return 1
+            }
+          }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+        } else {
+          // 如果返回的数组为空，显示空数组
+          gradesList.value = []
+        }
+      } else {
+        // 如果返回的数据不是数组，显示空数组
+        gradesList.value = []
+      }
     } else {
-      // 失败时使用默认数据
-      grades.value = [1, 2, 3, 4, 5, 6]
+      // 失败时显示空数组
+      grades.value = []
+      gradesList.value = []
     }
     
     // 获取班级列表
     const classesResponse = await fetch(`${getApiBaseUrl()}/classes`)
     if (classesResponse.ok) {
       const serverClasses = await classesResponse.json()
-      // 确保包含所有班级（1-10班）
-      const allClasses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-      classes.value = allClasses
+      classes.value = serverClasses
+      // 更新classesList，提取班级数值
+      if (Array.isArray(serverClasses)) {
+        if (serverClasses.length > 0) {
+          classesList.value = serverClasses.map(classItem => {
+            if (typeof classItem === 'object' && classItem.name) {
+              // 从班级名称中提取数字，如"1班" -> 1
+              const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+              return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+            } else if (typeof classItem === 'number') {
+              return classItem
+            } else {
+              return 1
+            }
+          }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+        } else {
+          // 如果返回的数组为空，显示空数组
+          classesList.value = []
+        }
+      } else {
+        // 如果返回的数据不是数组，显示空数组
+        classesList.value = []
+      }
     } else {
-      // 失败时使用默认数据
-      classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      // 失败时显示空数组
+      classes.value = []
+      classesList.value = []
     }
   } catch (error) {
     console.error('加载年级和班级数据失败:', error)
-    // 失败时使用默认数据
-    grades.value = [1, 2, 3, 4, 5, 6]
-    classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    // 失败时显示空数组
+    grades.value = []
+    classes.value = []
+    gradesList.value = []
+    classesList.value = []
   }
 }
 
 // 当年级变化时，重新加载班级列表
 const handleGradeChange = async () => {
   try {
-    // 无论年级如何变化，都使用固定的班级列表（1-10班）
-    const allClasses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-    classes.value = allClasses
+    // 从API获取班级数据
+    const classesResponse = await fetch(`${getApiBaseUrl()}/classes`)
+    if (classesResponse.ok) {
+      const serverClasses = await classesResponse.json()
+      // 更新classesList，提取班级数值
+      if (Array.isArray(serverClasses)) {
+        classesList.value = serverClasses.map(classItem => {
+          if (typeof classItem === 'object' && classItem.name) {
+            // 从班级名称中提取数字，如"1班" -> 1
+            const classNum = parseInt(classItem.name)
+            return isNaN(classNum) ? 1 : classNum
+          } else if (typeof classItem === 'number') {
+            return classItem
+          } else {
+            return 1
+          }
+        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+      }
+    } else {
+      // 失败时使用默认数据
+      classesList.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    }
     // 重置班级选择
     filterClass.value = ''
   } catch (error) {
     console.error('加载班级数据失败:', error)
     // 失败时使用默认数据
-    classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    classesList.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     // 重置班级选择
     filterClass.value = ''
   }
@@ -3156,6 +3513,7 @@ const clearAllData = async () => {
     if (response.ok) {
       ElMessage.success('所有数据清空成功')
       // 重新加载数据
+      await store.loadData()
       await loadGradesAndClasses()
       fetchUserStats()
       fetchRecentRecords()

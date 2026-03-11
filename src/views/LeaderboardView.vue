@@ -2,10 +2,8 @@
   <div class="student-container">
     <div class="game-header">
       <div class="game-title-container">
-        <div class="trophies">🏆🏆🏆</div>
         <h1 class="game-title">{{ interfaceName }}</h1>
       </div>
-      <div class="game-logo">🎮</div>
     </div>
     
     <!-- 用户信息 -->
@@ -324,30 +322,60 @@ const loadGradesAndClasses = async () => {
     const gradesResponse = await fetch(`${getApiBaseUrl()}/grades`)
     if (gradesResponse.ok) {
       const serverGrades = await gradesResponse.json()
-      // 确保包含所有年级（1-6年级）
-      const allGrades = [1, 2, 3, 4, 5, 6]
-      grades.value = allGrades
+      // 使用服务器返回的数据，如果没有数据则显示空数组
+      if (Array.isArray(serverGrades) && serverGrades.length > 0) {
+        // 提取年级数值
+        grades.value = serverGrades.map(grade => {
+          if (typeof grade === 'object' && grade.name) {
+            // 从年级名称中提取数字，如"1年级" -> 1
+            const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
+            return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
+          } else if (typeof grade === 'number') {
+            return grade
+          } else {
+            return 1
+          }
+        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+      } else {
+        // 没有数据时显示空数组
+        grades.value = []
+      }
     } else {
-      // 失败时使用默认数据
-      grades.value = [1, 2, 3, 4, 5, 6]
+      // 失败时显示空数组
+      grades.value = []
     }
     
     // 获取班级列表
     const classesResponse = await fetch(`${getApiBaseUrl()}/classes`)
     if (classesResponse.ok) {
       const serverClasses = await classesResponse.json()
-      // 确保包含所有班级（1-10班）
-      const allClasses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
-      classes.value = allClasses
+      // 使用服务器返回的数据，如果没有数据则显示空数组
+      if (Array.isArray(serverClasses) && serverClasses.length > 0) {
+        // 提取班级数值
+        classes.value = serverClasses.map(classItem => {
+          if (typeof classItem === 'object' && classItem.name) {
+            // 从班级名称中提取数字，如"1班" -> 1
+            const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+            return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+          } else if (typeof classItem === 'number') {
+            return classItem
+          } else {
+            return 1
+          }
+        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+      } else {
+        // 没有数据时显示空数组
+        classes.value = []
+      }
     } else {
-      // 失败时使用默认数据
-      classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      // 失败时显示空数组
+      classes.value = []
     }
   } catch (error) {
     console.error('加载年级和班级数据失败:', error)
-    // 失败时使用默认数据
-    grades.value = [1, 2, 3, 4, 5, 6]
-    classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    // 失败时显示空数组
+    grades.value = []
+    classes.value = []
   }
 }
 
@@ -356,7 +384,28 @@ const handleGradeChange = async () => {
   try {
     const classesResponse = await fetch(`${getApiBaseUrl()}/classes?grade=${selectedGrade.value}`)
     if (classesResponse.ok) {
-      classes.value = await classesResponse.json()
+      const serverClasses = await classesResponse.json()
+      // 使用服务器返回的数据，如果没有数据则显示空数组
+      if (Array.isArray(serverClasses) && serverClasses.length > 0) {
+        // 提取班级数值
+        classes.value = serverClasses.map(classItem => {
+          if (typeof classItem === 'object' && classItem.name) {
+            // 从班级名称中提取数字，如"1班" -> 1
+            const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+            return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+          } else if (typeof classItem === 'number') {
+            return classItem
+          } else {
+            return 1
+          }
+        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+      } else {
+        // 没有数据时显示空数组
+        classes.value = []
+      }
+    } else {
+      // 失败时显示空数组
+      classes.value = []
     }
     // 重置班级选择
     selectedClass.value = null
@@ -368,6 +417,8 @@ const handleGradeChange = async () => {
     }
   } catch (error) {
     console.error('加载班级数据失败:', error)
+    // 失败时显示空数组
+    classes.value = []
   }
 }
 
@@ -614,6 +665,8 @@ const logout = () => {
   ElMessage.success('已退出登录')
 }
 
+
+
 onMounted(async () => {
   console.log('onMounted called, currentUserId from localStorage:', currentUserId.value)
   await loadSubjects()
@@ -683,41 +736,72 @@ watch(activeTab, (newTab) => {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin-bottom: 30px;
-  padding: 15px 20px;
+  margin-bottom: 40px;
+  padding: 25px 40px;
   background: linear-gradient(135deg, #6a11cb 0%, #2575fc 100%);
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+  border-radius: 25px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.3);
   position: relative;
   z-index: 1;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.game-header::before {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: linear-gradient(
+    45deg,
+    rgba(255, 255, 255, 0.1) 0%,
+    rgba(255, 255, 255, 0) 50%,
+    rgba(255, 255, 255, 0.1) 100%
+  );
+  transform: rotate(45deg);
+  animation: shimmer 3s infinite linear;
+  z-index: -1;
 }
 
 .game-title-container {
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 20px;
   justify-content: center;
-  width: 100%;
+  flex: 1;
 }
 
-.trophies {
-  font-size: 24px;
-  animation: bounce 2s infinite;
-}
+
 
 .game-title {
-  font-size: 32px;
+  font-size: 36px;
   font-weight: bold;
   color: white;
-  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
+  text-shadow: 0 4px 15px rgba(0, 0, 0, 0.4);
   margin: 0;
+  font-family: 'Comic Sans MS', 'Arial', sans-serif;
+  letter-spacing: 1px;
+  animation: glow 2s ease-in-out infinite alternate;
 }
 
-.game-logo {
-  position: relative;
-  font-size: 48px;
-  animation: bounce 2s infinite;
-  filter: drop-shadow(0 4px 8px rgba(0, 0, 0, 0.3));
+@keyframes shimmer {
+  0% {
+    transform: translateX(-100%) rotate(45deg);
+  }
+  100% {
+    transform: translateX(100%) rotate(45deg);
+  }
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 20px rgba(255, 255, 255, 0.5);
+  }
+  to {
+    text-shadow: 0 0 20px rgba(255, 255, 255, 1), 0 0 30px rgba(255, 255, 255, 0.8);
+  }
 }
 
 @keyframes bounce {

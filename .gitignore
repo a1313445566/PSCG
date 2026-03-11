@@ -33,6 +33,7 @@ test-*.js
 *.zip
 *.rar
 *.7z
+*.bak
 
 # Environment variables
 .env
