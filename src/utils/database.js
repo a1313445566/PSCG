@@ -171,7 +171,8 @@ export const addQuestion = async (question) => {
       body: JSON.stringify(question)
     })
     if (!response.ok) {
-      throw new Error('添加题目失败')
+      const errorData = await response.json()
+      throw new Error(errorData.error || '添加题目失败')
     }
     return await response.json()
   } catch (error) {

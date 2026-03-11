@@ -51,8 +51,8 @@
             <div class="subject-management" style="padding: 20px;">
               <div class="add-subject" style="margin-bottom: 20px;">
                 <el-input v-model="newSubjectName" placeholder="输入学科名称" style="width: 200px; margin-right: 10px;"></el-input>
-                <el-select v-model="newSubjectIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
-                  <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+                <el-select v-model="newSubjectIcon" placeholder="选择图标" style="width: 150px; margin-right: 10px;">
+                  <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
                 </el-select>
                 <el-button type="primary" @click="addSubject">添加学科</el-button>
                 <el-button type="warning" @click="importLocalData">导入本地数据</el-button>
@@ -69,8 +69,8 @@
                   <template #default="{ row }">
                     <div v-if="editingSubjectId === row.id" class="subject-edit">
                       <el-input v-model="editingSubjectName" placeholder="输入学科名称" style="width: 200px; margin-right: 10px;"></el-input>
-                      <el-select v-model="editingSubjectIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
-                        <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+                      <el-select v-model="editingSubjectIcon" placeholder="选择图标" style="width: 150px; margin-right: 10px;">
+                        <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
                       </el-select>
                       <el-button type="primary" size="small" @click="saveSubjectEdit(row.id)">保存</el-button>
                       <el-button size="small" @click="cancelSubjectEdit">取消</el-button>
@@ -207,62 +207,76 @@
               stripe
               border
               :default-sort="{prop: 'createdAt', order: 'descending'}"
+              :row-class-name="row => hasValidImage(row.content) || row.audio ? 'has-media' : ''"
             >
               <el-table-column type="selection" width="40"></el-table-column>
-              <el-table-column prop="id" label="ID" width="40"></el-table-column>
-              <el-table-column prop="subjectName" label="学科" width="70">
+              <el-table-column prop="id" label="ID" width="60"></el-table-column>
+              <el-table-column prop="subjectName" label="学科" width="80">
                 <template #default="{ row }">
-                  <span class="subject-tag">{{ row.subjectName }}</span>
+                  <el-tag size="small" effect="light" :class="'subject-tag-' + row.subjectId">
+                    {{ row.subjectName }}
+                  </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="subcategoryName" label="子分类" width="90"></el-table-column>
-              <el-table-column prop="type" label="类型" width="60">
+              <el-table-column prop="subcategoryName" label="子分类" width="100">
                 <template #default="{ row }">
-                  <span class="type-tag" :class="'type-' + row.type">
-                    {{ 
-                      row.type === 'single' ? '单选' : 
-                      row.type === 'multiple' ? '多选' : 
-                      row.type === 'judgment' ? '判断' : 
-                      row.type === 'listening' ? '听力' : 
-                      row.type === 'reading' ? '阅读' : 
-                      row.type === 'image' ? '看图' : '未知'
-                    }}
-                  </span>
+                  <span class="subcategory-text">{{ row.subcategoryName || '-' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="content" label="题目内容" min-width="150">
+              <el-table-column prop="typeName" label="类型" width="70">
                 <template #default="{ row }">
-                  <div class="question-row">
-                    <el-tooltip :content="row.content" placement="top" effect="dark" :enterable="true" :popper-class="'content-tooltip'">
-                      <div class="question-content-preview">
-                        <div v-if="hasValidImage(row.content) || row.audio" class="content-with-media">
-                          <span class="image-indicator" v-if="hasValidImage(row.content)">📷</span>
-                          <span class="audio-indicator" v-if="row.audio">🎵</span>
-                          <span class="content-text" v-html="row.content"></span>
+                  <el-tag size="small" :type="{
+                    'single': 'primary',
+                    'multiple': 'success',
+                    'judgment': 'warning'
+                  }[row.type] || 'info'">
+                    {{ row.typeName }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="content" label="题目内容" min-width="300">
+                <template #default="{ row }">
+                  <div class="question-content-wrapper">
+                    <div class="question-content-preview">
+                      <div v-if="hasValidImage(row.content)" class="content-with-image">
+                        <div class="image-preview">
+                          <img :src="extractImageUrl(row.content)" alt="题目图片" class="question-image" />
                         </div>
-                        <div v-else class="content-text">
-                          {{ row.content }}
-                        </div>
+                        <div class="content-text" v-html="stripImages(row.content)"></div>
                       </div>
-                    </el-tooltip>
-                    <div class="row-operations">
-                      <el-button type="primary" size="small" @click="editQuestion(row)">编辑</el-button>
-                      <el-button type="danger" size="small" @click="deleteQuestion(row.id)">删除</el-button>
+                      <div v-else-if="row.audio" class="content-with-audio">
+                        <el-icon class="audio-icon"><i class="el-icon-microphone"></i></el-icon>
+                        <div class="content-text">{{ row.content }}</div>
+                      </div>
+                      <div v-else class="content-text">
+                        {{ row.content }}
+                      </div>
                     </div>
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="answer" label="答案" width="60">
+              <el-table-column prop="answer" label="答案" width="80">
                 <template #default="{ row }">
-                  <span class="answer-tag">{{ row.answer }}</span>
+                  <el-tag size="small" type="danger" effect="dark">{{ row.answer || '-' }}</el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="createdAt" label="时间" width="120">
+              <el-table-column prop="createdAt" label="创建时间" width="140">
                 <template #default="{ row }">
-                  {{ row.createdAt || '未知' }}
+                  <span class="time-text">{{ row.createdAt || '未知' }}</span>
                 </template>
               </el-table-column>
-
+              <el-table-column label="操作" width="120" fixed="right">
+                <template #default="{ row }">
+                  <div class="row-operations">
+                    <el-button type="primary" size="small" @click="editQuestion(row)" style="margin-right: 5px;">
+                      <el-icon><i class="el-icon-edit"></i></el-icon> 编辑
+                    </el-button>
+                    <el-button type="danger" size="small" @click="deleteQuestion(row.id)">
+                      <el-icon><i class="el-icon-delete"></i></el-icon> 删除
+                    </el-button>
+                  </div>
+                </template>
+              </el-table-column>
             </el-table>
           </div>
           
@@ -831,8 +845,8 @@
       <div class="subcategory-management">
         <div class="add-subcategory">
           <el-input v-model="newSubcategoryName" placeholder="输入子分类名称" style="width: 200px; margin-right: 10px;"></el-input>
-          <el-select v-model="newSubcategoryIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
-            <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+          <el-select v-model="newSubcategoryIcon" placeholder="选择图标" style="width: 150px; margin-right: 10px;">
+            <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
           </el-select>
           <el-button type="primary" @click="addSubcategory">添加子分类</el-button>
         </div>
@@ -848,8 +862,8 @@
             <template #default="{ row }">
               <div v-if="editingSubcategoryId === row.id" class="subcategory-edit">
                 <el-input v-model="editingSubcategoryName" placeholder="输入子分类名称" style="width: 200px; margin-right: 10px;"></el-input>
-                <el-select v-model="editingSubcategoryIcon" placeholder="选择图标" style="width: 100px; margin-right: 10px;">
-                  <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon" :value="index"></el-option>
+                <el-select v-model="editingSubcategoryIcon" placeholder="选择图标" style="width: 150px; margin-right: 10px;">
+                  <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
                 </el-select>
                 <el-button type="primary" size="small" @click="saveSubcategoryEdit(row.id)">保存</el-button>
                 <el-button size="small" @click="cancelSubcategoryEdit">取消</el-button>
@@ -1271,6 +1285,732 @@
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
+/* 表格容器 */
+.table-container {
+  margin-top: 20px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  padding: 24px;
+  overflow: hidden;
+}
+
+/* 表格样式 */
+.el-table {
+  border-radius: 8px !important;
+  overflow: hidden !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 表格行 */
+.el-table__row {
+  transition: all 0.3s ease !important;
+  height: auto !important;
+  min-height: 60px;
+}
+
+.el-table__row:hover {
+  background-color: #f8f9fa !important;
+}
+
+/* 表格单元格 */
+.el-table__cell {
+  padding: 16px 12px !important;
+  vertical-align: middle !important;
+  text-align: center !important;
+  border-bottom: 1px solid #f0f2f5 !important;
+  display: table-cell !important;
+}
+
+/* 表格表头 */
+.el-table th {
+  background-color: #f8f9fa !important;
+  color: #303133 !important;
+  font-weight: 600 !important;
+  text-align: center !important;
+  padding: 12px !important;
+  border-bottom: 2px solid #e4e7ed !important;
+}
+
+/* 表头单元格内容 */
+.el-table th .cell {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  font-size: 14px !important;
+  text-align: center !important;
+}
+
+/* 单元格内容 */
+.el-table__cell .cell {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 40px !important;
+  line-height: 40px !important;
+}
+
+/* 确保表格列内容居中 */
+.el-table-column {
+  text-align: center !important;
+}
+
+/* 确保表格列内容居中 */
+.el-table-column .cell {
+  text-align: center !important;
+}
+
+/* 确保所有表格中的文本内容居中 */
+.el-table__cell span {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 24px !important;
+  line-height: 24px !important;
+}
+
+/* 确保所有表格中的按钮居中 */
+.el-table__cell .el-button {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* 确保所有表格中的进度条居中 */
+.el-table__cell .el-progress {
+  margin: 0 auto !important;
+  display: block !important;
+}
+
+/* 确保表格中的标签水平垂直居中 */
+.el-table__cell .el-tag {
+  margin: 0 auto !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  height: 24px !important;
+  line-height: 24px !important;
+  padding: 0 12px !important;
+  min-width: 60px !important;
+}
+
+/* 确保标签内容水平垂直居中 */
+.el-table__cell .el-tag__content {
+  text-align: center !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  height: 100% !important;
+  line-height: 24px !important;
+  flex: 1 !important;
+  width: 100% !important;
+}
+
+/* 确保子分类文本居中 */
+.subcategory-text {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 24px !important;
+  line-height: 24px !important;
+}
+
+/* 确保时间文本居中 */
+.time-text {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 24px !important;
+  line-height: 24px !important;
+}
+
+/* 学科管理表格内容居中 */
+.subject-info {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+/* 年级管理表格内容居中 */
+.grade-info {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+/* 班级管理表格内容居中 */
+.class-info {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+/* 子分类管理表格内容居中 */
+.subcategory-info {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 10px !important;
+  width: 100% !important;
+}
+
+/* 学科标签 */
+.subject-tag-1 {
+  background-color: #ecf5ff !important;
+  color: #409eff !important;
+  border-color: #d9ecff !important;
+}
+
+.subject-tag-2 {
+  background-color: #f0f9eb !important;
+  color: #67c23a !important;
+  border-color: #d9f7be !important;
+}
+
+.subject-tag-3 {
+  background-color: #fdf6ec !important;
+  color: #e6a23c !important;
+  border-color: #faecd8 !important;
+}
+
+.subject-tag-4 {
+  background-color: #f0f0f0 !important;
+  color: #909399 !important;
+  border-color: #e4e7ed !important;
+}
+
+.subject-tag-5 {
+  background-color: #fef0f0 !important;
+  color: #f56c6c !important;
+  border-color: #fbc4c4 !important;
+}
+
+.subject-tag-6 {
+  background-color: #f0ecff !important;
+  color: #909399 !important;
+  border-color: #ebe7ff !important;
+}
+
+.subject-tag-7 {
+  background-color: #ecfdf5 !important;
+  color: #409eff !important;
+  border-color: #c6f6d5 !important;
+}
+
+.subject-tag-8 {
+  background-color: #fef5e7 !important;
+  color: #e6a23c !important;
+  border-color: #fde2a3 !important;
+}
+
+.subject-tag-9 {
+  background-color: #f0f9ff !important;
+  color: #409eff !important;
+  border-color: #cce7ff !important;
+}
+
+/* 标签样式 */
+.el-table__cell .el-tag {
+  padding: 4px 12px !important;
+  border-radius: 16px !important;
+  font-size: 13px !important;
+  font-weight: 500 !important;
+  transition: all 0.3s ease !important;
+  margin: 0 auto !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  min-width: 60px !important;
+  width: 100% !important;
+  max-width: 100% !important;
+}
+
+/* 确保标签内容居中 */
+.el-table__cell .el-tag span {
+  flex: 1 !important;
+  text-align: center !important;
+  display: block !important;
+}
+
+.el-table__cell .el-tag:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 标签内容 */
+.el-table__cell .el-tag__content {
+  text-align: center !important;
+  display: inline-block !important;
+  margin: 0 !important;
+}
+
+/* 子分类文本 */
+.subcategory-text {
+  display: block !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+/* 时间文本 */
+.time-text {
+  display: block !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+/* 题目内容列 */
+.el-table__cell:nth-child(6) {
+  text-align: left !important;
+}
+
+.el-table__cell:nth-child(6) .cell {
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+}
+
+/* 确保所有表格单元格内容居中 */
+.el-table__cell .cell > span {
+  display: block !important;
+  text-align: center !important;
+  width: 100% !important;
+}
+
+/* 操作按钮区域 */
+.row-operations {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+}
+
+/* 题目内容预览 */
+.question-content-preview {
+  line-height: 1.5 !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  display: -webkit-box !important;
+  -webkit-line-clamp: 3 !important;
+  -webkit-box-orient: vertical !important;
+  width: 100% !important;
+}
+
+/* 带图片的内容 */
+.content-with-image {
+  display: flex !important;
+  align-items: flex-start !important;
+  gap: 12px !important;
+  flex-wrap: wrap !important;
+}
+
+/* 图片预览 */
+.image-preview {
+  flex-shrink: 0 !important;
+  width: 80px !important;
+  height: 60px !important;
+  overflow: hidden !important;
+  border-radius: 6px !important;
+  border: 1px solid #e4e7ed !important;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05) !important;
+  transition: all 0.3s ease !important;
+}
+
+.image-preview:hover {
+  transform: scale(1.05) !important;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 题目图片 */
+.question-image {
+  width: 100% !important;
+  height: 100% !important;
+  object-fit: cover !important;
+}
+
+/* 内容文本 */
+.content-text {
+  flex: 1 !important;
+  min-width: 0 !important;
+  word-break: break-word !important;
+  line-height: 1.5 !important;
+  font-size: 14px !important;
+  color: #303133 !important;
+}
+
+/* 子分类文本 */
+.subcategory-text {
+  text-align: center !important;
+  display: block !important;
+  margin: 0 auto !important;
+  font-size: 13px !important;
+  color: #606266 !important;
+  line-height: 1.4 !important;
+}
+
+/* 时间文本 */
+.time-text {
+  text-align: center !important;
+  display: block !important;
+  margin: 0 auto !important;
+  font-size: 12px !important;
+  color: #909399 !important;
+  line-height: 1.4 !important;
+}
+
+/* 操作按钮 */
+.row-operations {
+  display: flex !important;
+  justify-content: center !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 4px 0 !important;
+}
+
+/* 操作按钮样式 */
+.row-operations .el-button {
+  padding: 6px 12px !important;
+  font-size: 13px !important;
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+  min-width: 60px !important;
+}
+
+.row-operations .el-button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.row-operations .el-button--primary {
+  background-color: #409eff !important;
+  border-color: #409eff !important;
+}
+
+.row-operations .el-button--primary:hover {
+  background-color: #66b1ff !important;
+  border-color: #66b1ff !important;
+}
+
+.row-operations .el-button--danger {
+  background-color: #f56c6c !important;
+  border-color: #f56c6c !important;
+}
+
+.row-operations .el-button--danger:hover {
+  background-color: #f78989 !important;
+  border-color: #f78989 !important;
+}
+
+/* 有媒体的行 */
+.has-media {
+  background-color: #f9f9f9 !important;
+}
+
+/* 表格底部 */
+.pagination {
+  margin-top: 24px !important;
+  text-align: right !important;
+}
+
+/* 筛选区域 */
+.filter-section {
+  margin-bottom: 20px !important;
+  padding: 16px !important;
+  background-color: #f8f9fa !important;
+  border-radius: 8px !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 按钮样式 */
+.el-button {
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.el-button:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* 输入框和选择器 */
+.el-input,
+.el-select {
+  border-radius: 6px !important;
+  transition: all 0.3s ease !important;
+}
+
+.el-input:focus-within,
+.el-select:focus-within {
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) !important;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 1200px) {
+  .table-container {
+    padding: 16px !important;
+  }
+  
+  .el-table__cell {
+    padding: 12px 8px !important;
+  }
+  
+  .image-preview {
+    width: 60px !important;
+    height: 45px !important;
+  }
+  
+  .row-operations {
+    flex-direction: column !important;
+    gap: 4px !important;
+  }
+  
+  .row-operations .el-button {
+    width: 100% !important;
+    padding: 4px 8px !important;
+    font-size: 12px !important;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .table-container {
+    padding: 12px !important;
+  }
+  
+  .el-table__cell {
+    padding: 8px 4px !important;
+  }
+  
+  .el-table th {
+    padding: 8px !important;
+  }
+  
+  .el-table th .cell {
+    font-size: 12px !important;
+  }
+  
+  .el-table__cell .el-tag {
+    padding: 2px 8px !important;
+    font-size: 12px !important;
+    min-width: 50px !important;
+  }
+  
+  .content-text {
+    font-size: 13px !important;
+  }
+}
+
+/* 有媒体的行 */
+.has-media {
+  background-color: #f9f9f9 !important;
+}
+
+/* 题目内容包装器 */
+.question-content-wrapper {
+  width: 100%;
+}
+
+/* 带图片的内容 */
+.content-with-image {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* 图片预览 */
+.image-preview {
+  flex-shrink: 0;
+  width: 100px;
+  height: 80px;
+  overflow: hidden;
+  border-radius: 4px;
+  border: 1px solid #e4e7ed;
+}
+
+/* 题目图片 */
+.question-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+}
+
+.question-image:hover {
+  transform: scale(1.05);
+}
+
+/* 带音频的内容 */
+.content-with-audio {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 音频图标 */
+.audio-icon {
+  font-size: 18px;
+  color: #409eff;
+}
+
+/* 内容文本 */
+.content-text {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  line-height: 1.5;
+  font-size: 14px;
+  color: #303133;
+}
+
+/* 子分类文本 */
+.subcategory-text {
+  font-size: 13px;
+  color: #606266;
+}
+
+/* 时间文本 */
+.time-text {
+  font-size: 12px;
+  color: #909399;
+}
+
+/* 行操作 */
+.row-operations {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: nowrap;
+  width: 100%;
+}
+
+/* 学科标签 */
+.subject-tag-1 {
+  background-color: #ecf5ff;
+  color: #409eff;
+}
+
+.subject-tag-2 {
+  background-color: #f0f9eb;
+  color: #67c23a;
+}
+
+.subject-tag-3 {
+  background-color: #fdf6ec;
+  color: #e6a23c;
+}
+
+.subject-tag-4 {
+  background-color: #f0f0f0;
+  color: #909399;
+}
+
+.subject-tag-5 {
+  background-color: #fef0f0;
+  color: #f56c6c;
+}
+
+.subject-tag-6 {
+  background-color: #f0ecff;
+  color: #909399;
+}
+
+.subject-tag-7 {
+  background-color: #ecfdf5;
+  color: #409eff;
+}
+
+.subject-tag-8 {
+  background-color: #fef5e7;
+  color: #e6a23c;
+}
+
+.subject-tag-9 {
+  background-color: #f0f9ff;
+  color: #409eff;
+}
+
+/* 操作按钮 */
+.row-operations .el-button {
+  padding: 4px 8px;
+  font-size: 12px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.row-operations .el-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* 内容提示框 */
+.content-tooltip {
+  max-width: 400px !important;
+  white-space: pre-wrap !important;
+  line-height: 1.4 !important;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 1200px) {
+  .image-preview {
+    width: 80px;
+    height: 60px;
+  }
+  
+  .content-with-image {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .table-container {
+    padding: 10px;
+  }
+  
+  .el-table__cell {
+    padding: 8px 4px !important;
+  }
+  
+  .image-preview {
+    width: 60px;
+    height: 45px;
+  }
+  
+  .row-operations {
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .row-operations .el-button {
+    width: 100%;
+    padding: 2px 4px;
+    font-size: 11px;
+  }
+}
 </style>
 
 <script setup>
@@ -1314,7 +2054,9 @@ const editingSubjectName = ref('')
 const editingSubjectIcon = ref(0)
 
 // 学科图标
-const subjectIcons = ['📚', '🔢', '🌍', '⚡', '🎨', '🎵', '⚽', '🔬']
+const subjectIcons = ['📚', '🔢', '🌍', '🔬', '🎨', '🎵', '⚽', '⚖️']
+// 学科图标对应的学科名称
+const subjectIconNames = ['语文', '数学', '英语', '科学', '美术', '音乐', '体育', '道德与法治']
 
 // 子分类管理相关
 const subcategoryDialogVisible = ref(false)
@@ -1481,8 +2223,15 @@ const filteredQuestions = computed(() => {
       subcategoryName = subcategory ? subcategory.name : ''
     }
     
-    // 获取正确答案，支持两种命名格式
-    const answer = q.answer || q.correct_answer || ''
+    // 获取正确答案，支持多种命名格式
+    const answer = q.answer || q.correct_answer || q.correctAnswer || ''
+    
+    // 获取题目类型名称
+    const typeName = {
+      'single': '单选题',
+      'multiple': '多选题',
+      'judgment': '判断题'
+    }[q.type] || '未知'
     
     return {
       ...q,
@@ -1490,7 +2239,8 @@ const filteredQuestions = computed(() => {
       subcategoryId: subcategoryId,
       answer: answer,
       subjectName,
-      subcategoryName
+      subcategoryName,
+      typeName
     }
   })
   
@@ -1519,9 +2269,9 @@ const editSubject = (subject) => {
 }
 
 // 保存学科编辑
-const saveSubjectEdit = (subjectId) => {
+const saveSubjectEdit = async (subjectId) => {
   if (editingSubjectName.value.trim()) {
-    store.updateSubject(subjectId, editingSubjectName.value.trim(), editingSubjectIcon.value)
+    await store.updateSubject(subjectId, editingSubjectName.value.trim(), editingSubjectIcon.value)
     cancelSubjectEdit()
   }
 }
@@ -1569,9 +2319,9 @@ const editSubcategory = (subcategory) => {
 }
 
 // 保存子分类编辑
-const saveSubcategoryEdit = (subcategoryId) => {
+const saveSubcategoryEdit = async (subcategoryId) => {
   if (editingSubcategoryName.value.trim() && currentSubjectForSubcategory.value) {
-    store.updateSubcategory(currentSubjectForSubcategory.value.id, subcategoryId, editingSubcategoryName.value.trim(), editingSubcategoryIcon.value)
+    await store.updateSubcategory(currentSubjectForSubcategory.value.id, subcategoryId, editingSubcategoryName.value.trim(), editingSubcategoryIcon.value)
     cancelSubcategoryEdit()
   }
 }
@@ -2002,8 +2752,17 @@ const saveQuestion = async () => {
       form.value.image = form.value.image || ''
     }
     
+    // 转换 subjectId 和 subcategoryId 为数字类型
+    form.value.subjectId = parseInt(form.value.subjectId) || 0
+    form.value.subcategoryId = parseInt(form.value.subcategoryId) || 0
+    
+    // 确保correctAnswer字段存在
+    form.value.correctAnswer = form.value.answer
+    
+    console.log('处理后的form:', form.value)
     console.log('处理后的form.content:', form.value.content)
     console.log('处理后的form.audio:', form.value.audio)
+    console.log('处理后的form.correctAnswer:', form.value.correctAnswer)
     // 保存题目
     if (isEditing.value) {
       console.log('更新题目')
@@ -2138,6 +2897,27 @@ const hasValidImage = (content) => {
   // 检查是否包含带有src属性的img标签
   const imgRegex = /<img[^>]*src="[^"]+"[^>]*>/i;
   return imgRegex.test(content);
+}
+
+const extractImageUrl = (content) => {
+  if (!content || typeof content !== 'string') return '';
+  // 提取img标签中的src属性
+  const imgMatch = content.match(/<img[^>]*src="([^"]*)"[^>]*>/i);
+  if (imgMatch && imgMatch[1]) {
+    return imgMatch[1];
+  }
+  // 提取DataURL（只匹配第一个）
+  const dataUrlMatch = content.match(/data:image\/[^;]+;base64,[^"\s<>]+/i);
+  if (dataUrlMatch) {
+    return dataUrlMatch[0];
+  }
+  return '';
+}
+
+const stripImages = (content) => {
+  if (!content || typeof content !== 'string') return '';
+  // 移除所有img标签
+  return content.replace(/<img[^>]*>/gi, '');
 }
 
 // 格式化题目内容，在预览时特殊显示正确答案

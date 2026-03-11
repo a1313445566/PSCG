@@ -183,7 +183,8 @@ export const useQuestionStore = defineStore('question', {
     async addQuestion(questionData) {
       const newQuestion = await addQuestion(questionData)
       if (newQuestion) {
-        this.questions.push(newQuestion)
+        // 重新加载题目数据，确保列表更新
+        await this.loadData()
         return newQuestion
       } else {
         throw new Error('添加题目失败')
@@ -193,10 +194,8 @@ export const useQuestionStore = defineStore('question', {
     async updateQuestion(questionData) {
       const result = await updateQuestion(questionData)
       if (result) {
-        const index = this.questions.findIndex(q => q.id === questionData.id)
-        if (index !== -1) {
-          this.questions[index] = result
-        }
+        // 重新加载题目数据，确保列表更新
+        await this.loadData()
         return result
       } else {
         throw new Error('更新题目失败')
@@ -206,7 +205,8 @@ export const useQuestionStore = defineStore('question', {
     async deleteQuestion(id) {
       const result = await deleteQuestion(id)
       if (result) {
-        this.questions = this.questions.filter(q => q.id !== id)
+        // 重新加载题目数据，确保列表更新
+        await this.loadData()
       }
     },
     

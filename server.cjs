@@ -8,8 +8,8 @@ const port = 3001;
 
 // 中间件
 app.use(cors());
-app.use(express.json({ encoding: 'utf-8' }));
-app.use(express.urlencoded({ extended: true, encoding: 'utf-8' }));
+app.use(express.json({ encoding: 'utf-8', limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/audio', express.static(path.join(__dirname, 'audio')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
@@ -1446,7 +1446,35 @@ app.put('/api/subjects/:id', (req, res) => {
         res.status(500).json({ error: '更新学科失败' });
         return;
       }
-      res.json({ success: true });
+      // 更新成功后，返回更新后的学科对象
+      db.get('SELECT * FROM subjects WHERE id = ?', [id], (err, subject) => {
+        if (err) {
+          console.error('获取更新后的学科失败:', err);
+          res.status(500).json({ error: '更新学科失败' });
+          return;
+        }
+        
+        // 获取学科的子分类
+        db.all('SELECT * FROM subcategories WHERE subject_id = ?', [id], (err, subcategories) => {
+          if (err) {
+            console.error('获取子分类失败:', err);
+          }
+          
+          // 转换字段名，确保与前端一致
+          const updatedSubject = {
+            id: subject.id,
+            name: subject.name,
+            iconIndex: subject.icon_index,
+            subcategories: (subcategories || []).map(subcat => ({
+              id: subcat.id,
+              subjectId: subcat.subject_id,
+              name: subcat.name,
+              iconIndex: subcat.icon_index
+            }))
+          };
+          res.json(updatedSubject);
+        });
+      });
     }
   );
 });
@@ -1535,7 +1563,22 @@ app.put('/api/subcategories/:id', (req, res) => {
         res.status(500).json({ error: '更新子分类失败' });
         return;
       }
-      res.json({ success: true });
+      // 更新成功后，返回更新后的子分类对象
+      db.get('SELECT * FROM subcategories WHERE id = ?', [id], (err, subcategory) => {
+        if (err) {
+          console.error('获取更新后的子分类失败:', err);
+          res.status(500).json({ error: '更新子分类失败' });
+          return;
+        }
+        // 转换字段名，确保与前端一致
+        const updatedSubcategory = {
+          id: subcategory.id,
+          subjectId: subcategory.subject_id,
+          name: subcategory.name,
+          iconIndex: subcategory.icon_index
+        };
+        res.json(updatedSubcategory);
+      });
     }
   );
 });

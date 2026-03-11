@@ -378,7 +378,9 @@ const totalQuestions = computed(() => currentQuestions.value.length)
 const wrongQuestions = ref([])
 
 // 学科图标
-const subjectIcons = ['📚', '🔢', '🌍', '⚡', '🎨', '🎵', '⚽', '🔬']
+const subjectIcons = ['📚', '🔢', '🌍', '🔬', '🎨', '🎵', '⚽', '⚖️']
+// 学科图标对应的学科名称
+const subjectIconNames = ['语文', '数学', '英语', '科学', '美术', '音乐', '体育', '道德与法治']
 
 // 结果图标
 const resultIcon = computed(() => {
