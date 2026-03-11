@@ -112,7 +112,7 @@ export const addSubcategory = async (subjectId, name, iconIndex = 0) => {
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ subject_id: subjectId, name, iconIndex })
+      body: JSON.stringify({ subjectId, name, iconIndex })
     })
     if (!response.ok) {
       throw new Error('添加子分类失败')

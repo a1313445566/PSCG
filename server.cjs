@@ -8,10 +8,17 @@ const port = 3001;
 
 // 中间件
 app.use(cors());
-app.use(express.json());
+app.use(express.json({ encoding: 'utf-8' }));
+app.use(express.urlencoded({ extended: true, encoding: 'utf-8' }));
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/audio', express.static(path.join(__dirname, 'audio')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
+
+// 设置响应编码为 UTF-8
+app.use((req, res, next) => {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  next();
+});
 
 // 数据库连接
 const db = new sqlite3.Database('./quiz.db', (err) => {
@@ -19,7 +26,14 @@ const db = new sqlite3.Database('./quiz.db', (err) => {
     console.error('数据库连接失败:', err);
   } else {
     console.log('数据库连接成功');
-    createTables();
+    // 设置编码为 UTF-8
+    db.run('PRAGMA encoding = "UTF-8";', (err) => {
+      if (err) {
+        console.error('设置编码失败:', err);
+      }
+      // 创建表结构
+      createTables();
+    });
   }
 });
 
@@ -476,7 +490,19 @@ app.get('/api/subjects', (req, res) => {
       // 为每个学科获取子分类
       const getSubcategories = (subjects, index) => {
         if (index >= subjects.length) {
-          res.json(subjects);
+          // 转换所有学科的字段名
+          const subjectsWithCamelCase = subjects.map(subject => ({
+            id: subject.id,
+            name: subject.name,
+            iconIndex: subject.icon_index,
+            subcategories: subject.subcategories.map(subcat => ({
+              id: subcat.id,
+              subjectId: subcat.subject_id,
+              name: subcat.name,
+              iconIndex: subcat.icon_index
+            }))
+          }));
+          res.json(subjectsWithCamelCase);
           return;
         }
         
@@ -1064,6 +1090,9 @@ app.post('/api/subjects', (req, res) => {
     return;
   }
   
+  // 打印接收到的名称，检查编码
+  console.log('接收到的学科名称:', name);
+  
   db.run('INSERT INTO subjects (name, icon_index) VALUES (?, ?)', 
     [name, iconIndex || 0], function(err) {
       if (err) {
@@ -1071,7 +1100,25 @@ app.post('/api/subjects', (req, res) => {
         res.status(500).json({ error: '添加学科失败' });
         return;
       }
-      res.json({ success: true, id: this.lastID });
+      // 返回完整的学科对象
+      db.get('SELECT * FROM subjects WHERE id = ?', [this.lastID], (err, subject) => {
+        if (err) {
+          console.error('获取新学科失败:', err);
+          res.json({ success: true, id: this.lastID, name, iconIndex: iconIndex || 0, subcategories: [] });
+          return;
+        }
+        // 打印从数据库获取的名称
+        console.log('从数据库获取的学科名称:', subject.name);
+        
+        // 转换字段名以匹配前端
+        const subjectWithCamelCase = {
+          id: subject.id,
+          name: subject.name,
+          iconIndex: subject.icon_index,
+          subcategories: []
+        };
+        res.json(subjectWithCamelCase);
+      });
     }
   );
 });
@@ -1145,7 +1192,22 @@ app.post('/api/subcategories', (req, res) => {
         res.status(500).json({ error: '添加子分类失败' });
         return;
       }
-      res.json({ success: true, id: this.lastID });
+      // 返回完整的子分类对象
+      db.get('SELECT * FROM subcategories WHERE id = ?', [this.lastID], (err, subcategory) => {
+        if (err) {
+          console.error('获取新子分类失败:', err);
+          res.json({ success: true, id: this.lastID, name, iconIndex: iconIndex || 0 });
+          return;
+        }
+        // 转换字段名以匹配前端
+        const subcategoryWithCamelCase = {
+          id: subcategory.id,
+          subjectId: subcategory.subject_id,
+          name: subcategory.name,
+          iconIndex: subcategory.icon_index
+        };
+        res.json(subcategoryWithCamelCase);
+      });
     }
   );
 });
