@@ -40,8 +40,8 @@
               <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
             </el-select>
           </el-form-item>
-          <el-form-item label="子分类">
-            <el-select v-model="filterForm.subcategoryIds" multiple placeholder="选择子分类" style="width: 180px">
+          <el-form-item label="学科题库">
+            <el-select v-model="filterForm.subcategoryIds" multiple placeholder="选择学科题库" style="width: 180px">
               <el-option v-for="subcategory in subcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
             </el-select>
           </el-form-item>
@@ -315,12 +315,12 @@
             </div>
           </div>
           
-          <!-- 子分类分析 -->
+          <!-- 学科题库分析 -->
           <div class="chart-card">
             <div class="chart-header">
               <div class="chart-title">
                 <i class="el-icon-menu"></i>
-                <h3>子分类分析</h3>
+                <h3>学科题库分析</h3>
               </div>
               <div style="display: flex; gap: 10px; align-items: center;">
                 <el-select v-model="chartTypes.subcategory" @change="initSubcategoryChart" size="small" class="chart-type-select">
@@ -336,7 +336,7 @@
             <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.subcategory" class="chart-table">
               <el-table :data="analysisData.subcategoryAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="subject" label="学科" width="120"></el-table-column>
-                <el-table-column prop="subcategory" label="子分类"></el-table-column>
+                <el-table-column prop="subcategory" label="学科题库"></el-table-column>
                 <el-table-column prop="sessions" label="答题次数"></el-table-column>
                 <el-table-column prop="questions" label="答题数"></el-table-column>
                 <el-table-column prop="correct" label="正确数"></el-table-column>
@@ -608,7 +608,7 @@ const loadSubcategories = async (subjectId) => {
   
   const API_BASE_URL = getApiBaseUrl();
   try {
-    const response = await fetch(`${API_BASE_URL}/api/subjects/${subjectId}/subcategories`);
+    const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/subcategories`);
     if (response.ok) {
       const data = await response.json();
       subcategories.value = data;
@@ -1171,7 +1171,7 @@ const initSubcategoryChart = () => {
         trigger: 'item'
       },
       legend: {
-        data: ['子分类数据']
+        data: ['学科题库数据']
       },
       radar: {
         indicator: subcategories.map(subcategory => ({
@@ -1181,7 +1181,7 @@ const initSubcategoryChart = () => {
       },
       series: [
         {
-          name: '子分类数据',
+          name: '学科题库数据',
           type: 'radar',
           data: [
             {

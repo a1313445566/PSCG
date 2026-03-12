@@ -88,90 +88,77 @@
           <div class="setting-card">
             <h3 class="setting-title">学科管理</h3>
             <div class="subject-management" style="padding: 20px;">
-              <div class="add-subject" style="margin-bottom: 20px; padding: 20px; background-color: #f5f7fa; border-radius: 4px; display: flex; align-items: center; gap: 15px;">
-                <el-input v-model="newSubjectName" placeholder="输入学科名称" style="width: 220px;"></el-input>
-                <el-select v-model="newSubjectIcon" placeholder="选择图标" style="width: 180px;">
-                  <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
-                </el-select>
-                <el-button type="primary" @click="addSubject">添加学科</el-button>
+              <div class="add-subject" style="margin-bottom: 20px; padding: 20px; background-color: #f5f7fa; border-radius: 8px;">
+                <h4 style="margin: 0 0 15px; font-size: 16px; font-weight: 500; color: #303133;">添加新学科</h4>
+                <div style="display: flex; align-items: flex-end; gap: 15px; flex-wrap: wrap;">
+                  <div class="form-item" style="display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 14px; color: #606266; font-weight: 500;">学科名称</label>
+                    <el-input v-model="newSubjectName" placeholder="请输入学科名称" style="width: 220px;"></el-input>
+                  </div>
+                  <div class="form-item" style="display: flex; flex-direction: column; gap: 6px;">
+                    <label style="font-size: 14px; color: #606266; font-weight: 500;">选择图标</label>
+                    <el-select v-model="newSubjectIcon" placeholder="请选择图标" style="width: 180px;">
+                      <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
+                    </el-select>
+                  </div>
+                  <el-button type="primary" @click="addSubject" style="margin-bottom: 0;">
+                    <el-icon><i class="el-icon-plus"></i></el-icon> 添加学科
+                  </el-button>
+                </div>
               </div>
               
-              <el-table :data="subjects" style="width: 100%; border: 1px solid #e0e0e0; border-radius: 4px;" row-key="id" :expand-row-keys="expandedRows" stripe border>
-                <el-table-column type="expand">
-                  <template #default="{ row }">
-                    <div class="subcategory-list" v-if="row.subcategories && row.subcategories.length > 0" style="padding: 20px; background-color: #f9f9f9; border-radius: 4px; margin: 10px 0;">
-                      <div style="margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #e0e0e0;">
-                        <h4 style="margin: 0; font-size: 16px; font-weight: 500; color: #333;">子分类列表</h4>
+              <div class="subjects-grid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px;">
+                <div v-for="subject in subjects" :key="subject.id" class="subject-card" style="background: #fff; border: 1px solid #e4e7ed; border-radius: 12px; padding: 20px; transition: all 0.3s ease; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);">
+                  <div class="subject-header" style="display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 16px;">
+                    <div class="subject-info-header" style="display: flex; align-items: center; gap: 12px;">
+                      <span class="subject-icon-large" style="font-size: 40px;">{{ subjectIcons[subject.iconIndex || 0] }}</span>
+                      <div class="subject-name-section">
+                        <div v-if="editingSubjectId === subject.id" class="subject-edit-inline" style="display: flex; flex-direction: column; gap: 8px;">
+                          <el-input v-model="editingSubjectName" placeholder="输入学科名称" style="width: 180px;"></el-input>
+                          <el-select v-model="editingSubjectIcon" placeholder="选择图标" style="width: 180px;">
+                            <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
+                          </el-select>
+                          <div class="edit-buttons" style="display: flex; gap: 8px;">
+                            <el-button type="primary" size="small" @click="saveSubjectEdit(subject.id)">保存</el-button>
+                            <el-button size="small" @click="cancelSubjectEdit">取消</el-button>
+                          </div>
+                        </div>
+                        <div v-else class="subject-name-display">
+                          <h3 style="margin: 0; font-size: 18px; font-weight: 600; color: #303133;">{{ subject.name }}</h3>
+                          <p style="margin: 4px 0 0; font-size: 13px; color: #909399;">学科题库: {{ subject.subcategories ? subject.subcategories.length : 0 }} 个</p>
+                        </div>
                       </div>
-                      <el-table :data="row.subcategories" style="width: 100%; border: 1px solid #e0e0e0; border-radius: 4px;" stripe border>
-                        <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
-                        <el-table-column label="图标" width="80" align="center">
-                          <template #default="{ row: subRow }">
-                            <span class="subcategory-icon" style="font-size: 20px;">{{ subjectIcons[subRow.iconIndex || 0] }}</span>
-                          </template>
-                        </el-table-column>
-                        <el-table-column label="子分类名称" min-width="200">
-                          <template #default="{ row: subRow }">
-                            <div v-if="editingSubcategoryId === subRow.id" class="subcategory-edit" style="display: flex; align-items: center; gap: 10px; padding: 5px 0;">
-                              <el-input v-model="editingSubcategoryName" placeholder="输入子分类名称" style="width: 200px;"></el-input>
-                              <el-select v-model="editingSubcategoryIcon" placeholder="选择图标" style="width: 150px;">
-                                <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
-                              </el-select>
-                              <el-button type="primary" size="small" @click="saveSubcategoryEdit(subRow.id, row.id)">保存</el-button>
-                              <el-button size="small" @click="cancelSubcategoryEdit">取消</el-button>
-                            </div>
-                            <div v-else class="subcategory-info" style="display: flex; align-items: center; gap: 10px; padding: 5px 0;">
-                              <span style="font-size: 14px; color: #333;">{{ subRow.name }}</span>
-                              <el-button type="text" size="small" style="color: #409eff;" @click="editSubcategory(subRow, row.id)">编辑</el-button>
-                            </div>
-                          </template>
-                        </el-table-column>
-                        <el-table-column label="操作" width="100" align="center">
-                          <template #default="{ row: subRow }">
-                            <el-button type="danger" size="small" style="margin: 0;" @click="deleteSubcategory(subRow.id, row.id)">删除</el-button>
-                          </template>
-                        </el-table-column>
-                      </el-table>
                     </div>
-                    <div v-else style="padding: 30px; color: #999; text-align: center; background-color: #f9f9f9; border-radius: 4px; margin: 10px 0;">
-                      暂无子分类，点击"管理子分类"按钮添加
+                    <div v-if="editingSubjectId !== subject.id" class="subject-actions" style="display: flex; gap: 6px;">
+                      <el-button type="primary" size="small" @click="editSubject(subject)">
+                        <el-icon><i class="el-icon-edit"></i></el-icon> 编辑
+                      </el-button>
+                      <el-button type="danger" size="small" @click="deleteSubject(subject.id)">
+                        <el-icon><i class="el-icon-delete"></i></el-icon> 删除
+                      </el-button>
                     </div>
-                  </template>
-                </el-table-column>
-                <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
-                <el-table-column label="图标" width="80" align="center">
-                  <template #default="{ row }">
-                    <span class="subject-icon" style="font-size: 24px;">{{ subjectIcons[row.iconIndex || 0] }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="学科名称" min-width="200">
-                  <template #default="{ row }">
-                    <div v-if="editingSubjectId === row.id" class="subject-edit" style="display: flex; align-items: center; gap: 10px; padding: 5px 0;">
-                      <el-input v-model="editingSubjectName" placeholder="输入学科名称" style="width: 200px;"></el-input>
-                      <el-select v-model="editingSubjectIcon" placeholder="选择图标" style="width: 150px;">
-                        <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
-                      </el-select>
-                      <el-button type="primary" size="small" @click="saveSubjectEdit(row.id)">保存</el-button>
-                      <el-button size="small" @click="cancelSubjectEdit">取消</el-button>
+                  </div>
+                  
+                  <div class="subcategories-section" style="border-top: 1px solid #f0f0f0; padding-top: 16px;">
+                    <div class="subcategories-header" style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px;">
+                      <span style="font-size: 14px; font-weight: 500; color: #606266;">学科题库</span>
+                      <el-button type="primary" size="small" @click="manageSubcategories(subject)">
+                        <el-icon><i class="el-icon-plus"></i></el-icon> 管理
+                      </el-button>
                     </div>
-                    <div v-else class="subject-info" style="display: flex; align-items: center; gap: 10px; padding: 5px 0;">
-                      <span style="font-size: 16px; font-weight: 500; color: #333;">{{ row.name }}</span>
-                      <el-button type="text" size="small" style="color: #409eff;" @click="editSubject(row)">编辑</el-button>
+                    
+                    <div v-if="subject.subcategories && subject.subcategories.length > 0" class="subcategories-list">
+                      <div v-for="subcategory in subject.subcategories" :key="subcategory.id" class="subcategory-tag">
+                        <span>{{ subjectIcons[subcategory.iconIndex || 0] }}</span>
+                        <span>{{ subcategory.name }}</span>
+                      </div>
                     </div>
-                  </template>
-                </el-table-column>
-                <el-table-column label="子分类数量" width="120" align="center">
-                  <template #default="{ row }">
-                    <span style="font-size: 14px; color: #666;">{{ row.subcategories ? row.subcategories.length : 0 }}</span>
-                  </template>
-                </el-table-column>
-                <el-table-column label="操作" width="200" align="center">
-                  <template #default="{ row }">
-                    <el-button type="primary" size="small" style="margin-right: 8px;" @click="manageSubcategories(row)">管理子分类</el-button>
-                    <el-button type="danger" size="small" @click="deleteSubject(row.id)">删除</el-button>
-                  </template>
-                </el-table-column>
-              </el-table>
+                    <div v-else class="no-subcategories" style="text-align: center; padding: 16px; color: #909399; font-size: 13px;">
+                      暂无学科题库
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
           
@@ -290,30 +277,30 @@
             >
               <el-table-column type="selection" width="40"></el-table-column>
               <el-table-column prop="id" label="ID" width="60" align="center"></el-table-column>
-              <el-table-column prop="subjectName" label="学科" width="80" align="center">
+              <el-table-column prop="subjectName" label="学科" width="120" align="center">
                 <template #default="{ row }">
-                  <el-tag size="small" effect="light" :class="'subject-tag-' + row.subjectId">
+                  <el-tag size="small" type="primary" effect="light" style="width: auto; max-width: 100%;">
                     {{ row.subjectName }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="subcategoryName" label="子分类" width="150" align="center">
+              <el-table-column prop="subcategoryName" label="学科题库" width="150" align="center">
                 <template #default="{ row }">
                   <span class="subcategory-text">{{ row.subcategoryName || '-' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column prop="typeName" label="类型" width="70" align="center">
+              <el-table-column prop="typeName" label="类型" width="90" align="center">
                 <template #default="{ row }">
                   <el-tag size="small" :type="{
                     'single': 'primary',
                     'multiple': 'success',
                     'judgment': 'warning'
-                  }[row.type] || 'info'">
+                  }[row.type] || 'info'" style="width: auto; max-width: 100%;">
                     {{ row.typeName }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="content" label="题目内容" min-width="300" align="center">
+              <el-table-column prop="content" label="题目内容" min-width="300" align="left">
                 <template #default="{ row }">
                   <div class="question-content-wrapper">
                     <div class="question-content-preview">
@@ -344,7 +331,7 @@
                   <span class="time-text">{{ row.createdAt || '未知' }}</span>
                 </template>
               </el-table-column>
-              <el-table-column label="操作" width="120" fixed="right" align="center">
+              <el-table-column label="操作" width="160" fixed="right" align="center">
                 <template #default="{ row }">
                   <div class="row-operations">
                     <el-button type="primary" size="small" @click="editQuestion(row)" style="margin-right: 5px;">
@@ -502,7 +489,7 @@
               </template>
             </el-table-column>
             <el-table-column prop="subject_name" label="学科" width="100" align="center"></el-table-column>
-            <el-table-column prop="subcategory_name" label="子分类" width="180" align="center">
+            <el-table-column prop="subcategory_name" label="学科题库" width="180" align="center">
               <template #default="{ row }">
                 {{ row.subcategory_name || '全部' }}
               </template>
@@ -650,19 +637,30 @@
       </template>
     </el-dialog>
 
-    <!-- 子分类管理对话框 -->
+    <!-- 学科题库管理对话框 -->
     <el-dialog
       v-model="subcategoryDialogVisible"
-      :title="`管理 ${currentSubjectForSubcategory?.name} 的子分类`"
+      :title="`管理 ${currentSubjectForSubcategory?.name} 的学科题库`"
       width="700px"
     >
       <div class="subcategory-management">
-        <div class="add-subcategory">
-          <el-input v-model="newSubcategoryName" placeholder="输入子分类名称" style="width: 200px; margin-right: 10px;"></el-input>
-          <el-select v-model="newSubcategoryIcon" placeholder="选择图标" style="width: 150px; margin-right: 10px;">
-            <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
-          </el-select>
-          <el-button type="primary" @click="addSubcategory">添加子分类</el-button>
+        <div class="add-subcategory" style="padding: 16px; background-color: #f5f7fa; border-radius: 8px; margin-bottom: 20px;">
+          <h4 style="margin: 0 0 15px; font-size: 16px; font-weight: 500; color: #303133;">添加新学科题库</h4>
+          <div style="display: flex; align-items: flex-end; gap: 15px; flex-wrap: wrap;">
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="font-size: 14px; color: #606266; font-weight: 500;">学科题库名称</label>
+              <el-input v-model="newSubcategoryName" placeholder="请输入学科题库名称" style="width: 200px;"></el-input>
+            </div>
+            <div style="display: flex; flex-direction: column; gap: 6px;">
+              <label style="font-size: 14px; color: #606266; font-weight: 500;">选择图标</label>
+              <el-select v-model="newSubcategoryIcon" placeholder="请选择图标" style="width: 150px;">
+                <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
+              </el-select>
+            </div>
+            <el-button type="primary" @click="addSubcategory" style="margin-bottom: 0;">
+              <el-icon><i class="el-icon-plus"></i></el-icon> 添加学科题库
+            </el-button>
+          </div>
         </div>
         
         <el-table :data="currentSubjectForSubcategory?.subcategories" style="margin-top: 20px;">
@@ -672,10 +670,10 @@
               <span class="subcategory-icon">{{ subjectIcons[row.iconIndex || 0] }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="子分类名称">
+          <el-table-column label="学科题库名称">
             <template #default="{ row }">
               <div v-if="editingSubcategoryId === row.id" class="subcategory-edit">
-                <el-input v-model="editingSubcategoryName" placeholder="输入子分类名称" style="width: 200px; margin-right: 10px;"></el-input>
+                <el-input v-model="editingSubcategoryName" placeholder="输入学科题库名称" style="width: 200px; margin-right: 10px;"></el-input>
                 <el-select v-model="editingSubcategoryIcon" placeholder="选择图标" style="width: 150px; margin-right: 10px;">
                   <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
                 </el-select>
@@ -719,8 +717,8 @@
                   <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
                 </el-select>
               </el-form-item>
-              <el-form-item label="子分类">
-                <el-select v-model="batchSubcategoryId" placeholder="选择子分类" style="width: 100%;">
+              <el-form-item label="学科题库">
+                <el-select v-model="batchSubcategoryId" placeholder="选择学科题库" style="width: 100%;">
                   <el-option v-for="subcategory in batchSubcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
                 </el-select>
               </el-form-item>
@@ -789,8 +787,8 @@
           </el-select>
         </el-form-item>
         
-        <el-form-item label="子分类">
-          <el-select v-model="form.subcategoryId" placeholder="选择子分类" style="width: 100%;">
+        <el-form-item label="学科题库">
+          <el-select v-model="form.subcategoryId" placeholder="选择学科题库" style="width: 100%;">
             <el-option v-for="subcategory in currentSubcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
           </el-select>
         </el-form-item>
@@ -960,7 +958,7 @@
           <div style="overflow-x: auto;">
             <el-table :data="selectedUserRecords" stripe style="width: 100%">
               <el-table-column prop="subject_name" label="学科" width="120" align="center"></el-table-column>
-              <el-table-column prop="subcategory_name" label="子分类" width="150" align="center">
+              <el-table-column prop="subcategory_name" label="学科题库" width="150" align="center">
                 <template #default="{ row }">
                   {{ row.subcategory_name || '全部' }}
                 </template>
@@ -1000,7 +998,7 @@
             <el-table :data="selectedUserQuestionAttempts" stripe style="width: 100%">
               <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
               <el-table-column prop="subject_name" label="学科" width="120" align="center"></el-table-column>
-              <el-table-column prop="subcategory_name" label="子分类" width="150" align="center">
+              <el-table-column prop="subcategory_name" label="学科题库" width="150" align="center">
                 <template #default="{ row }">
                   {{ row.subcategory_name || '全部' }}
                 </template>
@@ -1144,31 +1142,24 @@
 }
 
 .el-table__cell .cell {
-  display: flex !important;
-  justify-content: center !important;
-  align-items: center !important;
   text-align: center !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 40px !important;
-  line-height: 40px !important;
 }
 
-/* 表格内容居中 */
-.el-table__cell span {
+/* 只对特定的内容元素应用居中样式，不影响按钮 */
+.el-table__cell .cell .subcategory-text,
+.el-table__cell .cell .time-text,
+.el-table__cell .cell .question-content-preview {
   display: flex !important;
   align-items: center !important;
   justify-content: center !important;
   text-align: center !important;
-  width: 100% !important;
-  height: 100% !important;
-  min-height: 24px !important;
-  line-height: 24px !important;
-}
-
-.el-table__cell .el-button {
   margin: 0 auto !important;
-  display: block !important;
+}
+
+/* 让按钮保持Element Plus的默认样式 */
+.el-table__cell .el-button {
+  display: inline-flex !important;
+  margin: 0 4px !important;
 }
 
 .el-table__cell .el-progress {
@@ -1176,40 +1167,17 @@
   display: block !important;
 }
 
-/* 标签样式 */
+/* 标签样式 - 保持 Element Plus 默认样式，只做最小调整 */
 .el-table__cell .el-tag {
   margin: 0 auto !important;
   display: inline-flex !important;
   align-items: center !important;
   justify-content: center !important;
-  text-align: center !important;
-  height: 24px !important;
-  line-height: 24px !important;
-  padding: 4px 12px !important;
-  min-width: 60px !important;
-  width: 100% !important;
+  width: auto !important;
   max-width: 100% !important;
-  border-radius: 16px !important;
-  font-size: 13px !important;
-  font-weight: 500 !important;
-  transition: all 0.3s ease !important;
-}
-
-.el-table__cell .el-tag:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-.el-table__cell .el-tag__content {
-  text-align: center !important;
-  margin: 0 auto !important;
-  display: flex !important;
-  align-items: center !important;
-  justify-content: center !important;
-  height: 100% !important;
-  line-height: 24px !important;
-  flex: 1 !important;
-  width: 100% !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  text-overflow: clip !important;
 }
 
 /* 表格内容居中辅助类 */
@@ -1222,61 +1190,6 @@
   align-items: center !important;
   gap: 10px !important;
   width: 100% !important;
-}
-
-/* 学科标签 */
-.subject-tag-1 {
-  background-color: #ecf5ff !important;
-  color: #409eff !important;
-  border-color: #d9ecff !important;
-}
-
-.subject-tag-2 {
-  background-color: #f0f9eb !important;
-  color: #67c23a !important;
-  border-color: #d9f7be !important;
-}
-
-.subject-tag-3 {
-  background-color: #fdf6ec !important;
-  color: #e6a23c !important;
-  border-color: #faecd8 !important;
-}
-
-.subject-tag-4 {
-  background-color: #f0f0f0 !important;
-  color: #909399 !important;
-  border-color: #e4e7ed !important;
-}
-
-.subject-tag-5 {
-  background-color: #fef0f0 !important;
-  color: #f56c6c !important;
-  border-color: #fbc4c4 !important;
-}
-
-.subject-tag-6 {
-  background-color: #f0ecff !important;
-  color: #909399 !important;
-  border-color: #ebe7ff !important;
-}
-
-.subject-tag-7 {
-  background-color: #ecfdf5 !important;
-  color: #409eff !important;
-  border-color: #c6f6d5 !important;
-}
-
-.subject-tag-8 {
-  background-color: #fef5e7 !important;
-  color: #e6a23c !important;
-  border-color: #fde2a3 !important;
-}
-
-.subject-tag-9 {
-  background-color: #f0f9ff !important;
-  color: #409eff !important;
-  border-color: #cce7ff !important;
 }
 
 /* 题目内容列 */
@@ -1399,7 +1312,9 @@
   font-size: 13px !important;
   border-radius: 6px !important;
   transition: all 0.3s ease !important;
-  min-width: 60px !important;
+  min-width: auto !important;
+  width: auto !important;
+  white-space: nowrap !important;
 }
 
 .row-operations .el-button:hover {
@@ -1447,10 +1362,33 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
 }
 
-/* 按钮样式 */
+/* 按钮样式 - 只设置边框圆角和过渡，不影响内部布局 */
 .el-button {
   border-radius: 6px !important;
   transition: all 0.3s ease !important;
+}
+
+/* 确保按钮内部元素完全不受影响，保持Element Plus默认样式 */
+.el-button span,
+.el-button .el-icon,
+.el-button .el-button__text,
+.el-button .el-button__content,
+.el-button .el-icon--left,
+.el-button .el-icon--right {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  width: auto !important;
+  height: auto !important;
+  min-height: auto !important;
+  line-height: normal !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+}
+
+/* 确保按钮文字可见 */
+.el-button .el-button__text {
+  display: inline !important;
 }
 
 .el-button:hover {
@@ -1541,6 +1479,145 @@
     font-size: 11px !important;
   }
 }
+
+/* 学科管理卡片式布局样式 */
+.subjects-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+  gap: 20px;
+}
+
+.subject-card {
+  background: #fff;
+  border: 1px solid #e4e7ed;
+  border-radius: 12px;
+  padding: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.subject-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+  border-color: #409eff;
+}
+
+.subject-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.subject-info-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.subject-icon-large {
+  font-size: 40px;
+}
+
+.subject-edit-inline {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.edit-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.subject-name-display h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.subject-name-display p {
+  margin: 4px 0 0;
+  font-size: 13px;
+  color: #909399;
+}
+
+.subject-actions {
+  display: flex;
+  gap: 6px;
+}
+
+/* 按钮样式 - 只设置图标间距，完全不覆盖Element Plus默认按钮样式 */
+.subject-actions .el-button .el-icon,
+.edit-buttons .el-button .el-icon,
+.subcategories-header .el-button .el-icon,
+.add-subject .el-button .el-icon {
+  margin-right: 4px;
+}
+
+.subcategories-section {
+  border-top: 1px solid #f0f0f0;
+  padding-top: 16px;
+}
+
+.subcategories-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+
+.subcategories-header span {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.subcategories-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.subcategory-tag {
+  background: #f5f7fa;
+  padding: 8px 12px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid #e4e7ed;
+  transition: all 0.2s ease;
+}
+
+.subcategory-tag:hover {
+  background: #ecf5ff;
+  border-color: #409eff;
+}
+
+.subcategory-tag span:first-child {
+  font-size: 16px;
+}
+
+.subcategory-tag span:last-child {
+  font-size: 13px;
+  color: #303133;
+}
+
+.no-subcategories {
+  text-align: center;
+  padding: 16px;
+  color: #909399;
+  font-size: 13px;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 768px) {
+  .subjects-grid {
+    grid-template-columns: 1fr;
+  }
+}
 </style>
 
 <script setup>
@@ -1567,38 +1644,42 @@ const filterSubjectId = ref('')
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 
-// 界面名称设置
-const interfaceName = ref(localStorage.getItem('interfaceName') || '小学刷题闯关')
+// 界面名称设置 - 使用 ref，点击更新按钮时才保存到 store
+const interfaceName = ref(store.interfaceName)
 
-// 答题设置
-const randomizeAnswers = ref(true) // 默认开启
-const fixedQuestionCount = ref(false) // 默认不固定
-const minQuestionCount = ref(3) // 默认最小3题
-const maxQuestionCount = ref(5) // 默认最大5题
-const fixedQuestionCountValue = ref(3) // 默认固定3题
+// 答题设置 - 使用 store 中的设置
+const randomizeAnswers = computed({
+  get: () => store.settings.randomizeAnswers,
+  set: (value) => { store.settings.randomizeAnswers = value }
+})
+const fixedQuestionCount = computed({
+  get: () => store.settings.fixedQuestionCount,
+  set: (value) => { store.settings.fixedQuestionCount = value }
+})
+const minQuestionCount = computed({
+  get: () => store.settings.minQuestionCount,
+  set: (value) => { store.settings.minQuestionCount = value }
+})
+const maxQuestionCount = computed({
+  get: () => store.settings.maxQuestionCount,
+  set: (value) => { store.settings.maxQuestionCount = value }
+})
+const fixedQuestionCountValue = computed({
+  get: () => store.settings.fixedQuestionCountValue,
+  set: (value) => { store.settings.fixedQuestionCountValue = value }
+})
 
 // 加载设置
 const loadSettings = async () => {
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/settings`)
-    if (response.ok) {
-      const settings = await response.json()
-      randomizeAnswers.value = settings.randomizeAnswers !== 'false'
-      fixedQuestionCount.value = settings.fixedQuestionCount === 'true'
-      // 处理带引号的字符串格式
-      minQuestionCount.value = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
-      maxQuestionCount.value = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
-      fixedQuestionCountValue.value = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
-    }
-  } catch (error) {
-    console.error('加载设置失败:', error)
-  }
+  await store.loadSettings()
+  // 同步更新界面名称的本地状态
+  interfaceName.value = store.interfaceName
 }
 
 // 更新界面名称
-const updateInterfaceName = () => {
+const updateInterfaceName = async () => {
   if (interfaceName.value) {
-    localStorage.setItem('interfaceName', interfaceName.value)
+    await store.updateInterfaceName(interfaceName.value)
     ElMessage.success('界面名称更新成功！')
   } else {
     ElMessage.error('请输入界面名称')
@@ -1607,27 +1688,16 @@ const updateInterfaceName = () => {
 
 // 更新答题设置
 const updateAnswerSettings = async () => {
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/settings`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        randomizeAnswers: randomizeAnswers.value.toString(),
-        fixedQuestionCount: fixedQuestionCount.value.toString(),
-        minQuestionCount: minQuestionCount.value.toString(),
-        maxQuestionCount: maxQuestionCount.value.toString(),
-        fixedQuestionCountValue: fixedQuestionCountValue.value.toString()
-      })
-    })
-    if (response.ok) {
-      ElMessage.success('答题设置更新成功！')
-    } else {
-      ElMessage.error('答题设置更新失败')
-    }
-  } catch (error) {
-    console.error('更新设置失败:', error)
+  const success = await store.updateSettings({
+    randomizeAnswers: randomizeAnswers.value.toString(),
+    fixedQuestionCount: fixedQuestionCount.value.toString(),
+    minQuestionCount: minQuestionCount.value.toString(),
+    maxQuestionCount: maxQuestionCount.value.toString(),
+    fixedQuestionCountValue: fixedQuestionCountValue.value.toString()
+  })
+  if (success) {
+    ElMessage.success('答题设置更新成功！')
+  } else {
     ElMessage.error('答题设置更新失败')
   }
 }
@@ -2113,7 +2183,7 @@ const saveBatchQuestions = async () => {
   }
   
   if (!batchSubjectId.value || !batchSubcategoryId.value) {
-    ElMessage.error('请选择学科和子分类')
+    ElMessage.error('请选择学科和学科题库')
     return
   }
   
@@ -2154,7 +2224,7 @@ const saveBatchQuestions = async () => {
 }
 
 const deleteSubcategory = (subcategoryId, subjectId = null) => {
-  ElMessageBox.confirm('确定要删除该子分类吗？删除后相关题目也会被删除。', '删除确认', {
+  ElMessageBox.confirm('确定要删除该学科题库吗？删除后相关题目也会被删除。', '删除确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
@@ -2252,7 +2322,7 @@ const editQuestion = (question) => {
 const saveQuestion = async () => {
   // 验证子分类
   if (!form.value.subcategoryId) {
-    ElMessage.error('请选择子分类！')
+    ElMessage.error('请选择学科题库！')
     return
   }
   
@@ -4541,7 +4611,7 @@ onMounted(async () => {
 }
 
 .el-table-column:nth-child(5) {
-  width: 100px !important; /* 子分类列 */
+  width: 100px !important; /* 学科题库列 */
   min-width: 100px;
   max-width: 120px;
 }
@@ -4628,7 +4698,7 @@ onMounted(async () => {
   }
   
   .el-table-column:nth-child(5) {
-    width: 90px !important; /* 子分类列 */
+    width: 90px !important; /* 学科题库列 */
   }
   
   .el-table-column:nth-child(6) {

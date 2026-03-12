@@ -111,9 +111,9 @@
       </div>
     </div>
     
-    <!-- 子分类选择 -->
+    <!-- 学科题库选择 -->
     <div v-else-if="!selectedSubcategoryId" class="subcategory-selection">
-      <h2 class="section-title">🎯 请选择子分类</h2>
+      <h2 class="section-title">🎯 请选择题库</h2>
       <div class="subcategory-list">
         <div 
           v-for="subcategory in currentSubject.subcategories" 
@@ -263,8 +263,8 @@ import { getApiBaseUrl } from '../utils/database'
 
 const store = useQuestionStore()
 
-// 界面名称
-const interfaceName = ref(localStorage.getItem('interfaceName') || '小学刷题闯关')
+// 界面名称 - 使用 store
+const interfaceName = computed(() => store.interfaceName)
 
 const selectedSubjectId = ref(null)
 const selectedSubcategoryId = ref(null)
@@ -609,36 +609,17 @@ const backToSubjects = () => {
 }
 
 const generateNewQuestions = async () => {
-  // 读取设置
-  let randomizeAnswers = true
-  let fixedQuestionCount = false
-  let minCount = 3
-  let maxCount = 5
-  let fixedCount = 3
-  
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/settings`)
-    if (response.ok) {
-      const settings = await response.json()
-      randomizeAnswers = settings.randomizeAnswers !== 'false'
-      fixedQuestionCount = settings.fixedQuestionCount === 'true'
-      // 处理带引号的字符串格式
-      minCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
-      maxCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
-      fixedCount = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
-    }
-  } catch (error) {
-    console.error('加载设置失败:', error)
-  }
+  // 从 store 读取设置（已经通过 AdminView 实时更新）
+  const { randomizeAnswers, fixedQuestionCount, minQuestionCount, maxQuestionCount, fixedQuestionCountValue } = store.settings
   
   // console.log('答案随机排序设置:', randomizeAnswers)
   
   // 确定题目数量
   let questionCount
   if (fixedQuestionCount) {
-    questionCount = fixedCount
+    questionCount = fixedQuestionCountValue
   } else {
-    questionCount = Math.floor(Math.random() * (maxCount - minCount + 1)) + minCount
+    questionCount = Math.floor(Math.random() * (maxQuestionCount - minQuestionCount + 1)) + minQuestionCount
   }
   // 生成新的题目，传递随机排序设置
   store.generateQuestionsBySubcategory(selectedSubjectId.value, selectedSubcategoryId.value, questionCount, randomizeAnswers)
@@ -1413,7 +1394,7 @@ onMounted(async () => {
   }
 }
 
-/* 子分类选择 */
+/* 学科题库选择 */
 .subcategory-selection {
   margin-bottom: 40px;
 }

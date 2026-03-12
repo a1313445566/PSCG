@@ -98,96 +98,10 @@ const createTables = () => {
     
     // 创建设置表
     db.run(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-    
-    // 初始化默认年级数据
-    initializeDefaultGrades();
-    
-    // 初始化默认班级数据
-    initializeDefaultClasses();
-    
-    // 初始化默认学科数据
-    initializeDefaultSubjects();
   });
 };
 
-// 初始化默认年级数据
-const initializeDefaultGrades = () => {
-  // 检查是否已有年级数据
-  db.get('SELECT COUNT(*) as count FROM grades', (err, result) => {
-    if (err) {
-      console.error('检查年级数据失败:', err);
-      return;
-    }
-    
-    if (result.count === 0) {
-      // 插入默认年级数据
-      const defaultGrades = ['1年级', '2年级', '3年级', '4年级', '5年级', '6年级'];
-      defaultGrades.forEach((grade, index) => {
-        db.run('INSERT INTO grades (id, name) VALUES (?, ?)', [index + 1, grade], (err) => {
-          if (err) {
-            console.error('插入年级数据失败:', err);
-          }
-        });
-      });
-    }
-  });
-};
 
-// 初始化默认班级数据
-const initializeDefaultClasses = () => {
-  // 检查是否已有班级数据
-  db.get('SELECT COUNT(*) as count FROM classes', (err, result) => {
-    if (err) {
-      console.error('检查班级数据失败:', err);
-      return;
-    }
-    
-    if (result.count === 0) {
-      // 插入默认班级数据
-      const defaultClasses = ['1班', '2班', '3班', '4班', '5班', '6班', '7班', '8班', '9班', '10班'];
-      defaultClasses.forEach((className, index) => {
-        db.run('INSERT INTO classes (id, name) VALUES (?, ?)', [index + 1, className], (err) => {
-          if (err) {
-            console.error('插入班级数据失败:', err);
-          }
-        });
-      });
-    }
-  });
-};
-
-// 初始化默认学科数据
-const initializeDefaultSubjects = () => {
-  // 检查是否已有学科数据
-  db.get('SELECT COUNT(*) as count FROM subjects', (err, result) => {
-    if (err) {
-      console.error('检查学科数据失败:', err);
-      return;
-    }
-    
-    if (result.count === 0) {
-      // 插入默认学科数据
-      const defaultSubjects = [
-        { id: 1, name: '语文', icon_index: 0 },
-        { id: 2, name: '数学', icon_index: 1 },
-        { id: 3, name: '英语', icon_index: 2 },
-        { id: 4, name: '物理', icon_index: 3 },
-        { id: 5, name: '化学', icon_index: 4 },
-        { id: 6, name: '生物', icon_index: 5 },
-        { id: 7, name: '历史', icon_index: 6 },
-        { id: 8, name: '地理', icon_index: 7 },
-        { id: 9, name: '政治', icon_index: 8 }
-      ];
-      defaultSubjects.forEach((subject) => {
-        db.run('INSERT INTO subjects (id, name, icon_index) VALUES (?, ?, ?)', [subject.id, subject.name, subject.icon_index], (err) => {
-          if (err) {
-            console.error('插入学科数据失败:', err);
-          }
-        });
-      });
-    }
-  });
-};
 
 // 数据管理API
 
@@ -589,6 +503,9 @@ app.post('/api/data/clear-all', (req, res) => {
                       return;
                     }
                     
+                    // 清除所有缓存
+                    cache.clear();
+                    
                     res.json({ success: true, message: '所有数据清空成功' });
                   });
                 });
@@ -617,6 +534,10 @@ app.post('/api/data/clear-records', (req, res) => {
           res.status(500).json({ error: '清空用户答题记录失败' });
           return;
         }
+        
+        // 清除相关缓存
+        cache.del(CACHE_KEYS.ANALYSIS);
+        cache.del(CACHE_KEYS.ERROR_PRONE_QUESTIONS);
         
         res.json({ success: true, message: '用户答题记录清空成功' });
       });
@@ -869,6 +790,10 @@ app.post('/api/grades', (req, res) => {
       res.status(500).json({ error: '添加年级失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.GRADES);
+    
     // 返回新添加的年级
     db.get('SELECT * FROM grades WHERE id = ?', [this.lastID], (err, grade) => {
       if (err) {
@@ -896,6 +821,10 @@ app.put('/api/grades/:id', (req, res) => {
       res.status(500).json({ error: '更新年级失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.GRADES);
+    
     res.json({ success: true });
   });
 });
@@ -909,6 +838,10 @@ app.delete('/api/grades/:id', (req, res) => {
       res.status(500).json({ error: '删除年级失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.GRADES);
+    
     res.json({ success: true });
   });
 });
@@ -936,6 +869,8 @@ app.post('/api/grades/init', (req, res) => {
           count++;
           
           if (count === defaultGrades.length) {
+            // 清除缓存
+            cache.del(CACHE_KEYS.GRADES);
             res.json({ success: true, message: '年级数据初始化成功' });
           }
         });
@@ -952,6 +887,10 @@ app.post('/api/grades/clear', (req, res) => {
       res.status(500).json({ error: '清空年级数据失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.GRADES);
+    
     res.json({ success: true, message: '年级数据清空成功' });
   });
 });
@@ -992,6 +931,10 @@ app.post('/api/classes', (req, res) => {
       res.status(500).json({ error: '添加班级失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.CLASSES);
+    
     // 返回新添加的班级
     db.get('SELECT * FROM classes WHERE id = ?', [this.lastID], (err, classItem) => {
       if (err) {
@@ -1019,6 +962,10 @@ app.put('/api/classes/:id', (req, res) => {
       res.status(500).json({ error: '更新班级失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.CLASSES);
+    
     res.json({ success: true });
   });
 });
@@ -1032,6 +979,10 @@ app.delete('/api/classes/:id', (req, res) => {
       res.status(500).json({ error: '删除班级失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.CLASSES);
+    
     res.json({ success: true });
   });
 });
@@ -1059,6 +1010,8 @@ app.post('/api/classes/init', (req, res) => {
           count++;
           
           if (count === defaultClasses.length) {
+            // 清除缓存
+            cache.del(CACHE_KEYS.CLASSES);
             res.json({ success: true, message: '班级数据初始化成功' });
           }
         });
@@ -1075,6 +1028,10 @@ app.post('/api/classes/clear', (req, res) => {
       res.status(500).json({ error: '清空班级数据失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.CLASSES);
+    
     res.json({ success: true, message: '班级数据清空成功' });
   });
 });
@@ -1243,6 +1200,10 @@ app.post('/api/leaderboard/clear', (req, res) => {
           res.status(500).json({ error: '清空排行榜数据失败' });
           return;
         }
+        
+        // 清除相关缓存
+        cache.del(CACHE_KEYS.ANALYSIS);
+        cache.del(CACHE_KEYS.ERROR_PRONE_QUESTIONS);
         
         res.json({ success: true, message: '排行榜数据清空成功' });
       });
@@ -2423,9 +2384,6 @@ app.post('/api/subjects', (req, res) => {
     return;
   }
   
-  // 打印接收到的名称，检查编码
-
-  
   db.run('INSERT INTO subjects (name, icon_index) VALUES (?, ?)', 
     [name, iconIndex || 0], function(err) {
       if (err) {
@@ -2433,6 +2391,10 @@ app.post('/api/subjects', (req, res) => {
         res.status(500).json({ error: '添加学科失败' });
         return;
       }
+      
+      // 清除缓存
+      cache.del(CACHE_KEYS.SUBJECTS);
+      
       // 返回完整的学科对象
       db.get('SELECT * FROM subjects WHERE id = ?', [this.lastID], (err, subject) => {
         if (err) {
@@ -2440,8 +2402,6 @@ app.post('/api/subjects', (req, res) => {
           res.json({ success: true, id: this.lastID, name, iconIndex: iconIndex || 0, subcategories: [] });
           return;
         }
-        // 打印从数据库获取的名称
-
         
         // 转换字段名以匹配前端
         const subjectWithCamelCase = {
@@ -2472,6 +2432,10 @@ app.put('/api/subjects/:id', (req, res) => {
         res.status(500).json({ error: '更新学科失败' });
         return;
       }
+      
+      // 清除缓存
+      cache.del(CACHE_KEYS.SUBJECTS);
+      
       // 更新成功后，返回更新后的学科对象
       db.get('SELECT * FROM subjects WHERE id = ?', [id], (err, subject) => {
         if (err) {
@@ -2530,6 +2494,10 @@ app.delete('/api/subjects/:id', (req, res) => {
             res.status(500).json({ error: '删除学科失败' });
             return;
           }
+          
+          // 清除缓存
+          cache.del(CACHE_KEYS.SUBJECTS);
+          
           res.json({ success: true });
         });
       });
@@ -2553,6 +2521,11 @@ app.post('/api/subcategories', (req, res) => {
         res.status(500).json({ error: '添加子分类失败' });
         return;
       }
+      
+      // 清除缓存
+      cache.del(CACHE_KEYS.SUBJECTS);
+      cache.del(`${CACHE_KEYS.SUBCATEGORIES}_${subjectId}`);
+      
       // 返回完整的子分类对象
       db.get('SELECT * FROM subcategories WHERE id = ?', [this.lastID], (err, subcategory) => {
         if (err) {
@@ -2589,6 +2562,10 @@ app.put('/api/subcategories/:id', (req, res) => {
         res.status(500).json({ error: '更新子分类失败' });
         return;
       }
+      
+      // 清除缓存
+      cache.del(CACHE_KEYS.SUBJECTS);
+      
       // 更新成功后，返回更新后的子分类对象
       db.get('SELECT * FROM subcategories WHERE id = ?', [id], (err, subcategory) => {
         if (err) {
@@ -2627,6 +2604,10 @@ app.delete('/api/subcategories/:id', (req, res) => {
           res.status(500).json({ error: '删除子分类失败' });
           return;
         }
+        
+        // 清除缓存
+        cache.del(CACHE_KEYS.SUBJECTS);
+        
         res.json({ success: true });
       });
     });
@@ -2649,6 +2630,11 @@ app.post('/api/questions', (req, res) => {
         res.status(500).json({ error: '添加题目失败' });
         return;
       }
+      
+      // 清除缓存
+      cache.del(CACHE_KEYS.ERROR_PRONE_QUESTIONS);
+      cache.del(CACHE_KEYS.ANALYSIS);
+      
       res.json({ success: true, id: this.lastID });
     }
   );
@@ -2670,6 +2656,11 @@ app.put('/api/questions/:id', (req, res) => {
         res.status(500).json({ error: '更新题目失败' });
         return;
       }
+      
+      // 清除缓存
+      cache.del(CACHE_KEYS.ERROR_PRONE_QUESTIONS);
+      cache.del(CACHE_KEYS.ANALYSIS);
+      
       res.json({ success: true });
     }
   );
@@ -2684,6 +2675,11 @@ app.delete('/api/questions/:id', (req, res) => {
       res.status(500).json({ error: '删除题目失败' });
       return;
     }
+    
+    // 清除缓存
+    cache.del(CACHE_KEYS.ERROR_PRONE_QUESTIONS);
+    cache.del(CACHE_KEYS.ANALYSIS);
+    
     res.json({ success: true });
   });
 });

@@ -209,7 +209,7 @@
               <div class="leaderboard-table">
                 <div class="leaderboard-header">
                   <div class="subject-col">学科</div>
-                  <div class="subcategory-col">子分类</div>
+                  <div class="subcategory-col">学科题库</div>
                   <div class="score-col">成绩</div>
                   <div class="accuracy-col">正确率</div>
                   <div class="time-col">时间</div>
@@ -258,7 +258,7 @@
       <div class="leaderboard-table">
         <div class="leaderboard-header">
           <div class="subject-col">学科</div>
-          <div class="subcategory-col">子分类</div>
+          <div class="subcategory-col">学科题库</div>
           <div class="score-col">成绩</div>
           <div class="accuracy-col">正确率</div>
           <div class="time-col">时间</div>
@@ -283,9 +283,12 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { ElMessage, ElButton, ElTable, ElTableColumn, ElTabs, ElTabPane, ElSelect, ElOption, ElProgress, ElInput, ElDialog } from 'element-plus'
 import 'element-plus/dist/index.css'
 import { getApiBaseUrl } from '../utils/database'
+import { useQuestionStore } from '../stores/questionStore'
 
-// 界面名称
-const interfaceName = ref(localStorage.getItem('interfaceName') || '小学刷题闯关')
+const store = useQuestionStore()
+
+// 界面名称 - 使用 store
+const interfaceName = computed(() => store.interfaceName)
 
 const activeTab = ref('global')
 const subjects = ref([])

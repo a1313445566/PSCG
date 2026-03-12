@@ -14,6 +14,7 @@ import {
   updateSubject as updateSubjectApi,
   updateSubcategory as updateSubcategoryApi
 } from '../utils/database'
+import { getApiBaseUrl } from '../utils/database'
 
 export const useQuestionStore = defineStore('question', {
   state: () => ({
@@ -23,7 +24,15 @@ export const useQuestionStore = defineStore('question', {
     currentQuestions: [],
     userAnswers: {},
     score: null,
-    correctQuestions: [] // 存储已经做对的题目ID
+    correctQuestions: [], // 存储已经做对的题目ID
+    interfaceName: '小学刷题闯关',
+    settings: {
+      randomizeAnswers: true,
+      fixedQuestionCount: false,
+      minQuestionCount: 3,
+      maxQuestionCount: 5,
+      fixedQuestionCountValue: 3
+    }
   }),
   getters: {
     getQuestionsBySubject: (state) => (subjectId) => {
@@ -42,6 +51,71 @@ export const useQuestionStore = defineStore('question', {
     async initialize() {
       await initDatabase()
       await this.loadData()
+      await this.loadSettings()
+    },
+    
+    // 加载设置
+    async loadSettings() {
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/settings`)
+        if (response.ok) {
+          const settings = await response.json()
+          this.settings.randomizeAnswers = settings.randomizeAnswers !== 'false'
+          this.settings.fixedQuestionCount = settings.fixedQuestionCount === 'true'
+          this.settings.minQuestionCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
+          this.settings.maxQuestionCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
+          this.settings.fixedQuestionCountValue = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+          // 加载界面名称
+          if (settings.interfaceName) {
+            this.interfaceName = settings.interfaceName
+          }
+        }
+      } catch (error) {
+        console.error('加载设置失败:', error)
+      }
+    },
+    
+    // 更新设置
+    async updateSettings(newSettings) {
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify(newSettings)
+        })
+        if (response.ok) {
+          // 更新本地状态
+          this.settings.randomizeAnswers = newSettings.randomizeAnswers !== 'false'
+          this.settings.fixedQuestionCount = newSettings.fixedQuestionCount === 'true'
+          this.settings.minQuestionCount = parseInt(newSettings.minQuestionCount?.replace(/'/g, '')) || 3
+          this.settings.maxQuestionCount = parseInt(newSettings.maxQuestionCount?.replace(/'/g, '')) || 5
+          this.settings.fixedQuestionCountValue = parseInt(newSettings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+          return true
+        }
+        return false
+      } catch (error) {
+        console.error('更新设置失败:', error)
+        return false
+      }
+    },
+    
+    // 更新界面名称
+    async updateInterfaceName(newName) {
+      this.interfaceName = newName
+      // 保存到数据库
+      try {
+        await fetch(`${getApiBaseUrl()}/settings`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ interfaceName: newName })
+        })
+      } catch (error) {
+        console.error('保存界面名称到数据库失败:', error)
+      }
     },
     
     // 加载数据
