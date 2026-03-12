@@ -31,7 +31,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// 静态文件服务 - 放在API路由之后
+// 静态文件服务 - 放在API路由之前
 app.use(express.static(path.join(__dirname, 'dist')));
 app.use('/audio', express.static(path.join(__dirname, 'audio')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
