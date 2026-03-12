@@ -33,8 +33,10 @@ app.use((req, res, next) => {
 
 // 静态文件服务 - 放在API路由之前
 app.use(express.static(path.join(__dirname, 'dist')));
+app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets')));
 app.use('/audio', express.static(path.join(__dirname, 'audio')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
+app.use('/vite.svg', express.static(path.join(__dirname, 'dist', 'vite.svg')));
 
 // 数据库连接
 const db = new sqlite3.Database('./quiz.db', (err) => {
