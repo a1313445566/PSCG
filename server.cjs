@@ -1,4 +1,5 @@
 const express = require('express');
+const compression = require('compression');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
@@ -22,21 +23,34 @@ const port = 3001;
 
 // 中间件
 app.use(cors());
+app.use(compression());
 app.use(express.json({ encoding: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' }));
 
-// 设置响应编码为 UTF-8
+// 设置响应编码为 UTF-8 - 只对API请求设置JSON类型
 app.use((req, res, next) => {
-  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  if (req.path.startsWith('/api')) {
+    res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  }
   next();
 });
 
 // 静态文件服务 - 放在API路由之前
-app.use(express.static(path.join(__dirname, 'dist')));
-app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets')));
+app.use(express.static(path.join(__dirname, 'dist'), {
+  maxAge: '1d',
+  etag: true,
+  lastModified: true
+}));
+app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
+  maxAge: '7d',
+  etag: true,
+  lastModified: true
+}));
 app.use('/audio', express.static(path.join(__dirname, 'audio')));
 app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/vite.svg', express.static(path.join(__dirname, 'dist', 'vite.svg')));
+app.use('/vite.svg', express.static(path.join(__dirname, 'dist', 'vite.svg'), {
+  maxAge: '7d'
+}));
 
 // 数据库连接
 const db = new sqlite3.Database('./quiz.db', (err) => {
