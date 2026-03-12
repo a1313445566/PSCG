@@ -1,0 +1,11 @@
+{
+  "timestamp": "2026-03-12T00:51:36.469Z",
+  "concurrentUsers": 200,
+  "requestsPerUser": 5,
+  "totalRequests": 200,
+  "totalSuccess": 200,
+  "totalError": 0,
+  "successRate": 100,
+  "totalTime": 10869,
+  "averageResponseTime": 54.345
+}

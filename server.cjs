@@ -4,6 +4,18 @@ const cors = require('cors');
 const path = require('path');
 const PDFDocument = require('pdfkit');
 const XLSX = require('xlsx');
+const cache = require('memory-cache');
+
+// 缓存配置
+const CACHE_DURATION = 3600000; // 1小时
+const CACHE_KEYS = {
+  SUBJECTS: 'subjects',
+  GRADES: 'grades',
+  CLASSES: 'classes',
+  SUBCATEGORIES: 'subcategories',
+  ANALYSIS: 'analysis',
+  ERROR_PRONE_QUESTIONS: 'error_prone_questions'
+};
 
 const app = express();
 const port = 3001;
@@ -656,6 +668,14 @@ app.post('/api/settings', (req, res) => {
 
 // 学科相关API
 app.get('/api/subjects', (req, res) => {
+  // 尝试从缓存获取
+  const cachedSubjects = cache.get(CACHE_KEYS.SUBJECTS);
+  if (cachedSubjects) {
+    console.log('从缓存获取学科数据');
+    res.json(cachedSubjects);
+    return;
+  }
+  
   db.serialize(() => {
     db.all('SELECT * FROM subjects', (err, subjects) => {
       if (err) {
@@ -679,6 +699,11 @@ app.get('/api/subjects', (req, res) => {
               iconIndex: subcat.icon_index
             }))
           }));
+          
+          // 缓存结果
+          cache.put(CACHE_KEYS.SUBJECTS, subjectsWithCamelCase, CACHE_DURATION);
+          console.log('缓存学科数据');
+          
           res.json(subjectsWithCamelCase);
           return;
         }
@@ -701,12 +726,27 @@ app.get('/api/subjects', (req, res) => {
 // 子分类相关API
 app.get('/api/subjects/:id/subcategories', (req, res) => {
   const subjectId = req.params.id;
+  const cacheKey = `${CACHE_KEYS.SUBCATEGORIES}_${subjectId}`;
+  
+  // 尝试从缓存获取
+  const cachedSubcategories = cache.get(cacheKey);
+  if (cachedSubcategories) {
+    console.log('从缓存获取子分类数据');
+    res.json(cachedSubcategories);
+    return;
+  }
+  
   db.all('SELECT * FROM subcategories WHERE subject_id = ?', [subjectId], (err, subcategories) => {
     if (err) {
       console.error('获取子分类失败:', err);
       res.status(500).json({ error: '获取子分类失败' });
       return;
     }
+    
+    // 缓存结果
+    cache.put(cacheKey, subcategories, CACHE_DURATION);
+    console.log('缓存子分类数据');
+    
     res.json(subcategories);
   });
 });
@@ -786,12 +826,25 @@ app.get('/api/questions', (req, res) => {
 
 // 年级相关API
 app.get('/api/grades', (req, res) => {
+  // 尝试从缓存获取
+  const cachedGrades = cache.get(CACHE_KEYS.GRADES);
+  if (cachedGrades) {
+    console.log('从缓存获取年级数据');
+    res.json(cachedGrades);
+    return;
+  }
+  
   db.all('SELECT * FROM grades ORDER BY id', (err, grades) => {
     if (err) {
       console.error('获取年级失败:', err);
       res.status(500).json({ error: '获取年级失败' });
       return;
     }
+    
+    // 缓存结果
+    cache.put(CACHE_KEYS.GRADES, grades, CACHE_DURATION);
+    console.log('缓存年级数据');
+    
     res.json(grades);
   });
 });
@@ -899,12 +952,25 @@ app.post('/api/grades/clear', (req, res) => {
 
 // 班级相关API
 app.get('/api/classes', (req, res) => {
+  // 尝试从缓存获取
+  const cachedClasses = cache.get(CACHE_KEYS.CLASSES);
+  if (cachedClasses) {
+    console.log('从缓存获取班级数据');
+    res.json(cachedClasses);
+    return;
+  }
+  
   db.all('SELECT * FROM classes ORDER BY id', (err, classes) => {
     if (err) {
       console.error('获取班级失败:', err);
       res.status(500).json({ error: '获取班级失败' });
       return;
     }
+    
+    // 缓存结果
+    cache.put(CACHE_KEYS.CLASSES, classes, CACHE_DURATION);
+    console.log('缓存班级数据');
+    
     res.json(classes);
   });
 });
@@ -1295,6 +1361,17 @@ app.get('/api/question-attempts/:userId', (req, res) => {
 app.get('/api/error-prone-questions', (req, res) => {
   const { subjectId, grade, class: className, subcategoryIds } = req.query;
   
+  // 生成缓存键
+  const cacheKey = `${CACHE_KEYS.ERROR_PRONE_QUESTIONS}_${subjectId || ''}_${grade || ''}_${className || ''}_${subcategoryIds || ''}`;
+  
+  // 尝试从缓存获取
+  const cachedQuestions = cache.get(cacheKey);
+  if (cachedQuestions) {
+    console.log('从缓存获取错误率较高的题目');
+    res.json(cachedQuestions);
+    return;
+  }
+  
   let query = `
     SELECT q.id, q.subject_id, q.content, q.type,
            COUNT(qa.id) as total_attempts,
@@ -1340,6 +1417,11 @@ app.get('/api/error-prone-questions', (req, res) => {
       res.status(500).json({ error: '获取错误率较高的题目失败' });
       return;
     }
+    
+    // 缓存结果
+    cache.put(cacheKey, questions, CACHE_DURATION);
+    console.log('缓存错误率较高的题目');
+    
     res.json(questions);
   });
 });
@@ -1347,6 +1429,17 @@ app.get('/api/error-prone-questions', (req, res) => {
 // 数据分析API
 app.get('/api/analysis', (req, res) => {
   const { studentId, grade, class: className, subjectId, subcategoryIds, startDate, endDate } = req.query;
+  
+  // 生成缓存键
+  const cacheKey = `${CACHE_KEYS.ANALYSIS}_${studentId || ''}_${grade || ''}_${className || ''}_${subjectId || ''}_${subcategoryIds || ''}_${startDate || ''}_${endDate || ''}`;
+  
+  // 尝试从缓存获取
+  const cachedAnalysis = cache.get(cacheKey);
+  if (cachedAnalysis) {
+    console.log('从缓存获取分析数据');
+    res.json(cachedAnalysis);
+    return;
+  }
   
   // 构建基础查询条件
   let whereClause = 'WHERE 1=1';
@@ -1699,6 +1792,11 @@ app.get('/api/analysis', (req, res) => {
                       }
                       
                       analysisData.errorProneQuestions = errorProneData || [];
+                      
+                      // 缓存结果
+                      cache.put(cacheKey, analysisData, CACHE_DURATION);
+                      console.log('缓存分析数据');
+                      
                       res.json(analysisData);
                     });
                   });
