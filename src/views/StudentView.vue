@@ -434,7 +434,7 @@ const selectSubcategory = async (subcategoryId) => {
     console.error('加载设置失败:', error)
   }
   
-  console.log('答案随机排序设置:', randomizeAnswers)
+  // console.log('答案随机排序设置:', randomizeAnswers)
   
   // 确定题目数量
   let questionCount
@@ -450,7 +450,7 @@ const selectSubcategory = async (subcategoryId) => {
   startTime.value = Date.now()
   // 检查生成的题目
   setTimeout(() => {
-    console.log('Generated questions:', store.currentQuestions)
+    // console.log('Generated questions:', store.currentQuestions)
   }, 100)
 }
 
@@ -472,17 +472,17 @@ const submitAnswers = async () => {
   wrongQuestions.value = currentQuestions.value.filter(q => userAnswers.value[q.id] !== q.answer)
   
   // 保存答题记录
-  console.log('开始保存答题记录，currentUserId:', currentUserId.value, 'startTime:', startTime.value)
-  console.log('selectedSubjectId:', selectedSubjectId.value, 'selectedSubcategoryId:', selectedSubcategoryId.value)
-  console.log('totalQuestions:', totalQuestions.value, 'score:', score.value)
+  // console.log('开始保存答题记录，currentUserId:', currentUserId.value, 'startTime:', startTime.value)
+  // console.log('selectedSubjectId:', selectedSubjectId.value, 'selectedSubcategoryId:', selectedSubcategoryId.value)
+  // console.log('totalQuestions:', totalQuestions.value, 'score:', score.value)
   
   if (currentUserId.value && startTime.value) {
     const timeSpent = Math.round((Date.now() - startTime.value) / 1000) // 秒
-    console.log('开始保存整体答题记录，timeSpent:', timeSpent)
+    // console.log('开始保存整体答题记录，timeSpent:', timeSpent)
     try {
       // 保存整体答题记录
       const apiUrl = `${getApiBaseUrl()}/answer-records`
-      console.log('保存答题记录API URL:', apiUrl)
+      // console.log('保存答题记录API URL:', apiUrl)
       const answerRecordResponse = await fetch(apiUrl, {
         method: 'POST',
         headers: {
@@ -497,7 +497,7 @@ const submitAnswers = async () => {
           timeSpent: timeSpent
         })
       })
-      console.log('整体答题记录保存响应:', answerRecordResponse.status)
+      // console.log('整体答题记录保存响应:', answerRecordResponse.status)
       
       // 检查响应状态
       if (!answerRecordResponse.ok) {
@@ -505,14 +505,14 @@ const submitAnswers = async () => {
         console.error('保存答题记录失败:', errorData)
       } else {
         const successData = await answerRecordResponse.json()
-        console.log('保存答题记录成功:', successData)
+        // console.log('保存答题记录成功:', successData)
         
         // 保存每道题的答题记录
-        console.log('开始保存每道题的答题记录，题目数量:', currentQuestions.value.length)
+        // console.log('开始保存每道题的答题记录，题目数量:', currentQuestions.value.length)
         for (const question of currentQuestions.value) {
           const userAnswer = userAnswers.value[question.id]
           const isCorrect = userAnswer === question.answer
-          console.log('保存题目:', question.id, '答案:', userAnswer, '是否正确:', isCorrect)
+          // console.log('保存题目:', question.id, '答案:', userAnswer, '是否正确:', isCorrect)
           
           // 保存用户选择的选项内容，而不是标签
           let selectedOptionContent = ''
@@ -554,11 +554,11 @@ const submitAnswers = async () => {
               answerRecordId: successData.recordId // 传递答题记录ID
             })
           })
-          console.log('题目答题记录保存响应:', questionAttemptResponse.status)
+          // console.log('题目答题记录保存响应:', questionAttemptResponse.status)
         }
       }
       
-      console.log('答题记录已保存')
+      // console.log('答题记录已保存')
       // 重新获取排行榜数据
       await fetchLeaderboardData()
     } catch (error) {
@@ -567,7 +567,7 @@ const submitAnswers = async () => {
     }
   } else {
     // 如果没有用户ID，提示用户输入学号
-    console.log('没有用户ID或startTime，无法保存答题记录')
+    // console.log('没有用户ID或startTime，无法保存答题记录')
     ElMessage.warning('请先输入学号以保存答题记录')
     showStudentIdDialog.value = true
   }
@@ -631,7 +631,7 @@ const generateNewQuestions = async () => {
     console.error('加载设置失败:', error)
   }
   
-  console.log('答案随机排序设置:', randomizeAnswers)
+  // console.log('答案随机排序设置:', randomizeAnswers)
   
   // 确定题目数量
   let questionCount
@@ -754,7 +754,7 @@ const fetchLeaderboardData = async () => {
 onMounted(async () => {
   // 初始化数据
   await store.initialize()
-  console.log('Data loaded:', store.questions)
+  // console.log('Data loaded:', store.questions)
   
   // 加载年级和班级数据
   await loadGradesAndClasses()

@@ -491,7 +491,7 @@
 
 <script setup>
 import * as echarts from 'echarts';
-import { ref, onMounted, computed } from 'vue';
+import { ref, onMounted, computed, watch, nextTick } from 'vue';
 import { getApiBaseUrl, getSubjects, getGrades, getClasses } from '../utils/database';
 import { ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElButton, ElDatePicker, ElRow, ElCol, ElCard, ElTable, ElTableColumn, ElRadioGroup, ElRadioButton, ElPagination, ElCheckbox, ElTooltip, ElProgress } from 'element-plus';
 import 'element-plus/dist/index.css';
@@ -572,6 +572,15 @@ const handleErrorProneCurrentChange = (current) => {
   errorProneCurrentPage.value = current;
 };
 
+// 监听分析数据变化，确保图表能够正确初始化
+watch(analysisData, (newData) => {
+  if (newData) {
+    nextTick(() => {
+      initCharts();
+    });
+  }
+}, { deep: true });
+
 onMounted(() => {
   loadSubjects();
   loadGrades();
@@ -630,14 +639,15 @@ const loadAnalysisData = async () => {
   if (dateRange && dateRange[1]) params.append('endDate', dateRange[1]);
   
   try {
-    console.log('请求分析数据:', `${API_BASE_URL}/analysis?${params.toString()}`);
-    const response = await fetch(`${API_BASE_URL}/analysis?${params.toString()}`);
-    console.log('响应状态:', response.status);
+    const paramsString = params.toString();
+    const url = paramsString ? `${API_BASE_URL}/analysis?${paramsString}` : `${API_BASE_URL}/analysis`;
+    const response = await fetch(url);
     if (response.ok) {
       const data = await response.json();
-      console.log('获取到的分析数据:', data);
       analysisData.value = data;
-      initCharts();
+      nextTick(() => {
+        initCharts();
+      });
     } else {
       console.error('获取分析数据失败:', response.statusText);
     }

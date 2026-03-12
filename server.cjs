@@ -41,7 +41,6 @@ const db = new sqlite3.Database('./quiz.db', (err) => {
   if (err) {
     console.error('数据库连接失败:', err);
   } else {
-    console.log('数据库连接成功');
     // 设置编码为 UTF-8
     db.run('PRAGMA encoding = "UTF-8";', (err) => {
       if (err) {
@@ -671,7 +670,6 @@ app.get('/api/subjects', (req, res) => {
   // 尝试从缓存获取
   const cachedSubjects = cache.get(CACHE_KEYS.SUBJECTS);
   if (cachedSubjects) {
-    console.log('从缓存获取学科数据');
     res.json(cachedSubjects);
     return;
   }
@@ -702,8 +700,6 @@ app.get('/api/subjects', (req, res) => {
           
           // 缓存结果
           cache.put(CACHE_KEYS.SUBJECTS, subjectsWithCamelCase, CACHE_DURATION);
-          console.log('缓存学科数据');
-          
           res.json(subjectsWithCamelCase);
           return;
         }
@@ -731,7 +727,6 @@ app.get('/api/subjects/:id/subcategories', (req, res) => {
   // 尝试从缓存获取
   const cachedSubcategories = cache.get(cacheKey);
   if (cachedSubcategories) {
-    console.log('从缓存获取子分类数据');
     res.json(cachedSubcategories);
     return;
   }
@@ -745,8 +740,6 @@ app.get('/api/subjects/:id/subcategories', (req, res) => {
     
     // 缓存结果
     cache.put(cacheKey, subcategories, CACHE_DURATION);
-    console.log('缓存子分类数据');
-    
     res.json(subcategories);
   });
 });
@@ -829,7 +822,6 @@ app.get('/api/grades', (req, res) => {
   // 尝试从缓存获取
   const cachedGrades = cache.get(CACHE_KEYS.GRADES);
   if (cachedGrades) {
-    console.log('从缓存获取年级数据');
     res.json(cachedGrades);
     return;
   }
@@ -843,8 +835,6 @@ app.get('/api/grades', (req, res) => {
     
     // 缓存结果
     cache.put(CACHE_KEYS.GRADES, grades, CACHE_DURATION);
-    console.log('缓存年级数据');
-    
     res.json(grades);
   });
 });
@@ -955,7 +945,6 @@ app.get('/api/classes', (req, res) => {
   // 尝试从缓存获取
   const cachedClasses = cache.get(CACHE_KEYS.CLASSES);
   if (cachedClasses) {
-    console.log('从缓存获取班级数据');
     res.json(cachedClasses);
     return;
   }
@@ -969,8 +958,6 @@ app.get('/api/classes', (req, res) => {
     
     // 缓存结果
     cache.put(CACHE_KEYS.CLASSES, classes, CACHE_DURATION);
-    console.log('缓存班级数据');
-    
     res.json(classes);
   });
 });
@@ -1367,7 +1354,6 @@ app.get('/api/error-prone-questions', (req, res) => {
   // 尝试从缓存获取
   const cachedQuestions = cache.get(cacheKey);
   if (cachedQuestions) {
-    console.log('从缓存获取错误率较高的题目');
     res.json(cachedQuestions);
     return;
   }
@@ -1420,8 +1406,6 @@ app.get('/api/error-prone-questions', (req, res) => {
     
     // 缓存结果
     cache.put(cacheKey, questions, CACHE_DURATION);
-    console.log('缓存错误率较高的题目');
-    
     res.json(questions);
   });
 });
@@ -1436,7 +1420,6 @@ app.get('/api/analysis', (req, res) => {
   // 尝试从缓存获取
   const cachedAnalysis = cache.get(cacheKey);
   if (cachedAnalysis) {
-    console.log('从缓存获取分析数据');
     res.json(cachedAnalysis);
     return;
   }
@@ -1795,8 +1778,6 @@ app.get('/api/analysis', (req, res) => {
                       
                       // 缓存结果
                       cache.put(cacheKey, analysisData, CACHE_DURATION);
-                      console.log('缓存分析数据');
-                      
                       res.json(analysisData);
                     });
                   });
@@ -2427,7 +2408,7 @@ app.post('/api/subjects', (req, res) => {
   }
   
   // 打印接收到的名称，检查编码
-  console.log('接收到的学科名称:', name);
+
   
   db.run('INSERT INTO subjects (name, icon_index) VALUES (?, ?)', 
     [name, iconIndex || 0], function(err) {
@@ -2444,7 +2425,7 @@ app.post('/api/subjects', (req, res) => {
           return;
         }
         // 打印从数据库获取的名称
-        console.log('从数据库获取的学科名称:', subject.name);
+
         
         // 转换字段名以匹配前端
         const subjectWithCamelCase = {

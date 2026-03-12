@@ -7,12 +7,8 @@ const API_BASE_URL = isDevelopment
 
 // 导出API基础URL供其他模块使用
 export const getApiBaseUrl = () => {
-  console.log('getApiBaseUrl called, returning:', API_BASE_URL);
   return API_BASE_URL;
 };
-
-// 测试API基础URL
-console.log('API_BASE_URL:', API_BASE_URL);
 
 // 初始化数据库
 export const initDatabase = async () => {

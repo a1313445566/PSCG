@@ -473,12 +473,12 @@ const loadGlobalLeaderboard = async () => {
       url += '?' + params.toString()
     }
     
-    console.log('加载全局排行榜:', url)
+    // console.log('加载全局排行榜:', url)
     const response = await fetch(url)
-    console.log('全局排行榜响应状态:', response.status)
+    // console.log('全局排行榜响应状态:', response.status)
     if (response.ok) {
       const data = await response.json()
-      console.log('全局排行榜数据:', data)
+      // console.log('全局排行榜数据:', data)
       globalLeaderboard.value = data
     }
   } catch (error) {
@@ -508,12 +508,12 @@ const loadSubjectLeaderboard = async () => {
       url += '?' + params.toString()
     }
     
-    console.log('加载学科排行榜:', url)
+    // console.log('加载学科排行榜:', url)
     const response = await fetch(url)
-    console.log('学科排行榜响应状态:', response.status)
+    // console.log('学科排行榜响应状态:', response.status)
     if (response.ok) {
       const data = await response.json()
-      console.log('学科排行榜数据:', data)
+      // console.log('学科排行榜数据:', data)
       subjectLeaderboard.value = data
     }
   } catch (error) {
@@ -591,13 +591,7 @@ const loginUser = async () => {
   
   try {
     const apiUrl = `${getApiBaseUrl()}/users/login`;
-    console.log('Login API URL:', apiUrl);
-    console.log('Login data:', {
-      studentId: inputStudentId.value.trim(),
-      name: inputName.value.trim(),
-      grade: inputGrade.value,
-      class: inputClass.value
-    });
+    // console.log('Login API URL:', apiUrl);
     
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -612,11 +606,11 @@ const loginUser = async () => {
       })
     })
     
-    console.log('Login response status:', response.status);
+    // console.log('Login response status:', response.status);
     
     if (response.ok) {
       const data = await response.json()
-      console.log('Login response data:', data);
+      // console.log('Login response data:', data);
       currentUserId.value = data.userId
       currentStudentId.value = data.studentId
       currentUserName.value = inputName.value.trim()
@@ -627,7 +621,7 @@ const loginUser = async () => {
       localStorage.setItem('userName', inputName.value.trim())
       localStorage.setItem('userGrade', inputGrade.value)
       localStorage.setItem('userClass', inputClass.value)
-      console.log('localStorage set, userId:', localStorage.getItem('userId'))
+      // console.log('localStorage set, userId:', localStorage.getItem('userId'))
       ElMessage.success('登录成功')
       loadUserStats()
       loadRecentRecords()
@@ -668,17 +662,17 @@ const logout = () => {
 
 
 onMounted(async () => {
-  console.log('onMounted called, currentUserId from localStorage:', currentUserId.value)
+  // console.log('onMounted called, currentUserId from localStorage:', currentUserId.value)
   await loadSubjects()
   // 加载年级和班级数据
   await loadGradesAndClasses()
   loadGlobalLeaderboard()
   if (currentUserId.value) {
-    console.log('onMounted: currentUserId exists, loading stats and records')
+    // console.log('onMounted: currentUserId exists, loading stats and records')
     loadUserStats()
     loadRecentRecords()
   } else {
-    console.log('onMounted: no currentUserId, skipping stats and records')
+    // console.log('onMounted: no currentUserId, skipping stats and records')
   }
 })
 

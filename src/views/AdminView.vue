@@ -8,10 +8,11 @@
       :close-on-click-modal="false"
       :close-on-press-escape="false"
       :show-close="false"
+      @open="focusPasswordInput"
     >
-      <el-form :model="passwordForm" label-width="80px">
+      <el-form :model="passwordForm" label-width="80px" @submit.prevent="verifyPassword">
         <el-form-item label="密码">
-          <el-input v-model="passwordForm.password" type="password" placeholder="请输入管理密码" show-password @keyup.enter="verifyPassword"></el-input>
+          <el-input ref="passwordInputRef" v-model="passwordForm.password" type="password" placeholder="请输入管理密码" show-password @keyup="handleKeyUp"></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
@@ -93,7 +94,6 @@
                   <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
                 </el-select>
                 <el-button type="primary" @click="addSubject">添加学科</el-button>
-                <el-button type="warning" @click="importLocalData">导入本地数据</el-button>
               </div>
               
               <el-table :data="subjects" style="width: 100%; border: 1px solid #e0e0e0; border-radius: 4px;" row-key="id" :expand-row-keys="expandedRows" stripe border>
@@ -418,7 +418,6 @@
             <div style="margin-top: 15px; display: flex; gap: 10px;">
               <el-button type="primary" @click="applyFilters">应用筛选</el-button>
               <el-button @click="resetFilters">重置</el-button>
-              <el-button type="danger" @click="confirmClearLeaderboard">清空排行榜数据</el-button>
             </div>
           </div>
           
@@ -561,9 +560,9 @@
         <AnalysisView />
       </el-tab-pane>
       
-      <!-- 数据管理 -->
-      <el-tab-pane label="数据管理" name="data-management">
-        <div class="data-management" style="padding: 20px;">
+      <!-- 数据库管理 -->
+      <el-tab-pane label="数据库管理" name="data-management" @click="handleDataManagementClick">
+        <div v-if="isDataManagementAuthenticated" class="data-management" style="padding: 20px;">
           <!-- 数据备份与恢复 -->
           <div class="setting-card" style="margin-bottom: 30px;">
             <h3 class="setting-title">数据备份与恢复</h3>
@@ -602,50 +601,55 @@
             </div>
           </div>
           
-          <!-- 数据统计 -->
-          <div class="setting-card">
-            <h3 class="setting-title">数据统计</h3>
-            <div style="padding: 20px;">
-              <el-row :gutter="20">
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ totalUsers }}</div>
-                      <div class="stats-label">总用户数</div>
-                    </div>
-                  </el-card>
-                </el-col>
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ totalQuestions }}</div>
-                      <div class="stats-label">总题目数</div>
-                    </div>
-                  </el-card>
-                </el-col>
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ totalSessions }}</div>
-                      <div class="stats-label">总答题次数</div>
-                    </div>
-                  </el-card>
-                </el-col>
-                <el-col :span="6">
-                  <el-card shadow="hover">
-                    <div class="stats-item">
-                      <div class="stats-value">{{ subjects.length }}</div>
-                      <div class="stats-label">学科数量</div>
-                    </div>
-                  </el-card>
-                </el-col>
-              </el-row>
-            </div>
-          </div>
+
+        </div>
+        <div v-else class="data-management-locked" style="padding: 60px; text-align: center;">
+          <el-icon class="lock-icon" style="font-size: 48px; color: #909399; margin-bottom: 20px;"><i class="el-icon-lock"></i></el-icon>
+          <h3 style="margin-bottom: 10px; color: #606266;">数据库管理功能已锁定</h3>
+          <p style="color: #909399; margin-bottom: 30px;">请输入管理员密码解锁数据库管理功能</p>
+          <el-button type="primary" @click="showDataManagementPasswordDialog">解锁数据库管理</el-button>
         </div>
       </el-tab-pane>
     </el-tabs>
     
+    <!-- 数据库管理密码验证对话框 -->
+    <el-dialog
+      v-model="dataManagementPasswordDialogVisible"
+      title="🔐 数据库管理验证"
+      width="480px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      @open="focusDataManagementPasswordInput"
+      custom-class="database-management-dialog"
+    >
+      <div class="dialog-content">
+        <div class="dialog-icon">
+          <el-icon class="lock-icon"><i class="el-icon-lock"></i></el-icon>
+        </div>
+        <h3 class="dialog-title">数据库管理验证</h3>
+        <p class="dialog-description">为了保护系统安全，请输入管理员密码解锁数据库管理功能</p>
+        <el-form :model="dataManagementPasswordForm" label-width="100px" @submit.prevent="verifyDataManagementPassword" class="password-form">
+          <el-form-item label="管理员密码" class="password-input-item">
+            <el-input 
+              ref="dataManagementPasswordInputRef" 
+              v-model="dataManagementPasswordForm.password" 
+              type="password" 
+              placeholder="请输入管理员密码" 
+              show-password 
+              @keyup="handleDataManagementKeyUp"
+              class="password-input"
+            ></el-input>
+          </el-form-item>
+        </el-form>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button class="cancel-button" @click="dataManagementPasswordDialogVisible = false">取消</el-button>
+          <el-button type="primary" class="verify-button" @click="verifyDataManagementPassword">验证</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- 子分类管理对话框 -->
     <el-dialog
       v-model="subcategoryDialogVisible"
@@ -1702,6 +1706,15 @@ const passwordDialogVisible = ref(true)
 const passwordForm = ref({
   password: ''
 })
+const passwordInputRef = ref(null)
+
+// 数据库管理验证相关
+const isDataManagementAuthenticated = ref(false)
+const dataManagementPasswordDialogVisible = ref(false)
+const dataManagementPasswordForm = ref({
+  password: ''
+})
+const dataManagementPasswordInputRef = ref(null)
 
 // 验证密码
 const verifyPassword = () => {
@@ -1722,8 +1735,80 @@ const verifyPassword = () => {
 // 退出登录
 const logout = () => {
   isAuthenticated.value = false
+  isDataManagementAuthenticated.value = false
   passwordDialogVisible.value = true
   sessionStorage.removeItem('adminAuthenticated')
+  sessionStorage.removeItem('dataManagementAuthenticated')
+}
+
+// 显示数据库管理密码对话框
+const showDataManagementPasswordDialog = () => {
+  dataManagementPasswordDialogVisible.value = true
+}
+
+// 验证数据库管理密码
+const verifyDataManagementPassword = () => {
+  // 正确密码
+  const correctPassword = 'xgsy8188'
+  
+  if (dataManagementPasswordForm.value.password === correctPassword) {
+    isDataManagementAuthenticated.value = true
+    dataManagementPasswordDialogVisible.value = false
+    // 使用sessionStorage存储状态
+    sessionStorage.setItem('dataManagementAuthenticated', 'true')
+    ElMessage.success('数据库管理功能已解锁！')
+  } else {
+    ElMessage.error('密码错误，请重新输入！')
+    dataManagementPasswordForm.value.password = ''
+  }
+}
+
+// 处理数据库管理标签点击
+const handleDataManagementClick = () => {
+  // 检查sessionStorage中的数据库管理认证状态
+  if (sessionStorage.getItem('dataManagementAuthenticated') === 'true') {
+    isDataManagementAuthenticated.value = true
+  } else {
+    showDataManagementPasswordDialog()
+  }
+}
+
+// 聚焦密码输入框
+const focusPasswordInput = () => {
+  setTimeout(() => {
+    if (passwordInputRef.value && passwordInputRef.value.$el) {
+      const inputElement = passwordInputRef.value.$el.querySelector('input')
+      if (inputElement) {
+        inputElement.focus()
+      }
+    }
+  }, 100)
+}
+
+// 聚焦数据库管理密码输入框
+const focusDataManagementPasswordInput = () => {
+  setTimeout(() => {
+    if (dataManagementPasswordInputRef.value && dataManagementPasswordInputRef.value.$el) {
+      const inputElement = dataManagementPasswordInputRef.value.$el.querySelector('input')
+      if (inputElement) {
+        inputElement.focus()
+      }
+    }
+  }, 100)
+}
+
+// 处理键盘事件
+const handleKeyUp = (event) => {
+  if (event.key === 'Enter' || event.keyCode === 13) {
+    verifyPassword()
+  }
+}
+
+// 处理数据库管理验证键盘事件
+const handleDataManagementKeyUp = (event) => {
+  if (event.key === 'Enter' || event.keyCode === 13) {
+    verifyDataManagementPassword()
+  }
 }
 
 const backToHome = () => {
@@ -1736,6 +1821,10 @@ onMounted(async () => {
   if (sessionStorage.getItem('adminAuthenticated') === 'true') {
     isAuthenticated.value = true
     passwordDialogVisible.value = false
+    // 检查数据库管理认证状态
+    if (sessionStorage.getItem('dataManagementAuthenticated') === 'true') {
+      isDataManagementAuthenticated.value = true
+    }
     // 加载年级和班级数据
     await loadGrades()
     await loadClasses()
@@ -2126,11 +2215,7 @@ const showAddQuestionDialog = () => {
 
 const editQuestion = (question) => {
   isEditing.value = true
-  console.log('Editing question:', question)
-  console.log('Question content type:', typeof question.content)
-  console.log('Question content:', question.content)
-  console.log('Question audio:', question.audio)
-  console.log('Question audio type:', typeof question.audio)
+
   
   // 处理富文本内容
   let contentValue = ''
@@ -2154,39 +2239,30 @@ const editQuestion = (question) => {
     image: image
   }
   
-  console.log('Form content after assignment:', form.value.content)
-  console.log('Form audio after assignment:', form.value.audio)
+
   
   // 增加一个key来强制重新渲染编辑器
   editorKey.value++
   
   // 打开对话框
   dialogVisible.value = true
-  console.log('Dialog opened, form content:', form.value.content)
-  console.log('Dialog opened, form audio:', form.value.audio)
+
 }
 
 const saveQuestion = async () => {
-  console.log('saveQuestion方法被调用')
-  
   // 验证子分类
   if (!form.value.subcategoryId) {
     ElMessage.error('请选择子分类！')
-    console.log('未选择子分类，保存失败')
     return
   }
   
   // 验证正确答案
   if (form.value.selectedAnswers.length === 0) {
     ElMessage.error('请选择正确答案！')
-    console.log('未选择正确答案，保存失败')
     return
   }
   
   // 检查题目内容是否为空
-  console.log('form.content:', form.value.content)
-  console.log('form.content类型:', typeof form.value.content)
-  
   // 处理Delta对象
   let content = ''
   if (typeof form.value.content === 'object' && form.value.content.ops) {
@@ -2203,17 +2279,12 @@ const saveQuestion = async () => {
     content = form.value.content
   }
   
-  console.log('content:', content)
   // 移除HTML标签并 trim 后检查是否为空
   const plainText = content.replace(/<[^>]*>/g, '').trim()
-  console.log('plainText:', plainText)
-  console.log('plainText长度:', plainText.length)
   if (!plainText || plainText === '请输入题目内容') {
     ElMessage.error('请输入题目内容！')
-    console.log('题目内容为空，保存失败')
     return
   }
-  console.log('题目内容不为空，继续保存')
   
   // 清理答案中的HTML标签和Word格式，但保留图片标签
   form.value.options = await Promise.all(form.value.options.map(async (option) => {
@@ -2267,7 +2338,7 @@ const saveQuestion = async () => {
   
   // 将selectedAnswers转换为answer字符串
   form.value.answer = form.value.selectedAnswers.sort().join('')
-  console.log('answer:', form.value.answer)
+
   
   // 上传音频文件
   if (selectedAudioFile.value) {
@@ -2320,8 +2391,7 @@ const saveQuestion = async () => {
   }
   
   try {
-    console.log('开始保存题目')
-    console.log('isEditing:', isEditing.value)
+
     // 确保form.value.content是字符串
     if (typeof form.value.content === 'object' && form.value.content.ops) {
       // 处理Delta对象，保留HTML内容
@@ -2354,21 +2424,14 @@ const saveQuestion = async () => {
     // 确保correctAnswer字段存在
     form.value.correctAnswer = form.value.answer
     
-    console.log('处理后的form:', form.value)
-    console.log('处理后的form.content:', form.value.content)
-    console.log('处理后的form.audio:', form.value.audio)
-    console.log('处理后的form.correctAnswer:', form.value.correctAnswer)
+
     // 保存题目
     if (isEditing.value) {
-      console.log('更新题目')
       await store.updateQuestion(form.value)
       ElMessage.success('题目更新成功！')
-      console.log('题目更新成功')
     } else {
-      console.log('添加题目')
       await store.addQuestion(form.value)
       ElMessage.success('题目添加成功！')
-      console.log('题目添加成功')
     }
     
     // 清空选中的文件
@@ -2376,7 +2439,6 @@ const saveQuestion = async () => {
     selectedImageFile.value = null
     
     dialogVisible.value = false
-    console.log('保存完成，关闭对话框')
   } catch (error) {
     console.error('保存题目失败:', error)
     ElMessage.error('保存题目失败，请稍后重试！')
@@ -2384,18 +2446,15 @@ const saveQuestion = async () => {
 }
 
 const deleteQuestion = (questionId) => {
-  console.log('Delete question clicked with ID:', questionId)
   ElMessageBox.confirm('确定要删除该题目吗？', '删除确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning',
   })
   .then(() => {
-    console.log('Proceeding with deletion')
     store.deleteQuestion(questionId)
   })
   .catch(() => {
-    console.log('Deletion cancelled')
   })
 }
 
@@ -2536,18 +2595,6 @@ const handleLeaderboardCurrentChange = (current) => {
 }
 
 
-
-// 导入本地数据
-const importLocalData = async () => {
-  if (confirm('确定要从本地存储导入数据到SQL数据库吗？这将会覆盖现有的数据。')) {
-    const result = await store.importLocalData()
-    if (result.success) {
-      ElMessage.success('数据导入成功！')
-    } else {
-      ElMessage.error(`数据导入失败：${result.error}`)
-    }
-  }
-}
 
 // 加载年级数据
 const loadGrades = async () => {
@@ -2851,9 +2898,7 @@ const clearClasses = async () => {
 
 // Quill编辑器准备就绪事件
 const onQuillReady = (editor) => {
-  console.log('Quill editor ready')
   if (isEditing.value && form.value.content) {
-    console.log('Setting content to:', form.value.content)
     // 手动设置编辑器内容
     editor.root.innerHTML = form.value.content
     // 确保编辑器知道内容已更改
@@ -2863,13 +2908,11 @@ const onQuillReady = (editor) => {
 
 // 监听form.content的变化，确保编辑器内容同步
 watch(() => form.value.content, (newValue) => {
-  console.log('Form content changed:', newValue)
 }, { deep: true })
 
 // 监听对话框打开事件，确保富文本内容正确显示
 watch(dialogVisible, (newValue) => {
   if (newValue && isEditing.value) {
-    console.log('Dialog opened, form content:', form.value.content)
     // 确保内容是字符串格式
     if (typeof form.value.content !== 'string') {
       form.value.content = ''
@@ -3245,31 +3288,16 @@ const loadUserQuestionAttempts = async (userId, answerRecordId = null) => {
       url = `${getApiBaseUrl()}/question-attempts?answerRecordId=${answerRecordId}`
     }
     
-    console.log('加载答题记录ID:', answerRecordId, '的题目尝试记录')
-    console.log('User ID:', userId)
-    console.log('请求URL:', url)
     
     const response = await fetch(url)
     
-    console.log('响应状态:', response.status)
-    console.log('响应URL:', response.url)
     
     if (response.ok) {
         let data = await response.json()
-        console.log('加载的题目尝试记录数据:', data)
         
         // 检查数据结构，确保包含我们需要的字段
         if (Array.isArray(data)) {
-          console.log('获取到', data.length, '条题目尝试记录')
-          data.forEach((attempt, index) => {
-            console.log(`尝试记录 ${index + 1}:`, {
-              id: attempt.id,
-              userAnswer: attempt.userAnswer || attempt.user_answer,
-              correctAnswer: attempt.correctAnswer || attempt.correct_answer,
-              isCorrect: attempt.isCorrect || attempt.is_correct,
-              answerRecordId: attempt.answerRecordId || attempt.answer_record_id
-            })
-          })
+
         } else {
           console.error('响应数据不是数组:', data)
         }
@@ -3340,21 +3368,10 @@ const openUserDetailDialog = async (row) => {
     // 从最近答题记录点击，默认显示做题记录
     activeUserDetailTab.value = 'attempts'
     // 加载该答题记录的题目尝试记录
-    console.log('从最近答题记录点击，加载答题记录ID:', answerRecordId, '的题目尝试记录')
-    console.log('Row data:', row)
-    console.log('User ID:', userId)
     // 确保传递正确的answerRecordId
     if (answerRecordId) {
       await loadUserQuestionAttempts(userId, answerRecordId)
-      console.log('Loaded question attempts:', selectedUserQuestionAttempts.value)
-      // 验证加载的数据是否与答题记录ID对应
-      if (selectedUserQuestionAttempts.value.length > 0) {
-        console.log('First attempt record:', selectedUserQuestionAttempts.value[0])
-      } else {
-        console.log('No question attempts found for answer record ID:', answerRecordId)
-      }
     } else {
-      console.error('No answerRecordId provided')
       await loadUserQuestionAttempts(userId)
     }
   } else {
@@ -3464,7 +3481,7 @@ const getProgressColor = (accuracy) => {
   return '#f56c6c'
 }
 
-// 数据管理相关功能
+// 数据库管理相关功能
 
 // 备份数据
 const backupData = async () => {
@@ -3535,7 +3552,6 @@ const restoreData = () => {
               await loadGradesAndClasses()
               fetchUserStats()
               fetchRecentRecords()
-              fetchErrorProneQuestions()
             } else {
               ElMessage.error('数据恢复失败')
             }
@@ -3623,7 +3639,6 @@ const clearAllData = async () => {
       await loadGradesAndClasses()
       fetchUserStats()
       fetchRecentRecords()
-      fetchErrorProneQuestions()
     } else {
       ElMessage.error('清空数据失败')
     }
@@ -3665,7 +3680,6 @@ const clearUserRecords = async () => {
       // 重新加载数据
       fetchUserStats()
       fetchRecentRecords()
-      fetchErrorProneQuestions()
     } else {
       ElMessage.error('清空用户答题记录失败')
     }
@@ -3683,7 +3697,6 @@ onMounted(async () => {
   // 初始化数据
   fetchUserStats()
   fetchRecentRecords()
-  fetchErrorProneQuestions()
 })
 </script>
 
@@ -3693,6 +3706,272 @@ onMounted(async () => {
   margin: 0 auto;
   padding: 20px;
   font-family: Arial, sans-serif;
+}
+
+/* 数据库管理验证对话框样式 */
+.database-management-dialog {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15) !important;
+  animation: dialogFadeIn 0.3s ease-out;
+}
+
+@keyframes dialogFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.database-management-dialog .el-dialog__header {
+  background: linear-gradient(135deg, #3a8ee6 0%, #66b1ff 100%);
+  color: white;
+  border-radius: 12px 12px 0 0;
+  padding: 28px 32px;
+  text-align: center;
+}
+
+.database-management-dialog .el-dialog__title {
+  color: white;
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.database-management-dialog .el-dialog__body {
+  padding: 40px 32px;
+  text-align: center;
+  background-color: #f9fafb;
+}
+
+.dialog-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 400px;
+  margin: 0 auto;
+}
+
+.dialog-icon {
+  margin-bottom: 24px;
+  animation: iconPulse 2s infinite;
+}
+
+@keyframes iconPulse {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+.dialog-icon .lock-icon {
+  font-size: 60px;
+  color: #3a8ee6;
+  background: linear-gradient(135deg, #e6f0ff 0%, #f0f7ff 100%);
+  padding: 20px;
+  border-radius: 50%;
+  box-shadow: 0 4px 12px rgba(58, 142, 230, 0.2);
+}
+
+.dialog-title {
+  margin: 0 0 12px 0;
+  font-size: 20px;
+  font-weight: 600;
+  color: #1f2937;
+  line-height: 1.3;
+}
+
+.dialog-description {
+  margin: 0 0 32px 0;
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.6;
+  max-width: 350px;
+}
+
+.password-form {
+  width: 100%;
+  max-width: 350px;
+  margin: 0 auto;
+}
+
+.password-input-item {
+  margin-bottom: 0;
+  width: 100%;
+}
+
+.password-input-item .el-form-item__label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #4b5563;
+  margin-bottom: 8px;
+  display: block;
+  text-align: left;
+}
+
+.password-input {
+  height: 52px;
+  font-size: 16px;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+  transition: all 0.3s ease;
+  background-color: white;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.password-input:focus {
+  border-color: #3a8ee6;
+  box-shadow: 0 0 0 3px rgba(58, 142, 230, 0.2);
+  outline: none;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  gap: 16px;
+  padding: 24px 32px;
+  background-color: white;
+  border-radius: 0 0 12px 12px;
+  border-top: 1px solid #e5e7eb;
+}
+
+.cancel-button {
+  width: 130px;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 10px;
+  border: 2px solid #e5e7eb;
+  background-color: white;
+  color: #4b5563;
+  transition: all 0.3s ease;
+}
+
+.cancel-button:hover {
+  border-color: #d1d5db;
+  background-color: #f9fafb;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.verify-button {
+  width: 130px;
+  height: 44px;
+  font-size: 15px;
+  font-weight: 600;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #3a8ee6 0%, #66b1ff 100%);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(58, 142, 230, 0.3);
+}
+
+.verify-button:hover {
+  background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(58, 142, 230, 0.4);
+}
+
+.verify-button:active {
+  transform: translateY(0);
+  box-shadow: 0 4px 12px rgba(58, 142, 230, 0.3);
+}
+
+/* 登录对话框样式 */
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-dialog__header {
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  color: white;
+  border-radius: 8px 8px 0 0;
+  padding: 24px;
+}
+
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-dialog__title {
+  color: white;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-dialog__body {
+  padding: 30px 24px;
+  text-align: center;
+}
+
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-dialog__footer {
+  display: flex;
+  justify-content: center;
+  padding: 20px 24px;
+  background-color: #f5f7fa;
+  border-radius: 0 0 8px 8px;
+}
+
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-button--primary {
+  width: 150px;
+  height: 40px;
+  font-size: 14px;
+  border-radius: 8px;
+  background: linear-gradient(135deg, #67c23a 0%, #85ce61 100%);
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-button--primary:hover {
+  background: linear-gradient(135deg, #85ce61 0%, #95d475 100%);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(103, 194, 58, 0.3);
+}
+
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-input {
+  height: 48px;
+  font-size: 16px;
+  border-radius: 8px;
+  border: 1px solid #dcdfe6;
+  transition: all 0.3s ease;
+}
+
+.el-dialog[data-v-7ba5bd90]:not(.database-management-dialog) .el-input:focus {
+  border-color: #67c23a;
+  box-shadow: 0 0 0 2px rgba(103, 194, 58, 0.2);
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 768px) {
+  .database-management-dialog {
+    width: 90% !important;
+    max-width: 400px;
+  }
+  
+  .dialog-title {
+    font-size: 16px;
+  }
+  
+  .dialog-description {
+    font-size: 13px;
+  }
+  
+  .password-input {
+    height: 44px;
+    font-size: 14px;
+  }
+  
+  .cancel-button,
+  .verify-button {
+    width: 100px;
+    height: 36px;
+    font-size: 13px;
+  }
 }
 
 .admin-header {
