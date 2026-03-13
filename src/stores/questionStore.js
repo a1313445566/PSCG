@@ -239,18 +239,67 @@ export const useQuestionStore = defineStore('question', {
       return actualCount
     },
     
-    submitAnswer(questionId, answer) {
-      this.userAnswers[questionId] = answer
+    submitAnswer(questionId, answer, questionType = 'single') {
+      if (questionType === 'multiple') {
+        // 对于多选题，使用数组存储多个答案
+        if (!this.userAnswers[questionId]) {
+          this.userAnswers[questionId] = []
+        }
+        // 切换选项的选中状态
+        const index = this.userAnswers[questionId].indexOf(answer)
+        if (index === -1) {
+          // 如果选项未选中，则添加
+          this.userAnswers[questionId].push(answer)
+        } else {
+          // 如果选项已选中，则移除
+          this.userAnswers[questionId].splice(index, 1)
+        }
+      } else {
+        // 对于单选题，直接存储单个答案
+        this.userAnswers[questionId] = answer
+      }
     },
     
     calculateScore() {
       let correctCount = 0
       this.currentQuestions.forEach(question => {
-        if (this.userAnswers[question.id] === question.answer) {
-          correctCount++
-          // 将做对的题目ID添加到correctQuestions数组中
-          if (!this.correctQuestions.includes(question.id)) {
-            this.correctQuestions.push(question.id)
+        const userAnswer = this.userAnswers[question.id]
+        const correctAnswer = question.answer
+        
+        if (question.type === 'multiple') {
+          // 对于多选题，比较答案数组
+          if (Array.isArray(userAnswer) && Array.isArray(correctAnswer)) {
+            // 排序后比较是否完全一致
+            const sortedUserAnswer = userAnswer.sort()
+            const sortedCorrectAnswer = correctAnswer.sort()
+            if (JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)) {
+              correctCount++
+              // 将做对的题目ID添加到correctQuestions数组中
+              if (!this.correctQuestions.includes(question.id)) {
+                this.correctQuestions.push(question.id)
+              }
+            }
+          } else if (typeof correctAnswer === 'string') {
+            // 处理正确答案为字符串的情况（如 "AB"）
+            if (Array.isArray(userAnswer)) {
+              const sortedUserAnswer = userAnswer.sort().join('')
+              if (sortedUserAnswer === correctAnswer) {
+                correctCount++
+                // 将做对的题目ID添加到correctQuestions数组中
+                if (!this.correctQuestions.includes(question.id)) {
+                  this.correctQuestions.push(question.id)
+                }
+              }
+            }
+          }
+        } else {
+          // 对于单选题，直接比较
+          if (userAnswer === correctAnswer) {
+            correctCount++
+            // 将做对的题目ID添加到correctQuestions数组中
+            if (!this.correctQuestions.includes(question.id)) {
+              this.correctQuestions.push(question.id)
+            }
           }
         }
       })

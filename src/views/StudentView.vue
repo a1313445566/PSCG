@@ -171,10 +171,25 @@
               :key="index"
               class="option-item"
               :class="{
-                'correct': option.charAt(0) === question.answer,
-                'wrong': userAnswers[question.id] === option.charAt(0) && option.charAt(0) !== question.answer
+                'option-correct': isOptionCorrect(question, option.charAt(0)),
+                'option-selected': isOptionSelected(question, option.charAt(0)),
+                'option-wrong': isOptionWrong(question, option.charAt(0))
               }"
             >
+              <div class="option-indicators">
+                <span v-if="isOptionCorrect(question, option.charAt(0))" class="indicator correct">
+                  <span class="icon">✓</span>
+                  <span class="label">正确</span>
+                </span>
+                <span v-if="isOptionWrong(question, option.charAt(0))" class="indicator wrong">
+                  <span class="icon">✗</span>
+                  <span class="label">错误</span>
+                </span>
+                <span v-if="isOptionSelected(question, option.charAt(0)) && !isOptionWrong(question, option.charAt(0))" class="indicator selected">
+                  <span class="icon">→</span>
+                  <span class="label">你的选择</span>
+                </span>
+              </div>
               <span v-html="option"></span>
             </div>
           </div>
@@ -223,8 +238,8 @@
             v-for="(option, index) in question.shuffledOptions" 
             :key="index"
             class="option-item"
-            :class="{ 'selected': userAnswers[question.id] === option.charAt(0) }"
-            @click="selectOption(question.id, option.charAt(0))"
+            :class="{ 'selected': question.type === 'multiple' ? userAnswers[question.id]?.includes(option.charAt(0)) : userAnswers[question.id] === option.charAt(0) }"
+            @click="selectOption(question.id, option.charAt(0), question.type)"
           >
             <span class="option-letter">{{ option.charAt(0) }}</span>
             <span class="option-text" v-html="option.substring(2)"></span>
@@ -456,20 +471,53 @@ const selectSubcategory = async (subcategoryId) => {
 
 
 
-const selectOption = (questionId, option) => {
-  store.submitAnswer(questionId, option)
+const selectOption = (questionId, option, questionType = 'single') => {
+  store.submitAnswer(questionId, option, questionType)
 }
 
 const submitAnswers = async () => {
   // 验证是否所有题目都已作答
-  const allAnswered = currentQuestions.value.every(question => userAnswers.value[question.id] !== undefined)
+  const allAnswered = currentQuestions.value.every(question => {
+    const answer = userAnswers.value[question.id]
+    if (question.type === 'multiple') {
+      // 对于多选题，检查是否有至少一个选项被选中
+      return Array.isArray(answer) && answer.length > 0
+    } else {
+      // 对于单选题，检查是否有答案
+      return answer !== undefined
+    }
+  })
   if (!allAnswered) {
     alert('请回答所有题目后再提交！')
     return
   }
   
   store.calculateScore()
-  wrongQuestions.value = currentQuestions.value.filter(q => userAnswers.value[q.id] !== q.answer)
+  wrongQuestions.value = currentQuestions.value.filter(q => {
+    const userAnswer = userAnswers.value[q.id]
+    const correctAnswer = q.answer
+    
+    if (q.type === 'multiple') {
+      // 对于多选题，比较答案数组
+      if (Array.isArray(userAnswer) && Array.isArray(correctAnswer)) {
+        // 排序后比较是否完全一致
+        const sortedUserAnswer = userAnswer.sort()
+        const sortedCorrectAnswer = correctAnswer.sort()
+        return JSON.stringify(sortedUserAnswer) !== JSON.stringify(sortedCorrectAnswer)
+      } else if (typeof correctAnswer === 'string') {
+        // 处理正确答案为字符串的情况（如 "AB"）
+        if (Array.isArray(userAnswer)) {
+          const sortedUserAnswer = userAnswer.sort().join('')
+          return sortedUserAnswer !== correctAnswer
+        }
+        return true
+      }
+      return true
+    } else {
+      // 对于单选题，直接比较
+      return userAnswer !== correctAnswer
+    }
+  })
   
   // 保存答题记录
   // console.log('开始保存答题记录，currentUserId:', currentUserId.value, 'startTime:', startTime.value)
@@ -511,16 +559,27 @@ const submitAnswers = async () => {
         // console.log('开始保存每道题的答题记录，题目数量:', currentQuestions.value.length)
         for (const question of currentQuestions.value) {
           const userAnswer = userAnswers.value[question.id]
-          const isCorrect = userAnswer === question.answer
           // console.log('保存题目:', question.id, '答案:', userAnswer, '是否正确:', isCorrect)
           
           // 保存用户选择的选项内容，而不是标签
           let selectedOptionContent = ''
           if (question.shuffledOptions) {
-            for (const option of question.shuffledOptions) {
-              if (option.charAt(0) === userAnswer) {
-                selectedOptionContent = option.substring(2).trim()
-                break
+            if (question.type === 'multiple' && Array.isArray(userAnswer)) {
+              // 对于多选题，收集所有选中的选项内容
+              const selectedContents = []
+              for (const option of question.shuffledOptions) {
+                if (userAnswer.includes(option.charAt(0))) {
+                  selectedContents.push(option.substring(2).trim())
+                }
+              }
+              selectedOptionContent = selectedContents.join('; ')
+            } else if (userAnswer) {
+              // 对于单选题，只需要一个选项
+              for (const option of question.shuffledOptions) {
+                if (option.charAt(0) === userAnswer) {
+                  selectedOptionContent = option.substring(2).trim()
+                  break
+                }
               }
             }
           }
@@ -528,13 +587,43 @@ const submitAnswers = async () => {
           // 保存正确答案的选项内容
           let correctOptionContent = ''
           if (question.shuffledOptions) {
-            for (const option of question.shuffledOptions) {
-              if (option.charAt(0) === question.answer) {
-                correctOptionContent = option.substring(2).trim()
-                break
+            if (question.type === 'multiple') {
+              // 对于多选题，收集所有正确的选项内容
+              const correctContents = []
+              const correctAnswers = Array.isArray(question.answer) ? question.answer : question.answer.split('')
+              for (const option of question.shuffledOptions) {
+                if (correctAnswers.includes(option.charAt(0))) {
+                  correctContents.push(option.substring(2).trim())
+                }
+              }
+              correctOptionContent = correctContents.join('; ')
+            } else if (question.answer) {
+              // 对于单选题，只需要一个选项
+              for (const option of question.shuffledOptions) {
+                if (option.charAt(0) === question.answer) {
+                  correctOptionContent = option.substring(2).trim()
+                  break
+                }
               }
             }
           }
+          
+          // 计算是否正确
+          let isCorrect = false
+          if (question.type === 'multiple') {
+            const correctAnswers = Array.isArray(question.answer) ? question.answer : question.answer.split('')
+            if (Array.isArray(userAnswer)) {
+              const sortedUserAnswer = userAnswer.sort()
+              const sortedCorrectAnswer = correctAnswers.sort()
+              isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)
+            }
+          } else {
+            isCorrect = userAnswer === question.answer
+          }
+          
+          // 处理答案格式
+          const formattedUserAnswer = question.type === 'multiple' && Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
+          const formattedCorrectAnswer = question.type === 'multiple' && Array.isArray(question.answer) ? question.answer.join('') : question.answer
           
           const questionAttemptResponse = await fetch(`${getApiBaseUrl()}/question-attempts`, {
             method: 'POST',
@@ -546,11 +635,11 @@ const submitAnswers = async () => {
               questionId: question.id,
               subjectId: selectedSubjectId.value,
               subcategoryId: selectedSubcategoryId.value,
-              userAnswer: userAnswer,
+              userAnswer: formattedUserAnswer,
               userAnswerContent: selectedOptionContent,
-              correctAnswer: question.answer,
+              correctAnswer: formattedCorrectAnswer,
               correctAnswerContent: correctOptionContent,
-              isCorrect: userAnswer === question.answer,
+              isCorrect: isCorrect,
               answerRecordId: successData.recordId // 传递答题记录ID
             })
           })
@@ -583,6 +672,40 @@ const getEncouragement = () => {
     return '不错，再接再厉！'
   } else {
     return '加油，你可以做得更好！'
+  }
+}
+
+// 检查选项是否是正确答案
+const isOptionCorrect = (question, option) => {
+  if (question.type === 'multiple') {
+    const correctAnswers = Array.isArray(question.answer) ? question.answer : question.answer.split('')
+    return correctAnswers.includes(option)
+  } else {
+    return option === question.answer
+  }
+}
+
+// 检查选项是否被用户选择
+const isOptionSelected = (question, option) => {
+  const userAnswer = userAnswers.value[question.id]
+  if (question.type === 'multiple') {
+    return Array.isArray(userAnswer) && userAnswer.includes(option)
+  } else {
+    return userAnswer === option
+  }
+}
+
+// 检查选项是否是用户选择的错误答案
+const isOptionWrong = (question, option) => {
+  const userAnswer = userAnswers.value[question.id]
+  if (question.type === 'multiple') {
+    if (Array.isArray(userAnswer)) {
+      const correctAnswers = Array.isArray(question.answer) ? question.answer : question.answer.split('')
+      return userAnswer.includes(option) && !correctAnswers.includes(option)
+    }
+    return false
+  } else {
+    return userAnswer === option && option !== question.answer
   }
 }
 
@@ -1859,6 +1982,89 @@ onMounted(async () => {
   flex: 1;
   font-size: 16px;
   line-height: 1.4;
+}
+
+.option-indicators {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 8px;
+  flex-wrap: wrap;
+}
+
+.indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: bold;
+  white-space: nowrap;
+}
+
+.indicator .icon {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  line-height: 16px;
+  text-align: center;
+  border-radius: 50%;
+  font-size: 10px;
+}
+
+.indicator .label {
+  font-size: 12px;
+}
+
+.indicator.correct {
+  background-color: #e8f5e8;
+  color: #4caf50;
+  border: 1px solid #c8e6c9;
+}
+
+.indicator.correct .icon {
+  background-color: #4caf50;
+  color: white;
+}
+
+.indicator.wrong {
+  background-color: #ffebee;
+  color: #f44336;
+  border: 1px solid #ffcdd2;
+}
+
+.indicator.wrong .icon {
+  background-color: #f44336;
+  color: white;
+}
+
+.indicator.selected {
+  background-color: #f3e5f5;
+  color: #6a11cb;
+  border: 1px solid #e1bee7;
+}
+
+.indicator.selected .icon {
+  background-color: #6a11cb;
+  color: white;
+}
+
+/* 选项样式调整 */
+.option-item {
+  position: relative;
+  transition: all 0.3s ease;
+}
+
+.option-item.option-correct {
+  border-left: 4px solid #4caf50;
+}
+
+.option-item.option-wrong {
+  border-left: 4px solid #f44336;
+}
+
+.option-item.option-selected {
+  border-left: 4px solid #6a11cb;
 }
 
 .debug-info {
