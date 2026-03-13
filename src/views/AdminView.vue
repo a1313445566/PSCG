@@ -279,6 +279,7 @@
               :data="filteredQuestions" 
               style="margin-top: 20px; width: 100%"
               @selection-change="handleSelectionChange"
+              @row-click="editQuestion"
               stripe
               border
               :default-sort="{prop: 'createdAt', order: 'descending'}"
@@ -357,47 +358,104 @@
           
           <!-- 分类视图 -->
           <div class="category-view" v-else>
-            <div v-for="subject in subjects" :key="subject.id" class="subject-category">
-              <div class="subject-header">
-                <h3>{{ subject.name }}</h3>
-                <span class="question-count">{{ getSubjectQuestionCount(subject.id) }} 道题目</span>
-              </div>
-              <div class="subcategory-list">
-                <div v-for="subcategory in subject.subcategories" :key="subcategory.id" class="subcategory-card">
-                  <div class="subcategory-header">
-                    <h4>{{ subcategory.name }}</h4>
-                    <span class="question-count">{{ getSubcategoryQuestionCount(subject.id, subcategory.id) }} 道题目</span>
-                  </div>
-                  <div class="subcategory-questions">
-                    <div v-for="question in getQuestionsBySubcategory(subject.id, subcategory.id)" :key="question.id" class="question-card">
-                      <div class="question-content">
-                        <div class="question-type">
-                          <el-tag size="small" :type="{
-                            'single': 'primary',
-                            'multiple': 'success',
-                            'judgment': 'warning'
-                          }[question.type] || 'info'">
-                            {{ getTypeName(question.type) }}
-                          </el-tag>
-                        </div>
-                        <div class="question-text" v-html="stripImages(question.content)"></div>
-                      </div>
-                      <div class="question-actions">
-                        <el-button type="primary" size="small" @click="editQuestion(question)">
-                          <el-icon><i class="el-icon-edit"></i></el-icon> 编辑
-                        </el-button>
-                        <el-button type="danger" size="small" @click="deleteQuestion(question.id)">
-                          <el-icon><i class="el-icon-delete"></i></el-icon> 删除
-                        </el-button>
-                      </div>
-                    </div>
-                    <div v-if="getQuestionsBySubcategory(subject.id, subcategory.id).length === 0" class="empty-questions">
-                      暂无题目
-                    </div>
-                  </div>
-                </div>
-              </div>
+            <div class="category-filter" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px; display: flex; gap: 10px; align-items: center;">
+              <el-select v-model="selectedCategorySubjectId" placeholder="选择学科" style="width: 150px;" @change="handleCategorySubjectChange">
+                <el-option label="请选择学科" value=""></el-option>
+                <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+              </el-select>
+              <el-select v-model="selectedCategorySubcategoryId" placeholder="选择题库" style="width: 150px;" @change="handleCategorySubcategoryChange">
+                <el-option label="请选择题库" value=""></el-option>
+                <el-option v-for="subcategory in categorySubcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
+              </el-select>
             </div>
+            
+            <div v-if="selectedCategorySubjectId && selectedCategorySubcategoryId" class="category-questions-table">
+              <el-table 
+                :data="paginatedCategoryQuestions" 
+                style="margin-top: 20px; width: 100%"
+                @row-click="editQuestion"
+                stripe
+                border
+                :default-sort="{prop: 'createdAt', order: 'descending'}"
+                :row-class-name="row => hasValidImage(row.content) || row.audio ? 'has-media' : ''"
+              >
+                <el-table-column type="selection" width="40"></el-table-column>
+                <el-table-column prop="id" label="ID" width="60" align="center"></el-table-column>
+                <el-table-column prop="subjectName" label="学科" width="120" align="center">
+                  <template #default="{ row }">
+                    <el-tag size="small" type="primary" effect="light" style="width: auto; max-width: 100%;">
+                      {{ row.subjectName }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="subcategoryName" label="学科题库" width="150" align="center">
+                  <template #default="{ row }">
+                    <span class="subcategory-text">{{ row.subcategoryName || '-' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="typeName" label="类型" width="90" align="center">
+                  <template #default="{ row }">
+                    <el-tag size="small" :type="{
+                      'single': 'primary',
+                      'multiple': 'success',
+                      'judgment': 'warning'
+                    }[row.type] || 'info'" style="width: auto; max-width: 100%;">
+                      {{ getTypeName(row.type) }}
+                    </el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="content" label="题目内容" min-width="300" align="left">
+                  <template #default="{ row }">
+                    <div class="question-content-wrapper">
+                      <div class="question-content-preview">
+                        <div v-if="hasValidImage(row.content)" class="content-with-image">
+                          <div class="image-preview">
+                            <img :src="extractImageUrl(row.content)" alt="题目图片" class="question-image" />
+                          </div>
+                          <div class="content-text" v-html="stripImages(row.content)"></div>
+                        </div>
+                        <div v-else-if="row.audio" class="content-with-audio">
+                          <el-icon class="audio-icon"><i class="el-icon-microphone"></i></el-icon>
+                          <div class="content-text">{{ row.content }}</div>
+                        </div>
+                        <div v-else class="content-text">
+                          {{ row.content }}
+                        </div>
+                      </div>
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="answer" label="答案" width="80" align="center">
+                  <template #default="{ row }">
+                    <el-tag size="small" type="danger" effect="dark">{{ row.answer || '-' }}</el-tag>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="createdAt" label="创建时间" width="140" align="center">
+                  <template #default="{ row }">
+                    <span class="time-text">{{ row.createdAt || '未知' }}</span>
+                  </template>
+                </el-table-column>
+                <el-table-column label="操作" width="160" fixed="right" align="center">
+                  <template #default="{ row }">
+                    <div class="row-operations">
+                      <el-button type="primary" size="small" @click="editQuestion(row)" style="margin-right: 5px;">
+                        <el-icon><i class="el-icon-edit"></i></el-icon> 编辑
+                      </el-button>
+                      <el-button type="danger" size="small" @click="deleteQuestion(row.id)">
+                        <el-icon><i class="el-icon-delete"></i></el-icon> 删除
+                      </el-button>
+                    </div>
+                  </template>
+                </el-table-column>
+              </el-table>
+            </div>
+            
+            <div v-else class="category-empty" style="text-align: center; padding: 60px; color: #909399;">
+              <el-icon style="font-size: 48px; margin-bottom: 20px;"><i class="el-icon-document"></i></el-icon>
+              <h3 style="margin-bottom: 10px;">请选择学科和题库</h3>
+              <p>选择后将显示该题库下的所有题目</p>
+            </div>
+
           </div>
           
           <!-- 分页组件 -->
@@ -407,13 +465,13 @@
               v-model:page-size="pageSize"
               :page-sizes="[10, 20, 50]"
               layout="total, sizes, prev, pager, next, jumper"
-              :total="total"
+              :total="isCategoryView ? categoryTotal : total"
               @size-change="handleSizeChange"
               @current-change="handleCurrentChange"
             />
           </div>
         </div>
-      </el-tab-pane>
+      </el-tab-pane> 
       
       <!-- 排行榜管理 -->
       <el-tab-pane label="排行榜管理" name="leaderboard">
@@ -831,7 +889,7 @@
     <el-dialog
       v-model="dialogVisible"
       :title="isEditing ? '编辑题目' : '添加题目'"
-      width="800px"
+      width="1000px"
     >
       <el-form :model="form" label-width="100px">
         <el-form-item label="学科">
@@ -858,7 +916,7 @@
         </el-form-item>
         
         <el-form-item label="题目内容">
-          <div style="height: 200px; margin-bottom: 50px; clear: both; position: relative; z-index: 100;">
+          <div style="height: 200px; margin-bottom: 20px; clear: both;">
             <QuillEditor
                   :key="editorKey"
                   v-model:content="form.content"
@@ -884,13 +942,13 @@
                     },
                     placeholder: '输入题目内容'
                   }"
-                  style="width: 100%; height: 100%; position: relative; z-index: 101;"
+                  style="width: 100%; height: 100%;"
                 />
           </div>
         </el-form-item>
         
         <el-form-item label="添加答案">
-          <div class="options-container" style="margin-top: 50px;">
+          <div class="options-container" style="margin-top: 20px;">
             <div class="correct-answer-tip" style="margin-bottom: 10px; padding: 10px; background-color: #f0f9ff; border-radius: 4px; border-left: 4px solid #409eff;">
               <span style="font-weight: bold; color: #409eff;">提示：</span> 勾选框用于标记<strong>正确答案</strong>，请选择一个或多个正确的选项。<br>
               <span style="font-weight: bold; color: #409eff;">图片上传：</span> 您可以直接复制图片，然后粘贴到答案编辑器中，或使用编辑器工具栏中的图片按钮上传图片。
@@ -957,24 +1015,7 @@
           </div>
         </el-form-item>
         
-        <el-form-item label="图片文件">
-          <el-upload
-            class="upload-image"
-            action="#"
-            :auto-upload="false"
-            :on-change="handleImageChange"
-            accept=".jpg,.jpeg,.png,.gif"
-            :limit="1"
-          >
-            <el-button size="small" type="primary">上传图片</el-button>
-            <template #tip>
-              <div class="el-upload__tip">
-                请上传JPG、JPEG、PNG或GIF格式的图片文件
-              </div>
-            </template>
-          </el-upload>
-          <el-input v-model="form.image" placeholder="输入图片文件路径，如：images/cat.jpg" style="margin-top: 10px;"></el-input>
-        </el-form-item>
+
       </el-form>
       
       <template #footer>
@@ -1694,6 +1735,78 @@ const newSubjectIcon = ref(0)
 const subjects = computed(() => store.subjects)
 const questions = computed(() => store.questions)
 const filterSubjectId = ref('')
+const selectedCategorySubjectId = ref('')
+const selectedCategorySubcategoryId = ref('')
+const categorySubcategories = computed(() => {
+  if (!selectedCategorySubjectId.value) {
+    return []
+  }
+  const subject = subjects.value.find(s => s.id === selectedCategorySubjectId.value)
+  return subject ? subject.subcategories || [] : []
+})
+const categoryFilteredQuestions = computed(() => {
+  if (!selectedCategorySubjectId.value || !selectedCategorySubcategoryId.value) {
+    return []
+  }
+  const filtered = questions.value.filter(q => {
+    const qSubjectId = q.subjectId || q.subject_id
+    const qSubcategoryId = q.subcategoryId || q.subcategory_id
+    return qSubjectId === selectedCategorySubjectId.value && qSubcategoryId === selectedCategorySubcategoryId.value
+  })
+  
+  // 添加学科和子分类名称
+  return filtered.map(q => {
+    // 获取学科名称，支持两种命名格式
+    const subjectId = q.subjectId || q.subject_id
+    const subject = subjects.value.find(s => s.id === subjectId)
+    const subjectName = subject ? subject.name : ''
+    
+    // 获取子分类名称，支持两种命名格式
+    const subcategoryId = q.subcategoryId || q.subcategory_id
+    let subcategoryName = ''
+    if (subject && subcategoryId) {
+      const subcategory = subject.subcategories.find(s => s.id === subcategoryId)
+      subcategoryName = subcategory ? subcategory.name : ''
+    }
+    
+    // 获取正确答案，支持多种命名格式
+    const answer = q.answer || q.correct_answer || q.correctAnswer || ''
+    
+    // 获取题目类型名称
+    const typeName = {
+      'single': '单选题',
+      'multiple': '多选题',
+      'judgment': '判断题'
+    }[q.type] || '未知'
+    
+    return {
+      ...q,
+      subjectId: subjectId,
+      subcategoryId: subcategoryId,
+      answer: answer,
+      subjectName,
+      subcategoryName,
+      typeName
+    }
+  })
+})
+
+const paginatedCategoryQuestions = computed(() => {
+  const questions = categoryFilteredQuestions.value
+  const start = (currentPage.value - 1) * pageSize.value
+  const end = start + pageSize.value
+  return questions.slice(start, end)
+})
+
+const categoryTotal = computed(() => {
+  return categoryFilteredQuestions.value.length
+})
+const filteredSubjects = computed(() => {
+  if (!selectedCategorySubjectId.value) {
+    return subjects.value
+  }
+  return subjects.value.filter(subject => subject.id === selectedCategorySubjectId.value)
+})
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 
@@ -1853,7 +1966,7 @@ const getQuestionsBySubcategory = (subjectId, subcategoryId) => {
     const qSubjectId = q.subjectId || q.subject_id
     const qSubcategoryId = q.subcategoryId || q.subcategory_id
     return qSubjectId === subjectId && qSubcategoryId === subcategoryId
-  })
+  }).slice(0, 1)
 }
 
 // 获取题目类型名称
@@ -1867,6 +1980,16 @@ const getTypeName = (type) => {
     'image': '看图题'
   }
   return typeNames[type] || '未知'
+}
+
+// 分类视图学科选择变化处理
+const handleCategorySubjectChange = () => {
+  selectedCategorySubcategoryId.value = ''
+}
+
+// 分类视图题库选择变化处理
+const handleCategorySubcategoryChange = () => {
+  // 可以在这里添加额外的逻辑
 }
 
 // 筛选后的子分类列表
@@ -2619,30 +2742,7 @@ const saveQuestion = async () => {
     }
   }
   
-  // 上传图片文件
-  if (selectedImageFile.value) {
-    ElMessage.success(`正在上传图片文件 ${selectedImageFile.value.name}...`)
-    try {
-      const formData = new FormData()
-      formData.append('image', selectedImageFile.value)
-      
-      const response = await fetch(`${getApiBaseUrl()}/upload-image`, {
-        method: 'POST',
-        body: formData
-      })
-      
-      if (response.ok) {
-        const result = await response.json()
-        form.value.image = result.filePath
-        ElMessage.success(`图片文件 ${selectedImageFile.value.name} 上传成功`)
-      } else {
-        ElMessage.error('图片文件上传失败')
-      }
-    } catch (error) {
-      console.error('图片文件上传失败:', error)
-      ElMessage.error('图片文件上传失败')
-    }
-  }
+
   
   try {
 
@@ -2690,7 +2790,6 @@ const saveQuestion = async () => {
     
     // 清空选中的文件
     selectedAudioFile.value = null
-    selectedImageFile.value = null
     
     dialogVisible.value = false
   } catch (error) {
@@ -2731,7 +2830,7 @@ const removeOption = (index) => {
 
 // 保存选中的文件
 const selectedAudioFile = ref(null)
-const selectedImageFile = ref(null)
+
 
 // 文件选择处理函数
 const handleAudioChange = (file) => {
@@ -2741,12 +2840,7 @@ const handleAudioChange = (file) => {
   form.value.audio = `audio/${file.name}`
 }
 
-const handleImageChange = (file) => {
-  selectedImageFile.value = file.raw
-  ElMessage.success(`图片文件 ${file.name} 已选择`)
-  // 暂时不上传，只保存文件对象，在保存时上传
-  form.value.image = `images/${file.name}`
-}
+
 
 // 处理粘贴事件
 const handlePaste = (event) => {

@@ -1308,6 +1308,144 @@ watch(activeTab, (newTab) => {
   .stats-overview {
     grid-template-columns: repeat(2, 1fr);
   }
+  
+  .filter-section {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .filter-section .el-select {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .leaderboard-header-container {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .back-home-btn {
+    width: 100%;
+    max-width: 200px;
+    text-align: center;
+  }
+}
+
+/* 移动设备优化 */
+@media (max-width: 480px) {
+  .student-container {
+    padding: 5px;
+  }
+  
+  .game-header {
+    padding: 15px 20px;
+  }
+  
+  .game-title {
+    font-size: 20px;
+  }
+  
+  .section-title {
+    font-size: 18px;
+  }
+  
+  .leaderboard-header,
+  .leaderboard-row {
+    grid-template-columns: 40px 1fr 60px 40px 40px 60px 60px 60px;
+    font-size: 12px;
+  }
+  
+  .leaderboard-section {
+    padding: 10px;
+  }
+  
+  .leaderboard-header,
+  .leaderboard-row {
+    padding: 6px;
+  }
+  
+  .rank-number {
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 10px;
+  }
+  
+  .user-info-details {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .student-id-bottom,
+  .user-info-item {
+    border-right: none;
+    padding-right: 0;
+    margin-right: 0;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .form-item {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .login-form .el-input,
+  .login-form .el-select {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .stats-overview {
+    grid-template-columns: 1fr;
+  }
+  
+  .stat-card {
+    padding: 10px;
+  }
+  
+  .stat-icon {
+    font-size: 20px;
+  }
+  
+  .stat-value {
+    font-size: 18px;
+  }
+  
+  .stat-label {
+    font-size: 11px;
+  }
+  
+  .recent-records .leaderboard-header,
+  .recent-records .leaderboard-row {
+    grid-template-columns: 80px 1fr 60px 60px 100px;
+    font-size: 12px;
+  }
+  
+  .user-records .leaderboard-header,
+  .user-records .leaderboard-row {
+    grid-template-columns: 80px 1fr 60px 60px 100px;
+    font-size: 12px;
+  }
+  
+  .el-tabs__header {
+    margin-bottom: 15px;
+  }
+  
+  .el-tabs__nav {
+    flex-wrap: wrap;
+  }
+  
+  .el-tab-pane {
+    padding: 10px 0;
+  }
 }
 
 /* 最近答题记录样式 */

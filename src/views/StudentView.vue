@@ -760,6 +760,12 @@ onMounted(async () => {
   box-shadow: 0 0 30px rgba(0, 0, 0, 0.15);
   position: relative;
   overflow: hidden;
+  box-sizing: border-box;
+}
+
+/* 确保所有元素都使用盒模型 */
+* {
+  box-sizing: border-box;
 }
 
 /* 背景装饰 */
@@ -1391,6 +1397,182 @@ onMounted(async () => {
     height: 24px;
     line-height: 24px;
     font-size: 12px;
+  }
+}
+
+/* 移动设备优化 */
+@media (max-width: 480px) {
+  .student-container {
+    padding: 10px;
+    border-radius: 10px;
+  }
+  
+  .game-header {
+    padding: 15px 20px;
+  }
+  
+  .game-title {
+    font-size: 24px;
+  }
+  
+  .section-title {
+    font-size: 20px;
+  }
+  
+  .subject-card {
+    padding: 30px 20px;
+    min-width: 140px;
+  }
+  
+  .subject-icon {
+    font-size: 48px;
+  }
+  
+  .subject-name {
+    font-size: 16px;
+  }
+  
+  .leaderboard-header,
+  .leaderboard-row {
+    grid-template-columns: 40px 1fr 60px 40px 40px 60px 60px;
+    font-size: 12px;
+  }
+  
+  .leaderboard-section {
+    padding: 10px;
+  }
+  
+  .leaderboard-header,
+  .leaderboard-row {
+    padding: 6px;
+  }
+  
+  .rank-number {
+    width: 20px;
+    height: 20px;
+    line-height: 20px;
+    font-size: 10px;
+  }
+  
+  .question-item {
+    padding: 15px;
+  }
+  
+  .option-item {
+    padding: 12px 16px;
+  }
+  
+  .option-text {
+    font-size: 14px;
+  }
+  
+  .user-info-details {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+  }
+  
+  .student-id-bottom,
+  .user-info-item {
+    border-right: none;
+    padding-right: 0;
+    margin-right: 0;
+  }
+  
+  .form-row {
+    flex-direction: column;
+    align-items: center;
+    gap: 15px;
+  }
+  
+  .form-item {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .login-form .el-input,
+  .login-form .el-select {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .action-btn,
+  .back-btn,
+  .submit-btn {
+    width: 100%;
+    max-width: 200px;
+    margin: 0 auto;
+  }
+  
+  .score-card {
+    padding: 30px;
+  }
+  
+  .score-number {
+    font-size: 48px;
+  }
+  
+  .score-total {
+    font-size: 24px;
+  }
+  
+  .encouragement {
+    font-size: 20px;
+  }
+  
+  .wrong-item .options {
+    grid-template-columns: 1fr;
+  }
+  
+  .question-content-main {
+    font-size: 16px;
+  }
+  
+  .subcategory-card {
+    padding: 20px 15px;
+  }
+  
+  .subcategory-icon {
+    font-size: 36px;
+  }
+  
+  .subcategory-name {
+    font-size: 16px;
+  }
+  
+  .question-header {
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+  }
+  
+  .question-count {
+    margin-top: 10px;
+  }
+  
+  .question-header-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .question-meta {
+    flex-direction: row;
+    gap: 15px;
+    align-items: center;
+    width: 100%;
+  }
+  
+  .question-content-main {
+    border-left: none;
+    padding-left: 0;
+    margin-top: 10px;
+    width: 100%;
   }
 }
 
