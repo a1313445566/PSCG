@@ -776,13 +776,7 @@
                   <el-option v-for="subcategory in batchSubcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
                 </el-select>
               </el-form-item>
-              <el-form-item label="题目类型">
-                <el-select v-model="batchQuestionType" placeholder="选择题目类型" style="width: 100%;">
-                  <el-option label="单选题" value="single"></el-option>
-                  <el-option label="多选题" value="multiple"></el-option>
-                  <el-option label="判断题" value="judgment"></el-option>
-                </el-select>
-              </el-form-item>
+
               <el-form-item label="题目文本">
                 <el-input
                   v-model="batchQuestionText"
@@ -808,7 +802,7 @@
                   <div v-for="(option, optIndex) in question.options" :key="optIndex" class="preview-option">
                     <span class="option-label">{{ String.fromCharCode(65 + optIndex) }}. </span>
                     {{ option }}
-                    <span v-if="String.fromCharCode(65 + optIndex) === question.answer" class="correct-answer-tag">(正确答案)</span>
+                    <span v-if="question.answer.includes(String.fromCharCode(65 + optIndex))" class="correct-answer-tag">(正确答案)</span>
                   </div>
                 </div>
                 <div v-if="question.explanation" class="preview-explanation">
@@ -2261,8 +2255,8 @@ const parseBatchQuestions = () => {
     // 模式2: 题目内容+答案括号 (如: 题目内容(A))
     // 支持答案括号后有句号等标点的情况
     // 只匹配答案括号，不匹配选项中的拼音括号
-    const numberedQuestionMatch = line.match(/^(\d+[.、]\s*)(.+?)([\(（]\s*[A-Da-d]\s*[\)）])(.*)$/)
-    const unnumberedQuestionMatch = line.match(/^(.+?)([\(（]\s*[A-Da-d]\s*[\)）])(.*)$/)
+    const numberedQuestionMatch = line.match(/^(\d+[.、]\s*)(.+?)([\(（]\s*[A-Da-d]+\s*[\)）])(.*)$/)
+    const unnumberedQuestionMatch = line.match(/^(.+?)([\(（]\s*[A-Da-d]+\s*[\)）])(.*)$/)
     
     if (numberedQuestionMatch) {
       // 保存当前题目（如果存在）
@@ -2276,12 +2270,20 @@ const parseBatchQuestions = () => {
       const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
       const postfix = numberedQuestionMatch[4] || ''
       
-      currentQuestion = {
-        content: questionText + numberedQuestionMatch[3] + postfix,
-        answer: answer,
-        options: [],
-        explanation: ''
+      // 自动识别题目类型
+      let questionType = 'single'
+      // 检查是否有【多选】标记
+      if (questionText.includes('【多选】') || answer.length > 1) {
+        questionType = 'multiple'
       }
+      
+      currentQuestion = {
+            content: questionText + numberedQuestionMatch[3] + postfix,
+            answer: answer,
+            type: questionType,
+            options: [],
+            explanation: ''
+          }
       inOptions = true
     } else if (unnumberedQuestionMatch) {
       // 保存当前题目（如果存在）
@@ -2295,12 +2297,20 @@ const parseBatchQuestions = () => {
       const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
       const postfix = unnumberedQuestionMatch[3] || ''
       
-      currentQuestion = {
-        content: questionText + unnumberedQuestionMatch[2] + postfix,
-        answer: answer,
-        options: [],
-        explanation: ''
+      // 自动识别题目类型
+      let questionType = 'single'
+      // 检查是否有【多选】标记
+      if (questionText.includes('【多选】') || answer.length > 1) {
+        questionType = 'multiple'
       }
+      
+      currentQuestion = {
+            content: questionText + unnumberedQuestionMatch[2] + postfix,
+            answer: answer,
+            type: questionType,
+            options: [],
+            explanation: ''
+          }
       inOptions = true
     } else if (inOptions && currentQuestion) {
       // 检查是否是选项（以字母+标点开头，允许行首有空格）
@@ -2360,7 +2370,7 @@ const saveBatchQuestions = async () => {
     const questionData = {
           subjectId: batchSubjectId.value,
           subcategoryId: batchSubcategoryId.value,
-          type: batchQuestionType.value,
+          type: question.type || 'single',
           content: contentWithoutAnswer,
           options: question.options,
           correctAnswer: question.answer,
