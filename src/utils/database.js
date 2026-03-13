@@ -33,7 +33,8 @@ export const getSubjects = async () => {
 // 获取所有题目
 export const getQuestions = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/questions`)
+    // 添加较大的limit参数，确保获取所有题目
+    const response = await fetch(`${API_BASE_URL}/questions?limit=1000`)
     if (!response.ok) {
       throw new Error('获取题目失败')
     }

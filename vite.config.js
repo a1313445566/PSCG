@@ -15,9 +15,7 @@ export default defineConfig({
         manualChunks: {
           'element-plus': ['element-plus'],
           'echarts': ['echarts'],
-          'quill': ['@vueup/vue-quill'],
-          'xlsx': ['xlsx'],
-          'pdfkit': ['pdfkit'],
+          'quill': ['@vueup/vue-quill']
         }
       }
     }

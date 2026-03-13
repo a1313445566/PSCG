@@ -3,12 +3,11 @@ const compression = require('compression');
 const sqlite3 = require('sqlite3').verbose();
 const cors = require('cors');
 const path = require('path');
-const PDFDocument = require('pdfkit');
 const XLSX = require('xlsx');
 const cache = require('memory-cache');
 
 // 缓存配置
-const CACHE_DURATION = 3600000; // 1小时
+const CACHE_DURATION = 60000; // 1分钟
 const CACHE_KEYS = {
   SUBJECTS: 'subjects',
   GRADES: 'grades',
@@ -29,27 +28,47 @@ app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' })
 
 // 设置响应编码为 UTF-8 - 只对API请求设置JSON类型
 app.use((req, res, next) => {
-  if (req.path.startsWith('/api')) {
+  // 只对实际的API端点设置JSON Content-Type，避免影响静态文件
+  if (req.path.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
   }
   next();
 });
 
 // 静态文件服务 - 放在API路由之前
+// 主静态文件目录
 app.use(express.static(path.join(__dirname, 'dist'), {
   maxAge: '1d',
   etag: true,
-  lastModified: true
+  lastModified: true,
+  immutable: false
 }));
+
+// 资产文件目录 - 更长的缓存时间
 app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
-  maxAge: '7d',
+  maxAge: '30d',
   etag: true,
-  lastModified: true
+  lastModified: false,
+  immutable: true
 }));
-app.use('/audio', express.static(path.join(__dirname, 'audio')));
-app.use('/images', express.static(path.join(__dirname, 'images')));
-app.use('/vite.svg', express.static(path.join(__dirname, 'dist', 'vite.svg'), {
-  maxAge: '7d'
+
+// 音频文件目录
+app.use('/audio', express.static(path.join(__dirname, 'audio'), {
+  maxAge: '7d',
+  etag: true
+}));
+
+// 图片文件目录
+app.use('/images', express.static(path.join(__dirname, 'images'), {
+  maxAge: '7d',
+  etag: true
+}));
+
+// 字体文件目录
+app.use('/fonts', express.static(path.join(__dirname, 'fonts'), {
+  maxAge: '30d',
+  etag: true,
+  immutable: true
 }));
 
 // 数据库连接
@@ -1336,7 +1355,7 @@ app.get('/api/error-prone-questions', (req, res) => {
   }
   
   let query = `
-    SELECT q.id, q.subject_id, q.content, q.type,
+    SELECT q.id, q.subject_id, q.content, q.type, q.options, q.correct_answer,
            COUNT(qa.id) as total_attempts,
            SUM(qa.is_correct) as correct_count,
            s.name as subject_name
@@ -1381,9 +1400,91 @@ app.get('/api/error-prone-questions', (req, res) => {
       return;
     }
     
-    // 缓存结果
-    cache.put(cacheKey, questions, CACHE_DURATION);
-    res.json(questions);
+    // 处理错误率较高的题目数据，添加选项和选择次数
+    const processErrorProneQuestions = (index) => {
+      if (index >= questions.length) {
+        // 缓存结果
+        cache.put(cacheKey, questions, CACHE_DURATION);
+        res.json(questions);
+        return;
+      }
+      
+      const question = questions[index];
+      
+      // 解析选项
+      let options = [];
+      try {
+        options = JSON.parse(question.options);
+      } catch (e) {
+        console.error('解析选项失败:', e);
+      }
+      question.options = options;
+      
+      // 解析正确答案
+      let correctAnswer = question.correct_answer;
+      try {
+        const parsedAnswer = JSON.parse(question.correct_answer);
+        if (typeof parsedAnswer === 'string') {
+          correctAnswer = parsedAnswer;
+        }
+      } catch (e) {
+        // 解析失败，使用原始值
+      }
+      question.correctAnswer = correctAnswer;
+      
+      // 构建选项选择次数查询，应用相同的筛选条件
+      let optionCountsQuery = `
+        SELECT user_answer, COUNT(*) as count
+        FROM question_attempts qa
+        LEFT JOIN users u ON qa.user_id = u.id
+        WHERE qa.question_id = ?
+      `;
+      
+      const optionCountsParams = [question.id];
+      
+      if (grade) {
+        optionCountsQuery += ' AND u.grade = ?';
+        optionCountsParams.push(grade);
+      }
+      
+      if (className) {
+        optionCountsQuery += ' AND u.class = ?';
+        optionCountsParams.push(className);
+      }
+      
+      if (startDate) {
+        optionCountsQuery += ' AND qa.created_at >= ?';
+        optionCountsParams.push(startDate);
+      }
+      
+      if (endDate) {
+        optionCountsQuery += ' AND qa.created_at <= ?';
+        optionCountsParams.push(endDate);
+      }
+      
+      optionCountsQuery += ' GROUP BY user_answer';
+      
+      db.all(optionCountsQuery, optionCountsParams, (err, optionCounts) => {
+        if (err) {
+          console.error('获取选项选择次数失败:', err);
+        }
+        
+        // 构建选项选择次数对象
+        const optionCountsObj = {};
+        if (optionCounts) {
+          optionCounts.forEach(item => {
+            optionCountsObj[item.user_answer] = item.count;
+          });
+        }
+        question.optionCounts = optionCountsObj;
+        
+        // 处理下一个题目
+        processErrorProneQuestions(index + 1);
+      });
+    };
+    
+    // 开始处理错误率较高的题目
+    processErrorProneQuestions(0);
   });
 });
 
@@ -1711,7 +1812,7 @@ app.get('/api/analysis', (req, res) => {
                     
                     // 执行错误率较高的题目查询
                     let errorProneQuery = `
-                      SELECT q.id, q.subject_id, q.content, q.type,
+                      SELECT q.id, q.subject_id, q.content, q.type, q.options, q.correct_answer,
                              COUNT(qa.id) as total_attempts,
                              SUM(qa.is_correct) as correct_count,
                              s.name as subject_name
@@ -1724,6 +1825,13 @@ app.get('/api/analysis', (req, res) => {
                     
                     if (subjectId) {
                       errorProneQuery += ' AND q.subject_id = ?';
+                    }
+                    
+                    if (subcategoryIds) {
+                      const subcategoryArray = Array.isArray(subcategoryIds) ? subcategoryIds : [subcategoryIds];
+                      if (subcategoryArray.length > 0) {
+                        errorProneQuery += ' AND q.subcategory_id IN (' + subcategoryArray.map(() => '?').join(', ') + ')';
+                      }
                     }
                     
                     if (grade) {
@@ -1751,11 +1859,93 @@ app.get('/api/analysis', (req, res) => {
                         return;
                       }
                       
-                      analysisData.errorProneQuestions = errorProneData || [];
+                      // 处理错误率较高的题目数据，添加选项和选择次数
+                      const processErrorProneQuestions = (index) => {
+                        if (index >= errorProneData.length) {
+                          analysisData.errorProneQuestions = errorProneData || [];
+                          
+                          // 缓存结果
+                          cache.put(cacheKey, analysisData, CACHE_DURATION);
+                          res.json(analysisData);
+                          return;
+                        }
+                        
+                        const question = errorProneData[index];
+                        
+                        // 解析选项
+                        let options = [];
+                        try {
+                          options = JSON.parse(question.options);
+                        } catch (e) {
+                          console.error('解析选项失败:', e);
+                        }
+                        question.options = options;
+                        
+                        // 解析正确答案
+                        let correctAnswer = question.correct_answer;
+                        try {
+                          const parsedAnswer = JSON.parse(question.correct_answer);
+                          if (typeof parsedAnswer === 'string') {
+                            correctAnswer = parsedAnswer;
+                          }
+                        } catch (e) {
+                          // 解析失败，使用原始值
+                        }
+                        question.correctAnswer = correctAnswer;
+                        
+                        // 构建选项选择次数查询，应用相同的筛选条件
+                        let optionCountsQuery = `
+                          SELECT user_answer, COUNT(*) as count
+                          FROM question_attempts qa
+                          LEFT JOIN users u ON qa.user_id = u.id
+                          WHERE qa.question_id = ?
+                        `;
+                        
+                        const optionCountsParams = [question.id];
+                        
+                        if (grade) {
+                          optionCountsQuery += ' AND u.grade = ?';
+                          optionCountsParams.push(grade);
+                        }
+                        
+                        if (className) {
+                          optionCountsQuery += ' AND u.class = ?';
+                          optionCountsParams.push(className);
+                        }
+                        
+                        if (startDate) {
+                          optionCountsQuery += ' AND qa.created_at >= ?';
+                          optionCountsParams.push(startDate);
+                        }
+                        
+                        if (endDate) {
+                          optionCountsQuery += ' AND qa.created_at <= ?';
+                          optionCountsParams.push(endDate);
+                        }
+                        
+                        optionCountsQuery += ' GROUP BY user_answer';
+                        
+                        db.all(optionCountsQuery, optionCountsParams, (err, optionCounts) => {
+                          if (err) {
+                            console.error('获取选项选择次数失败:', err);
+                          }
+                          
+                          // 构建选项选择次数对象
+                          const optionCountsObj = {};
+                          if (optionCounts) {
+                            optionCounts.forEach(item => {
+                              optionCountsObj[item.user_answer] = item.count;
+                            });
+                          }
+                          question.optionCounts = optionCountsObj;
+                          
+                          // 处理下一个题目
+                          processErrorProneQuestions(index + 1);
+                        });
+                      };
                       
-                      // 缓存结果
-                      cache.put(cacheKey, analysisData, CACHE_DURATION);
-                      res.json(analysisData);
+                      // 开始处理错误率较高的题目
+                      processErrorProneQuestions(0);
                     });
                   });
                 });
@@ -2075,13 +2265,145 @@ app.get('/api/analysis/download', (req, res) => {
                     
                     analysisData.errorAnalysisList = errorData || [];
                     
-                    if (type === 'pdf') {
-                      generatePDFReport(analysisData, res);
-                    } else if (type === 'excel') {
-                      generateExcelReport(analysisData, res);
-                    } else {
-                      res.status(400).json({ error: '无效的报告类型' });
+                    // 执行错误率较高的题目查询
+                    const errorProneQuery = `
+                      SELECT
+                        q.id,
+                        q.subject_id,
+                        q.content,
+                        q.type,
+                        q.options,
+                        q.correct_answer,
+                        COUNT(qa.id) as total_attempts,
+                        SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) as correct_count,
+                        s.name as subject_name
+                      FROM questions q
+                      LEFT JOIN question_attempts qa ON q.id = qa.question_id
+                      LEFT JOIN users u ON qa.user_id = u.id
+                      LEFT JOIN subjects s ON q.subject_id = s.id
+                      WHERE 1=1
+                    `;
+                    
+                    // 添加筛选条件
+                    if (subjectId) {
+                      errorProneQuery += ' AND q.subject_id = ?';
                     }
+                    
+                    if (grade) {
+                      errorProneQuery += ' AND u.grade = ?';
+                    }
+                    
+                    if (className) {
+                      errorProneQuery += ' AND u.class = ?';
+                    }
+                    
+                    if (startDate) {
+                      errorProneQuery += ' AND qa.created_at >= ?';
+                    }
+                    
+                    if (endDate) {
+                      errorProneQuery += ' AND qa.created_at <= ?';
+                    }
+                    
+                    errorProneQuery += ' GROUP BY q.id HAVING total_attempts >= 3 ORDER BY (total_attempts - correct_count) DESC LIMIT 20';
+                    
+                    db.all(errorProneQuery, params, (err, errorProneData) => {
+                      if (err) {
+                        console.error('获取错误率较高的题目失败:', err);
+                        res.status(500).json({ error: '获取分析数据失败' });
+                        return;
+                      }
+                      
+                      // 处理错误率较高的题目数据，添加选项和选择次数
+                      const processErrorProneQuestions = (index) => {
+                        if (index >= errorProneData.length) {
+                          analysisData.errorProneQuestions = errorProneData || [];
+                          
+                          if (type === 'excel') {
+                            generateExcelReport(analysisData, res);
+                          } else {
+                            res.status(400).json({ error: '无效的报告类型' });
+                          }
+                          return;
+                        }
+                        
+                        const question = errorProneData[index];
+                        
+                        // 解析选项
+                        let options = [];
+                        try {
+                          options = JSON.parse(question.options);
+                        } catch (e) {
+                          console.error('解析选项失败:', e);
+                        }
+                        question.options = options;
+                        
+                        // 解析正确答案
+                        let correctAnswer = question.correct_answer;
+                        try {
+                          const parsedAnswer = JSON.parse(question.correct_answer);
+                          if (typeof parsedAnswer === 'string') {
+                            correctAnswer = parsedAnswer;
+                          }
+                        } catch (e) {
+                          // 解析失败，使用原始值
+                        }
+                        question.correctAnswer = correctAnswer;
+                        
+                        // 构建选项选择次数查询，应用相同的筛选条件
+                        let optionCountsQuery = `
+                          SELECT user_answer, COUNT(*) as count
+                          FROM question_attempts qa
+                          LEFT JOIN users u ON qa.user_id = u.id
+                          WHERE qa.question_id = ?
+                        `;
+                        
+                        const optionCountsParams = [question.id];
+                        
+                        if (grade) {
+                          optionCountsQuery += ' AND u.grade = ?';
+                          optionCountsParams.push(grade);
+                        }
+                        
+                        if (className) {
+                          optionCountsQuery += ' AND u.class = ?';
+                          optionCountsParams.push(className);
+                        }
+                        
+                        if (startDate) {
+                          optionCountsQuery += ' AND qa.created_at >= ?';
+                          optionCountsParams.push(startDate);
+                        }
+                        
+                        if (endDate) {
+                          optionCountsQuery += ' AND qa.created_at <= ?';
+                          optionCountsParams.push(endDate);
+                        }
+                        
+                        optionCountsQuery += ' GROUP BY user_answer';
+                        
+                        db.all(optionCountsQuery, optionCountsParams, (err, optionCounts) => {
+                          if (err) {
+                            console.error('获取选项选择次数失败:', err);
+                          }
+                          
+                          // 构建选项选择次数对象
+                          const optionCountsObj = {};
+                          if (optionCounts) {
+                            optionCounts.forEach(item => {
+                              optionCountsObj[item.user_answer] = item.count;
+                            });
+                          }
+                          question.optionCounts = optionCountsObj;
+                          
+                          // 处理下一个题目
+                          processErrorProneQuestions(index + 1);
+                        });
+                      };
+                      
+                      // 开始处理错误率较高的题目
+                      processErrorProneQuestions(0);
+                    });
                   });
                 });
               });
@@ -2093,85 +2415,22 @@ app.get('/api/analysis/download', (req, res) => {
   });
 });
 
-// 生成PDF报告
-function generatePDFReport(analysisData, res) {
-  const PDFDocument = require('pdfkit');
-  const doc = new PDFDocument({ margin: 50 });
-  
-  // 设置响应头
-  res.setHeader('Content-Type', 'application/pdf');
-  res.setHeader('Content-Disposition', 'attachment; filename=analysis_report.pdf');
-  
-  // 连接PDF流到响应
-  doc.pipe(res);
-  
-  // 标题
-  doc.fontSize(20).text('小学各学科数据分析报告', { align: 'center' });
-  doc.moveDown(2);
-  
-  // 总体统计
-  doc.fontSize(16).text('一、总体统计', { underline: true });
-  doc.moveDown(0.5);
-  doc.fontSize(12).text(`总用户数: ${analysisData.totalUsers}`);
-  doc.text(`总答题次数: ${analysisData.totalSessions}`);
-  doc.text(`总答题数: ${analysisData.totalQuestions}`);
-  doc.text(`总正确数: ${analysisData.totalCorrect}`);
-  doc.text(`总体正确率: ${analysisData.overallAccuracy.toFixed(1)}%`);
-  doc.moveDown(2);
-  
-  // 学科分析
-  doc.fontSize(16).text('二、学科分析', { underline: true });
-  doc.moveDown(0.5);
-  analysisData.subjectAnalysisList.forEach(item => {
-    doc.fontSize(12).text(`${item.subject}: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
-  });
-  doc.moveDown(2);
-  
-  // 年级分析
-  doc.fontSize(16).text('三、年级分析', { underline: true });
-  doc.moveDown(0.5);
-  analysisData.gradeAnalysisList.forEach(item => {
-    doc.fontSize(12).text(`${item.grade}年级: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
-  });
-  doc.moveDown(2);
-  
-  // 时间趋势分析
-  doc.fontSize(16).text('四、时间趋势分析', { underline: true });
-  doc.moveDown(0.5);
-  analysisData.timeAnalysisList.forEach(item => {
-    doc.fontSize(12).text(`${item.date}: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
-  });
-  
-  // 班级分析
-  doc.fontSize(16).text('五、班级分析', { underline: true });
-  doc.moveDown(0.5);
-  analysisData.classAnalysisList.forEach(item => {
-    doc.fontSize(12).text(`${item.class}班: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
-  });
-  
-  // 子分类分析
-  doc.fontSize(16).text('六、子分类分析', { underline: true });
-  doc.moveDown(0.5);
-  analysisData.subcategoryAnalysisList.forEach(item => {
-    doc.fontSize(12).text(`${item.subject} - ${item.subcategory || '未分类'}: 正确率 ${item.accuracy.toFixed(1)}%, 答题数 ${item.questions}`);
-  });
-  
-  // 答题时间分析
-  doc.fontSize(16).text('七、答题时间分析', { underline: true });
-  doc.moveDown(0.5);
-  analysisData.timeSpentAnalysisList.forEach(item => {
-    doc.fontSize(12).text(`${item.time_range}: 正确率 ${item.accuracy.toFixed(1)}%, 答题次数 ${item.sessions}`);
-  });
-  
-  // 错题分析
-  doc.fontSize(16).text('八、错题分析', { underline: true });
-  doc.moveDown(0.5);
-  analysisData.errorAnalysisList.forEach(item => {
-    doc.fontSize(12).text(`${item.subject}: 错误率 ${item.error_rate.toFixed(1)}%, 错题数 ${item.error_count}, 总尝试次数 ${item.total_attempts}`);
-  });
-  
-  // 结束PDF生成
-  doc.end();
+
+
+// 辅助函数：截断文本长度
+function truncateText(text, maxLength = 32767) {
+  if (text === null || text === undefined) {
+    return '';
+  }
+  // 确保text是字符串类型
+  let textStr;
+  try {
+    textStr = String(text);
+  } catch (e) {
+    textStr = '';
+  }
+  // 截断文本长度
+  return textStr.substring(0, maxLength);
 }
 
 // 生成Excel报告
@@ -2195,7 +2454,7 @@ function generateExcelReport(analysisData, res) {
   // 学科分析工作表
   const subjectData = [['学科', '答题次数', '答题数', '正确数', '正确率']];
   analysisData.subjectAnalysisList.forEach(item => {
-    subjectData.push([item.subject, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+    subjectData.push([truncateText(item.subject), item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
   });
   const subjectWs = XLSX.utils.aoa_to_sheet(subjectData);
   XLSX.utils.book_append_sheet(wb, subjectWs, '学科分析');
@@ -2211,7 +2470,7 @@ function generateExcelReport(analysisData, res) {
   // 时间趋势分析工作表
   const timeData = [['日期', '答题次数', '答题数', '正确数', '正确率']];
   analysisData.timeAnalysisList.forEach(item => {
-    timeData.push([item.date, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+    timeData.push([truncateText(item.date), item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
   });
   const timeWs = XLSX.utils.aoa_to_sheet(timeData);
   XLSX.utils.book_append_sheet(wb, timeWs, '时间趋势');
@@ -2219,7 +2478,8 @@ function generateExcelReport(analysisData, res) {
   // 班级分析工作表
   const classData = [['班级', '用户数', '答题次数', '答题数', '正确数', '正确率']];
   analysisData.classAnalysisList.forEach(item => {
-    classData.push([`${item.class}班`, item.users, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+    const className = item.class || item.class_num || '未知';
+    classData.push([`${className}班`, item.users, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
   });
   const classWs = XLSX.utils.aoa_to_sheet(classData);
   XLSX.utils.book_append_sheet(wb, classWs, '班级分析');
@@ -2227,7 +2487,7 @@ function generateExcelReport(analysisData, res) {
   // 子分类分析工作表
   const subcategoryData = [['学科', '子分类', '答题次数', '答题数', '正确数', '正确率']];
   analysisData.subcategoryAnalysisList.forEach(item => {
-    subcategoryData.push([item.subject, item.subcategory || '未分类', item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+    subcategoryData.push([truncateText(item.subject), truncateText(item.subcategory || '未分类'), item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
   });
   const subcategoryWs = XLSX.utils.aoa_to_sheet(subcategoryData);
   XLSX.utils.book_append_sheet(wb, subcategoryWs, '子分类分析');
@@ -2235,7 +2495,7 @@ function generateExcelReport(analysisData, res) {
   // 答题时间分析工作表
   const timeSpentData = [['时间范围', '答题次数', '答题数', '正确数', '正确率']];
   analysisData.timeSpentAnalysisList.forEach(item => {
-    timeSpentData.push([item.time_range, item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
+    timeSpentData.push([truncateText(item.time_range), item.sessions, item.questions, item.correct, `${item.accuracy.toFixed(1)}%`]);
   });
   const timeSpentWs = XLSX.utils.aoa_to_sheet(timeSpentData);
   XLSX.utils.book_append_sheet(wb, timeSpentWs, '答题时间分析');
@@ -2243,10 +2503,37 @@ function generateExcelReport(analysisData, res) {
   // 错题分析工作表
   const errorData = [['学科', '总尝试次数', '错题数', '错误率']];
   analysisData.errorAnalysisList.forEach(item => {
-    errorData.push([item.subject, item.total_attempts, item.error_count, `${item.error_rate.toFixed(1)}%`]);
+    errorData.push([truncateText(item.subject), item.total_attempts, item.error_count, `${item.error_rate.toFixed(1)}%`]);
   });
   const errorWs = XLSX.utils.aoa_to_sheet(errorData);
   XLSX.utils.book_append_sheet(wb, errorWs, '错题分析');
+  
+  // 错误率较高的题目工作表
+  // 确保即使没有错误率较高的题目也添加此工作表
+  const errorProneData = [['题目ID', '题目内容', '学科', '学科题库', '错误率', '总尝试次数', '错误次数']];
+  if (analysisData.errorProneQuestions && analysisData.errorProneQuestions.length > 0) {
+    analysisData.errorProneQuestions.forEach(item => {
+      // 限制文本长度，确保不超过32767个字符
+      const questionContent = truncateText(item.question_content || '无题目内容');
+      const subject = truncateText(item.subject || '未知学科');
+      const subcategory = truncateText(item.subcategory || '未分类');
+      
+      errorProneData.push([
+        item.question_id,
+        questionContent,
+        subject,
+        subcategory,
+        `${item.error_rate.toFixed(1)}%`,
+        item.total_attempts,
+        item.error_count
+      ]);
+    });
+  } else {
+    // 添加一行空数据或提示信息
+    errorProneData.push(['', '暂无数据', '', '', '', '', '']);
+  }
+  const errorProneWs = XLSX.utils.aoa_to_sheet(errorProneData);
+  XLSX.utils.book_append_sheet(wb, errorProneWs, '错误率较高的题目');
   
   // 生成Excel文件
   const excelBuffer = XLSX.write(wb, { bookType: 'xlsx', type: 'buffer' });

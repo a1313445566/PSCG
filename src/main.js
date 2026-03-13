@@ -5,11 +5,16 @@ import router from './router'
 import { useQuestionStore } from './stores/questionStore'
 import './styles/loading.css'
 
+// 导入Element Plus
+import ElementPlus from 'element-plus'
+import 'element-plus/dist/index.css'
+
 const app = createApp(App)
 const pinia = createPinia()
 
 app.use(pinia)
 app.use(router)
+app.use(ElementPlus)
 
 // 初始化数据库
 const questionStore = useQuestionStore()

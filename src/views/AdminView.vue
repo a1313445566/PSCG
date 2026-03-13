@@ -244,9 +244,13 @@
           <div class="filter-section">
             <div class="filter-row">
               <el-input v-model="searchKeyword" placeholder="搜索题目内容" style="width: 300px; margin-right: 10px;"></el-input>
-              <el-select v-model="filterSubjectId" placeholder="选择学科" style="width: 120px; margin-right: 10px;">
+              <el-select v-model="filterSubjectId" placeholder="选择学科" style="width: 120px; margin-right: 10px;" @change="handleSubjectChange">
                 <el-option label="全部学科" value=""></el-option>
                 <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+              </el-select>
+              <el-select v-model="filterSubcategoryId" placeholder="选择学科题库" style="width: 150px; margin-right: 10px;">
+                <el-option label="全部题库" value=""></el-option>
+                <el-option v-for="subcategory in filterSubcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
               </el-select>
               <el-select v-model="filterType" placeholder="选择类型" style="width: 120px; margin-right: 10px;">
                 <el-option label="全部类型" value=""></el-option>
@@ -257,15 +261,20 @@
                 <el-option label="阅读题" value="reading"></el-option>
                 <el-option label="看图题" value="image"></el-option>
               </el-select>
+              <el-button type="primary" @click="applyQuestionFilters">应用筛选</el-button>
             </div>
             <div class="action-buttons">
               <el-button type="primary" @click="showAddQuestionDialog">添加题目</el-button>
               <el-button type="success" @click="batchAddDialogVisible = true">批量添加题目</el-button>
               <el-button type="danger" @click="batchDeleteQuestions" :disabled="selectedQuestions.length === 0">批量删除</el-button>
+              <el-button type="info" @click="toggleViewMode">
+                {{ isCategoryView ? '切换到列表视图' : '切换到分类视图' }}
+              </el-button>
             </div>
           </div>
           
-          <div class="table-container">
+          <!-- 列表视图 -->
+          <div class="table-container" v-if="!isCategoryView">
             <el-table 
               :data="filteredQuestions" 
               style="margin-top: 20px; width: 100%"
@@ -344,6 +353,51 @@
                 </template>
               </el-table-column>
             </el-table>
+          </div>
+          
+          <!-- 分类视图 -->
+          <div class="category-view" v-else>
+            <div v-for="subject in subjects" :key="subject.id" class="subject-category">
+              <div class="subject-header">
+                <h3>{{ subject.name }}</h3>
+                <span class="question-count">{{ getSubjectQuestionCount(subject.id) }} 道题目</span>
+              </div>
+              <div class="subcategory-list">
+                <div v-for="subcategory in subject.subcategories" :key="subcategory.id" class="subcategory-card">
+                  <div class="subcategory-header">
+                    <h4>{{ subcategory.name }}</h4>
+                    <span class="question-count">{{ getSubcategoryQuestionCount(subject.id, subcategory.id) }} 道题目</span>
+                  </div>
+                  <div class="subcategory-questions">
+                    <div v-for="question in getQuestionsBySubcategory(subject.id, subcategory.id)" :key="question.id" class="question-card">
+                      <div class="question-content">
+                        <div class="question-type">
+                          <el-tag size="small" :type="{
+                            'single': 'primary',
+                            'multiple': 'success',
+                            'judgment': 'warning'
+                          }[question.type] || 'info'">
+                            {{ getTypeName(question.type) }}
+                          </el-tag>
+                        </div>
+                        <div class="question-text" v-html="stripImages(question.content)"></div>
+                      </div>
+                      <div class="question-actions">
+                        <el-button type="primary" size="small" @click="editQuestion(question)">
+                          <el-icon><i class="el-icon-edit"></i></el-icon> 编辑
+                        </el-button>
+                        <el-button type="danger" size="small" @click="deleteQuestion(question.id)">
+                          <el-icon><i class="el-icon-delete"></i></el-icon> 删除
+                        </el-button>
+                      </div>
+                    </div>
+                    <div v-if="getQuestionsBySubcategory(subject.id, subcategory.id).length === 0" class="empty-questions">
+                      暂无题目
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- 分页组件 -->
@@ -752,9 +806,14 @@
                 </div>
                 <div class="preview-options">
                   <div v-for="(option, optIndex) in question.options" :key="optIndex" class="preview-option">
+                    <span class="option-label">{{ String.fromCharCode(65 + optIndex) }}. </span>
                     {{ option }}
-                    <span v-if="option.trim().startsWith(question.answer + '.') || option.trim().startsWith(question.answer + '、') || option.trim().startsWith(question.answer + '．') || option.trim().startsWith(question.answer.toLowerCase() + '.') || option.trim().startsWith(question.answer.toLowerCase() + '、') || option.trim().startsWith(question.answer.toLowerCase() + '．')" class="correct-answer-tag">(正确答案)</span>
+                    <span v-if="String.fromCharCode(65 + optIndex) === question.answer" class="correct-answer-tag">(正确答案)</span>
                   </div>
+                </div>
+                <div v-if="question.explanation" class="preview-explanation">
+                  <span class="explanation-label">解析：</span>
+                  <span>{{ question.explanation }}</span>
                 </div>
               </div>
             </div>
@@ -1757,6 +1816,71 @@ const batchSubcategories = computed(() => {
 const searchKeyword = ref('')
 const filterType = ref('')
 const selectedQuestions = ref([])
+const isCategoryView = ref(false)
+const filterSubcategoryId = ref('')
+
+// 切换视图模式
+const toggleViewMode = () => {
+  isCategoryView.value = !isCategoryView.value
+}
+
+// 应用题目筛选
+const applyQuestionFilters = () => {
+  // 重置分页到第一页
+  currentPage.value = 1
+}
+
+// 处理学科变化
+const handleSubjectChange = () => {
+  // 当学科变化时，重置子分类选择
+  filterSubcategoryId.value = ''
+}
+
+// 获取学科的题目数量
+const getSubjectQuestionCount = (subjectId) => {
+  return questions.value.filter(q => {
+    const qSubjectId = q.subjectId || q.subject_id
+    return qSubjectId === subjectId
+  }).length
+}
+
+// 获取子分类的题目数量
+const getSubcategoryQuestionCount = (subjectId, subcategoryId) => {
+  return questions.value.filter(q => {
+    const qSubjectId = q.subjectId || q.subject_id
+    const qSubcategoryId = q.subcategoryId || q.subcategory_id
+    return qSubjectId === subjectId && qSubcategoryId === subcategoryId
+  }).length
+}
+
+// 获取子分类的题目
+const getQuestionsBySubcategory = (subjectId, subcategoryId) => {
+  return questions.value.filter(q => {
+    const qSubjectId = q.subjectId || q.subject_id
+    const qSubcategoryId = q.subcategoryId || q.subcategory_id
+    return qSubjectId === subjectId && qSubcategoryId === subcategoryId
+  })
+}
+
+// 获取题目类型名称
+const getTypeName = (type) => {
+  const typeNames = {
+    'single': '单选题',
+    'multiple': '多选题',
+    'judgment': '判断题',
+    'listening': '听力题',
+    'reading': '阅读题',
+    'image': '看图题'
+  }
+  return typeNames[type] || '未知'
+}
+
+// 筛选后的子分类列表
+const filterSubcategories = computed(() => {
+  if (!filterSubjectId.value) return []
+  const subject = subjects.value.find(s => s.id === parseInt(filterSubjectId.value))
+  return subject ? subject.subcategories : []
+})
 
 // 分页相关
 const currentPage = ref(1)
@@ -1937,6 +2061,15 @@ const filteredQuestions = computed(() => {
     })
   }
   
+  // 按子分类过滤
+  if (filterSubcategoryId.value) {
+    const subcategoryId = parseInt(filterSubcategoryId.value)
+    filtered = filtered.filter(q => {
+      const qSubcategoryId = q.subcategoryId || q.subcategory_id
+      return qSubcategoryId === subcategoryId
+    })
+  }
+  
   // 按类型过滤
   if (filterType.value) {
     filtered = filtered.filter(q => q.type === filterType.value)
@@ -1945,7 +2078,23 @@ const filteredQuestions = computed(() => {
   // 按关键词搜索
   if (searchKeyword.value) {
     const keyword = searchKeyword.value.toLowerCase()
-    filtered = filtered.filter(q => q.content.toLowerCase().includes(keyword))
+    filtered = filtered.filter(q => {
+      // 搜索题目内容
+      if (q.content && q.content.toLowerCase().includes(keyword)) return true
+      // 搜索选项
+      if (q.options && Array.isArray(q.options)) {
+        for (const option of q.options) {
+          if (option && option.toLowerCase().includes(keyword)) return true
+        }
+      }
+      // 搜索答案
+      if (q.answer && q.answer.toLowerCase().includes(keyword)) return true
+      // 搜索学科名称
+      if (q.subjectName && q.subjectName.toLowerCase().includes(keyword)) return true
+      // 搜索子分类名称
+      if (q.subcategoryName && q.subcategoryName.toLowerCase().includes(keyword)) return true
+      return false
+    })
   }
   
   // 添加学科和子分类名称
@@ -2110,8 +2259,10 @@ const parseBatchQuestions = () => {
     // 检查是否是新题目
     // 模式1: 数字+标点+题目内容+答案括号 (如: 1. 题目内容(A))
     // 模式2: 题目内容+答案括号 (如: 题目内容(A))
-    const numberedQuestionMatch = line.match(/^(\d+[.、]\s*)(.+?)([\(（]\s*[A-Za-z]*\s*[\)）])$/)
-    const unnumberedQuestionMatch = line.match(/^(.+?)([\(（]\s*[A-Za-z]*\s*[\)）])$/)
+    // 支持答案括号后有句号等标点的情况
+    // 只匹配答案括号，不匹配选项中的拼音括号
+    const numberedQuestionMatch = line.match(/^(\d+[.、]\s*)(.+?)([\(（]\s*[A-Da-d]\s*[\)）])(.*)$/)
+    const unnumberedQuestionMatch = line.match(/^(.+?)([\(（]\s*[A-Da-d]\s*[\)）])(.*)$/)
     
     if (numberedQuestionMatch) {
       // 保存当前题目（如果存在）
@@ -2121,13 +2272,15 @@ const parseBatchQuestions = () => {
       
       // 创建新题目
       const questionText = numberedQuestionMatch[2].trim()
-      const answerMatch = numberedQuestionMatch[3].match(/[A-Za-z]+/)
+      const answerMatch = numberedQuestionMatch[3].match(/[A-Da-d]+/)
       const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+      const postfix = numberedQuestionMatch[4] || ''
       
       currentQuestion = {
-        content: questionText + numberedQuestionMatch[3],
+        content: questionText + numberedQuestionMatch[3] + postfix,
         answer: answer,
-        options: []
+        options: [],
+        explanation: ''
       }
       inOptions = true
     } else if (unnumberedQuestionMatch) {
@@ -2138,26 +2291,35 @@ const parseBatchQuestions = () => {
       
       // 创建新题目（无编号）
       const questionText = unnumberedQuestionMatch[1].trim()
-      const answerMatch = unnumberedQuestionMatch[2].match(/[A-Za-z]+/)
+      const answerMatch = unnumberedQuestionMatch[2].match(/[A-Da-d]+/)
       const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+      const postfix = unnumberedQuestionMatch[3] || ''
       
       currentQuestion = {
-        content: questionText + unnumberedQuestionMatch[2],
+        content: questionText + unnumberedQuestionMatch[2] + postfix,
         answer: answer,
-        options: []
+        options: [],
+        explanation: ''
       }
       inOptions = true
     } else if (inOptions && currentQuestion) {
-      // 检查是否是选项（以字母+标点开头）
-      const optionMatch = line.match(/^([A-Za-z][\.\、．]?\s*)(.*)$/)
-      if (optionMatch) {
-        // 移除选项标签（A.、B.等），只保留实际内容
-        const optionContent = optionMatch[2].trim()
-        currentQuestion.options.push(optionContent)
-      } else {
-        // 如果不是选项，可能是题目内容的延续（多行题目）
-        currentQuestion.content += ' ' + line
-      }
+      // 检查是否是选项（以字母+标点开头，允许行首有空格）
+        const optionMatch = line.match(/^\s*([A-Za-z][\.\、．]?\s*)(.*)$/)
+        if (optionMatch) {
+          // 移除选项标签（A.、B.等），只保留实际内容
+          const optionContent = optionMatch[2].trim()
+          currentQuestion.options.push(optionContent)
+        } else {
+          // 检查是否是解析（允许行首有空格）
+          const explanationMatch = line.match(/^\s*解析[:：]\s*(.*)$/)
+          if (explanationMatch) {
+            // 提取解析内容
+            currentQuestion.explanation = explanationMatch[1].trim()
+          } else {
+            // 如果不是选项和解析，可能是题目内容的延续（多行题目）
+            currentQuestion.content += ' ' + line
+          }
+        }
     }
   }
   
@@ -2196,22 +2358,34 @@ const saveBatchQuestions = async () => {
     contentWithoutAnswer = contentWithoutAnswer.replace(/\s*[\(（]\s*[A-Za-z]*\s*[\)）]/, ' (  )')
     
     const questionData = {
-      subjectId: batchSubjectId.value,
-      subcategoryId: batchSubcategoryId.value,
-      type: batchQuestionType.value,
-      content: contentWithoutAnswer,
-      options: question.options,
-      correctAnswer: question.answer,
-      explanation: ''
-    }
+          subjectId: batchSubjectId.value,
+          subcategoryId: batchSubcategoryId.value,
+          type: batchQuestionType.value,
+          content: contentWithoutAnswer,
+          options: question.options,
+          correctAnswer: question.answer,
+          explanation: question.explanation || ''
+        }
     
     try {
-      await store.addQuestion(questionData)
-      successCount++
+      // 直接调用API添加题目，不重新加载数据
+      const response = await fetch(`${getApiBaseUrl()}/questions`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(questionData)
+      })
+      if (response.ok) {
+        successCount++
+      }
     } catch (error) {
       console.error('添加题目失败:', error)
     }
   }
+  
+  // 所有题目添加完成后，重新加载数据
+  await store.loadData()
   
   ElMessage.success(`成功添加 ${successCount} 道题目`)
   batchAddDialogVisible.value = false
@@ -2566,23 +2740,56 @@ const handleImageChange = (file) => {
 
 // 处理粘贴事件
 const handlePaste = (event) => {
-  const items = (event.clipboardData || event.originalEvent.clipboardData).items;
+  const clipboardData = event.clipboardData || event.originalEvent.clipboardData;
+  if (!clipboardData) return;
+  
+  const items = clipboardData.items;
+  let hasImage = false;
   
   for (const item of items) {
     if (item.type.indexOf('image') === 0) {
+      hasImage = true;
       event.preventDefault();
       const blob = item.getAsFile();
+      if (!blob) return;
+      
       const reader = new FileReader();
       reader.onload = function(e) {
+        // 确保目标元素存在
+        if (!event.target) return;
+        
+        // 清空现有内容
+        event.target.innerHTML = '';
+        
+        // 创建并添加图片元素
         const img = document.createElement('img');
         img.src = e.target.result;
         img.style.maxWidth = '100%';
         img.style.maxHeight = '200px';
-        event.target.appendChild(img);
-        event.target.blur();
+        
+        // 确保元素已经准备好
+        if (event.target.isConnected) {
+          event.target.appendChild(img);
+          // 触发内容变化
+          event.target.blur();
+        }
+      };
+      reader.onerror = function() {
+        console.error('读取图片失败');
       };
       reader.readAsDataURL(blob);
     }
+  }
+  
+  // 只有在粘贴图片时才阻止默认行为，文本粘贴让默认行为继续执行
+  if (!hasImage) {
+    // 对于文本粘贴，不阻止默认行为
+    // 但需要在粘贴后触发内容变化
+    setTimeout(() => {
+      if (event.target && event.target.isConnected) {
+        event.target.blur();
+      }
+    }, 100);
   }
 }
 
@@ -4223,6 +4430,28 @@ onMounted(async () => {
   display: inline-block;
 }
 
+.option-label {
+  font-weight: bold;
+  color: #409eff;
+  margin-right: 5px;
+}
+
+.preview-explanation {
+  margin-top: 15px;
+  padding: 12px;
+  background-color: #f0f9ff;
+  border-left: 4px solid #409eff;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.explanation-label {
+  font-weight: bold;
+  color: #409eff;
+  margin-right: 5px;
+}
+
 .preview-empty {
   flex: 1;
   display: flex;
@@ -4647,6 +4876,133 @@ onMounted(async () => {
   max-width: 100px;
 }
 
+/* 分类视图样式 */
+.category-view {
+  margin-top: 20px;
+}
+
+.subject-category {
+  margin-bottom: 30px;
+  background: #fff;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+.subject-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #e4e7ed 100%);
+  border-bottom: 1px solid #ebeef5;
+}
+
+.subject-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.question-count {
+  background: #409eff;
+  color: white;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.subcategory-list {
+  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+  gap: 20px;
+}
+
+.subcategory-card {
+  background: #f9f9f9;
+  border-radius: 8px;
+  padding: 16px;
+  border: 1px solid #e4e7ed;
+  transition: all 0.3s ease;
+}
+
+.subcategory-card:hover {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  transform: translateY(-2px);
+}
+
+.subcategory-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #e4e7ed;
+}
+
+.subcategory-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 500;
+  color: #606266;
+}
+
+.subcategory-questions {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.question-card {
+  background: white;
+  border-radius: 6px;
+  padding: 12px;
+  border: 1px solid #ebeef5;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+}
+
+.question-content {
+  flex: 1;
+  min-width: 0;
+}
+
+.question-type {
+  margin-bottom: 8px;
+}
+
+.question-text {
+  font-size: 14px;
+  line-height: 1.4;
+  color: #303133;
+  word-break: break-word;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.question-actions {
+  display: flex;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.empty-questions {
+  text-align: center;
+  padding: 20px;
+  color: #909399;
+  font-size: 14px;
+  background: white;
+  border-radius: 6px;
+  border: 1px dashed #dcdfe6;
+}
+
 /* 响应式设计 */
 @media (max-width: 768px) {
   .filter-section {
@@ -4757,6 +5113,20 @@ onMounted(async () => {
   /* 小屏幕下的题目管理容器 */
   .question-management {
     padding: 10px;
+  }
+  
+  /* 小屏幕下的分类视图 */
+  .subcategory-list {
+    grid-template-columns: 1fr;
+  }
+  
+  .question-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .question-actions {
+    justify-content: flex-end;
   }
 }
 </style>

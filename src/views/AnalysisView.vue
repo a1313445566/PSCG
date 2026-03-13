@@ -9,181 +9,28 @@
     <!-- 数据筛选和下载区域 -->
     <div class="filter-download-section">
       <!-- 数据筛选 -->
-      <div class="filter-section">
-        <div class="section-title">
-          <i class="el-icon-filter"></i>
-          <h3>数据筛选</h3>
-        </div>
-        <el-form :model="filterForm" class="filter-form" inline>
-          <el-form-item label="学号">
-            <el-input 
-              v-model="filterForm.studentId" 
-              placeholder="输入学号"
-              style="width: 180px"
-            ></el-input>
-          </el-form-item>
-          <el-form-item label="年级">
-            <el-select v-model="filterForm.grade" placeholder="选择年级" style="width: 120px">
-              <el-option label="全部" value=""></el-option>
-              <el-option v-for="grade in grades" :key="grade.id" :label="grade.name + '年级'" :value="grade.id"></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="班级">
-            <el-select v-model="filterForm.class" placeholder="选择班级" style="width: 120px">
-              <el-option label="全部" value=""></el-option>
-              <el-option v-for="classItem in classes" :key="classItem.id" :label="classItem.name + '班'" :value="classItem.id"></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="学科">
-            <el-select v-model="filterForm.subjectId" placeholder="选择学科" style="width: 120px" @change="handleSubjectChange">
-              <el-option label="全部" value=""></el-option>
-              <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="学科题库">
-            <el-select v-model="filterForm.subcategoryIds" multiple placeholder="选择学科题库" style="width: 180px">
-              <el-option v-for="subcategory in subcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
-            </el-select>
-          </el-form-item>
-          <el-form-item label="时间范围">
-            <el-date-picker
-              v-model="filterForm.dateRange"
-              type="daterange"
-              range-separator="至"
-              start-placeholder="开始日期"
-              end-placeholder="结束日期"
-              style="width: 240px"
-              :shortcuts="[
-                { text: '最近7天', value: () => {
-                  const end = new Date();
-                  const start = new Date();
-                  start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-                  return [start, end];
-                }},
-                { text: '最近30天', value: () => {
-                  const end = new Date();
-                  const start = new Date();
-                  start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-                  return [start, end];
-                }},
-                { text: '今年', value: () => {
-                  const end = new Date();
-                  const start = new Date(new Date().getFullYear(), 0, 1);
-                  return [start, end];
-                }}
-              ]"
-            ></el-date-picker>
-          </el-form-item>
-          <el-form-item>
-            <el-button type="primary" @click="applyFilters" class="btn-primary">
-              <i class="el-icon-check"></i> 应用筛选
-            </el-button>
-          </el-form-item>
-          <el-form-item>
-            <el-button @click="resetFilters" class="btn-secondary">
-              <i class="el-icon-refresh"></i> 重置
-            </el-button>
-          </el-form-item>
-        </el-form>
-      </div>
+      <FilterPanel />
       
       <!-- 分析报告下载 -->
-      <div class="download-section">
-        <el-button type="success" @click="downloadReport('pdf')" class="btn-download">
-          <i class="el-icon-document"></i> PDF报告
-        </el-button>
-        <el-button type="success" @click="downloadReport('excel')" class="btn-download">
-          <i class="el-icon-s-grid"></i> 电子表格
-        </el-button>
-      </div>
+      <DownloadPanel />
     </div>
     
     <!-- 主要内容区域 -->
     <div class="main-content">
       <div class="analysis-results" v-if="analysisData">
         <!-- 总体统计 -->
-        <div class="stats-section">
-          <div class="stats-header">
-            <div class="stats-title">
-              <i class="el-icon-data-analysis"></i>
-              <h2>总体统计</h2>
-            </div>
-            <div class="display-mode">
-              <span>显示模式：</span>
-              <el-radio-group v-model="showMode" @change="initCharts" size="large">
-                <el-radio-button label="both" border>
-                  <i class="el-icon-data-line"></i> 图表+表格
-                </el-radio-button>
-                <el-radio-button label="chart" border>
-                  <i class="el-icon-pie-chart"></i> 仅图表
-                </el-radio-button>
-                <el-radio-button label="table" border>
-                  <i class="el-icon-notebook-2"></i> 仅表格
-                </el-radio-button>
-              </el-radio-group>
-            </div>
-          </div>
-          <div class="stats-card">
-            <div class="stats-item">
-              <div class="stats-icon user-icon">
-                <i class="el-icon-user"></i>
-              </div>
-              <div class="stats-content">
-                <div class="stats-value">{{ analysisData.totalUsers }}</div>
-                <div class="stats-label">总用户数</div>
-              </div>
-            </div>
-            <div class="stats-item">
-              <div class="stats-icon session-icon">
-                <i class="el-icon-view"></i>
-              </div>
-              <div class="stats-content">
-                <div class="stats-value">{{ analysisData.totalSessions }}</div>
-                <div class="stats-label">总答题次数</div>
-              </div>
-            </div>
-            <div class="stats-item">
-              <div class="stats-icon question-icon">
-                <i class="el-icon-edit-outline"></i>
-              </div>
-              <div class="stats-content">
-                <div class="stats-value">{{ analysisData.totalQuestions }}</div>
-                <div class="stats-label">总答题数</div>
-              </div>
-            </div>
-            <div class="stats-item">
-              <div class="stats-icon accuracy-icon">
-                <i class="el-icon-check"></i>
-              </div>
-              <div class="stats-content">
-                <div class="stats-value">{{ analysisData.overallAccuracy.toFixed(1) }}%</div>
-                <div class="stats-label">总体正确率</div>
-              </div>
-            </div>
-          </div>
-        </div>
+        <OverallStats />
         
         <!-- 图表网格布局 -->
         <div class="chart-grid">
           <!-- 学科分析 -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <div class="chart-title">
-                <i class="el-icon-collection-tag"></i>
-                <h3>学科分析</h3>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <el-select v-model="chartTypes.subject" @change="initSubjectChart" size="small" class="chart-type-select">
-                  <el-option label="柱状图" value="bar"></el-option>
-                  <el-option label="折线图" value="line"></el-option>
-                  <el-option label="饼图" value="pie"></el-option>
-                  <el-option label="雷达图" value="radar"></el-option>
-                </el-select>
-                <el-checkbox v-model="expandedCards.subject" size="small">显示表格</el-checkbox>
-              </div>
-            </div>
-            <div v-if="showMode === 'both' || showMode === 'chart'" ref="subjectChartRef" class="chart"></div>
-            <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.subject" class="chart-table">
+          <BaseChart 
+            title="学科分析" 
+            iconClass="el-icon-collection-tag" 
+            chartKey="subject"
+            :chartConfig="initSubjectChart"
+          >
+            <template #table>
               <el-table :data="analysisData.subjectAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="subject" label="学科" width="120"></el-table-column>
                 <el-table-column prop="sessions" label="答题次数"></el-table-column>
@@ -197,28 +44,17 @@
                   </template>
                 </el-table-column>
               </el-table>
-            </div>
-          </div>
+            </template>
+          </BaseChart>
           
           <!-- 年级分析 -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <div class="chart-title">
-                <i class="el-icon-school"></i>
-                <h3>年级分析</h3>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <el-select v-model="chartTypes.grade" @change="initGradeChart" size="small" class="chart-type-select">
-                  <el-option label="柱状图" value="bar"></el-option>
-                  <el-option label="折线图" value="line"></el-option>
-                  <el-option label="饼图" value="pie"></el-option>
-                  <el-option label="雷达图" value="radar"></el-option>
-                </el-select>
-                <el-checkbox v-model="expandedCards.grade" size="small">显示表格</el-checkbox>
-              </div>
-            </div>
-            <div v-if="showMode === 'both' || showMode === 'chart'" ref="gradeChartRef" class="chart"></div>
-            <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.grade" class="chart-table">
+          <BaseChart 
+            title="年级分析" 
+            iconClass="el-icon-school" 
+            chartKey="grade"
+            :chartConfig="initGradeChart"
+          >
+            <template #table>
               <el-table :data="analysisData.gradeAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="grade" label="年级" width="100">
                   <template #default="scope">
@@ -237,28 +73,17 @@
                   </template>
                 </el-table-column>
               </el-table>
-            </div>
-          </div>
+            </template>
+          </BaseChart>
           
           <!-- 时间趋势分析 -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <div class="chart-title">
-                <i class="el-icon-data-line"></i>
-                <h3>时间趋势分析</h3>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <el-select v-model="chartTypes.time" @change="initTimeChart" size="small" class="chart-type-select">
-                  <el-option label="柱状图" value="bar"></el-option>
-                  <el-option label="折线图" value="line"></el-option>
-                  <el-option label="面积图" value="area"></el-option>
-                  <el-option label="雷达图" value="radar"></el-option>
-                </el-select>
-                <el-checkbox v-model="expandedCards.time" size="small">显示表格</el-checkbox>
-              </div>
-            </div>
-            <div v-if="showMode === 'both' || showMode === 'chart'" ref="timeChartRef" class="chart"></div>
-            <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.time" class="chart-table">
+          <BaseChart 
+            title="时间趋势分析" 
+            iconClass="el-icon-data-line" 
+            chartKey="time"
+            :chartConfig="initTimeChart"
+          >
+            <template #table>
               <el-table :data="analysisData.timeAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="date" label="日期" width="120"></el-table-column>
                 <el-table-column prop="sessions" label="答题次数"></el-table-column>
@@ -272,28 +97,17 @@
                   </template>
                 </el-table-column>
               </el-table>
-            </div>
-          </div>
+            </template>
+          </BaseChart>
           
           <!-- 班级分析 -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <div class="chart-title">
-                <i class="el-icon-office-building"></i>
-                <h3>班级分析</h3>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <el-select v-model="chartTypes.class" @change="initClassChart" size="small" class="chart-type-select">
-                  <el-option label="柱状图" value="bar"></el-option>
-                  <el-option label="折线图" value="line"></el-option>
-                  <el-option label="饼图" value="pie"></el-option>
-                  <el-option label="雷达图" value="radar"></el-option>
-                </el-select>
-                <el-checkbox v-model="expandedCards.class" size="small">显示表格</el-checkbox>
-              </div>
-            </div>
-            <div v-if="showMode === 'both' || showMode === 'chart'" ref="classChartRef" class="chart"></div>
-            <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.class" class="chart-table">
+          <BaseChart 
+            title="班级分析" 
+            iconClass="el-icon-office-building" 
+            chartKey="class"
+            :chartConfig="initClassChart"
+          >
+            <template #table>
               <el-table :data="analysisData.classAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="class_num" label="班级" width="100">
                   <template #default="scope">
@@ -312,28 +126,17 @@
                   </template>
                 </el-table-column>
               </el-table>
-            </div>
-          </div>
+            </template>
+          </BaseChart>
           
           <!-- 学科题库分析 -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <div class="chart-title">
-                <i class="el-icon-menu"></i>
-                <h3>学科题库分析</h3>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <el-select v-model="chartTypes.subcategory" @change="initSubcategoryChart" size="small" class="chart-type-select">
-                  <el-option label="柱状图" value="bar"></el-option>
-                  <el-option label="折线图" value="line"></el-option>
-                  <el-option label="饼图" value="pie"></el-option>
-                  <el-option label="雷达图" value="radar"></el-option>
-                </el-select>
-                <el-checkbox v-model="expandedCards.subcategory" size="small">显示表格</el-checkbox>
-              </div>
-            </div>
-            <div v-if="showMode === 'both' || showMode === 'chart'" ref="subcategoryChartRef" class="chart"></div>
-            <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.subcategory" class="chart-table">
+          <BaseChart 
+            title="学科题库分析" 
+            iconClass="el-icon-menu" 
+            chartKey="subcategory"
+            :chartConfig="initSubcategoryChart"
+          >
+            <template #table>
               <el-table :data="analysisData.subcategoryAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="subject" label="学科" width="120"></el-table-column>
                 <el-table-column prop="subcategory" label="学科题库"></el-table-column>
@@ -348,28 +151,17 @@
                   </template>
                 </el-table-column>
               </el-table>
-            </div>
-          </div>
+            </template>
+          </BaseChart>
           
           <!-- 答题时间分析 -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <div class="chart-title">
-                <i class="el-icon-time"></i>
-                <h3>答题时间分析</h3>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <el-select v-model="chartTypes.timeSpent" @change="initTimeSpentChart" size="small" class="chart-type-select">
-                  <el-option label="柱状图" value="bar"></el-option>
-                  <el-option label="折线图" value="line"></el-option>
-                  <el-option label="饼图" value="pie"></el-option>
-                  <el-option label="雷达图" value="radar"></el-option>
-                </el-select>
-                <el-checkbox v-model="expandedCards.timeSpent" size="small">显示表格</el-checkbox>
-              </div>
-            </div>
-            <div v-if="showMode === 'both' || showMode === 'chart'" ref="timeSpentChartRef" class="chart"></div>
-            <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.timeSpent" class="chart-table">
+          <BaseChart 
+            title="答题时间分析" 
+            iconClass="el-icon-time" 
+            chartKey="timeSpent"
+            :chartConfig="initTimeSpentChart"
+          >
+            <template #table>
               <el-table :data="analysisData.timeSpentAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="time_range" label="时间范围" width="120"></el-table-column>
                 <el-table-column prop="sessions" label="答题次数"></el-table-column>
@@ -383,28 +175,17 @@
                   </template>
                 </el-table-column>
               </el-table>
-            </div>
-          </div>
+            </template>
+          </BaseChart>
           
           <!-- 错题分析 -->
-          <div class="chart-card">
-            <div class="chart-header">
-              <div class="chart-title">
-                <i class="el-icon-warning-outline"></i>
-                <h3>错题分析</h3>
-              </div>
-              <div style="display: flex; gap: 10px; align-items: center;">
-                <el-select v-model="chartTypes.error" @change="initErrorChart" size="small" class="chart-type-select">
-                  <el-option label="柱状图" value="bar"></el-option>
-                  <el-option label="折线图" value="line"></el-option>
-                  <el-option label="饼图" value="pie"></el-option>
-                  <el-option label="雷达图" value="radar"></el-option>
-                </el-select>
-                <el-checkbox v-model="expandedCards.error" size="small">显示表格</el-checkbox>
-              </div>
-            </div>
-            <div v-if="showMode === 'both' || showMode === 'chart'" ref="errorChartRef" class="chart"></div>
-            <div v-if="(showMode === 'both' || showMode === 'table') && expandedCards.error" class="chart-table">
+          <BaseChart 
+            title="错题分析" 
+            iconClass="el-icon-warning-outline" 
+            chartKey="error"
+            :chartConfig="initErrorChart"
+          >
+            <template #table>
               <el-table :data="analysisData.errorAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="subject" label="学科" width="120"></el-table-column>
                 <el-table-column prop="total_attempts" label="总尝试次数"></el-table-column>
@@ -417,8 +198,8 @@
                   </template>
                 </el-table-column>
               </el-table>
-            </div>
-          </div>
+            </template>
+          </BaseChart>
           
           <!-- 错误率较高的题目 -->
           <div class="chart-card" style="grid-column: 1 / -1;">
@@ -427,7 +208,7 @@
                 <i class="el-icon-warning"></i>
                 <h3>错误率较高的题目</h3>
               </div>
-              <el-checkbox v-model="expandedCards.errorProne" size="small">显示表格</el-checkbox>
+              <el-checkbox v-model="expandedCards.errorProne" size="small" @change="updateExpandedCard('errorProne', $event)">显示表格</el-checkbox>
             </div>
             <div style="margin-bottom: 15px; padding: 12px; background-color: #f0f9ff; border-radius: 4px; border-left: 4px solid #409eff;">
               <span style="font-weight: bold; color: #409eff;">说明：</span> 
@@ -436,13 +217,36 @@
             </div>
             <div v-if="expandedCards.errorProne" class="chart-table">
               <el-table :data="paginatedErrorProneQuestions" style="width: 100%" stripe border>
-                <el-table-column prop="id" label="ID" width="80"></el-table-column>
                 <el-table-column prop="subject_name" label="学科" width="100"></el-table-column>
                 <el-table-column prop="content" label="题目内容" min-width="300">
                   <template #default="scope">
-                    <el-tooltip :content="scope.row.content" placement="top" effect="dark">
-                      <div class="question-content-preview">{{ scope.row.content.replace(/<[^>]*>/g, '').substring(0, 50) }}{{ scope.row.content.length > 50 ? '...' : '' }}</div>
-                    </el-tooltip>
+                    <div class="question-content">
+                      {{ scope.row.content.replace(/<[^>]*>/g, '') }}
+                    </div>
+                  </template>
+                </el-table-column>
+                <el-table-column label="选项及选择次数" min-width="400">
+                  <template #default="scope">
+                    <div v-if="scope.row.options && scope.row.options.length > 0" style="padding: 10px; background-color: #f9f9f9; border-radius: 4px;">
+                      <div v-for="(option, index) in scope.row.options" :key="index" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; padding: 4px 0;">
+                        <div style="flex: 1; display: flex; align-items: center;">
+                          <el-tooltip placement="top" :effect="isCorrectAnswer(scope.row.correctAnswer, option, index) ? 'light' : 'dark'">
+                            <template #content>
+                              <div v-html="typeof option === 'string' ? option : option.text || option.label || option.value"></div>
+                            </template>
+                            <span :class="{ 'correct-option': isCorrectAnswer(scope.row.correctAnswer, option, index) }" style="font-weight: bold; margin-right: 8px; cursor: help; min-width: 20px; text-align: center;">
+                              {{ String.fromCharCode(65 + index) }}
+                              <span v-if="isCorrectAnswer(scope.row.correctAnswer, option, index)" style="color: #67c23a; margin-left: 2px; font-size: 11px;">(正确)</span>
+                            </span>
+                          </el-tooltip>
+                          <span style="color: #666;">选项</span>
+                        </div>
+                        <div style="color: #666; font-size: 12px; min-width: 80px; text-align: right;">
+                          选择次数: {{ getOptionCount(scope.row.optionCounts, option, index) }}
+                        </div>
+                      </div>
+                    </div>
+                    <div v-else style="color: #999; font-size: 12px;">无选项数据</div>
                   </template>
                 </el-table-column>
                 <el-table-column label="错误率" width="150">
@@ -491,292 +295,163 @@
 
 <script setup>
 import * as echarts from 'echarts';
-import { ref, onMounted, computed, watch, nextTick } from 'vue';
-import { getApiBaseUrl, getSubjects, getGrades, getClasses } from '../utils/database';
-import { ElForm, ElFormItem, ElInput, ElSelect, ElOption, ElButton, ElDatePicker, ElRow, ElCol, ElCard, ElTable, ElTableColumn, ElRadioGroup, ElRadioButton, ElPagination, ElCheckbox, ElTooltip, ElProgress } from 'element-plus';
-import 'element-plus/dist/index.css';
+import { onMounted, computed } from 'vue';
+import { useAnalysisStore } from '../stores/analysisStore';
+import FilterPanel from '../components/analysis/filters/FilterPanel.vue';
+import DownloadPanel from '../components/analysis/download/DownloadPanel.vue';
+import OverallStats from '../components/analysis/stats/OverallStats.vue';
+import BaseChart from '../components/analysis/charts/BaseChart.vue';
 
-const filterForm = ref({
-  studentId: '',
-  grade: '',
-  class: '',
-  subjectId: '',
-  subcategoryIds: [],
-  dateRange: []
-});
+const analysisStore = useAnalysisStore();
 
-const analysisData = ref(null);
-const subjects = ref([]);
-const grades = ref([]);
-const classes = ref([]);
-const subcategories = ref([]);
-const subjectChartRef = ref(null);
-const gradeChartRef = ref(null);
-const timeChartRef = ref(null);
-const classChartRef = ref(null);
-const subcategoryChartRef = ref(null);
-const timeSpentChartRef = ref(null);
-const errorChartRef = ref(null);
-const subjectChart = ref(null);
-const gradeChart = ref(null);
-const timeChart = ref(null);
-const classChart = ref(null);
-const subcategoryChart = ref(null);
-const timeSpentChart = ref(null);
-const errorChart = ref(null);
+// 从store中获取数据
+const analysisData = computed(() => analysisStore.analysisData);
+const expandedCards = computed(() => analysisStore.expandedCards);
+const errorProneCurrentPage = computed({ get: () => analysisStore.errorProneCurrentPage, set: (value) => analysisStore.errorProneCurrentPage = value });
+const errorPronePageSize = computed({ get: () => analysisStore.errorPronePageSize, set: (value) => analysisStore.errorPronePageSize = value });
 
-// 图表类型选择
-const chartTypes = ref({
-  subject: 'bar',
-  grade: 'bar',
-  time: 'line',
-  class: 'bar',
-  subcategory: 'bar',
-  timeSpent: 'bar',
-  error: 'bar'
-});
-
-// 显示模式
-const showMode = ref('both'); // both, chart, table
-
-// 卡片展开状态
-const expandedCards = ref({
-  subject: false,
-  grade: false,
-  time: false,
-  class: false,
-  subcategory: false,
-  timeSpent: false,
-  error: false,
-  errorProne: true
-});
-
-// 错误率较高的题目分页
-const errorProneCurrentPage = ref(1);
-const errorPronePageSize = ref(10);
+// 分页后的错误率较高的题目
 const paginatedErrorProneQuestions = computed(() => {
-  if (!analysisData.value || !analysisData.value.errorProneQuestions) {
-    return [];
-  }
-  const start = (errorProneCurrentPage.value - 1) * errorPronePageSize.value;
-  const end = start + errorPronePageSize.value;
-  return analysisData.value.errorProneQuestions.slice(start, end);
+  return analysisStore.paginatedErrorProneQuestions;
 });
 
+// 初始化数据
+onMounted(() => {
+  analysisStore.initData();
+});
+
+// 处理错误率题目分页
 const handleErrorProneSizeChange = (size) => {
-  errorPronePageSize.value = size;
-  errorProneCurrentPage.value = 1;
+  analysisStore.updateErrorPronePage(1, size);
 };
 
 const handleErrorProneCurrentChange = (current) => {
-  errorProneCurrentPage.value = current;
+  analysisStore.updateErrorPronePage(current);
 };
 
-// 监听分析数据变化，确保图表能够正确初始化
-watch(analysisData, (newData) => {
-  if (newData) {
-    nextTick(() => {
-      initCharts();
-    });
-  }
-}, { deep: true });
-
-onMounted(() => {
-  loadSubjects();
-  loadGrades();
-  loadClasses();
-  loadAnalysisData();
-});
-
-const loadSubjects = async () => {
-  subjects.value = await getSubjects();
+// 更新卡片展开状态
+const updateExpandedCard = (key, value) => {
+  analysisStore.updateExpandedCard(key, value);
 };
 
-const loadGrades = async () => {
-  grades.value = await getGrades();
+// 获取错误率颜色
+const getErrorRateColor = (accuracy) => {
+  if (accuracy < 0.3) return '#ff4d4f';
+  if (accuracy < 0.6) return '#faad14';
+  return '#52c41a';
 };
 
-const loadClasses = async () => {
-  classes.value = await getClasses();
-};
-
-const loadSubcategories = async (subjectId) => {
-  if (!subjectId) {
-    subcategories.value = [];
-    return;
-  }
-  
-  const API_BASE_URL = getApiBaseUrl();
-  try {
-    const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/subcategories`);
-    if (response.ok) {
-      const data = await response.json();
-      subcategories.value = data;
-    }
-  } catch (error) {
-    console.error('获取子分类失败:', error);
+// 检查是否为正确答案
+const isCorrectAnswer = (correctAnswer, option, index) => {
+  if (!correctAnswer) return false;
+  // 生成选项标签（A、B、C、D）
+  const optionLabel = String.fromCharCode(65 + index);
+  // 检查多种可能的匹配方式
+  if (typeof option === 'string') {
+    // 选项是字符串形式
+    return correctAnswer === optionLabel || correctAnswer === option;
+  } else {
+    // 选项是对象形式
+    return correctAnswer === option.value || correctAnswer === option.label || correctAnswer === option.text || correctAnswer === optionLabel;
   }
 };
 
-const handleSubjectChange = (subjectId) => {
-  filterForm.value.subcategoryIds = [];
-  loadSubcategories(subjectId);
-};
-
-const loadAnalysisData = async () => {
-  const API_BASE_URL = getApiBaseUrl();
-  const { studentId, grade, class: className, subjectId, subcategoryIds, dateRange } = filterForm.value;
-  
-  const params = new URLSearchParams();
-  if (studentId) params.append('studentId', studentId);
-  if (grade) params.append('grade', grade);
-  if (className) params.append('class', className);
-  if (subjectId) params.append('subjectId', subjectId);
-  if (subcategoryIds && subcategoryIds.length > 0) {
-    subcategoryIds.forEach(id => params.append('subcategoryIds', id));
-  }
-  if (dateRange && dateRange[0]) params.append('startDate', dateRange[0]);
-  if (dateRange && dateRange[1]) params.append('endDate', dateRange[1]);
-  
-  try {
-    const paramsString = params.toString();
-    const url = paramsString ? `${API_BASE_URL}/analysis?${paramsString}` : `${API_BASE_URL}/analysis`;
-    const response = await fetch(url);
-    if (response.ok) {
-      const data = await response.json();
-      analysisData.value = data;
-      nextTick(() => {
-        initCharts();
-      });
-    } else {
-      console.error('获取分析数据失败:', response.statusText);
-    }
-  } catch (error) {
-    console.error('获取分析数据失败:', error);
+// 获取选项选择次数
+const getOptionCount = (optionCounts, option, index) => {
+  if (!optionCounts) return 0;
+  // 生成选项标签（A、B、C、D）
+  const optionLabel = String.fromCharCode(65 + index);
+  // 检查多种可能的键名
+  if (typeof option === 'string') {
+    // 选项是字符串形式
+    return optionCounts[option] || optionCounts[optionLabel] || 0;
+  } else {
+    // 选项是对象形式
+    return optionCounts[option.value] || optionCounts[option.label] || optionCounts[option.text] || optionCounts[optionLabel] || 0;
   }
 };
 
-const applyFilters = () => {
-  loadAnalysisData();
+// 格式化tooltip内容
+const formatTooltipContent = (content) => {
+  if (!content) return '';
+  
+  // 处理图片标签，确保图片正确显示
+  let formattedContent = content;
+  
+  // 替换图片标签，确保图片有合适的样式
+  formattedContent = formattedContent.replace(/<img[^>]*src="([^"]+)"[^>]*>/g, '<img src="$1" style="max-width: 200px; max-height: 150px; display: block; margin: 10px 0;" />');
+  
+  // 移除可能的多余标签
+  formattedContent = formattedContent.replace(/<style[^>]*>.*?<\/style>/g, '');
+  
+  return formattedContent;
 };
 
-const resetFilters = () => {
-  filterForm.value = {
-    studentId: '',
-    grade: '',
-    class: '',
-    subjectId: '',
-    subcategoryIds: [],
-    dateRange: []
-  };
-  loadAnalysisData();
-};
-
-const initCharts = () => {
-  if (!analysisData.value) return;
+// 学科分析图表配置
+const initSubjectChart = ({ chartType, analysisData }) => {
+  if (!analysisData || !analysisData.subjectAnalysisList) return;
   
-  initSubjectChart();
-  initGradeChart();
-  initTimeChart();
-  initClassChart();
-  initSubcategoryChart();
-  initTimeSpentChart();
-  initErrorChart();
-};
-
-const initSubjectChart = () => {
-  if (!subjectChartRef.value) return;
-  if (!analysisData.value || !analysisData.value.subjectAnalysisList) return;
+  const subjectsData = analysisData.subjectAnalysisList.map(item => item.subject);
+  const accuracies = analysisData.subjectAnalysisList.map(item => item.accuracy);
+  const questions = analysisData.subjectAnalysisList.map(item => item.questions);
   
-  if (subjectChart.value) {
-    subjectChart.value.dispose();
-  }
-  
-  subjectChart.value = echarts.init(subjectChartRef.value);
-  
-  const subjectsData = analysisData.value.subjectAnalysisList.map(item => item.subject);
-  const accuracies = analysisData.value.subjectAnalysisList.map(item => item.accuracy);
-  const questions = analysisData.value.subjectAnalysisList.map(item => item.questions);
-  
-  let option;
-  
-  if (chartTypes.value.subject === 'radar') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: ['学科数据']
-      },
+  if (chartType === 'radar') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: ['学科数据'] },
       radar: {
         indicator: subjectsData.map(subject => ({
           name: subject,
           max: 100
         }))
       },
-      series: [
-        {
-          name: '学科数据',
-          type: 'radar',
-          data: [
-            {
-              value: accuracies,
-              name: '正确率(%)'
-            }
-          ]
-        }
-      ]
+      series: [{
+        name: '学科数据',
+        type: 'radar',
+        data: [{
+          value: accuracies,
+          name: '正确率(%)'
+        }]
+      }]
     };
-  } else if (chartTypes.value.subject === 'pie') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: subjectsData
-      },
-      series: [
-        {
-          name: '正确率',
-          type: 'pie',
-          radius: '60%',
-          data: subjectsData.map((subject, index) => ({
-            name: subject,
-            value: accuracies[index]
-          })),
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
+  } else if (chartType === 'pie') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: subjectsData },
+      series: [{
+        name: '正确率',
+        type: 'pie',
+        radius: '60%',
+        data: subjectsData.map((subject, index) => ({
+          name: subject,
+          value: accuracies[index]
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      ]
+      }]
     };
   } else {
-    option = {
+    return {
       tooltip: {
         trigger: 'axis',
         axisPointer: {
           type: 'cross',
-          crossStyle: {
-            color: '#999'
-          }
+          crossStyle: { color: '#999' }
         }
       },
-      legend: {
-        data: ['正确率', '答题数']
-      },
-      xAxis: [
-        {
-          type: 'category',
-          data: subjectsData,
-          axisPointer: {
-            type: chartTypes.value.subject === 'bar' ? 'shadow' : 'cross'
-          }
+      legend: { data: ['正确率', '答题数'] },
+      xAxis: [{
+        type: 'category',
+        data: subjectsData,
+        axisPointer: {
+          type: chartType === 'bar' ? 'shadow' : 'cross'
         }
-      ],
+      }],
       yAxis: [
         {
           type: 'value',
@@ -784,24 +459,20 @@ const initSubjectChart = () => {
           min: 0,
           max: 100,
           interval: 20,
-          axisLabel: {
-            formatter: '{value}%'
-          }
+          axisLabel: { formatter: '{value}%' }
         },
         {
           type: 'value',
           name: '答题数',
           min: 0,
           interval: 100,
-          axisLabel: {
-            formatter: '{value}'
-          }
+          axisLabel: { formatter: '{value}' }
         }
       ],
       series: [
         {
           name: '正确率',
-          type: chartTypes.value.subject,
+          type: chartType,
           data: accuracies
         },
         {
@@ -813,426 +484,303 @@ const initSubjectChart = () => {
       ]
     };
   }
-  
-  subjectChart.value.setOption(option);
 };
 
-const initGradeChart = () => {
-  if (!gradeChartRef.value) return;
-  if (!analysisData.value || !analysisData.value.gradeAnalysisList) return;
+// 年级分析图表配置
+const initGradeChart = ({ chartType, analysisData }) => {
+  if (!analysisData || !analysisData.gradeAnalysisList) return;
   
-  if (gradeChart.value) {
-    gradeChart.value.dispose();
-  }
+  const grades = analysisData.gradeAnalysisList.map(item => item.grade + '年级');
+  const accuracies = analysisData.gradeAnalysisList.map(item => item.accuracy);
   
-  gradeChart.value = echarts.init(gradeChartRef.value);
-  
-  const grades = analysisData.value.gradeAnalysisList.map(item => item.grade + '年级');
-  const accuracies = analysisData.value.gradeAnalysisList.map(item => item.accuracy);
-  
-  let option;
-  
-  if (chartTypes.value.grade === 'radar') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: ['年级数据']
-      },
+  if (chartType === 'radar') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: ['年级数据'] },
       radar: {
         indicator: grades.map(grade => ({
           name: grade,
           max: 100
         }))
       },
-      series: [
-        {
-          name: '年级数据',
-          type: 'radar',
-          data: [
-            {
-              value: accuracies,
-              name: '正确率(%)'
-            }
-          ]
-        }
-      ]
+      series: [{
+        name: '年级数据',
+        type: 'radar',
+        data: [{
+          value: accuracies,
+          name: '正确率(%)'
+        }]
+      }]
     };
-  } else if (chartTypes.value.grade === 'pie') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: grades
-      },
-      series: [
-        {
-          name: '正确率',
-          type: 'pie',
-          radius: '60%',
-          data: grades.map((grade, index) => ({
-            name: grade,
-            value: accuracies[index]
-          })),
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
+  } else if (chartType === 'pie') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: grades },
+      series: [{
+        name: '正确率',
+        type: 'pie',
+        radius: '60%',
+        data: grades.map((grade, index) => ({
+          name: grade,
+          value: accuracies[index]
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      ]
+      }]
     };
   } else {
-    option = {
+    return {
       tooltip: {
         trigger: 'axis',
         axisPointer: {
-          type: chartTypes.value.grade === 'bar' ? 'shadow' : 'cross'
+          type: chartType === 'bar' ? 'shadow' : 'cross'
         }
       },
-      xAxis: {
-        type: 'category',
-        data: grades
-      },
+      xAxis: { type: 'category', data: grades },
       yAxis: {
         type: 'value',
         name: '正确率(%)',
         min: 0,
         max: 100,
         interval: 20,
-        axisLabel: {
-          formatter: '{value}%'
-        }
+        axisLabel: { formatter: '{value}%' }
       },
-      series: [
-        {
-          name: '正确率',
-          type: chartTypes.value.grade,
-          data: accuracies,
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#83bff6' },
-              { offset: 0.5, color: '#188df0' },
-              { offset: 1, color: '#188df0' }
-            ])
-          }
+      series: [{
+        name: '正确率',
+        type: chartType,
+        data: accuracies,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#83bff6' },
+            { offset: 0.5, color: '#188df0' },
+            { offset: 1, color: '#188df0' }
+          ])
         }
-      ]
+      }]
     };
   }
-  
-  gradeChart.value.setOption(option);
 };
 
-const initTimeChart = () => {
-  if (!timeChartRef.value) return;
-  if (!analysisData.value || !analysisData.value.timeAnalysisList) return;
+// 时间趋势分析图表配置
+const initTimeChart = ({ chartType, analysisData }) => {
+  if (!analysisData || !analysisData.timeAnalysisList) return;
   
-  if (timeChart.value) {
-    timeChart.value.dispose();
-  }
+  const dates = analysisData.timeAnalysisList.map(item => item.date);
+  const accuracies = analysisData.timeAnalysisList.map(item => item.accuracy);
   
-  timeChart.value = echarts.init(timeChartRef.value);
-  
-  const dates = analysisData.value.timeAnalysisList.map(item => item.date);
-  const accuracies = analysisData.value.timeAnalysisList.map(item => item.accuracy);
-  
-  let option;
-  
-  if (chartTypes.value.time === 'radar') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: ['时间趋势数据']
-      },
+  if (chartType === 'radar') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: ['时间趋势数据'] },
       radar: {
         indicator: dates.map(date => ({
           name: date,
           max: 100
         }))
       },
-      series: [
-        {
-          name: '时间趋势数据',
-          type: 'radar',
-          data: [
-            {
-              value: accuracies,
-              name: '正确率(%)'
-            }
-          ]
-        }
-      ]
+      series: [{
+        name: '时间趋势数据',
+        type: 'radar',
+        data: [{
+          value: accuracies,
+          name: '正确率(%)'
+        }]
+      }]
     };
-  } else if (chartTypes.value.time === 'pie') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: dates
-      },
-      series: [
-        {
-          name: '正确率',
-          type: 'pie',
-          radius: '60%',
-          data: dates.map((date, index) => ({
-            name: date,
-            value: accuracies[index]
-          })),
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
+  } else if (chartType === 'pie') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: dates },
+      series: [{
+        name: '正确率',
+        type: 'pie',
+        radius: '60%',
+        data: dates.map((date, index) => ({
+          name: date,
+          value: accuracies[index]
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      ]
+      }]
     };
   } else {
-    option = {
-      tooltip: {
-        trigger: 'axis'
-      },
-      xAxis: {
-        type: 'category',
-        data: dates
-      },
+    return {
+      tooltip: { trigger: 'axis' },
+      xAxis: { type: 'category', data: dates },
       yAxis: {
         type: 'value',
         name: '正确率(%)',
         min: 0,
         max: 100,
         interval: 20,
-        axisLabel: {
-          formatter: '{value}%'
-        }
+        axisLabel: { formatter: '{value}%' }
       },
-      series: [
-        {
-          name: '正确率',
-          type: chartTypes.value.time,
-          data: accuracies,
-          smooth: chartTypes.value.time === 'line',
-          itemStyle: {
-            color: '#5470c6'
-          },
-          areaStyle: chartTypes.value.time === 'line' ? {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: 'rgba(84, 112, 198, 0.5)' },
-              { offset: 1, color: 'rgba(84, 112, 198, 0.1)' }
-            ])
-          } : undefined
-        }
-      ]
+      series: [{
+        name: '正确率',
+        type: chartType,
+        data: accuracies,
+        smooth: chartType === 'line',
+        itemStyle: { color: '#5470c6' },
+        areaStyle: chartType === 'line' ? {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: 'rgba(84, 112, 198, 0.5)' },
+            { offset: 1, color: 'rgba(84, 112, 198, 0.1)' }
+          ])
+        } : undefined
+      }]
     };
   }
-  
-  timeChart.value.setOption(option);
 };
 
-const initClassChart = () => {
-  if (!classChartRef.value) return;
-  if (!analysisData.value || !analysisData.value.classAnalysisList) return;
+// 班级分析图表配置
+const initClassChart = ({ chartType, analysisData }) => {
+  if (!analysisData || !analysisData.classAnalysisList) return;
   
-  if (classChart.value) {
-    classChart.value.dispose();
-  }
+  const classes = analysisData.classAnalysisList.map(item => item.class_num + '班');
+  const accuracies = analysisData.classAnalysisList.map(item => item.accuracy);
   
-  classChart.value = echarts.init(classChartRef.value);
-  
-  const classes = analysisData.value.classAnalysisList.map(item => item.class_num + '班');
-  const accuracies = analysisData.value.classAnalysisList.map(item => item.accuracy);
-  
-  let option;
-  
-  if (chartTypes.value.class === 'radar') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: ['班级数据']
-      },
+  if (chartType === 'radar') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: ['班级数据'] },
       radar: {
         indicator: classes.map(classItem => ({
           name: classItem,
           max: 100
         }))
       },
-      series: [
-        {
-          name: '班级数据',
-          type: 'radar',
-          data: [
-            {
-              value: accuracies,
-              name: '正确率(%)'
-            }
-          ]
-        }
-      ]
+      series: [{
+        name: '班级数据',
+        type: 'radar',
+        data: [{
+          value: accuracies,
+          name: '正确率(%)'
+        }]
+      }]
     };
-  } else if (chartTypes.value.class === 'pie') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: classes
-      },
-      series: [
-        {
-          name: '正确率',
-          type: 'pie',
-          radius: '60%',
-          data: classes.map((classItem, index) => ({
-            name: classItem,
-            value: accuracies[index]
-          })),
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
+  } else if (chartType === 'pie') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: classes },
+      series: [{
+        name: '正确率',
+        type: 'pie',
+        radius: '60%',
+        data: classes.map((classItem, index) => ({
+          name: classItem,
+          value: accuracies[index]
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      ]
+      }]
     };
   } else {
-    option = {
+    return {
       tooltip: {
         trigger: 'axis',
         axisPointer: {
-          type: chartTypes.value.class === 'bar' ? 'shadow' : 'cross'
+          type: chartType === 'bar' ? 'shadow' : 'cross'
         }
       },
-      xAxis: {
-        type: 'category',
-        data: classes
-      },
+      xAxis: { type: 'category', data: classes },
       yAxis: {
         type: 'value',
         name: '正确率(%)',
         min: 0,
         max: 100,
         interval: 20,
-        axisLabel: {
-          formatter: '{value}%'
-        }
+        axisLabel: { formatter: '{value}%' }
       },
-      series: [
-        {
-          name: '正确率',
-          type: chartTypes.value.class,
-          data: accuracies,
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#52c41a' },
-              { offset: 0.5, color: '#389e0d' },
-              { offset: 1, color: '#389e0d' }
-            ])
-          }
+      series: [{
+        name: '正确率',
+        type: chartType,
+        data: accuracies,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#52c41a' },
+            { offset: 0.5, color: '#389e0d' },
+            { offset: 1, color: '#389e0d' }
+          ])
         }
-      ]
+      }]
     };
   }
-  
-  classChart.value.setOption(option);
 };
 
-const initSubcategoryChart = () => {
-  if (!subcategoryChartRef.value) return;
-  if (!analysisData.value || !analysisData.value.subcategoryAnalysisList) return;
+// 学科题库分析图表配置
+const initSubcategoryChart = ({ chartType, analysisData }) => {
+  if (!analysisData || !analysisData.subcategoryAnalysisList) return;
   
-  if (subcategoryChart.value) {
-    subcategoryChart.value.dispose();
-  }
+  const subcategories = analysisData.subcategoryAnalysisList.map(item => item.subcategory || '未分类');
+  const accuracies = analysisData.subcategoryAnalysisList.map(item => item.accuracy);
   
-  subcategoryChart.value = echarts.init(subcategoryChartRef.value);
-  
-  const subcategories = analysisData.value.subcategoryAnalysisList.map(item => item.subcategory || '未分类');
-  const accuracies = analysisData.value.subcategoryAnalysisList.map(item => item.accuracy);
-  
-  let option;
-  
-  if (chartTypes.value.subcategory === 'radar') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: ['学科题库数据']
-      },
+  if (chartType === 'radar') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: ['学科题库数据'] },
       radar: {
         indicator: subcategories.map(subcategory => ({
           name: subcategory,
           max: 100
         }))
       },
-      series: [
-        {
-          name: '学科题库数据',
-          type: 'radar',
-          data: [
-            {
-              value: accuracies,
-              name: '正确率(%)'
-            }
-          ]
-        }
-      ]
+      series: [{
+        name: '学科题库数据',
+        type: 'radar',
+        data: [{
+          value: accuracies,
+          name: '正确率(%)'
+        }]
+      }]
     };
-  } else if (chartTypes.value.subcategory === 'pie') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: subcategories
-      },
-      series: [
-        {
-          name: '正确率',
-          type: 'pie',
-          radius: '60%',
-          data: subcategories.map((subcategory, index) => ({
-            name: subcategory,
-            value: accuracies[index]
-          })),
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
+  } else if (chartType === 'pie') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: subcategories },
+      series: [{
+        name: '正确率',
+        type: 'pie',
+        radius: '60%',
+        data: subcategories.map((subcategory, index) => ({
+          name: subcategory,
+          value: accuracies[index]
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      ]
+      }]
     };
   } else {
-    option = {
+    return {
       tooltip: {
         trigger: 'axis',
         axisPointer: {
-          type: chartTypes.value.subcategory === 'bar' ? 'shadow' : 'cross'
+          type: chartType === 'bar' ? 'shadow' : 'cross'
         }
       },
       xAxis: {
         type: 'category',
         data: subcategories,
-        axisLabel: {
-          rotate: 45
-        }
+        axisLabel: { rotate: 45 }
       },
       yAxis: {
         type: 'value',
@@ -1240,123 +788,89 @@ const initSubcategoryChart = () => {
         min: 0,
         max: 100,
         interval: 20,
-        axisLabel: {
-          formatter: '{value}%'
-        }
+        axisLabel: { formatter: '{value}%' }
       },
-      series: [
-        {
-          name: '正确率',
-          type: chartTypes.value.subcategory,
-          data: accuracies,
-          itemStyle: {
-            color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-              { offset: 0, color: '#fa8c16' },
-              { offset: 0.5, color: '#d46b08' },
-              { offset: 1, color: '#d46b08' }
-            ])
-          }
+      series: [{
+        name: '正确率',
+        type: chartType,
+        data: accuracies,
+        itemStyle: {
+          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
+            { offset: 0, color: '#fa8c16' },
+            { offset: 0.5, color: '#d46b08' },
+            { offset: 1, color: '#d46b08' }
+          ])
         }
-      ]
+      }]
     };
   }
-  
-  subcategoryChart.value.setOption(option);
 };
 
-const initTimeSpentChart = () => {
-  if (!timeSpentChartRef.value) return;
-  if (!analysisData.value || !analysisData.value.timeSpentAnalysisList) return;
+// 答题时间分析图表配置
+const initTimeSpentChart = ({ chartType, analysisData }) => {
+  if (!analysisData || !analysisData.timeSpentAnalysisList) return;
   
-  if (timeSpentChart.value) {
-    timeSpentChart.value.dispose();
-  }
+  const timeRanges = analysisData.timeSpentAnalysisList.map(item => item.time_range);
+  const accuracies = analysisData.timeSpentAnalysisList.map(item => item.accuracy);
+  const sessions = analysisData.timeSpentAnalysisList.map(item => item.sessions);
   
-  timeSpentChart.value = echarts.init(timeSpentChartRef.value);
-  
-  const timeRanges = analysisData.value.timeSpentAnalysisList.map(item => item.time_range);
-  const accuracies = analysisData.value.timeSpentAnalysisList.map(item => item.accuracy);
-  const sessions = analysisData.value.timeSpentAnalysisList.map(item => item.sessions);
-  
-  let option;
-  
-  if (chartTypes.value.timeSpent === 'radar') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: ['答题时间数据']
-      },
+  if (chartType === 'radar') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: ['答题时间数据'] },
       radar: {
         indicator: timeRanges.map(timeRange => ({
           name: timeRange,
           max: 100
         }))
       },
-      series: [
-        {
-          name: '答题时间数据',
-          type: 'radar',
-          data: [
-            {
-              value: accuracies,
-              name: '正确率(%)'
-            }
-          ]
-        }
-      ]
+      series: [{
+        name: '答题时间数据',
+        type: 'radar',
+        data: [{
+          value: accuracies,
+          name: '正确率(%)'
+        }]
+      }]
     };
-  } else if (chartTypes.value.timeSpent === 'pie') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: timeRanges
-      },
-      series: [
-        {
-          name: '正确率',
-          type: 'pie',
-          radius: '60%',
-          data: timeRanges.map((timeRange, index) => ({
-            name: timeRange,
-            value: accuracies[index]
-          })),
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
+  } else if (chartType === 'pie') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: timeRanges },
+      series: [{
+        name: '正确率',
+        type: 'pie',
+        radius: '60%',
+        data: timeRanges.map((timeRange, index) => ({
+          name: timeRange,
+          value: accuracies[index]
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      ]
+      }]
     };
   } else {
-    option = {
+    return {
       tooltip: {
         trigger: 'axis',
         axisPointer: {
           type: 'cross',
-          crossStyle: {
-            color: '#999'
-          }
+          crossStyle: { color: '#999' }
         }
       },
-      legend: {
-        data: ['正确率', '答题次数']
-      },
-      xAxis: [
-        {
-          type: 'category',
-          data: timeRanges,
-          axisPointer: {
-            type: chartTypes.value.timeSpent === 'bar' ? 'shadow' : 'cross'
-          }
+      legend: { data: ['正确率', '答题次数'] },
+      xAxis: [{
+        type: 'category',
+        data: timeRanges,
+        axisPointer: {
+          type: chartType === 'bar' ? 'shadow' : 'cross'
         }
-      ],
+      }],
       yAxis: [
         {
           type: 'value',
@@ -1364,24 +878,20 @@ const initTimeSpentChart = () => {
           min: 0,
           max: 100,
           interval: 20,
-          axisLabel: {
-            formatter: '{value}%'
-          }
+          axisLabel: { formatter: '{value}%' }
         },
         {
           type: 'value',
           name: '答题次数',
           min: 0,
           interval: 5,
-          axisLabel: {
-            formatter: '{value}'
-          }
+          axisLabel: { formatter: '{value}' }
         }
       ],
       series: [
         {
           name: '正确率',
-          type: chartTypes.value.timeSpent,
+          type: chartType,
           data: accuracies
         },
         {
@@ -1393,103 +903,73 @@ const initTimeSpentChart = () => {
       ]
     };
   }
-  
-  timeSpentChart.value.setOption(option);
 };
 
-const initErrorChart = () => {
-  if (!errorChartRef.value) return;
-  if (!analysisData.value || !analysisData.value.errorAnalysisList) return;
+// 错题分析图表配置
+const initErrorChart = ({ chartType, analysisData }) => {
+  if (!analysisData || !analysisData.errorAnalysisList) return;
   
-  if (errorChart.value) {
-    errorChart.value.dispose();
-  }
+  const subjects = analysisData.errorAnalysisList.map(item => item.subject);
+  const errorRates = analysisData.errorAnalysisList.map(item => item.error_rate);
+  const errorCounts = analysisData.errorAnalysisList.map(item => item.error_count);
   
-  errorChart.value = echarts.init(errorChartRef.value);
-  
-  const subjects = analysisData.value.errorAnalysisList.map(item => item.subject);
-  const errorRates = analysisData.value.errorAnalysisList.map(item => item.error_rate);
-  const errorCounts = analysisData.value.errorAnalysisList.map(item => item.error_count);
-  
-  let option;
-  
-  if (chartTypes.value.error === 'radar') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: ['错题分析数据']
-      },
+  if (chartType === 'radar') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: ['错题分析数据'] },
       radar: {
         indicator: subjects.map(subject => ({
           name: subject,
           max: 100
         }))
       },
-      series: [
-        {
-          name: '错题分析数据',
-          type: 'radar',
-          data: [
-            {
-              value: errorRates,
-              name: '错误率(%)'
-            }
-          ]
-        }
-      ]
+      series: [{
+        name: '错题分析数据',
+        type: 'radar',
+        data: [{
+          value: errorRates,
+          name: '错误率(%)'
+        }]
+      }]
     };
-  } else if (chartTypes.value.error === 'pie') {
-    option = {
-      tooltip: {
-        trigger: 'item'
-      },
-      legend: {
-        data: subjects
-      },
-      series: [
-        {
-          name: '错误率',
-          type: 'pie',
-          radius: '60%',
-          data: subjects.map((subject, index) => ({
-            name: subject,
-            value: errorRates[index]
-          })),
-          emphasis: {
-            itemStyle: {
-              shadowBlur: 10,
-              shadowOffsetX: 0,
-              shadowColor: 'rgba(0, 0, 0, 0.5)'
-            }
+  } else if (chartType === 'pie') {
+    return {
+      tooltip: { trigger: 'item' },
+      legend: { data: subjects },
+      series: [{
+        name: '错误率',
+        type: 'pie',
+        radius: '60%',
+        data: subjects.map((subject, index) => ({
+          name: subject,
+          value: errorRates[index]
+        })),
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
         }
-      ]
+      }]
     };
   } else {
-    option = {
+    return {
       tooltip: {
         trigger: 'axis',
         axisPointer: {
           type: 'cross',
-          crossStyle: {
-            color: '#999'
-          }
+          crossStyle: { color: '#999' }
         }
       },
-      legend: {
-        data: ['错误率', '错题数']
-      },
-      xAxis: [
-        {
-          type: 'category',
-          data: subjects,
-          axisPointer: {
-            type: chartTypes.value.error === 'bar' ? 'shadow' : 'cross'
-          }
+      legend: { data: ['错误率', '错题数'] },
+      xAxis: [{
+        type: 'category',
+        data: subjects,
+        axisPointer: {
+          type: chartType === 'bar' ? 'shadow' : 'cross'
         }
-      ],
+      }],
       yAxis: [
         {
           type: 'value',
@@ -1497,24 +977,20 @@ const initErrorChart = () => {
           min: 0,
           max: 100,
           interval: 20,
-          axisLabel: {
-            formatter: '{value}%'
-          }
+          axisLabel: { formatter: '{value}%' }
         },
         {
           type: 'value',
           name: '错题数',
           min: 0,
           interval: 5,
-          axisLabel: {
-            formatter: '{value}'
-          }
+          axisLabel: { formatter: '{value}' }
         }
       ],
       series: [
         {
           name: '错误率',
-          type: chartTypes.value.error,
+          type: chartType,
           data: errorRates,
           itemStyle: {
             color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
@@ -1529,40 +1005,11 @@ const initErrorChart = () => {
           type: 'line',
           yAxisIndex: 1,
           data: errorCounts,
-          itemStyle: {
-            color: '#fa8c16'
-          }
+          itemStyle: { color: '#fa8c16' }
         }
       ]
     };
   }
-  
-  errorChart.value.setOption(option);
-};
-
-const downloadReport = (type) => {
-  const API_BASE_URL = getApiBaseUrl();
-  const { studentId, grade, class: className, subjectId, subcategoryIds, dateRange } = filterForm.value;
-  
-  const params = new URLSearchParams();
-  if (studentId) params.append('studentId', studentId);
-  if (grade) params.append('grade', grade);
-  if (className) params.append('class', className);
-  if (subjectId) params.append('subjectId', subjectId);
-  if (subcategoryIds && subcategoryIds.length > 0) {
-    subcategoryIds.forEach(id => params.append('subcategoryIds', id));
-  }
-  if (dateRange && dateRange[0]) params.append('startDate', dateRange[0]);
-  if (dateRange && dateRange[1]) params.append('endDate', dateRange[1]);
-  
-  window.open(`${API_BASE_URL}/analysis/download?type=${type}&${params.toString()}`);
-};
-
-// 获取错误率颜色
-const getErrorRateColor = (accuracy) => {
-  if (accuracy < 0.3) return '#ff4d4f';
-  if (accuracy < 0.6) return '#faad14';
-  return '#52c41a';
 };
 </script>
 
@@ -1602,197 +1049,9 @@ const getErrorRateColor = (accuracy) => {
   margin-bottom: 32px;
 }
 
-/* 筛选区域 */
-.filter-section {
-  margin-bottom: 20px;
-}
-
-.section-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 16px;
-  font-size: 16px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.section-title i {
-  font-size: 18px;
-  color: #409eff;
-}
-
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  align-items: end;
-}
-
-.filter-form .el-form-item {
-  margin-bottom: 0;
-}
-
-/* 下载区域 */
-.download-section {
-  display: flex;
-  gap: 12px;
-  padding-top: 20px;
-  border-top: 1px solid #e4e7ed;
-}
-
-.btn-download {
-  padding: 10px 20px !important;
-  font-size: 14px !important;
-}
-
-.btn-primary {
-  padding: 10px 20px !important;
-  font-size: 14px !important;
-  font-weight: 500 !important;
-}
-
-.btn-secondary {
-  padding: 10px 20px !important;
-  font-size: 14px !important;
-}
-
 /* 主要内容区域 */
 .main-content {
   width: 100%;
-}
-
-/* 页面标题 */
-.page-header {
-  margin-bottom: 32px;
-}
-
-.page-header h1 {
-  margin: 0 0 8px 0;
-  font-size: 28px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.page-description {
-  margin: 0;
-  font-size: 16px;
-  color: #606266;
-}
-
-/* 统计区域 */
-.stats-section {
-  margin-bottom: 32px;
-}
-
-.stats-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 16px;
-}
-
-.stats-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.stats-title i {
-  font-size: 20px;
-  color: #409eff;
-}
-
-.stats-title h2 {
-  margin: 0;
-  font-size: 20px;
-  font-weight: 600;
-  color: #303133;
-}
-
-.display-mode {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.display-mode span {
-  font-size: 14px;
-  color: #606266;
-  white-space: nowrap;
-}
-
-/* 统计卡片 */
-.stats-card {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
-  padding: 24px;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-}
-
-.stats-item {
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  padding: 20px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-  transition: all 0.3s ease;
-}
-
-.stats-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.stats-icon {
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 24px;
-  color: white;
-}
-
-.user-icon {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-}
-
-.session-icon {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-}
-
-.question-icon {
-  background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-}
-
-.accuracy-icon {
-  background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-}
-
-.stats-content {
-  flex: 1;
-}
-
-.stats-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #303133;
-  line-height: 1;
-}
-
-.stats-label {
-  font-size: 14px;
-  color: #606266;
-  margin-top: 4px;
 }
 
 /* 图表网格 */
@@ -1803,76 +1062,31 @@ const getErrorRateColor = (accuracy) => {
   margin-top: 24px;
 }
 
-/* 图表卡片 */
-.chart-card {
-  padding: 16px;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  transition: all 0.3s ease;
+/* 加载状态 */
+.loading {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 400px;
+}
+
+.loading-content {
+  text-align: center;
+  color: #606266;
+}
+
+.loading-icon {
+  font-size: 48px;
   margin-bottom: 16px;
+  animation: spin 1s linear infinite;
 }
 
-.chart-card:hover {
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.chart-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
-}
-
-.chart-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.chart-title i {
-  font-size: 18px;
-  color: #409eff;
-}
-
-.chart-title h3 {
-  margin: 0;
-  font-size: 16px;
-  font-weight: 500;
-  color: #303133;
-}
-
-.chart-type-select {
-  min-width: 100px;
-}
-
-/* 图表 */
-.chart {
-  height: 250px;
-  width: 100%;
-}
-
-/* 表格 */
-.chart-table {
-  margin-top: 20px;
-  border-radius: 8px;
-  overflow: hidden;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
-}
-
-.chart-table .el-table {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.chart-table .el-table th {
-  background-color: #f8f9fa;
-  font-weight: 500;
-}
-
-/* 文本颜色 */
+/* 文本样式 */
 .text-success {
   color: #67c23a;
 }
@@ -1885,72 +1099,72 @@ const getErrorRateColor = (accuracy) => {
   color: #f56c6c;
 }
 
-/* 加载动画 */
-.loading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 600px;
+/* 题目内容预览 */
+.question-content-preview {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  cursor: help;
 }
 
-.loading-content {
-  text-align: center;
+.question-content {
+  max-width: 100%;
+  word-break: break-word;
+  line-height: 1.4;
 }
 
-.loading-icon {
-  font-size: 64px;
-  margin-bottom: 24px;
-  color: #409eff;
-  animation: spin 1s linear infinite;
+.question-content img {
+  max-width: 100%;
+  max-height: 200px;
+  display: block;
+  margin: 8px 0;
+  border-radius: 4px;
 }
 
-.loading-content p {
-  font-size: 16px;
-  color: #606266;
-  margin: 0;
+/* Tooltip内容样式 */
+.tooltip-content {
+  max-width: 400px;
+  max-height: 300px;
+  overflow-y: auto;
+  padding: 8px;
+  line-height: 1.5;
 }
 
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+.tooltip-content img {
+  max-width: 100%;
+  max-height: 200px;
+  display: block;
+  margin: 8px 0;
+  border-radius: 4px;
 }
 
-/* 响应式布局 */
-@media (max-width: 1200px) {
-  .chart-grid {
-    grid-template-columns: 1fr;
-  }
-  
-  .chart {
-    height: 350px;
-  }
-  
-  .stats-card {
-    grid-template-columns: repeat(2, 1fr);
-  }
+.tooltip-content p {
+  margin: 8px 0;
 }
 
-@media (max-width: 768px) {
-  .left-panel {
-    width: 240px;
-  }
-  
-  .right-panel {
-    padding: 20px;
-  }
-  
-  .stats-card {
-    grid-template-columns: 1fr;
-  }
-  
-  .stats-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .display-mode {
-    width: 100%;
-    justify-content: space-between;
-  }
+/* 正确选项样式 */
+.correct-option {
+  color: #67c23a;
+  font-weight: bold;
+  position: relative;
+}
+
+.correct-option::after {
+  content: ' (正确答案)';
+  font-size: 12px;
+  font-weight: normal;
+  color: #999;
+}
+
+/* 自定义Tooltip样式 */
+:deep(.el-tooltip__popper) {
+  max-width: 400px !important;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+:deep(.el-tooltip__popper.is-dark) {
+  background-color: rgba(51, 51, 51, 0.95) !important;
+  border: none;
 }
 </style>
