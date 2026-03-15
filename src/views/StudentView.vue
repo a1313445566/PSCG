@@ -1883,6 +1883,75 @@ onMounted(async () => {
   border-left: 2px solid #e1bee7;
 }
 
+.question-content-main * {
+  box-sizing: border-box;
+}
+
+.question-content-main img {
+  max-width: 100%;
+  max-height: 300px;
+  margin: 10px 0;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.question-content-main strong,
+.question-content-main b {
+  font-weight: bold;
+}
+
+.question-content-main em,
+.question-content-main i {
+  font-style: italic;
+}
+
+.question-content-main u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.question-content-main s,
+.question-content-main strike {
+  text-decoration: line-through;
+}
+
+.option-text {
+  flex: 1;
+  font-size: 16px;
+  line-height: 1.4;
+}
+
+.option-text * {
+  box-sizing: border-box;
+}
+
+.option-text img {
+  max-width: 100%;
+  max-height: 200px;
+  margin: 5px 0;
+  border-radius: 4px;
+}
+
+.option-text strong,
+.option-text b {
+  font-weight: bold;
+}
+
+.option-text em,
+.option-text i {
+  font-style: italic;
+}
+
+.option-text u {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.option-text s,
+.option-text strike {
+  text-decoration: line-through;
+}
+
 /* 选项 */
 .options {
   display: flex;

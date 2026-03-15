@@ -962,14 +962,10 @@
                 {{ String.fromCharCode(65 + index) }}. 
               </el-checkbox>
               <div style="flex: 1; margin-left: 10px; margin-right: 10px;">
-                <div 
-                  contenteditable="true"
-                  :innerHTML="form.options[index]"
+                <EditableContent 
+                  v-model="form.options[index]"
                   placeholder="输入答案内容"
-                  style="width: calc(100% - 80px); min-height: 60px; padding: 8px; border: 1px solid #dcdfe6; border-radius: 4px; outline: none;"
-                  @paste="handlePaste"
-                  @blur="handleContentChange($event, index)"
-                ></div>
+                />
               </div>
               <el-button type="danger" size="small" @click="removeOption(index)">删除</el-button>
             </div>
@@ -1722,6 +1718,7 @@ import { getApiBaseUrl } from '../utils/database'
 import { ElTabs, ElTabPane, ElInput, ElButton, ElTable, ElTableColumn, ElSelect, ElOption, ElDialog, ElForm, ElFormItem, ElPagination, ElCheckbox, ElUpload, ElMessage, ElMessageBox, ElTooltip, ElRow, ElCol, ElCard, ElProgress, ElTag, ElInputNumber, ElIcon } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import AnalysisView from './AnalysisView.vue'
+import EditableContent from '../components/EditableContent.vue'
 
 import 'element-plus/dist/index.css'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
@@ -2640,24 +2637,26 @@ const saveQuestion = async () => {
   }
   
   // 检查题目内容是否为空
-  // 处理Delta对象
+  // 处理Delta对象或HTML内容
   let content = ''
+  let plainText = ''
   if (typeof form.value.content === 'object' && form.value.content.ops) {
-    // 处理Delta对象，保留HTML内容
-    content = form.value.content.ops.map(op => {
+    // 对于Delta对象，提取纯文本进行验证
+    plainText = form.value.content.ops.map(op => {
       if (typeof op.insert === 'string') {
         return op.insert
-      } else if (op.insert && op.insert.image) {
-        return `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`
       }
       return ''
-    }).join('')
+    }).join('').trim()
+    // 直接使用原始内容，Quill会自动处理
+    content = form.value.content
   } else if (typeof form.value.content === 'string') {
     content = form.value.content
+    // 移除HTML标签并 trim 后检查是否为空
+    plainText = content.replace(/<[^>]*>/g, '').trim()
   }
   
-  // 移除HTML标签并 trim 后检查是否为空
-  const plainText = content.replace(/<[^>]*>/g, '').trim()
+  // 检查是否为空
   if (!plainText || plainText === '请输入题目内容') {
     ElMessage.error('请输入题目内容！')
     return
@@ -2697,12 +2696,16 @@ const saveQuestion = async () => {
           }
         }
       }
-      // 保留图片标签，移除其他HTML标签
+      // 保留图片标签和排版标签，移除其他HTML标签
       let cleaned = processedOption
         // 保留图片标签
         .replace(/<img[^>]*>/g, match => match)
+        // 保留排版相关标签
+        .replace(/<(strong|b|em|i|u|s|strike|span)[^>]*>/g, match => match)
+        .replace(/<\/(strong|b|em|i|u|s|strike|span)>/g, match => match)
         // 移除其他HTML标签
-        .replace(/<(?!img)[^>]*>/g, '')
+        .replace(/<(?!(img|strong|b|em|i|u|s|strike|span))[^>]*>/g, '')
+        .replace(/<\/(?!(img|strong|b|em|i|u|s|strike|span))[^>]*>/g, '')
         .replace(/&nbsp;/g, ' ')
         .replace(/&lt;/g, '<')
         .replace(/&gt;/g, '>')
