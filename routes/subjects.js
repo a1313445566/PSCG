@@ -1,0 +1,212 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../services/database');
+const cacheService = require('../services/cache');
+
+// 获取所有学科（包含子分类）
+router.get('/', async (req, res) => {
+  try {
+    // 尝试从缓存获取
+    const cachedSubjects = cacheService.get('subjects');
+    if (cachedSubjects) {
+      res.json(cachedSubjects);
+      return;
+    }
+    
+    const subjects = await db.all('SELECT * FROM subjects');
+    
+    // 为每个学科获取子分类
+    for (const subject of subjects) {
+      const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ?', [subject.id]);
+      subject.subcategories = subcategories || [];
+    }
+    
+    // 转换所有学科的字段名
+    const subjectsWithCamelCase = subjects.map(subject => ({
+      id: subject.id,
+      name: subject.name,
+      iconIndex: subject.icon_index,
+      subcategories: subject.subcategories.map(subcat => ({
+        id: subcat.id,
+        subjectId: subcat.subject_id,
+        name: subcat.name,
+        iconIndex: subcat.icon_index
+      }))
+    }));
+    
+    // 缓存结果
+    cacheService.set('subjects', subjectsWithCamelCase);
+    res.json(subjectsWithCamelCase);
+  } catch (error) {
+    console.error('获取学科失败:', error);
+    res.status(500).json({ error: '获取学科失败' });
+  }
+});
+
+// 获取指定学科的子分类
+router.get('/:id/subcategories', async (req, res) => {
+  try {
+    const subjectId = req.params.id;
+    const cacheKey = cacheService.generateSubcategoryKey(subjectId);
+    
+    // 尝试从缓存获取
+    const cachedSubcategories = cacheService.get(cacheKey);
+    if (cachedSubcategories) {
+      res.json(cachedSubcategories);
+      return;
+    }
+    
+    const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ?', [subjectId]);
+    
+    // 缓存结果
+    cacheService.set(cacheKey, subcategories);
+    res.json(subcategories);
+  } catch (error) {
+    console.error('获取子分类失败:', error);
+    res.status(500).json({ error: '获取子分类失败' });
+  }
+});
+
+// 添加学科
+router.post('/', async (req, res) => {
+  try {
+    const { name, iconIndex = 0 } = req.body;
+    
+    if (!name) {
+      res.status(400).json({ error: '学科名称不能为空' });
+      return;
+    }
+    
+    const result = await db.run('INSERT INTO subjects (name, icon_index) VALUES (?, ?)', [name, iconIndex]);
+    
+    // 清除缓存
+    cacheService.del('subjects');
+    
+    // 返回新添加的学科
+    const newSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [result.lastID]);
+    res.json(newSubject);
+  } catch (error) {
+    console.error('添加学科失败:', error);
+    res.status(500).json({ error: '添加学科失败' });
+  }
+});
+
+// 更新学科
+router.put('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, iconIndex } = req.body;
+    
+    if (!name) {
+      res.status(400).json({ error: '学科名称不能为空' });
+      return;
+    }
+    
+    await db.run('UPDATE subjects SET name = ?, icon_index = ? WHERE id = ?', [name, iconIndex, id]);
+    
+    // 清除缓存
+    cacheService.del('subjects');
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('更新学科失败:', error);
+    res.status(500).json({ error: '更新学科失败' });
+  }
+});
+
+// 删除学科
+router.delete('/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    await db.run('DELETE FROM subjects WHERE id = ?', [id]);
+    
+    // 清除缓存
+    cacheService.del('subjects');
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('删除学科失败:', error);
+    res.status(500).json({ error: '删除学科失败' });
+  }
+});
+
+// 添加子分类
+router.post('/:subjectId/subcategories', async (req, res) => {
+  try {
+    const { subjectId } = req.params;
+    const { name, iconIndex = 0 } = req.body;
+    
+    if (!name) {
+      res.status(400).json({ error: '子分类名称不能为空' });
+      return;
+    }
+    
+    const result = await db.run('INSERT INTO subcategories (subject_id, name, icon_index) VALUES (?, ?, ?)', [subjectId, name, iconIndex]);
+    
+    // 清除缓存
+    cacheService.del('subjects');
+    cacheService.del(cacheService.generateSubcategoryKey(subjectId));
+    
+    // 返回新添加的子分类
+    const newSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [result.lastID]);
+    res.json(newSubcategory);
+  } catch (error) {
+    console.error('添加子分类失败:', error);
+    res.status(500).json({ error: '添加子分类失败' });
+  }
+});
+
+// 更新子分类
+router.put('/subcategories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, iconIndex } = req.body;
+    
+    if (!name) {
+      res.status(400).json({ error: '子分类名称不能为空' });
+      return;
+    }
+    
+    // 获取子分类信息，用于清除缓存
+    const subcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id]);
+    
+    await db.run('UPDATE subcategories SET name = ?, icon_index = ? WHERE id = ?', [name, iconIndex, id]);
+    
+    // 清除缓存
+    cacheService.del('subjects');
+    if (subcategory) {
+      cacheService.del(cacheService.generateSubcategoryKey(subcategory.subject_id));
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('更新子分类失败:', error);
+    res.status(500).json({ error: '更新子分类失败' });
+  }
+});
+
+// 删除子分类
+router.delete('/subcategories/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    // 获取子分类信息，用于清除缓存
+    const subcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id]);
+    
+    await db.run('DELETE FROM subcategories WHERE id = ?', [id]);
+    
+    // 清除缓存
+    cacheService.del('subjects');
+    if (subcategory) {
+      cacheService.del(cacheService.generateSubcategoryKey(subcategory.subject_id));
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('删除子分类失败:', error);
+    res.status(500).json({ error: '删除子分类失败' });
+  }
+});
+
+module.exports = router;

@@ -5,6 +5,9 @@ const API_BASE_URL = isDevelopment
   ? '/api'
   : import.meta.env.VITE_API_URL || 'http://10.78.127.23:3001/api';
 
+// 导入缓存模块
+import { apiCache } from './apiCache.js';
+
 // 导出API基础URL供其他模块使用
 export const getApiBaseUrl = () => {
   return API_BASE_URL;
@@ -19,11 +22,7 @@ export const initDatabase = async () => {
 // 获取所有学科
 export const getSubjects = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/subjects`)
-    if (!response.ok) {
-      throw new Error('获取学科失败')
-    }
-    return await response.json()
+    return await apiCache.getCached(`${API_BASE_URL}/subjects`);
   } catch (error) {
     console.error('获取学科失败:', error)
     return []
@@ -34,11 +33,7 @@ export const getSubjects = async () => {
 export const getQuestions = async () => {
   try {
     // 添加较大的limit参数，确保获取所有题目
-    const response = await fetch(`${API_BASE_URL}/questions?limit=1000`)
-    if (!response.ok) {
-      throw new Error('获取题目失败')
-    }
-    return await response.json()
+    return await apiCache.getCached(`${API_BASE_URL}/questions?limit=1000`);
   } catch (error) {
     console.error('获取题目失败:', error)
     return []
@@ -104,12 +99,12 @@ export const deleteSubject = async (subjectId) => {
 // 添加子分类
 export const addSubcategory = async (subjectId, name, iconIndex = 0) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/subcategories`, {
+    const response = await fetch(`${API_BASE_URL}/subjects/${subjectId}/subcategories`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({ subjectId, name, iconIndex })
+      body: JSON.stringify({ name, iconIndex })
     })
     if (!response.ok) {
       throw new Error('添加子分类失败')
@@ -124,7 +119,7 @@ export const addSubcategory = async (subjectId, name, iconIndex = 0) => {
 // 更新子分类
 export const updateSubcategory = async (subcategoryId, name, iconIndex = 0) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/subcategories/${subcategoryId}`, {
+    const response = await fetch(`${API_BASE_URL}/subjects/subcategories/${subcategoryId}`, {
       method: 'PUT',
       headers: {
         'Content-Type': 'application/json'
@@ -144,7 +139,7 @@ export const updateSubcategory = async (subcategoryId, name, iconIndex = 0) => {
 // 删除子分类
 export const deleteSubcategory = async (subcategoryId) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/subcategories/${subcategoryId}`, {
+    const response = await fetch(`${API_BASE_URL}/subjects/subcategories/${subcategoryId}`, {
       method: 'DELETE'
     })
     if (!response.ok) {
@@ -270,11 +265,7 @@ export const importLocalData = async () => {
 // 获取所有年级
 export const getGrades = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/grades`)
-    if (!response.ok) {
-      throw new Error('获取年级失败')
-    }
-    return await response.json()
+    return await apiCache.getCached(`${API_BASE_URL}/grades`);
   } catch (error) {
     console.error('获取年级失败:', error)
     return []
@@ -284,11 +275,7 @@ export const getGrades = async () => {
 // 获取所有班级
 export const getClasses = async () => {
   try {
-    const response = await fetch(`${API_BASE_URL}/classes`)
-    if (!response.ok) {
-      throw new Error('获取班级失败')
-    }
-    return await response.json()
+    return await apiCache.getCached(`${API_BASE_URL}/classes`);
   } catch (error) {
     console.error('获取班级失败:', error)
     return []

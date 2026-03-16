@@ -953,7 +953,7 @@
               <span style="font-weight: bold; color: #409eff;">提示：</span> 勾选框用于标记<strong>正确答案</strong>，请选择一个或多个正确的选项。<br>
               <span style="font-weight: bold; color: #409eff;">图片上传：</span> 您可以直接复制图片，然后粘贴到答案编辑器中，或使用编辑器工具栏中的图片按钮上传图片。
             </div>
-            <div v-for="(_, index) in form.options" :key="index" class="option-item">
+            <div v-for="(option, index) in form.options" :key="'option-' + index" class="option-item">
               <el-checkbox 
                 :label="String.fromCharCode(65 + index)" 
                 v-model="form.selectedAnswers"
@@ -961,10 +961,23 @@
               >
                 {{ String.fromCharCode(65 + index) }}. 
               </el-checkbox>
-              <div style="flex: 1; margin-left: 10px; margin-right: 10px;">
-                <EditableContent 
-                  v-model="form.options[index]"
-                  placeholder="输入答案内容"
+              <div style="flex: 1; margin-left: 10px; margin-right: 10px; height: 100px;">
+                <QuillEditor
+                  :key="editorKey + '-' + index"
+                  v-model:html="form.options[index]"
+                  @ready="(editor) => onOptionQuillReady(editor, index)"
+                  :options="{
+                    theme: 'snow',
+                    modules: {
+                      toolbar: [
+                        ['bold', 'italic', 'underline', 'strike'],
+                        [{ 'color': [] }, { 'background': [] }],
+                        ['clean']
+                      ]
+                    },
+                    placeholder: '输入答案内容'
+                  }"
+                  style="width: 100%; height: 100%;"
                 />
               </div>
               <el-button type="danger" size="small" @click="removeOption(index)">删除</el-button>
@@ -1713,24 +1726,25 @@
 <script setup>
 import { ref, computed, onMounted, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
-import { useQuestionStore } from '../stores/questionStore'
+import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
 import { ElTabs, ElTabPane, ElInput, ElButton, ElTable, ElTableColumn, ElSelect, ElOption, ElDialog, ElForm, ElFormItem, ElPagination, ElCheckbox, ElUpload, ElMessage, ElMessageBox, ElTooltip, ElRow, ElCol, ElCard, ElProgress, ElTag, ElInputNumber, ElIcon } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import AnalysisView from './AnalysisView.vue'
-import EditableContent from '../components/EditableContent.vue'
+import EditableContent from '../components/common/EditableContent.vue'
 
 import 'element-plus/dist/index.css'
 import '@vueup/vue-quill/dist/vue-quill.snow.css'
 
-const store = useQuestionStore()
+const questionStore = useQuestionStore()
+const settingsStore = useSettingsStore()
 const router = useRouter()
 
 const activeTab = ref('basic-settings')
 const newSubjectName = ref('')
 const newSubjectIcon = ref(0)
-const subjects = computed(() => store.subjects)
-const questions = computed(() => store.questions)
+const subjects = computed(() => questionStore.subjects)
+const questions = computed(() => questionStore.questions)
 const filterSubjectId = ref('')
 const selectedCategorySubjectId = ref('')
 const selectedCategorySubcategoryId = ref('')
@@ -1807,42 +1821,45 @@ const filteredSubjects = computed(() => {
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 
-// 界面名称设置 - 使用 ref，点击更新按钮时才保存到 store
-const interfaceName = ref(store.interfaceName)
+// 界面名称设置 - 使用 computed，与 store 同步
+const interfaceName = computed({
+  get: () => settingsStore.interfaceName,
+  set: (value) => {}
+})
 
 // 答题设置 - 使用 store 中的设置
 const randomizeAnswers = computed({
-  get: () => store.settings.randomizeAnswers,
-  set: (value) => { store.settings.randomizeAnswers = value }
+  get: () => settingsStore.settings.randomizeAnswers,
+  set: (value) => { settingsStore.settings.randomizeAnswers = value }
 })
 const fixedQuestionCount = computed({
-  get: () => store.settings.fixedQuestionCount,
-  set: (value) => { store.settings.fixedQuestionCount = value }
+  get: () => settingsStore.settings.fixedQuestionCount,
+  set: (value) => { settingsStore.settings.fixedQuestionCount = value }
 })
 const minQuestionCount = computed({
-  get: () => store.settings.minQuestionCount,
-  set: (value) => { store.settings.minQuestionCount = value }
+  get: () => settingsStore.settings.minQuestionCount,
+  set: (value) => { settingsStore.settings.minQuestionCount = value }
 })
 const maxQuestionCount = computed({
-  get: () => store.settings.maxQuestionCount,
-  set: (value) => { store.settings.maxQuestionCount = value }
+  get: () => settingsStore.settings.maxQuestionCount,
+  set: (value) => { settingsStore.settings.maxQuestionCount = value }
 })
 const fixedQuestionCountValue = computed({
-  get: () => store.settings.fixedQuestionCountValue,
-  set: (value) => { store.settings.fixedQuestionCountValue = value }
+  get: () => settingsStore.settings.fixedQuestionCountValue,
+  set: (value) => { settingsStore.settings.fixedQuestionCountValue = value }
 })
 
 // 加载设置
 const loadSettings = async () => {
-  await store.loadSettings()
+  await settingsStore.loadSettings()
   // 同步更新界面名称的本地状态
-  interfaceName.value = store.interfaceName
+  interfaceName.value = settingsStore.interfaceName
 }
 
 // 更新界面名称
 const updateInterfaceName = async () => {
   if (interfaceName.value) {
-    await store.updateInterfaceName(interfaceName.value)
+    await settingsStore.updateInterfaceName(interfaceName.value)
     ElMessage.success('界面名称更新成功！')
   } else {
     ElMessage.error('请输入界面名称')
@@ -1851,7 +1868,7 @@ const updateInterfaceName = async () => {
 
 // 更新答题设置
 const updateAnswerSettings = async () => {
-  const success = await store.updateSettings({
+  const success = await settingsStore.updateSettings({
     randomizeAnswers: randomizeAnswers.value.toString(),
     fixedQuestionCount: fixedQuestionCount.value.toString(),
     minQuestionCount: minQuestionCount.value.toString(),
@@ -2258,7 +2275,7 @@ const filteredQuestions = computed(() => {
 
 const addSubject = () => {
   if (newSubjectName.value.trim()) {
-    store.addSubject(newSubjectName.value.trim(), newSubjectIcon.value)
+    questionStore.addSubject(newSubjectName.value.trim(), newSubjectIcon.value)
     newSubjectName.value = ''
     newSubjectIcon.value = 0
   }
@@ -2274,7 +2291,7 @@ const editSubject = (subject) => {
 // 保存学科编辑
 const saveSubjectEdit = async (subjectId) => {
   if (editingSubjectName.value.trim()) {
-    await store.updateSubject(subjectId, editingSubjectName.value.trim(), editingSubjectIcon.value)
+    await questionStore.updateSubject(subjectId, editingSubjectName.value.trim(), editingSubjectIcon.value)
     cancelSubjectEdit()
   }
 }
@@ -2293,7 +2310,7 @@ const deleteSubject = (subjectId) => {
     type: 'warning',
   })
   .then(() => {
-    store.deleteSubject(subjectId)
+    questionStore.deleteSubject(subjectId)
   })
   .catch(() => {
     // 取消删除
@@ -2308,7 +2325,7 @@ const manageSubcategories = (subject) => {
 
 const addSubcategory = () => {
   if (newSubcategoryName.value.trim() && currentSubjectForSubcategory.value) {
-    store.addSubcategory(currentSubjectForSubcategory.value.id, newSubcategoryName.value.trim(), newSubcategoryIcon.value)
+    questionStore.addSubcategory(currentSubjectForSubcategory.value.id, newSubcategoryName.value.trim(), newSubcategoryIcon.value)
     newSubcategoryName.value = ''
     newSubcategoryIcon.value = 0
   }
@@ -2334,7 +2351,7 @@ const saveSubcategoryEdit = async (subcategoryId, subjectId = null) => {
   const targetSubjectId = subjectId || (currentSubjectForSubcategory.value ? currentSubjectForSubcategory.value.id : null)
   
   if (editingSubcategoryName.value.trim() && targetSubjectId) {
-    await store.updateSubcategory(targetSubjectId, subcategoryId, editingSubcategoryName.value.trim(), editingSubcategoryIcon.value)
+    await questionStore.updateSubcategory(targetSubjectId, subcategoryId, editingSubcategoryName.value.trim(), editingSubcategoryIcon.value)
     cancelSubcategoryEdit()
   }
 }
@@ -2493,7 +2510,7 @@ const saveBatchQuestions = async () => {
           type: question.type || 'single',
           content: contentWithoutAnswer,
           options: question.options,
-          correctAnswer: question.answer,
+          answer: question.answer,
           explanation: question.explanation || ''
         }
     
@@ -2515,7 +2532,7 @@ const saveBatchQuestions = async () => {
   }
   
   // 所有题目添加完成后，重新加载数据
-  await store.loadData()
+  await questionStore.loadData()
   
   ElMessage.success(`成功添加 ${successCount} 道题目`)
   batchAddDialogVisible.value = false
@@ -2537,7 +2554,7 @@ const deleteSubcategory = (subcategoryId, subjectId = null) => {
     // 确定使用哪个学科ID
     const targetSubjectId = subjectId || (currentSubjectForSubcategory.value ? currentSubjectForSubcategory.value.id : null)
     if (targetSubjectId) {
-      store.deleteSubcategory(targetSubjectId, subcategoryId)
+      questionStore.deleteSubcategory(targetSubjectId, subcategoryId)
     }
   })
   .catch(() => {
@@ -2560,7 +2577,7 @@ const batchDeleteQuestions = () => {
   })
   .then(() => {
     selectedQuestions.value.forEach(question => {
-      store.deleteQuestion(question.id)
+      questionStore.deleteQuestion(question.id)
     })
     selectedQuestions.value = []
   })
@@ -2603,15 +2620,61 @@ const editQuestion = (question) => {
   const answer = question.answer || question.correct_answer || ''
   const audio = question.audio || question.audio_url || ''
   const image = question.image || question.image_url || ''
+  
+  // 处理options字段，确保它是一个数组，并且每个元素都是字符串
+  let options = []
+  if (question.options) {
+    if (typeof question.options === 'string') {
+      try {
+        // 尝试解析JSON字符串
+        options = JSON.parse(question.options)
+      } catch (e) {
+        // 如果解析失败，使用原始值作为单个选项
+        options = [question.options]
+      }
+    } else if (Array.isArray(question.options)) {
+      options = question.options
+    }
+  }
+  
+  // 确保数组中的每个元素都是字符串
+  options = options.map(option => {
+    if (typeof option === 'string') {
+      return option
+    } else if (option === null || option === undefined) {
+      return ''
+    } else {
+      return String(option)
+    }
+  })
+  
+  // 确保options数组至少有4个元素
+  while (options.length < 4) {
+    options.push('')
+  }
+  
+  // 确保options是一个普通数组，而不是Proxy对象
+  const plainOptions = [...options]
+  
   form.value = {
-    ...question,
+    id: question.id,
     subjectId: question.subjectId || question.subject_id,
     subcategoryId: question.subcategoryId || question.subcategory_id,
+    type: question.type || 'single',
     selectedAnswers: answer.split(''),
     content: contentValue,
+    options: plainOptions.length > 0 ? plainOptions : ['', '', '', ''],
+    answer: answer,
+    correct_answer: question.correct_answer || answer,
+    explanation: question.explanation || '',
     audio: audio,
     image: image
   }
+  
+  // 打印form.options的值，用于调试
+  console.log('form.options:', form.value.options);
+  console.log('options array length:', form.value.options.length);
+  console.log('options array elements:', form.value.options.map((opt, i) => `[${i}]: ${opt}`));
   
 
   
@@ -2664,10 +2727,25 @@ const saveQuestion = async () => {
   
   // 清理答案中的HTML标签和Word格式，但保留图片标签
   form.value.options = await Promise.all(form.value.options.map(async (option) => {
-    if (typeof option === 'string') {
-      // 处理DataURL格式的图片
-      let processedOption = option
-      // 查找DataURL格式的图片
+    let processedOption = ''
+    
+    // 处理Delta对象
+    if (typeof option === 'object' && option.ops) {
+      // 转换Delta对象为HTML字符串
+      processedOption = option.ops.map(op => {
+        if (typeof op.insert === 'string') {
+          return op.insert
+        } else if (op.insert && op.insert.image) {
+          return `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`
+        }
+        return ''
+      }).join('')
+    } else if (typeof option === 'string') {
+      processedOption = option
+    }
+    
+    // 处理DataURL格式的图片
+    if (processedOption) {
       const dataUrlRegex = /<img[^>]*src="data:image\/[^;]+;base64,[^"]+"[^>]*>/g
       const dataUrlMatches = processedOption.match(dataUrlRegex)
       if (dataUrlMatches) {
@@ -2713,7 +2791,7 @@ const saveQuestion = async () => {
         .trim()
       return cleaned
     }
-    return option
+    return ''
   }))
   
   // 将selectedAnswers转换为answer字符串
@@ -2784,10 +2862,10 @@ const saveQuestion = async () => {
 
     // 保存题目
     if (isEditing.value) {
-      await store.updateQuestion(form.value)
+      await questionStore.updateQuestion(form.value)
       ElMessage.success('题目更新成功！')
     } else {
-      await store.addQuestion(form.value)
+      await questionStore.addQuestion(form.value)
       ElMessage.success('题目添加成功！')
     }
     
@@ -2808,7 +2886,7 @@ const deleteQuestion = (questionId) => {
     type: 'warning',
   })
   .then(() => {
-    store.deleteQuestion(questionId)
+    questionStore.deleteQuestion(questionId)
   })
   .catch(() => {
   })
@@ -3290,6 +3368,15 @@ const onQuillReady = (editor) => {
   }
 }
 
+const onOptionQuillReady = (editor, index) => {
+  if (isEditing.value && form.value.options && form.value.options[index]) {
+    // 手动设置答案选项编辑器内容
+    editor.root.innerHTML = form.value.options[index]
+    // 确保编辑器知道内容已更改
+    editor.updateContents({})
+  }
+}
+
 // 监听form.content的变化，确保编辑器内容同步
 watch(() => form.value.content, (newValue) => {
 }, { deep: true })
@@ -3438,15 +3525,15 @@ const handleGradeChange = async () => {
         }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
       }
     } else {
-      // 失败时使用默认数据
-      classesList.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+      // 失败时显示空数组
+      classesList.value = []
     }
     // 重置班级选择
     filterClass.value = ''
   } catch (error) {
     console.error('加载班级数据失败:', error)
-    // 失败时使用默认数据
-    classesList.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    // 失败时显示空数组
+    classesList.value = []
     // 重置班级选择
     filterClass.value = ''
   }
@@ -3658,20 +3745,12 @@ const loadUserRecords = async (userId) => {
 // 加载用户的题目尝试记录
 const loadUserQuestionAttempts = async (userId, answerRecordId = null) => {
   try {
-    // 尝试使用不同的API端点格式
-    let url = `${getApiBaseUrl()}/question-attempts`
+    // 构建正确的API路径，包含answer-records前缀
+    let url = `${getApiBaseUrl()}/answer-records/question-attempts/${userId}`
     
-    // 先尝试使用userId作为路径参数，answerRecordId作为查询参数
-    if (userId) {
-      url = `${getApiBaseUrl()}/question-attempts/${userId}`
-      if (answerRecordId) {
-        url += `?answerRecordId=${answerRecordId}`
-      }
-    } else if (answerRecordId) {
-      // 如果没有userId，只使用answerRecordId作为查询参数
-      url = `${getApiBaseUrl()}/question-attempts?answerRecordId=${answerRecordId}`
+    if (answerRecordId) {
+      url += `?answerRecordId=${answerRecordId}`
     }
-    
     
     const response = await fetch(url)
     
@@ -3932,7 +4011,7 @@ const restoreData = () => {
             if (response.ok) {
               ElMessage.success('数据恢复成功')
               // 重新加载数据
-              await store.loadData()
+              await questionStore.loadData()
               await loadGradesAndClasses()
               fetchUserStats()
               fetchRecentRecords()
@@ -4019,7 +4098,7 @@ const clearAllData = async () => {
     if (response.ok) {
       ElMessage.success('所有数据清空成功')
       // 重新加载数据
-      await store.loadData()
+      await questionStore.loadData()
       await loadGradesAndClasses()
       fetchUserStats()
       fetchRecentRecords()
@@ -4075,7 +4154,7 @@ const clearUserRecords = async () => {
 
 onMounted(async () => {
   // 初始化数据
-  await store.initialize()
+  await questionStore.initialize()
   // 加载年级和班级数据
   await loadGradesAndClasses()
   // 初始化数据

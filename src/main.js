@@ -4,6 +4,7 @@ import App from './App.vue'
 import router from './router'
 import { useQuestionStore } from './stores/questionStore'
 import './styles/loading.css'
+import './styles/global.css'
 
 // 导入Element Plus
 import ElementPlus from 'element-plus'
