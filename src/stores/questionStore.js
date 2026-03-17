@@ -62,7 +62,7 @@ export const useQuestionStore = defineStore('question', {
         await this.loadData()
       } catch (error) {
         this.error = error.message
-        console.error('初始化数据失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -88,7 +88,7 @@ export const useQuestionStore = defineStore('question', {
         this.classes = classesData
       } catch (error) {
         this.error = error.message
-        console.error('加载数据失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -109,7 +109,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('添加题目失败:', error)
+
         throw error
       } finally {
         this.isLoading = false
@@ -133,7 +133,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('更新题目失败:', error)
+
         throw error
       } finally {
         this.isLoading = false
@@ -152,7 +152,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('删除题目失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -170,7 +170,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('添加学科失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -191,7 +191,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('更新学科失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -229,7 +229,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('删除学科失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -253,7 +253,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('添加子分类失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -281,7 +281,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('更新子分类失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -314,7 +314,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('删除子分类失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -329,7 +329,7 @@ export const useQuestionStore = defineStore('question', {
         await this.loadData()
       } catch (error) {
         this.error = error.message
-        console.error('更新学科列表失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -348,7 +348,7 @@ export const useQuestionStore = defineStore('question', {
         return result
       } catch (error) {
         this.error = error.message
-        console.error('导入数据失败:', error)
+
         return { success: false, error: error.message }
       } finally {
         this.isLoading = false
@@ -367,7 +367,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('添加年级失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -388,7 +388,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('更新年级失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -406,7 +406,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('删除年级失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -424,7 +424,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('添加班级失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -445,7 +445,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('更新班级失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -463,7 +463,7 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('删除班级失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -805,7 +805,7 @@ export const useSettingsStore = defineStore('settings', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('加载设置失败:', error)
+
       } finally {
         this.isLoading = false
       }
@@ -835,7 +835,7 @@ export const useSettingsStore = defineStore('settings', {
         return false
       } catch (error) {
         this.error = error.message
-        console.error('更新设置失败:', error)
+
         return false
       } finally {
         this.isLoading = false
@@ -858,7 +858,7 @@ export const useSettingsStore = defineStore('settings', {
         })
       } catch (error) {
         this.error = error.message
-        console.error('保存界面名称到数据库失败:', error)
+
       } finally {
         this.isLoading = false
       }

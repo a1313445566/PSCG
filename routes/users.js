@@ -26,7 +26,7 @@ router.get('/', async (req, res) => {
     const users = await db.all(query, params);
     res.json(users);
   } catch (error) {
-    console.error('获取用户失败:', error);
+    // console.error('获取用户失败:', error);
     res.status(500).json({ error: '获取用户失败' });
   }
 });
@@ -44,7 +44,7 @@ router.get('/:id', async (req, res) => {
     
     res.json(user);
   } catch (error) {
-    console.error('获取用户失败:', error);
+    // console.error('获取用户失败:', error);
     res.status(500).json({ error: '获取用户失败' });
   }
 });
@@ -65,7 +65,7 @@ router.post('/', async (req, res) => {
     const newUser = await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
     res.json(newUser);
   } catch (error) {
-    console.error('添加用户失败:', error);
+    // console.error('添加用户失败:', error);
     res.status(500).json({ error: '添加用户失败' });
   }
 });
@@ -91,7 +91,7 @@ router.post('/batch', async (req, res) => {
           await db.run('INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)', [student_id, name, grade, className]);
           successCount++;
         } catch (error) {
-          console.error('添加用户失败:', error);
+          // console.error('添加用户失败:', error);
           errorCount++;
         }
       }
@@ -99,7 +99,7 @@ router.post('/batch', async (req, res) => {
     
     res.json({ success: true, message: `成功添加 ${successCount} 个用户，失败 ${errorCount} 个` });
   } catch (error) {
-    console.error('批量添加用户失败:', error);
+    // console.error('批量添加用户失败:', error);
     res.status(500).json({ error: '批量添加用户失败' });
   }
 });
@@ -114,7 +114,7 @@ router.put('/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('更新用户失败:', error);
+    // console.error('更新用户失败:', error);
     res.status(500).json({ error: '更新用户失败' });
   }
 });
@@ -127,7 +127,7 @@ router.delete('/:id', async (req, res) => {
     await db.run('DELETE FROM users WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (error) {
-    console.error('删除用户失败:', error);
+    // console.error('删除用户失败:', error);
     res.status(500).json({ error: '删除用户失败' });
   }
 });
@@ -177,7 +177,7 @@ router.get('/stats/:userId', async (req, res) => {
     
     res.json(userStats);
   } catch (error) {
-    console.error('获取用户统计失败:', error);
+    // console.error('获取用户统计失败:', error);
     res.status(500).json({ error: '获取用户统计失败' });
   }
 });
@@ -214,7 +214,7 @@ router.post('/login', async (req, res) => {
       class: user.class
     });
   } catch (error) {
-    console.error('用户登录失败:', error);
+    // console.error('用户登录失败:', error);
     res.status(500).json({ error: '用户登录失败' });
   }
 });

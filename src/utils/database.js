@@ -24,7 +24,7 @@ export const getSubjects = async () => {
   try {
     return await apiCache.getCached(`${API_BASE_URL}/subjects`);
   } catch (error) {
-    console.error('获取学科失败:', error)
+
     return []
   }
 }
@@ -35,7 +35,7 @@ export const getQuestions = async () => {
     // 添加较大的limit参数，确保获取所有题目
     return await apiCache.getCached(`${API_BASE_URL}/questions?limit=1000`);
   } catch (error) {
-    console.error('获取题目失败:', error)
+
     return []
   }
 }
@@ -55,7 +55,7 @@ export const addSubject = async (name, iconIndex = 0) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('添加学科失败:', error)
+
     return null
   }
 }
@@ -75,7 +75,7 @@ export const updateSubject = async (subjectId, name, iconIndex = 0) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('更新学科失败:', error)
+
     return null
   }
 }
@@ -91,7 +91,7 @@ export const deleteSubject = async (subjectId) => {
     }
     return true
   } catch (error) {
-    console.error('删除学科失败:', error)
+
     return false
   }
 }
@@ -111,7 +111,7 @@ export const addSubcategory = async (subjectId, name, iconIndex = 0) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('添加子分类失败:', error)
+
     return null
   }
 }
@@ -131,7 +131,7 @@ export const updateSubcategory = async (subcategoryId, name, iconIndex = 0) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('更新子分类失败:', error)
+
     return null
   }
 }
@@ -147,7 +147,7 @@ export const deleteSubcategory = async (subcategoryId) => {
     }
     return true
   } catch (error) {
-    console.error('删除子分类失败:', error)
+
     return false
   }
 }
@@ -168,7 +168,7 @@ export const addQuestion = async (question) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('添加题目失败:', error)
+
     return null
   }
 }
@@ -188,7 +188,7 @@ export const updateQuestion = async (updatedQuestion) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('更新题目失败:', error)
+
     return null
   }
 }
@@ -204,7 +204,7 @@ export const deleteQuestion = async (questionId) => {
     }
     return true
   } catch (error) {
-    console.error('删除题目失败:', error)
+
     return false
   }
 }
@@ -220,7 +220,7 @@ export const clearAllData = async () => {
     }
     return true
   } catch (error) {
-    console.error('清空数据失败:', error)
+
     return false
   }
 }
@@ -257,7 +257,7 @@ export const importLocalData = async () => {
     
     return await response.json()
   } catch (error) {
-    console.error('导入本地数据失败:', error)
+
     return { success: false, error: error.message }
   }
 }
@@ -267,7 +267,7 @@ export const getGrades = async () => {
   try {
     return await apiCache.getCached(`${API_BASE_URL}/grades`);
   } catch (error) {
-    console.error('获取年级失败:', error)
+
     return []
   }
 }
@@ -277,7 +277,7 @@ export const getClasses = async () => {
   try {
     return await apiCache.getCached(`${API_BASE_URL}/classes`);
   } catch (error) {
-    console.error('获取班级失败:', error)
+
     return []
   }
 }
@@ -297,7 +297,7 @@ export const addGrade = async (name) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('添加年级失败:', error)
+
     return null
   }
 }
@@ -317,7 +317,7 @@ export const updateGrade = async (gradeId, name) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('更新年级失败:', error)
+
     return null
   }
 }
@@ -333,7 +333,7 @@ export const deleteGrade = async (gradeId) => {
     }
     return true
   } catch (error) {
-    console.error('删除年级失败:', error)
+
     return false
   }
 }
@@ -353,7 +353,7 @@ export const addClass = async (name) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('添加班级失败:', error)
+
     return null
   }
 }
@@ -373,7 +373,7 @@ export const updateClass = async (classId, name) => {
     }
     return await response.json()
   } catch (error) {
-    console.error('更新班级失败:', error)
+
     return null
   }
 }
@@ -389,7 +389,7 @@ export const deleteClass = async (classId) => {
     }
     return true
   } catch (error) {
-    console.error('删除班级失败:', error)
+
     return false
   }
 }

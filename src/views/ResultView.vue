@@ -127,7 +127,7 @@ onMounted(async () => {
     try {
       quizData.value = JSON.parse(storedData)
     } catch (error) {
-      console.error('解析答题数据失败:', error)
+
       // 如果解析失败，重定向到题库选择页面
       router.push(`/subcategory/${subjectId.value}`)
     }

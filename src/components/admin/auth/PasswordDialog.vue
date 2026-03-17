@@ -72,7 +72,7 @@ const focusPasswordInput = () => {
         }
       }
     } catch (error) {
-      console.error('Error focusing password input:', error);
+
     }
   }, 300);
 };

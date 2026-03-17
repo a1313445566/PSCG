@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
     cacheService.set('subjects', subjectsWithCamelCase);
     res.json(subjectsWithCamelCase);
   } catch (error) {
-    console.error('获取学科失败:', error);
+
     res.status(500).json({ error: '获取学科失败' });
   }
 });
@@ -62,7 +62,7 @@ router.get('/:id/subcategories', async (req, res) => {
     cacheService.set(cacheKey, subcategories);
     res.json(subcategories);
   } catch (error) {
-    console.error('获取子分类失败:', error);
+
     res.status(500).json({ error: '获取子分类失败' });
   }
 });
@@ -92,7 +92,7 @@ router.post('/', async (req, res) => {
     };
     res.json(formattedSubject);
   } catch (error) {
-    console.error('添加学科失败:', error);
+
     res.status(500).json({ error: '添加学科失败' });
   }
 });
@@ -123,7 +123,7 @@ router.put('/:id', async (req, res) => {
     };
     res.json(formattedSubject);
   } catch (error) {
-    console.error('更新学科失败:', error);
+
     res.status(500).json({ error: '更新学科失败' });
   }
 });
@@ -140,7 +140,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('删除学科失败:', error);
+
     res.status(500).json({ error: '删除学科失败' });
   }
 });
@@ -173,7 +173,7 @@ router.post('/:subjectId/subcategories', async (req, res) => {
     };
     res.json(formattedSubcategory);
   } catch (error) {
-    console.error('添加子分类失败:', error);
+
     res.status(500).json({ error: '添加子分类失败' });
   }
 });
@@ -211,7 +211,7 @@ router.put('/subcategories/:id', async (req, res) => {
     };
     res.json(formattedSubcategory);
   } catch (error) {
-    console.error('更新子分类失败:', error);
+
     res.status(500).json({ error: '更新子分类失败' });
   }
 });
@@ -234,7 +234,7 @@ router.delete('/subcategories/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('删除子分类失败:', error);
+
     res.status(500).json({ error: '删除子分类失败' });
   }
 });

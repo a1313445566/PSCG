@@ -39,7 +39,7 @@ router.get('/global', async (req, res) => {
     const users = await db.all(query, params);
     res.json(users);
   } catch (error) {
-    console.error('获取排行榜数据失败:', error);
+    // console.error('获取排行榜数据失败:', error);
     res.status(500).json({ error: '获取排行榜数据失败' });
   }
 });
@@ -85,7 +85,7 @@ router.get('/subject/:subjectId', async (req, res) => {
     const users = await db.all(query, params);
     res.json(users);
   } catch (error) {
-    console.error('获取学科排行榜数据失败:', error);
+    // console.error('获取学科排行榜数据失败:', error);
     res.status(500).json({ error: '获取学科排行榜数据失败' });
   }
 });
@@ -103,7 +103,7 @@ router.post('/clear', async (req, res) => {
     
     res.json({ success: true, message: '排行榜数据清空成功' });
   } catch (error) {
-    console.error('清空排行榜数据失败:', error);
+    // console.error('清空排行榜数据失败:', error);
     res.status(500).json({ error: '清空排行榜数据失败' });
   }
 });

@@ -51,7 +51,7 @@ router.get('/all', async (req, res) => {
     const records = await db.all(query, params);
     res.json(records);
   } catch (error) {
-    console.error('获取答题记录失败:', error);
+    // console.error('获取答题记录失败:', error);
     res.status(500).json({ error: '获取答题记录失败' });
   }
 });
@@ -73,7 +73,7 @@ router.get('/:userId', async (req, res) => {
     const records = await db.all(query, [userId]);
     res.json(records);
   } catch (error) {
-    console.error('获取用户答题记录失败:', error);
+    // console.error('获取用户答题记录失败:', error);
     res.status(500).json({ error: '获取用户答题记录失败' });
   }
 });
@@ -106,7 +106,7 @@ router.get('/question-attempts/:userId', async (req, res) => {
     const attempts = await db.all(query, params);
     res.json(attempts);
   } catch (error) {
-    console.error('获取题目尝试记录失败:', error);
+    // console.error('获取题目尝试记录失败:', error);
     res.status(500).json({ error: '获取题目尝试记录失败' });
   }
 });
@@ -174,7 +174,7 @@ router.get('/error-prone-questions', async (req, res) => {
       try {
         options = JSON.parse(question.options);
       } catch (e) {
-        console.error('解析选项失败:', e);
+        // console.error('解析选项失败:', e);
       }
       question.options = options;
       
@@ -228,7 +228,7 @@ router.get('/error-prone-questions', async (req, res) => {
     cacheService.set(cacheKey, questions);
     res.json(questions);
   } catch (error) {
-    console.error('获取错误率较高的题目失败:', error);
+    // console.error('获取错误率较高的题目失败:', error);
     res.status(500).json({ error: '获取错误率较高的题目失败' });
   }
 });
@@ -245,7 +245,7 @@ router.post('/', async (req, res) => {
     
     res.json({ success: true, recordId: result.lastID });
   } catch (error) {
-    console.error('保存答题记录失败:', error);
+    // console.error('保存答题记录失败:', error);
     res.status(500).json({ error: '保存答题记录失败' });
   }
 });
@@ -262,7 +262,7 @@ router.post('/question-attempts', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('保存题目尝试记录失败:', error);
+    // console.error('保存题目尝试记录失败:', error);
     res.status(500).json({ error: '保存题目尝试记录失败' });
   }
 });

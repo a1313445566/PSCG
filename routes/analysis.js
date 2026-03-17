@@ -295,7 +295,7 @@ router.get('/', async (req, res) => {
       try {
         options = JSON.parse(question.options);
       } catch (e) {
-        console.error('解析选项失败:', e);
+        // console.error('解析选项失败:', e);
       }
       question.options = options;
       
@@ -361,7 +361,7 @@ router.get('/', async (req, res) => {
     cacheService.set(cacheKey, analysisData);
     res.json(analysisData);
   } catch (error) {
-    console.error('获取分析数据失败:', error);
+    // console.error('获取分析数据失败:', error);
     res.status(500).json({ error: '获取分析数据失败' });
   }
 });
@@ -445,7 +445,7 @@ router.get('/download', async (req, res) => {
     
     res.send(excelBuffer);
   } catch (error) {
-    console.error('下载分析报告失败:', error);
+    // console.error('下载分析报告失败:', error);
     res.status(500).json({ error: '下载分析报告失败' });
   }
 });

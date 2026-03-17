@@ -59,13 +59,12 @@ const leaderboardData = ref([])
 
 // 调试：监控 subjects 数据变化
 watch(() => questionStore.subjects, (newSubjects) => {
-  console.log('Subjects data:', newSubjects)
-  console.log('Number of subjects:', newSubjects.length)
+
 }, { deep: true, immediate: true })
 
 // 监控 questions 数据变化，确保新添加的题目能显示
 watch(() => questionStore.questions, (newQuestions) => {
-  console.log('Questions data updated:', newQuestions.length, 'questions')
+
 }, { deep: true })
 
 // 获取排行榜数据
@@ -77,7 +76,7 @@ const fetchLeaderboardData = async () => {
       leaderboardData.value = data
     }
   } catch (error) {
-    console.error('获取排行榜数据失败:', error)
+
   }
 }
 

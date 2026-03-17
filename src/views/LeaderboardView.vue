@@ -312,7 +312,7 @@ const loadGradesAndClasses = async () => {
       classes.value = []
     }
   } catch (error) {
-    console.error('加载年级和班级数据失败:', error)
+    // console.error('加载年级和班级数据失败:', error)
     grades.value = []
     classes.value = []
   }
@@ -347,7 +347,7 @@ const handleGradeChange = async () => {
       await loadSubjectLeaderboard()
     }
   } catch (error) {
-    console.error('加载班级数据失败:', error)
+    // console.error('加载班级数据失败:', error)
     classes.value = []
   }
 }
@@ -364,7 +364,7 @@ const formatDate = (dateString) => {
       minute: '2-digit'
     })
   } catch (error) {
-    console.error('日期格式化失败:', error)
+    // console.error('日期格式化失败:', error)
     return '未知时间'
   }
 }
@@ -376,7 +376,7 @@ const loadSubjects = async () => {
       subjects.value = await response.json()
     }
   } catch (error) {
-    console.error('加载学科失败:', error)
+    // console.error('加载学科失败:', error)
   }
 }
 
@@ -396,7 +396,7 @@ const loadSubcategories = async (subjectId) => {
     }
     selectedSubcategoryId.value = null
   } catch (error) {
-    console.error('加载子分类失败:', error)
+    // console.error('加载子分类失败:', error)
     subcategories.value = []
     selectedSubcategoryId.value = null
   }
@@ -425,7 +425,7 @@ const loadGlobalLeaderboard = async () => {
       globalLeaderboard.value = data
     }
   } catch (error) {
-    console.error('加载全局排行榜失败:', error)
+    // console.error('加载全局排行榜失败:', error)
   }
 }
 
@@ -461,7 +461,7 @@ const loadSubjectLeaderboard = async () => {
       subjectLeaderboard.value = data
     }
   } catch (error) {
-    console.error('加载学科排行榜失败:', error)
+    // console.error('加载学科排行榜失败:', error)
   }
 }
 
@@ -474,7 +474,7 @@ const loadUserStats = async () => {
       userStats.value = await response.json()
     }
   } catch (error) {
-    console.error('加载用户统计失败:', error)
+    // console.error('加载用户统计失败:', error)
   }
 }
 
@@ -492,11 +492,11 @@ const loadRecentRecords = async () => {
       const data = await response.json()
       recentRecords.value = data
     } else {
-      console.error('加载答题记录失败，响应状态:', response.status)
+      // console.error('加载答题记录失败，响应状态:', response.status)
       recentRecords.value = []
     }
   } catch (error) {
-    console.error('加载答题记录失败:', error)
+    // console.error('加载答题记录失败:', error)
     recentRecords.value = []
   }
 }
@@ -511,11 +511,11 @@ const loadUserRecords = async (userId) => {
       const data = await response.json()
       selectedUserRecords.value = data
     } else {
-      console.error('加载用户答题记录失败，响应状态:', response.status)
+      // console.error('加载用户答题记录失败，响应状态:', response.status)
       selectedUserRecords.value = []
     }
   } catch (error) {
-    console.error('加载用户答题记录失败:', error)
+    // console.error('加载用户答题记录失败:', error)
     selectedUserRecords.value = []
   }
 }

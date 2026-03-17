@@ -23,7 +23,7 @@ router.post('/backup', async (req, res) => {
     
     res.json({ success: true, data: backupData });
   } catch (error) {
-    console.error('备份数据失败:', error);
+    // console.error('备份数据失败:', error);
     res.status(500).json({ error: '备份数据失败' });
   }
 });
@@ -105,7 +105,7 @@ router.post('/restore', async (req, res) => {
     
     res.json({ success: true, message: '数据恢复成功' });
   } catch (error) {
-    console.error('恢复数据失败:', error);
+    // console.error('恢复数据失败:', error);
     res.status(500).json({ error: '恢复数据失败' });
   }
 });
@@ -128,7 +128,7 @@ router.get('/export', async (req, res) => {
     
     res.json({ success: true, data: exportData });
   } catch (error) {
-    console.error('导出数据失败:', error);
+    // console.error('导出数据失败:', error);
     res.status(500).json({ error: '导出数据失败' });
   }
 });
@@ -151,7 +151,7 @@ router.post('/clear-all', async (req, res) => {
     
     res.json({ success: true, message: '所有数据清空成功' });
   } catch (error) {
-    console.error('清空数据失败:', error);
+    // console.error('清空数据失败:', error);
     res.status(500).json({ error: '清空数据失败' });
   }
 });
@@ -169,7 +169,7 @@ router.post('/clear-records', async (req, res) => {
     
     res.json({ success: true, message: '用户答题记录清空成功' });
   } catch (error) {
-    console.error('清空用户答题记录失败:', error);
+    // console.error('清空用户答题记录失败:', error);
     res.status(500).json({ error: '清空用户答题记录失败' });
   }
 });

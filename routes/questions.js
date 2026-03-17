@@ -38,7 +38,7 @@ router.get('/', async (req, res) => {
       try {
         options = JSON.parse(question.options);
       } catch (error) {
-        console.error('解析选项失败:', error);
+
         options = [];
       }
       
@@ -69,7 +69,7 @@ router.get('/', async (req, res) => {
     
     res.json(formattedQuestions);
   } catch (error) {
-    console.error('获取题目失败:', error);
+    // console.error('获取题目失败:', error);
     res.status(500).json({ error: '获取题目失败' });
   }
 });
@@ -92,7 +92,7 @@ router.get('/:id', async (req, res) => {
     try {
       options = JSON.parse(question.options);
     } catch (error) {
-      console.error('解析选项失败:', error);
+      // console.error('解析选项失败:', error);
       options = [];
     }
     
@@ -122,7 +122,7 @@ router.get('/:id', async (req, res) => {
     
     res.json(formattedQuestion);
   } catch (error) {
-    console.error('获取题目失败:', error);
+    // console.error('获取题目失败:', error);
     res.status(500).json({ error: '获取题目失败' });
   }
 });
@@ -152,7 +152,7 @@ router.post('/', async (req, res) => {
     try {
       formattedOptions = JSON.parse(newQuestion.options);
     } catch (error) {
-      console.error('解析选项失败:', error);
+      // console.error('解析选项失败:', error);
       formattedOptions = [];
     }
     
@@ -182,7 +182,7 @@ router.post('/', async (req, res) => {
     
     res.json(formattedQuestion);
   } catch (error) {
-    console.error('添加题目失败:', error);
+    // console.error('添加题目失败:', error);
     res.status(500).json({ error: '添加题目失败' });
   }
 });
@@ -213,7 +213,7 @@ router.put('/:id', async (req, res) => {
     try {
       formattedOptions = JSON.parse(updatedQuestion.options);
     } catch (error) {
-      console.error('解析选项失败:', error);
+      // console.error('解析选项失败:', error);
       formattedOptions = [];
     }
     
@@ -243,7 +243,7 @@ router.put('/:id', async (req, res) => {
     
     res.json(formattedQuestion);
   } catch (error) {
-    console.error('更新题目失败:', error);
+    // console.error('更新题目失败:', error);
     res.status(500).json({ error: '更新题目失败' });
   }
 });
@@ -255,7 +255,7 @@ router.delete('/:id', async (req, res) => {
     await db.run('DELETE FROM questions WHERE id = ?', [id]);
     res.json({ success: true });
   } catch (error) {
-    console.error('删除题目失败:', error);
+    // console.error('删除题目失败:', error);
     res.status(500).json({ error: '删除题目失败' });
   }
 });

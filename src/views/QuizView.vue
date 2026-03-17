@@ -128,18 +128,15 @@ const selectOption = (questionId, option, questionType = 'single') => {
 
 // 提交答案
 const submitAnswers = async () => {
-  console.log('提交答案按钮点击')
-  console.log('hasAnsweredAll:', hasAnsweredAll.value)
-  console.log('currentQuestions:', currentQuestions.value)
-  console.log('userAnswers:', userAnswers.value)
+
   
   if (!hasAnsweredAll.value) {
     ElMessage.warning('请回答所有题目后再提交！')
-    console.log('未回答所有题目')
+
     return
   }
   
-  console.log('开始计算分数')
+
   // 计算分数
   quizStore.calculateScore()
   
@@ -216,7 +213,7 @@ const submitAnswers = async () => {
       }
     }
   } catch (error) {
-    console.error('保存答题记录失败:', error)
+
     ElMessage.error('保存答题记录失败，请检查网络连接')
   }
   
@@ -242,14 +239,14 @@ const startTimer = () => {
 const startCountdown = () => {
   countdownInterval = setInterval(() => {
     countdown.value--
-    console.log('倒计时:', countdown.value)
+
     if (countdown.value <= 0) {
       clearInterval(countdownInterval)
       countdownInterval = null
       // 使用 nextTick 确保响应式更新
       nextTick(() => {
         canSubmit.value = true
-        console.log('倒计时结束，canSubmit设为true')
+
       })
       countdown.value = 0
     }

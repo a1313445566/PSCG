@@ -87,7 +87,7 @@ export const useAnalysisStore = defineStore('analysis', {
       try {
         this.subjects = await getSubjects();
       } catch (error) {
-        console.error('加载学科失败:', error);
+        // console.error('加载学科失败:', error);
         this.error = '加载学科失败';
       }
     },
@@ -97,7 +97,7 @@ export const useAnalysisStore = defineStore('analysis', {
       try {
         this.grades = await getGrades();
       } catch (error) {
-        console.error('加载年级失败:', error);
+        // console.error('加载年级失败:', error);
         this.error = '加载年级失败';
       }
     },
@@ -107,7 +107,7 @@ export const useAnalysisStore = defineStore('analysis', {
       try {
         this.classes = await getClasses();
       } catch (error) {
-        console.error('加载班级失败:', error);
+        // console.error('加载班级失败:', error);
         this.error = '加载班级失败';
       }
     },
@@ -127,7 +127,7 @@ export const useAnalysisStore = defineStore('analysis', {
           this.subcategories = data;
         }
       } catch (error) {
-        console.error('获取学科题库失败:', error);
+        // console.error('获取学科题库失败:', error);
         this.error = '获取学科题库失败';
       }
     },
@@ -140,12 +140,12 @@ export const useAnalysisStore = defineStore('analysis', {
     
     // 加载分析数据
     async loadAnalysisData() {
-      console.log('开始加载分析数据');
+      // console.log('开始加载分析数据');
       this.loading = true;
       this.error = null;
       
       const API_BASE_URL = getApiBaseUrl();
-      console.log('API_BASE_URL:', API_BASE_URL);
+      // console.log('API_BASE_URL:', API_BASE_URL);
       const { studentId, grade, class: className, subjectId, subcategoryIds, dateRange } = this.filterForm;
       
       const params = new URLSearchParams();
@@ -162,24 +162,24 @@ export const useAnalysisStore = defineStore('analysis', {
       try {
         const paramsString = params.toString();
         const url = paramsString ? `${API_BASE_URL}/analysis?${paramsString}` : `${API_BASE_URL}/analysis`;
-        console.log('请求URL:', url);
+        // console.log('请求URL:', url);
         const response = await fetch(url);
-        console.log('响应状态:', response.status);
+        // console.log('响应状态:', response.status);
         
         if (response.ok) {
           const data = await response.json();
-          console.log('获取到的分析数据:', data);
+          // console.log('获取到的分析数据:', data);
           this.analysisData = data;
-          console.log('analysisData已设置:', this.analysisData);
+          // console.log('analysisData已设置:', this.analysisData);
         } else {
           throw new Error('获取分析数据失败');
         }
       } catch (error) {
-        console.error('获取分析数据失败:', error);
+        // console.error('获取分析数据失败:', error);
         this.error = '获取分析数据失败';
       } finally {
         this.loading = false;
-        console.log('加载完成，loading状态:', this.loading);
+        // console.log('加载完成，loading状态:', this.loading);
       }
     },
     

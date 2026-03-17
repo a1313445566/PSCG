@@ -122,7 +122,7 @@ const loadGradesAndClasses = async () => {
       classes.value = []
     }
   } catch (error) {
-    console.error('加载年级和班级数据失败:', error)
+    // console.error('加载年级和班级数据失败:', error)
     grades.value = []
     classes.value = []
   }
@@ -176,7 +176,7 @@ const saveStudentId = async () => {
       ElMessage.error('登录失败')
     }
   } catch (error) {
-    console.error('登录失败:', error)
+    // console.error('登录失败:', error)
     ElMessage.error('登录失败，请检查网络连接')
   } finally {
     isLoading.value = false

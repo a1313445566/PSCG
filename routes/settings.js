@@ -12,7 +12,7 @@ router.get('/', async (req, res) => {
     });
     res.json(settingsObj);
   } catch (error) {
-    console.error('获取设置失败:', error);
+    // console.error('获取设置失败:', error);
     res.status(500).json({ error: '获取设置失败' });
   }
 });
@@ -43,7 +43,7 @@ router.post('/', async (req, res) => {
     
     res.json({ success: true, message: '设置保存成功' });
   } catch (error) {
-    console.error('保存设置失败:', error);
+    // console.error('保存设置失败:', error);
     res.status(500).json({ error: '保存设置失败' });
   }
 });

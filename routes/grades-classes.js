@@ -19,7 +19,7 @@ router.get('/grades', async (req, res) => {
     cacheService.set('grades', grades);
     res.json(grades);
   } catch (error) {
-    console.error('获取年级失败:', error);
+    // console.error('获取年级失败:', error);
     res.status(500).json({ error: '获取年级失败' });
   }
 });
@@ -42,7 +42,7 @@ router.post('/grades', async (req, res) => {
     const newGrade = await db.get('SELECT * FROM grades WHERE id = ?', [result.lastID]);
     res.json(newGrade);
   } catch (error) {
-    console.error('添加年级失败:', error);
+    // console.error('添加年级失败:', error);
     res.status(500).json({ error: '添加年级失败' });
   }
 });
@@ -64,7 +64,7 @@ router.put('/grades/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('更新年级失败:', error);
+    // console.error('更新年级失败:', error);
     res.status(500).json({ error: '更新年级失败' });
   }
 });
@@ -80,7 +80,7 @@ router.delete('/grades/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('删除年级失败:', error);
+    // console.error('删除年级失败:', error);
     res.status(500).json({ error: '删除年级失败' });
   }
 });
@@ -101,7 +101,7 @@ router.post('/grades/init', async (req, res) => {
     cacheService.del('grades');
     res.json({ success: true, message: '年级数据初始化成功' });
   } catch (error) {
-    console.error('初始化年级数据失败:', error);
+    // console.error('初始化年级数据失败:', error);
     res.status(500).json({ error: '初始化年级数据失败' });
   }
 });
@@ -116,7 +116,7 @@ router.post('/grades/clear', async (req, res) => {
     
     res.json({ success: true, message: '年级数据清空成功' });
   } catch (error) {
-    console.error('清空年级数据失败:', error);
+    // console.error('清空年级数据失败:', error);
     res.status(500).json({ error: '清空年级数据失败' });
   }
 });
@@ -137,7 +137,7 @@ router.get('/classes', async (req, res) => {
     cacheService.set('classes', classes);
     res.json(classes);
   } catch (error) {
-    console.error('获取班级失败:', error);
+    // console.error('获取班级失败:', error);
     res.status(500).json({ error: '获取班级失败' });
   }
 });
@@ -160,7 +160,7 @@ router.post('/classes', async (req, res) => {
     const newClass = await db.get('SELECT * FROM classes WHERE id = ?', [result.lastID]);
     res.json(newClass);
   } catch (error) {
-    console.error('添加班级失败:', error);
+    // console.error('添加班级失败:', error);
     res.status(500).json({ error: '添加班级失败' });
   }
 });
@@ -182,7 +182,7 @@ router.put('/classes/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('更新班级失败:', error);
+    // console.error('更新班级失败:', error);
     res.status(500).json({ error: '更新班级失败' });
   }
 });
@@ -198,7 +198,7 @@ router.delete('/classes/:id', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('删除班级失败:', error);
+    // console.error('删除班级失败:', error);
     res.status(500).json({ error: '删除班级失败' });
   }
 });
@@ -219,7 +219,7 @@ router.post('/classes/init', async (req, res) => {
     cacheService.del('classes');
     res.json({ success: true, message: '班级数据初始化成功' });
   } catch (error) {
-    console.error('初始化班级数据失败:', error);
+    // console.error('初始化班级数据失败:', error);
     res.status(500).json({ error: '初始化班级数据失败' });
   }
 });
@@ -234,7 +234,7 @@ router.post('/classes/clear', async (req, res) => {
     
     res.json({ success: true, message: '班级数据清空成功' });
   } catch (error) {
-    console.error('清空班级数据失败:', error);
+    // console.error('清空班级数据失败:', error);
     res.status(500).json({ error: '清空班级数据失败' });
   }
 });

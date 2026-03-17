@@ -597,7 +597,7 @@ const saveQuestion = async (formData) => {
     }
     
     // 添加调试信息，显示保存后的题目数据
-    console.log('保存后的题目数据:', savedQuestion);
+
     
     // 如果有题目ID，从数据库获取完整数据
     if (savedQuestion && savedQuestion.id) {
@@ -605,16 +605,16 @@ const saveQuestion = async (formData) => {
         const response = await fetch(`/api/questions/${savedQuestion.id}`);
         if (response.ok) {
           const questionFromDb = await response.json();
-          console.log('从数据库获取的题目数据:', questionFromDb);
+
         }
       } catch (error) {
-        console.error('获取数据库题目数据失败:', error);
+
       }
     }
     
     dialogVisible.value = false
   } catch (error) {
-    console.error('保存题目失败:', error)
+
     ElMessage.error('保存题目失败，请稍后重试！')
   }
 }
@@ -630,7 +630,7 @@ const addSubcategory = async (subjectId, subcategory) => {
     await questionStore.addSubcategory(subjectId, subcategory.name, subcategory.iconIndex)
     ElMessage.success('学科题库添加成功！')
   } catch (error) {
-    console.error('添加学科题库失败:', error)
+
     ElMessage.error('添加学科题库失败，请稍后重试！')
   }
 }
@@ -641,7 +641,7 @@ const updateSubcategory = async (subjectId, subcategory) => {
     await questionStore.updateSubcategory(subjectId, subcategory.id, subcategory.name, subcategory.iconIndex)
     ElMessage.success('学科题库更新成功！')
   } catch (error) {
-    console.error('更新学科题库失败:', error)
+
     ElMessage.error('更新学科题库失败，请稍后重试！')
   }
 }
@@ -652,7 +652,7 @@ const deleteSubcategory = async (subjectId, subcategoryId) => {
     await questionStore.deleteSubcategory(subjectId, subcategoryId)
     ElMessage.success('学科题库删除成功！')
   } catch (error) {
-    console.error('删除学科题库失败:', error)
+
     ElMessage.error('删除学科题库失败，请稍后重试！')
   }
 }
@@ -672,7 +672,7 @@ const handleBatchAddQuestions = async (questions) => {
     }
     ElMessage.success(`成功添加 ${questions.length} 道题目`)
   } catch (error) {
-    console.error('批量添加题目失败:', error)
+
     ElMessage.error('批量添加题目失败，请稍后重试')
   }
 }
@@ -684,7 +684,7 @@ const clearAllData = async () => {
     await questionStore.loadData()
     ElMessage.success('所有数据已清空')
   } catch (error) {
-    console.error('清空数据失败:', error)
+
     ElMessage.error('清空数据失败，请稍后重试')
   }
 }
@@ -694,7 +694,7 @@ const clearUserRecords = async () => {
     await fetch(`${getApiBaseUrl()}/user-records`, { method: 'DELETE' })
     ElMessage.success('用户答题记录已清空')
   } catch (error) {
-    console.error('清空用户答题记录失败:', error)
+
     ElMessage.error('清空用户答题记录失败，请稍后重试')
   }
 }
@@ -704,7 +704,7 @@ const clearLeaderboard = async () => {
     await fetch(`${getApiBaseUrl()}/leaderboard`, { method: 'DELETE' })
     ElMessage.success('排行榜数据已清空')
   } catch (error) {
-    console.error('清空排行榜数据失败:', error)
+
     ElMessage.error('清空排行榜数据失败，请稍后重试')
   }
 }
@@ -715,7 +715,7 @@ const clearGrades = async () => {
     await questionStore.loadData()
     ElMessage.success('年级数据已清空')
   } catch (error) {
-    console.error('清空年级数据失败:', error)
+
     ElMessage.error('清空年级数据失败，请稍后重试')
   }
 }
@@ -726,7 +726,7 @@ const clearClasses = async () => {
     await questionStore.loadData()
     ElMessage.success('班级数据已清空')
   } catch (error) {
-    console.error('清空班级数据失败:', error)
+
     ElMessage.error('清空班级数据失败，请稍后重试')
   }
 }
@@ -743,7 +743,7 @@ const backupData = async () => {
     URL.revokeObjectURL(url)
     ElMessage.success('数据备份成功')
   } catch (error) {
-    console.error('备份数据失败:', error)
+
     ElMessage.error('备份数据失败，请稍后重试')
   }
 }
@@ -754,7 +754,7 @@ const restoreData = async () => {
     // 然后上传文件到服务器
     ElMessage.info('请使用上传备份文件功能恢复数据')
   } catch (error) {
-    console.error('恢复数据失败:', error)
+
     ElMessage.error('恢复数据失败，请稍后重试')
   }
 }
@@ -771,7 +771,7 @@ const exportData = async () => {
     URL.revokeObjectURL(url)
     ElMessage.success('数据导出成功')
   } catch (error) {
-    console.error('导出数据失败:', error)
+
     ElMessage.error('导出数据失败，请稍后重试')
   }
 }
@@ -793,7 +793,7 @@ const uploadBackup = async (file) => {
       throw new Error('恢复数据失败')
     }
   } catch (error) {
-    console.error('上传备份文件失败:', error)
+
     ElMessage.error('上传备份文件失败，请稍后重试')
   }
 }
@@ -849,7 +849,6 @@ onMounted(async () => {
     isAuthenticated.value = false
   }
   
-  console.log('onMounted: passwordDialogVisible =', passwordDialogVisible.value)
-  console.log('onMounted: isAuthenticated =', isAuthenticated.value)
+
 })
 </script>

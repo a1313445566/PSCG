@@ -93,7 +93,7 @@ class ApiCache {
       this.set(key, data, ttl);
       return data;
     } catch (error) {
-      console.error('Fetch error:', error);
+      // console.error('Fetch error:', error);
       throw error;
     }
   }

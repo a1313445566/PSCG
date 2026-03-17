@@ -29,7 +29,7 @@ class AnalysisService {
         throw new Error('获取分析数据失败');
       }
     } catch (error) {
-      console.error('获取分析数据失败:', error);
+      // console.error('获取分析数据失败:', error);
       throw error;
     }
   }
@@ -68,7 +68,7 @@ class AnalysisService {
         throw new Error('获取学科题库失败');
       }
     } catch (error) {
-      console.error('获取学科题库失败:', error);
+      // console.error('获取学科题库失败:', error);
       throw error;
     }
   }
