@@ -18,7 +18,7 @@
           :key="question.id"
           :question="question"
           :question-number="index + 1"
-          :user-answer="userAnswers[question.id]"
+          :user-answer="formatUserAnswer(question.id, question.type)"
           :show-result="true"
         />
       </div>
@@ -87,6 +87,27 @@ const generateNewQuestions = () => {
   // 清除旧的答题数据
   localStorage.removeItem('quizData')
   router.push(`/quiz/${subjectId.value}/${subcategoryId.value}`)
+}
+
+// 格式化用户答案
+const formatUserAnswer = (questionId, questionType) => {
+  const userAnswer = userAnswers.value[questionId]
+  
+  if (questionType === 'multiple') {
+    // 如果是字符串格式，转换为数组
+    if (typeof userAnswer === 'string' && userAnswer.length > 0) {
+      return userAnswer.split('')
+    }
+    // 如果已经是数组，直接返回
+    if (Array.isArray(userAnswer)) {
+      return userAnswer
+    }
+    // 其他情况返回空数组
+    return []
+  } else {
+    // 单选题直接返回
+    return userAnswer
+  }
 }
 
 // 返回题库选择

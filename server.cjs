@@ -3,7 +3,6 @@ const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
 
-// 导入路由模块
 const dataRoutes = require('./routes/data');
 const settingsRoutes = require('./routes/settings');
 const subjectsRoutes = require('./routes/subjects');
@@ -14,29 +13,23 @@ const leaderboardRoutes = require('./routes/leaderboard');
 const answerRecordsRoutes = require('./routes/answer-records');
 const analysisRoutes = require('./routes/analysis');
 
-// 导入服务模块
 const db = require('./services/database');
 
 const app = express();
 const port = 3001;
 
-// 中间件
 app.use(cors());
 app.use(compression());
 app.use(express.json({ encoding: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' }));
 
-// 设置响应编码为 UTF-8 - 只对API请求设置JSON类型
 app.use((req, res, next) => {
-  // 只对实际的API端点设置JSON Content-Type，避免影响静态文件
   if (req.path.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8');
   }
   next();
 });
 
-// 静态文件服务 - 放在API路由之前
-// 主静态文件目录
 app.use(express.static(path.join(__dirname, 'dist'), {
   maxAge: '1d',
   etag: true,
@@ -44,7 +37,6 @@ app.use(express.static(path.join(__dirname, 'dist'), {
   immutable: false
 }));
 
-// 资产文件目录 - 更长的缓存时间
 app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
   maxAge: '30d',
   etag: true,
@@ -52,26 +44,22 @@ app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
   immutable: true
 }));
 
-// 音频文件目录
 app.use('/audio', express.static(path.join(__dirname, 'audio'), {
   maxAge: '7d',
   etag: true
 }));
 
-// 图片文件目录
 app.use('/images', express.static(path.join(__dirname, 'images'), {
   maxAge: '7d',
   etag: true
 }));
 
-// 字体文件目录
 app.use('/fonts', express.static(path.join(__dirname, 'fonts'), {
   maxAge: '30d',
   etag: true,
   immutable: true
 }));
 
-// API路由
 app.use('/api/data', dataRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/subjects', subjectsRoutes);
@@ -82,21 +70,42 @@ app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/answer-records', answerRecordsRoutes);
 app.use('/api/analysis', analysisRoutes);
 
-// 启动数据库连接
+process.on('uncaughtException', (err) => {
+  console.error(`未捕获异常:`, err.message);
+  if (err.message.includes('SQLITE_CANTOPEN') || err.message.includes('database is locked')) {
+    console.log('数据库错误，尝试重新连接...');
+  }
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error(`未处理 Promise 拒绝:`, reason);
+});
+
 async function startServer() {
   try {
     await db.connect();
     console.log('数据库连接成功');
     
-    // 启动服务器
-    app.listen(port, () => {
-      console.log(`服务器运行在 http://localhost:${port}`);
+    const server = app.listen(port, '0.0.0.0', () => {
+      console.log(`服务器运行在 http://0.0.0.0:${port}`);
     });
+
+    server.on('error', (err) => {
+      if (err.code === 'EADDRINUSE') {
+        console.error(`端口 ${port} 被占用`);
+      } else {
+        console.error('服务器错误:', err);
+      }
+    });
+
+    server.timeout = 60000;
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+    
   } catch (error) {
     console.error('服务器启动失败:', error);
     process.exit(1);
   }
 }
 
-// 启动服务器
 startServer();

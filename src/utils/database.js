@@ -3,7 +3,7 @@
 const isDevelopment = import.meta.env.DEV;
 const API_BASE_URL = isDevelopment 
   ? '/api'
-  : import.meta.env.VITE_API_URL || 'http://10.78.127.23:3001/api';
+  : import.meta.env.VITE_API_URL || '/api';
 
 // 导入缓存模块
 import { apiCache } from './apiCache.js';

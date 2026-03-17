@@ -32,8 +32,13 @@
       </div>
       
       <div class="action-buttons">
-        <button class="submit-btn" @click="submitAnswers" :disabled="!hasAnsweredAll">
-          🚩 提交答案
+        <button class="submit-btn" @click="submitAnswers" :disabled="!hasAnsweredAll || !canSubmit">
+          <template v-if="!canSubmit">
+            🔒 {{ countdown }}秒后可提交
+          </template>
+          <template v-else>
+            🚩 提交答案
+          </template>
         </button>
       </div>
     </div>
@@ -103,6 +108,12 @@ const startTime = ref(Date.now())
 const timeSpent = ref(0)
 let timerInterval = null
 
+// 提交冷却时间（10秒）
+const SUBMIT_COOLDOWN = 10
+const countdown = ref(SUBMIT_COOLDOWN)
+let countdownInterval = null
+const canSubmit = ref(false)
+
 // 格式化时间
 const formatTime = (seconds) => {
   const minutes = Math.floor(seconds / 60)
@@ -170,12 +181,20 @@ const submitAnswers = async () => {
             isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)
           }
         } else {
-          isCorrect = userAnswer === question.answer
+          if (Array.isArray(userAnswer)) {
+            // 如果用户答案是数组，取第一个元素
+            isCorrect = userAnswer[0] === question.answer
+          } else {
+            isCorrect = userAnswer === question.answer
+          }
         }
         
         // 处理答案格式
         const formattedUserAnswer = question.type === 'multiple' && Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
         const formattedCorrectAnswer = question.type === 'multiple' && Array.isArray(question.answer) ? question.answer.join('') : question.answer
+        
+        // 保存随机排序的选项
+        const shuffledOptions = question.shuffledOptions ? JSON.stringify(question.shuffledOptions) : null
         
         await fetch(`${getApiBaseUrl()}/answer-records/question-attempts`, {
           method: 'POST',
@@ -190,7 +209,8 @@ const submitAnswers = async () => {
             userAnswer: formattedUserAnswer,
             correctAnswer: formattedCorrectAnswer,
             isCorrect: isCorrect,
-            answerRecordId: successData.recordId
+            answerRecordId: successData.recordId,
+            shuffledOptions: shuffledOptions
           })
         })
       }
@@ -218,11 +238,27 @@ const startTimer = () => {
   }, 1000)
 }
 
+// 启动提交倒计时
+const startCountdown = () => {
+  countdownInterval = setInterval(() => {
+    countdown.value--
+    if (countdown.value <= 0) {
+      clearInterval(countdownInterval)
+      canSubmit.value = true
+      countdown.value = 0
+    }
+  }, 1000)
+}
+
 // 停止计时
 const stopTimer = () => {
   if (timerInterval) {
     clearInterval(timerInterval)
     timerInterval = null
+  }
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
   }
 }
 
@@ -258,6 +294,7 @@ onMounted(async () => {
   // 开始计时
   startTime.value = Date.now()
   startTimer()
+  startCountdown()
 })
 
 onUnmounted(() => {

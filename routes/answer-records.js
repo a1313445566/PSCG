@@ -85,7 +85,7 @@ router.get('/question-attempts/:userId', async (req, res) => {
     const { answerRecordId } = req.query;
     
     let query = `
-      SELECT qa.*, q.content, q.correct_answer, s.name as subject_name,
+      SELECT qa.*, q.content, q.correct_answer, q.options, q.type, qa.shuffled_options, s.name as subject_name,
              sc.name as subcategory_name
       FROM question_attempts qa
       LEFT JOIN questions q ON qa.question_id = q.id
@@ -253,11 +253,11 @@ router.post('/', async (req, res) => {
 // 保存题目尝试记录
 router.post('/question-attempts', async (req, res) => {
   try {
-    const { userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId } = req.body;
+    const { userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions } = req.body;
     
     await db.run(
-      'INSERT INTO question_attempts (user_id, question_id, subject_id, subcategory_id, user_answer, correct_answer, is_correct, answer_record_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId]
+      'INSERT INTO question_attempts (user_id, question_id, subject_id, subcategory_id, user_answer, correct_answer, is_correct, answer_record_id, shuffled_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      [userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions]
     );
     
     res.json({ success: true });

@@ -749,6 +749,31 @@
       </template>
     </el-dialog>
 
+    <!-- 题目详情对话框 -->
+    <el-dialog
+      v-model="questionDetailDialogVisible"
+      title="题目详情"
+      width="800px"
+    >
+      <div v-if="selectedQuestionDetail" class="question-detail">
+        <QuestionCard 
+          :question="selectedQuestionDetail"
+          :question-number="1"
+          :user-answer="selectedQuestionDetail.user_answer"
+          :show-result="true"
+        />
+      </div>
+      <div v-else class="loading">
+        <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
+        <p>加载中...</p>
+      </div>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="questionDetailDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
     <!-- 学科题库管理对话框 -->
     <el-dialog
       v-model="subcategoryDialogVisible"
@@ -1040,7 +1065,7 @@
   <el-dialog
     v-model="userDetailDialogVisible"
     :title="selectedUser?.name ? `${selectedUser.name}的记录 (ID: ${currentAnswerRecordId || '未知'})` : `${selectedUser?.grade || '-'}年级${selectedUser?.class || '-'}班的${selectedUser?.student_id || selectedUser?.user_id || '未知'}的记录 (ID: ${currentAnswerRecordId || '未知'})`"
-    width="1000px"
+    width="1400px"
   >
     <div v-if="selectedUser" class="user-detail-info" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px;">
       <div style="display: flex; gap: 20px; flex-wrap: wrap;">
@@ -1137,6 +1162,11 @@
             <el-table-column prop="created_at" label="时间" width="180" align="center">
               <template #default="{ row }">
                 {{ formatDate(row.created_at) }}
+              </template>
+            </el-table-column>
+            <el-table-column label="操作" width="120" align="center">
+              <template #default="{ row }">
+                <el-button type="primary" size="small" @click="showQuestionDetail(row)">查看详情</el-button>
               </template>
             </el-table-column>
             </el-table>
@@ -1731,6 +1761,7 @@ import { getApiBaseUrl } from '../utils/database'
 import { ElTabs, ElTabPane, ElInput, ElButton, ElTable, ElTableColumn, ElSelect, ElOption, ElDialog, ElForm, ElFormItem, ElPagination, ElCheckbox, ElUpload, ElMessage, ElMessageBox, ElTooltip, ElRow, ElCol, ElCard, ElProgress, ElTag, ElInputNumber, ElIcon } from 'element-plus'
 import { QuillEditor } from '@vueup/vue-quill'
 import AnalysisView from './AnalysisView.vue'
+import QuestionCard from '../components/quiz/QuestionCard.vue'
 import EditableContent from '../components/common/EditableContent.vue'
 
 import 'element-plus/dist/index.css'
@@ -3549,6 +3580,8 @@ const selectedUserQuestionAttempts = ref([])
 const activeUserDetailTab = ref('records')
 const dialogSource = ref('') // 记录对话框的来源：'userStats' 或 'recentRecords'
 const currentAnswerRecordId = ref(null) // 当前答题记录的ID
+const questionDetailDialogVisible = ref(false) // 题目详情对话框可见性
+const selectedQuestionDetail = ref(null) // 选中的题目详情
 
 
 
@@ -3760,7 +3793,96 @@ const loadUserQuestionAttempts = async (userId, answerRecordId = null) => {
         
         // 检查数据结构，确保包含我们需要的字段
         if (Array.isArray(data)) {
-
+          // 处理shuffled_options和options字段，确保它们被正确解析
+          data = data.map(attempt => {
+            // 处理options字段
+            if (attempt.options) {
+              try {
+                if (typeof attempt.options === 'string') {
+                  attempt.options = JSON.parse(attempt.options)
+                }
+              } catch (e) {
+                console.error('解析options失败:', e)
+                attempt.options = []
+              }
+            } else {
+              attempt.options = []
+            }
+            
+            // 处理shuffled_options字段
+            if (attempt.shuffled_options) {
+              try {
+                if (typeof attempt.shuffled_options === 'string') {
+                  attempt.shuffledOptions = JSON.parse(attempt.shuffled_options)
+                } else {
+                  attempt.shuffledOptions = attempt.shuffled_options
+                }
+              } catch (e) {
+                console.error('解析shuffled_options失败:', e)
+                attempt.shuffledOptions = attempt.options
+              }
+            } else {
+              attempt.shuffledOptions = attempt.options
+            }
+            
+            // 处理user_answer字段
+            if (attempt.user_answer) {
+              try {
+                if (typeof attempt.user_answer === 'string') {
+                  // 尝试解析为JSON数组
+                  try {
+                    const parsedAnswer = JSON.parse(attempt.user_answer)
+                    if (Array.isArray(parsedAnswer)) {
+                      attempt.user_answer = parsedAnswer
+                    }
+                  } catch (jsonError) {
+                    // 如果解析失败，尝试将字符串拆分为数组（比如"BC"拆分为["B", "C"]）
+                    // 但只对多选题这样做
+                    if (attempt.type === 'multiple') {
+                      attempt.user_answer = attempt.user_answer.split('')
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('解析user_answer失败:', e)
+              }
+            }
+            
+            // 处理correct_answer字段
+            if (attempt.correct_answer) {
+              try {
+                if (typeof attempt.correct_answer === 'string') {
+                  // 尝试解析为JSON数组
+                  try {
+                    const parsedAnswer = JSON.parse(attempt.correct_answer)
+                    if (Array.isArray(parsedAnswer)) {
+                      attempt.correct_answer = parsedAnswer
+                    }
+                  } catch (jsonError) {
+                    // 如果解析失败，尝试将字符串拆分为数组（比如"ACD"拆分为["A", "C", "D"]）
+                    // 但只对多选题这样做
+                    if (attempt.type === 'multiple') {
+                      attempt.correct_answer = attempt.correct_answer.split('')
+                    }
+                  }
+                }
+              } catch (e) {
+                console.error('解析correct_answer失败:', e)
+              }
+            }
+            
+            // 确保type字段存在
+            if (!attempt.type) {
+              // 根据题目内容判断是否为多选题
+              if (attempt.content && attempt.content.includes('[多选]')) {
+                attempt.type = 'multiple'
+              } else {
+                attempt.type = 'single'
+              }
+            }
+            
+            return attempt
+          })
         } else {
           console.error('响应数据不是数组:', data)
         }
@@ -3847,7 +3969,22 @@ const openUserDetailDialog = async (row) => {
   userDetailDialogVisible.value = true
 }
 
-
+// 显示题目详情
+const showQuestionDetail = (row) => {
+  console.log('showQuestionDetail - row:', row)
+  // 确保shuffledOptions被正确处理
+  const questionDetail = {
+    ...row,
+    shuffledOptions: row.shuffledOptions || row.options
+  }
+  // 确保type字段正确设置
+  if (!questionDetail.type) {
+    questionDetail.type = questionDetail.content && questionDetail.content.includes('[多选]') ? 'multiple' : 'single'
+  }
+  console.log('showQuestionDetail - questionDetail:', questionDetail)
+  selectedQuestionDetail.value = questionDetail
+  questionDetailDialogVisible.value = true
+}
 
 // 确认清空排行榜数据
 const confirmClearLeaderboard = () => {

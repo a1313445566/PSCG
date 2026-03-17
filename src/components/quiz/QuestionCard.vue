@@ -25,6 +25,7 @@
           <div class="option-label">{{ String.fromCharCode(65 + index) }}</div>
           <div class="option-text" v-html="option"></div>
           <div v-if="showResult" class="option-feedback">
+            <span v-if="isOptionSelected(String.fromCharCode(65 + index))" class="feedback-selected">●</span>
             <span v-if="isOptionCorrect(String.fromCharCode(65 + index))" class="feedback-correct">✓</span>
             <span v-else-if="isOptionWrong(String.fromCharCode(65 + index))" class="feedback-wrong">✗</span>
           </div>
@@ -88,10 +89,17 @@ const isOptionSelected = (option) => {
 
 // 检查选项是否是正确答案
 const isOptionCorrect = (option) => {
-  const correctAnswer = props.question.answer
+  const correctAnswer = props.question.correct_answer || props.question.answer
   
   if (props.question.type === 'multiple') {
-    const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('')
+    let correctAnswers
+    if (Array.isArray(correctAnswer)) {
+      correctAnswers = correctAnswer
+    } else if (typeof correctAnswer === 'string' && correctAnswer.length > 0) {
+      correctAnswers = correctAnswer.split('')
+    } else {
+      correctAnswers = []
+    }
     return correctAnswers.includes(option)
   } else {
     return option === correctAnswer
@@ -231,6 +239,16 @@ const selectOption = (option) => {
   background-color: #FFEBEE;
 }
 
+.option-item.selected.correct {
+  border-color: #4CAF50;
+  background-color: #E8F5E9;
+}
+
+.option-item.selected.wrong {
+  border-color: #F44336;
+  background-color: #FFEBEE;
+}
+
 .option-label {
   width: 30px;
   height: 30px;
@@ -258,6 +276,16 @@ const selectOption = (option) => {
   color: white;
 }
 
+.option-item.selected.correct .option-label {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.option-item.selected.wrong .option-label {
+  background-color: #F44336;
+  color: white;
+}
+
 .option-text {
   flex: 1;
   font-size: 1rem;
@@ -267,6 +295,12 @@ const selectOption = (option) => {
 .option-feedback {
   font-size: 1.2rem;
   font-weight: bold;
+  display: flex;
+  gap: 0.3rem;
+}
+
+.feedback-selected {
+  color: #4A90E2;
 }
 
 .feedback-correct {

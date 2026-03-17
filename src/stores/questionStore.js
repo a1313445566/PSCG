@@ -374,12 +374,30 @@ export const useQuizStore = defineStore('quiz', {
         
         // 只有在随机排序时才更新答案标签
         if (randomizeAnswers && answer) {
-          const originalAnswerIndex = answer.charCodeAt(0) - 65
-          if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
-            const originalAnswerContent = optionContents[originalAnswerIndex]
-            const newIndex = shuffledContents.indexOf(originalAnswerContent)
-            if (newIndex !== -1) {
-              newQuestion.answer = String.fromCharCode(65 + newIndex)
+          if (question.type === 'multiple') {
+            // 处理多选题答案
+            const originalAnswerChars = Array.isArray(answer) ? answer : answer.split('')
+            const newAnswerChars = originalAnswerChars.map(originalAnswerChar => {
+              const originalAnswerIndex = originalAnswerChar.charCodeAt(0) - 65
+              if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
+                const originalAnswerContent = optionContents[originalAnswerIndex]
+                const newIndex = shuffledContents.indexOf(originalAnswerContent)
+                if (newIndex !== -1) {
+                  return String.fromCharCode(65 + newIndex)
+                }
+              }
+              return originalAnswerChar
+            }).filter(char => char !== undefined)
+            newQuestion.answer = newAnswerChars
+          } else {
+            // 处理单选题答案
+            const originalAnswerIndex = answer.charCodeAt(0) - 65
+            if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
+              const originalAnswerContent = optionContents[originalAnswerIndex]
+              const newIndex = shuffledContents.indexOf(originalAnswerContent)
+              if (newIndex !== -1) {
+                newQuestion.answer = String.fromCharCode(65 + newIndex)
+              }
             }
           }
         }
@@ -450,12 +468,30 @@ export const useQuizStore = defineStore('quiz', {
         
         // 只有在随机排序时才更新答案标签
         if (randomizeAnswers && answer) {
-          const originalAnswerIndex = answer.charCodeAt(0) - 65
-          if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
-            const originalAnswerContent = optionContents[originalAnswerIndex]
-            const newIndex = shuffledContents.indexOf(originalAnswerContent)
-            if (newIndex !== -1) {
-              newQuestion.answer = String.fromCharCode(65 + newIndex)
+          if (question.type === 'multiple') {
+            // 处理多选题答案
+            const originalAnswerChars = Array.isArray(answer) ? answer : answer.split('')
+            const newAnswerChars = originalAnswerChars.map(originalAnswerChar => {
+              const originalAnswerIndex = originalAnswerChar.charCodeAt(0) - 65
+              if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
+                const originalAnswerContent = optionContents[originalAnswerIndex]
+                const newIndex = shuffledContents.indexOf(originalAnswerContent)
+                if (newIndex !== -1) {
+                  return String.fromCharCode(65 + newIndex)
+                }
+              }
+              return originalAnswerChar
+            }).filter(char => char !== undefined)
+            newQuestion.answer = newAnswerChars
+          } else {
+            // 处理单选题答案
+            const originalAnswerIndex = answer.charCodeAt(0) - 65
+            if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
+              const originalAnswerContent = optionContents[originalAnswerIndex]
+              const newIndex = shuffledContents.indexOf(originalAnswerContent)
+              if (newIndex !== -1) {
+                newQuestion.answer = String.fromCharCode(65 + newIndex)
+              }
             }
           }
         }
@@ -517,7 +553,12 @@ export const useQuizStore = defineStore('quiz', {
           }
         } else {
           // 对于单选题，直接比较
-          isCorrect = userAnswer === correctAnswer
+          if (Array.isArray(userAnswer)) {
+            // 如果用户答案是数组，取第一个元素
+            isCorrect = userAnswer[0] === correctAnswer
+          } else {
+            isCorrect = userAnswer === correctAnswer
+          }
         }
         
         if (isCorrect) {
