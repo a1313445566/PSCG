@@ -8,7 +8,7 @@
     </div>
     
     <div class="question-content">
-      <p class="question-text">{{ question.content }}</p>
+        <div class="question-text" v-html="question.content"></div>
       
       <div class="options">
         <div 
@@ -25,9 +25,15 @@
           <div class="option-label">{{ String.fromCharCode(65 + index) }}</div>
           <div class="option-text" v-html="option"></div>
           <div v-if="showResult" class="option-feedback">
-            <span v-if="isOptionSelected(String.fromCharCode(65 + index))" class="feedback-selected">●</span>
-            <span v-if="isOptionCorrect(String.fromCharCode(65 + index))" class="feedback-correct">✓</span>
-            <span v-else-if="isOptionWrong(String.fromCharCode(65 + index))" class="feedback-wrong">✗</span>
+            <span v-if="isOptionSelected(String.fromCharCode(65 + index))" class="feedback-selected">
+              你的选择
+            </span>
+            <span v-if="isOptionCorrect(String.fromCharCode(65 + index))" class="feedback-correct">
+              正确答案
+            </span>
+            <span v-else-if="isOptionWrong(String.fromCharCode(65 + index))" class="feedback-wrong">
+              错误选择
+            </span>
           </div>
         </div>
       </div>
@@ -293,22 +299,69 @@ const selectOption = (option) => {
 }
 
 .option-feedback {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
   font-weight: bold;
   display: flex;
-  gap: 0.3rem;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
 }
 
 .feedback-selected {
   color: #4A90E2;
+  background-color: rgba(74, 144, 226, 0.1);
+  padding: 0.2rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid #4A90E2;
+  white-space: nowrap;
 }
 
 .feedback-correct {
   color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.1);
+  padding: 0.2rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid #4CAF50;
+  white-space: nowrap;
 }
 
 .feedback-wrong {
   color: #F44336;
+  background-color: rgba(244, 67, 54, 0.1);
+  padding: 0.2rem 0.8rem;
+  border-radius: 12px;
+  border: 1px solid #F44336;
+  white-space: nowrap;
+}
+
+.option-item.selected {
+  border-color: #4A90E2;
+  background-color: #E3F2FD;
+  box-shadow: 0 0 0 2px rgba(74, 144, 226, 0.3);
+}
+
+.option-item.correct {
+  border-color: #4CAF50;
+  background-color: #E8F5E9;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+.option-item.wrong {
+  border-color: #F44336;
+  background-color: #FFEBEE;
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
+}
+
+.option-item.selected.correct {
+  border-color: #4CAF50;
+  background-color: #E8F5E9;
+  box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.3);
+}
+
+.option-item.selected.wrong {
+  border-color: #F44336;
+  background-color: #FFEBEE;
+  box-shadow: 0 0 0 2px rgba(244, 67, 54, 0.3);
 }
 
 /* 答案解析样式 */

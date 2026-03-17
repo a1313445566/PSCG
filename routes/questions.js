@@ -144,7 +144,43 @@ router.post('/', async (req, res) => {
     
     // 返回新添加的题目
     const newQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [result.lastID]);
-    res.json(newQuestion);
+    
+    // 格式化题目数据
+    let formattedOptions = [];
+    let correctAnswer = newQuestion.correct_answer;
+    
+    try {
+      formattedOptions = JSON.parse(newQuestion.options);
+    } catch (error) {
+      console.error('解析选项失败:', error);
+      formattedOptions = [];
+    }
+    
+    try {
+      // 尝试解析answer字段，处理JSON字符串格式的答案
+      const parsedAnswer = JSON.parse(newQuestion.correct_answer);
+      if (typeof parsedAnswer === 'string') {
+        correctAnswer = parsedAnswer;
+      }
+    } catch (error) {
+      // 如果解析失败，使用原始值
+    }
+    
+    const formattedQuestion = {
+      id: newQuestion.id,
+      subjectId: newQuestion.subject_id,
+      subcategoryId: newQuestion.subcategory_id,
+      content: newQuestion.content,
+      type: newQuestion.type,
+      options: formattedOptions,
+      answer: correctAnswer,
+      explanation: newQuestion.explanation,
+      audio: newQuestion.audio_url,
+      image: newQuestion.image_url,
+      createdAt: newQuestion.created_at
+    };
+    
+    res.json(formattedQuestion);
   } catch (error) {
     console.error('添加题目失败:', error);
     res.status(500).json({ error: '添加题目失败' });
@@ -167,7 +203,45 @@ router.put('/:id', async (req, res) => {
       [subjectId, subcategoryId, content, type, JSON.stringify(options), answer, explanation, audio, image, id]
     );
     
-    res.json({ success: true });
+    // 返回更新后的题目
+    const updatedQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [id]);
+    
+    // 格式化题目数据
+    let formattedOptions = [];
+    let correctAnswer = updatedQuestion.correct_answer;
+    
+    try {
+      formattedOptions = JSON.parse(updatedQuestion.options);
+    } catch (error) {
+      console.error('解析选项失败:', error);
+      formattedOptions = [];
+    }
+    
+    try {
+      // 尝试解析answer字段，处理JSON字符串格式的答案
+      const parsedAnswer = JSON.parse(updatedQuestion.correct_answer);
+      if (typeof parsedAnswer === 'string') {
+        correctAnswer = parsedAnswer;
+      }
+    } catch (error) {
+      // 如果解析失败，使用原始值
+    }
+    
+    const formattedQuestion = {
+      id: updatedQuestion.id,
+      subjectId: updatedQuestion.subject_id,
+      subcategoryId: updatedQuestion.subcategory_id,
+      content: updatedQuestion.content,
+      type: updatedQuestion.type,
+      options: formattedOptions,
+      answer: correctAnswer,
+      explanation: updatedQuestion.explanation,
+      audio: updatedQuestion.audio_url,
+      image: updatedQuestion.image_url,
+      createdAt: updatedQuestion.created_at
+    };
+    
+    res.json(formattedQuestion);
   } catch (error) {
     console.error('更新题目失败:', error);
     res.status(500).json({ error: '更新题目失败' });

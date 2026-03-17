@@ -12,7 +12,15 @@ import {
   deleteQuestion,
   importLocalData,
   updateSubject as updateSubjectApi,
-  updateSubcategory as updateSubcategoryApi
+  updateSubcategory as updateSubcategoryApi,
+  getGrades,
+  getClasses,
+  addGrade,
+  updateGrade,
+  deleteGrade,
+  addClass,
+  updateClass,
+  deleteClass
 } from '../utils/database'
 import { getApiBaseUrl } from '../utils/database'
 import { apiCache } from '../utils/apiCache'
@@ -22,6 +30,10 @@ export const useQuestionStore = defineStore('question', {
   state: () => ({
     subjects: [],
     questions: [],
+    grades: [],
+    classes: [],
+    userStats: [],
+    recentRecords: [],
     isLoading: false,
     error: null
   }),
@@ -62,25 +74,18 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         
-        // 清除API缓存，确保获取最新数据
-        console.log('Clearing API cache...');
-        apiCache.clear();
-        console.log('API cache cleared');
-        
-        // 直接使用fetch而不是apiCache，确保每次都从服务器获取最新数据
-        console.log('Fetching subjects from server...');
-        const subjectsResponse = await fetch(`${getApiBaseUrl()}/subjects`);
-        const subjectsData = await subjectsResponse.json();
-        console.log('Subjects fetched:', subjectsData);
-        
-        console.log('Fetching questions from server...');
-        const questionsResponse = await fetch(`${getApiBaseUrl()}/questions?limit=1000`);
-        const questionsData = await questionsResponse.json();
-        console.log('Questions fetched:', questionsData.length);
+        // 并行加载所有数据，提高性能
+        const [subjectsData, questionsData, gradesData, classesData] = await Promise.all([
+          fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()),
+          fetch(`${getApiBaseUrl()}/questions?limit=1000`).then(res => res.json()),
+          fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()),
+          fetch(`${getApiBaseUrl()}/classes`).then(res => res.json())
+        ]);
         
         this.subjects = subjectsData
         this.questions = questionsData
-        console.log('Data loaded successfully');
+        this.grades = gradesData
+        this.classes = classesData
       } catch (error) {
         this.error = error.message
         console.error('加载数据失败:', error)
@@ -96,8 +101,8 @@ export const useQuestionStore = defineStore('question', {
         this.error = null
         const newQuestion = await addQuestion(questionData)
         if (newQuestion) {
-          // 重新加载题目数据，确保列表更新
-          await this.loadData()
+          // 使用展开运算符创建新数组，确保响应式更新
+          this.questions = [...this.questions, newQuestion]
           return newQuestion
         } else {
           throw new Error('添加题目失败')
@@ -116,11 +121,13 @@ export const useQuestionStore = defineStore('question', {
       try {
         this.isLoading = true
         this.error = null
-        const result = await updateQuestion(questionData)
-        if (result) {
-          // 重新加载题目数据，确保列表更新
-          await this.loadData()
-          return result
+        const updatedQuestion = await updateQuestion(questionData)
+        if (updatedQuestion) {
+          // 使用展开运算符创建新数组，确保响应式更新
+          this.questions = this.questions.map(q => 
+            q.id === questionData.id ? updatedQuestion : q
+          )
+          return updatedQuestion
         } else {
           throw new Error('更新题目失败')
         }
@@ -140,8 +147,8 @@ export const useQuestionStore = defineStore('question', {
         this.error = null
         const result = await deleteQuestion(id)
         if (result) {
-          // 重新加载题目数据，确保列表更新
-          await this.loadData()
+          // 使用filter创建新数组，确保响应式更新
+          this.questions = this.questions.filter(q => q.id !== id)
         }
       } catch (error) {
         this.error = error.message
@@ -158,8 +165,8 @@ export const useQuestionStore = defineStore('question', {
         this.error = null
         const newSubject = await addSubject(subjectName, iconIndex)
         if (newSubject) {
-          // 重新加载数据，确保与服务器保持一致
-          await this.loadData()
+          // 直接添加到本地状态，避免重新加载所有数据
+          this.subjects.push(newSubject)
         }
       } catch (error) {
         this.error = error.message
@@ -176,8 +183,11 @@ export const useQuestionStore = defineStore('question', {
         this.error = null
         const result = await updateSubjectApi(subjectId, subjectName, iconIndex)
         if (result) {
-          // 重新加载数据，确保与服务器保持一致
-          await this.loadData()
+          // 直接更新本地状态，避免重新加载所有数据
+          const index = this.subjects.findIndex(s => s.id === subjectId)
+          if (index !== -1) {
+            this.subjects[index] = { ...this.subjects[index], name: subjectName, iconIndex }
+          }
         }
       } catch (error) {
         this.error = error.message
@@ -192,10 +202,30 @@ export const useQuestionStore = defineStore('question', {
       try {
         this.isLoading = true
         this.error = null
+        
+        // 先删除该学科下的所有题目
+        const subjectQuestions = this.questions.filter(q => {
+          const qSubjectId = q.subjectId || q.subject_id
+          return qSubjectId === id
+        })
+        
+        for (const question of subjectQuestions) {
+          await this.deleteQuestion(question.id)
+        }
+        
+        // 然后删除该学科下的所有题库（子分类）
+        const subject = this.subjects.find(s => s.id === id)
+        if (subject && subject.subcategories) {
+          for (const subcategory of subject.subcategories) {
+            await this.deleteSubcategory(id, subcategory.id)
+          }
+        }
+        
+        // 最后删除学科本身
         const result = await deleteSubject(id)
         if (result) {
-          // 重新加载数据，确保与服务器保持一致
-          await this.loadData()
+          // 直接从本地状态中删除，避免重新加载所有数据
+          this.subjects = this.subjects.filter(s => s.id !== id)
         }
       } catch (error) {
         this.error = error.message
@@ -212,8 +242,14 @@ export const useQuestionStore = defineStore('question', {
         this.error = null
         const newSubcategory = await addSubcategory(subjectId, name, iconIndex)
         if (newSubcategory) {
-          // 重新加载数据，确保与服务器保持一致
-          await this.loadData()
+          // 直接添加到本地状态，避免重新加载所有数据
+          const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
+          if (subjectIndex !== -1) {
+            if (!this.subjects[subjectIndex].subcategories) {
+              this.subjects[subjectIndex].subcategories = []
+            }
+            this.subjects[subjectIndex].subcategories.push(newSubcategory)
+          }
         }
       } catch (error) {
         this.error = error.message
@@ -230,8 +266,18 @@ export const useQuestionStore = defineStore('question', {
         this.error = null
         const result = await updateSubcategoryApi(subcategoryId, name, iconIndex)
         if (result) {
-          // 重新加载数据，确保与服务器保持一致
-          await this.loadData()
+          // 直接更新本地状态，避免重新加载所有数据
+          const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
+          if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
+            const subcategoryIndex = this.subjects[subjectIndex].subcategories.findIndex(sc => sc.id === subcategoryId)
+            if (subcategoryIndex !== -1) {
+              this.subjects[subjectIndex].subcategories[subcategoryIndex] = {
+                ...this.subjects[subjectIndex].subcategories[subcategoryIndex],
+                name,
+                iconIndex
+              }
+            }
+          }
         }
       } catch (error) {
         this.error = error.message
@@ -246,14 +292,44 @@ export const useQuestionStore = defineStore('question', {
       try {
         this.isLoading = true
         this.error = null
+        
+        // 先删除该子分类下的所有题目
+        const subcategoryQuestions = this.questions.filter(q => {
+          const qSubcategoryId = q.subcategoryId || q.subcategory_id
+          return qSubcategoryId === id
+        })
+        
+        for (const question of subcategoryQuestions) {
+          await this.deleteQuestion(question.id)
+        }
+        
+        // 然后删除子分类本身
         const result = await deleteSubcategory(id)
         if (result) {
-          // 重新加载数据，确保与服务器保持一致
-          await this.loadData()
+          // 直接从本地状态中删除，避免重新加载所有数据
+          const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
+          if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
+            this.subjects[subjectIndex].subcategories = this.subjects[subjectIndex].subcategories.filter(sc => sc.id !== id)
+          }
         }
       } catch (error) {
         this.error = error.message
         console.error('删除子分类失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 更新学科列表
+    async updateSubjects(updatedSubjects) {
+      try {
+        this.isLoading = true
+        this.error = null
+        // 重新加载数据，确保与服务器保持一致
+        await this.loadData()
+      } catch (error) {
+        this.error = error.message
+        console.error('更新学科列表失败:', error)
       } finally {
         this.isLoading = false
       }
@@ -274,6 +350,120 @@ export const useQuestionStore = defineStore('question', {
         this.error = error.message
         console.error('导入数据失败:', error)
         return { success: false, error: error.message }
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 添加年级
+    async addGrade(gradeName) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const newGrade = await addGrade(gradeName)
+        if (newGrade) {
+          // 直接添加到本地状态，避免重新加载所有数据
+          this.grades.push(newGrade)
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('添加年级失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 更新年级
+    async updateGrade(gradeId, gradeName) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const result = await updateGrade(gradeId, gradeName)
+        if (result) {
+          // 直接更新本地状态，避免重新加载所有数据
+          const index = this.grades.findIndex(g => g.id === gradeId)
+          if (index !== -1) {
+            this.grades[index] = { ...this.grades[index], name: gradeName }
+          }
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('更新年级失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 删除年级
+    async deleteGrade(gradeId) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const result = await deleteGrade(gradeId)
+        if (result) {
+          // 直接从本地状态中删除，避免重新加载所有数据
+          this.grades = this.grades.filter(g => g.id !== gradeId)
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('删除年级失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 添加班级
+    async addClass(className) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const newClass = await addClass(className)
+        if (newClass) {
+          // 直接添加到本地状态，避免重新加载所有数据
+          this.classes.push(newClass)
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('添加班级失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 更新班级
+    async updateClass(classId, className) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const result = await updateClass(classId, className)
+        if (result) {
+          // 直接更新本地状态，避免重新加载所有数据
+          const index = this.classes.findIndex(c => c.id === classId)
+          if (index !== -1) {
+            this.classes[index] = { ...this.classes[index], name: className }
+          }
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('更新班级失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 删除班级
+    async deleteClass(classId) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const result = await deleteClass(classId)
+        if (result) {
+          // 直接从本地状态中删除，避免重新加载所有数据
+          this.classes = this.classes.filter(c => c.id !== classId)
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('删除班级失败:', error)
       } finally {
         this.isLoading = false
       }
@@ -357,11 +547,8 @@ export const useQuizStore = defineStore('quiz', {
           shuffledContents = [...optionContents].sort(() => 0.5 - Math.random())
         }
         
-        // 重新添加标签
-        const shuffledOptions = shuffledContents.map((content, index) => {
-          const label = String.fromCharCode(65 + index) // A, B, C, D...
-          return `${label}. ${content}`
-        })
+        // 不添加标签，标签由组件负责显示
+        const shuffledOptions = shuffledContents
         
         const newQuestion = {
           ...question,
@@ -451,11 +638,8 @@ export const useQuizStore = defineStore('quiz', {
           shuffledContents = [...optionContents].sort(() => 0.5 - Math.random())
         }
         
-        // 重新添加标签
-        const shuffledOptions = shuffledContents.map((content, index) => {
-          const label = String.fromCharCode(65 + index)
-          return `${label}. ${content}`
-        })
+        // 不添加标签，标签由组件负责显示
+        const shuffledOptions = shuffledContents
         
         const newQuestion = {
           ...question,

@@ -46,7 +46,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
@@ -242,9 +242,15 @@ const startTimer = () => {
 const startCountdown = () => {
   countdownInterval = setInterval(() => {
     countdown.value--
+    console.log('倒计时:', countdown.value)
     if (countdown.value <= 0) {
       clearInterval(countdownInterval)
-      canSubmit.value = true
+      countdownInterval = null
+      // 使用 nextTick 确保响应式更新
+      nextTick(() => {
+        canSubmit.value = true
+        console.log('倒计时结束，canSubmit设为true')
+      })
       countdown.value = 0
     }
   }, 1000)

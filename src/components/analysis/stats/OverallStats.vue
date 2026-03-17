@@ -8,13 +8,13 @@
       <div class="display-mode">
         <span>显示模式：</span>
         <el-radio-group v-model="showMode" @change="updateShowMode" size="large">
-          <el-radio-button label="both" border>
+          <el-radio-button value="both" border>
             <i class="el-icon-data-line"></i> 图表+表格
           </el-radio-button>
-          <el-radio-button label="chart" border>
+          <el-radio-button value="chart" border>
             <i class="el-icon-pie-chart"></i> 仅图表
           </el-radio-button>
-          <el-radio-button label="table" border>
+          <el-radio-button value="table" border>
             <i class="el-icon-notebook-2"></i> 仅表格
           </el-radio-button>
         </el-radio-group>

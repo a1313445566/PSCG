@@ -281,3 +281,115 @@ export const getClasses = async () => {
     return []
   }
 }
+
+// 添加年级
+export const addGrade = async (name) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/grades`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    })
+    if (!response.ok) {
+      throw new Error('添加年级失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('添加年级失败:', error)
+    return null
+  }
+}
+
+// 更新年级
+export const updateGrade = async (gradeId, name) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/grades/${gradeId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    })
+    if (!response.ok) {
+      throw new Error('更新年级失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('更新年级失败:', error)
+    return null
+  }
+}
+
+// 删除年级
+export const deleteGrade = async (gradeId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/grades/${gradeId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('删除年级失败')
+    }
+    return true
+  } catch (error) {
+    console.error('删除年级失败:', error)
+    return false
+  }
+}
+
+// 添加班级
+export const addClass = async (name) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/classes`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    })
+    if (!response.ok) {
+      throw new Error('添加班级失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('添加班级失败:', error)
+    return null
+  }
+}
+
+// 更新班级
+export const updateClass = async (classId, name) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/classes/${classId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ name })
+    })
+    if (!response.ok) {
+      throw new Error('更新班级失败')
+    }
+    return await response.json()
+  } catch (error) {
+    console.error('更新班级失败:', error)
+    return null
+  }
+}
+
+// 删除班级
+export const deleteClass = async (classId) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/classes/${classId}`, {
+      method: 'DELETE'
+    })
+    if (!response.ok) {
+      throw new Error('删除班级失败')
+    }
+    return true
+  } catch (error) {
+    console.error('删除班级失败:', error)
+    return false
+  }
+}

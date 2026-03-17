@@ -1,6 +1,6 @@
 <template>
   <div class="subcategory-card" @click="selectSubcategory">
-    <div class="subcategory-icon">📚</div>
+    <div class="subcategory-icon">{{ subjectIcons[subcategory.iconIndex || 0] }}</div>
     <div class="subcategory-name">{{ subcategory.name }}</div>
     <div class="subcategory-info">
       <span class="question-count">{{ getQuestionCount(subcategory.id) }} 题</span>
@@ -28,6 +28,9 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['select'])
+
+// 学科图标
+const subjectIcons = ['📚', '🔢', '🔬', '🎨', '🎵', '⚽', '🌍', '🖥️', '📝', '🌟']
 
 // 计算该题库的题目数量
 const getQuestionCount = (subcategoryId) => {

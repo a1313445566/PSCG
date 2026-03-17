@@ -27,7 +27,7 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 // 学科图标
-const subjectIcons = ['📚', '🔢', '🌍', '🔬', '🎨', '🎵', '⚽', '⚖️']
+const subjectIcons = ['📚', '🔢', '🔬', '🎨', '🎵', '⚽', '🌍', '🖥️', '📝', '🌟']
 
 // 计算该学科的题目数量
 const getQuestionCount = (subjectId) => {

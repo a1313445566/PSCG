@@ -84,7 +84,13 @@ router.post('/', async (req, res) => {
     
     // 返回新添加的学科
     const newSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [result.lastID]);
-    res.json(newSubject);
+    // 转换字段名为驼峰命名
+    const formattedSubject = {
+      id: newSubject.id,
+      name: newSubject.name,
+      iconIndex: newSubject.icon_index
+    };
+    res.json(formattedSubject);
   } catch (error) {
     console.error('添加学科失败:', error);
     res.status(500).json({ error: '添加学科失败' });
@@ -107,7 +113,15 @@ router.put('/:id', async (req, res) => {
     // 清除缓存
     cacheService.del('subjects');
     
-    res.json({ success: true });
+    // 获取更新后的学科
+    const updatedSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [id]);
+    // 转换字段名为驼峰命名
+    const formattedSubject = {
+      id: updatedSubject.id,
+      name: updatedSubject.name,
+      iconIndex: updatedSubject.icon_index
+    };
+    res.json(formattedSubject);
   } catch (error) {
     console.error('更新学科失败:', error);
     res.status(500).json({ error: '更新学科失败' });
@@ -150,7 +164,14 @@ router.post('/:subjectId/subcategories', async (req, res) => {
     
     // 返回新添加的子分类
     const newSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [result.lastID]);
-    res.json(newSubcategory);
+    // 转换字段名为驼峰命名
+    const formattedSubcategory = {
+      id: newSubcategory.id,
+      subjectId: newSubcategory.subject_id,
+      name: newSubcategory.name,
+      iconIndex: newSubcategory.icon_index
+    };
+    res.json(formattedSubcategory);
   } catch (error) {
     console.error('添加子分类失败:', error);
     res.status(500).json({ error: '添加子分类失败' });
@@ -179,7 +200,16 @@ router.put('/subcategories/:id', async (req, res) => {
       cacheService.del(cacheService.generateSubcategoryKey(subcategory.subject_id));
     }
     
-    res.json({ success: true });
+    // 获取更新后的子分类
+    const updatedSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id]);
+    // 转换字段名为驼峰命名
+    const formattedSubcategory = {
+      id: updatedSubcategory.id,
+      subjectId: updatedSubcategory.subject_id,
+      name: updatedSubcategory.name,
+      iconIndex: updatedSubcategory.icon_index
+    };
+    res.json(formattedSubcategory);
   } catch (error) {
     console.error('更新子分类失败:', error);
     res.status(500).json({ error: '更新子分类失败' });
