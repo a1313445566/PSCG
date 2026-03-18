@@ -5,12 +5,21 @@
 ### 1.1 数据备份
 - **请求方法**：POST
 - **API路径**：`/api/data/backup`
-- **功能**：备份所有数据到JSON文件
+- **功能**：备份所有数据到JSON文件，包括音频和图片文件
 - **响应**：
   ```json
   {
     "success": true,
-    "data": {"subjects": [...], "subcategories": [...], "questions": [...], "users": [...], "answer_records": [...], "question_attempts": [...]}
+    "data": {
+      "subjects": [...], 
+      "subcategories": [...], 
+      "questions": [...], 
+      "users": [...], 
+      "answer_records": [...], 
+      "question_attempts": [...],
+      "audioFiles": [...],
+      "imageFiles": [...]
+    }
   }
   ```
 
@@ -20,10 +29,19 @@
 - **请求体**：
   ```json
   {
-    "data": {"subjects": [...], "subcategories": [...], "questions": [...], "users": [...], "answer_records": [...], "question_attempts": [...]}
+    "data": {
+      "subjects": [...], 
+      "subcategories": [...], 
+      "questions": [...], 
+      "users": [...], 
+      "answer_records": [...], 
+      "question_attempts": [...],
+      "audioFiles": [...],
+      "imageFiles": [...]
+    }
   }
   ```
-- **功能**：从JSON文件恢复数据
+- **功能**：从JSON文件恢复数据，包括音频和图片文件
 - **响应**：
   ```json
   {
@@ -40,7 +58,7 @@
   ```json
   {
     "success": true,
-    "data": {"subjects": [...], "subcategories": [...], "questions": [...], "users": [...], "answer_records": [...]}
+    "data": {"subjects": [...], "subcategories": [...], "questions": [...], "users": [...], "answer_records": [...], "question_attempts": [...]}
   }
   ```
 
@@ -185,7 +203,7 @@
     "type": "single",
     "content": "题目内容",
     "options": ["选项1", "选项2", "选项3", "选项4"],
-    "correctAnswer": "A",
+    "answer": "A",
     "explanation": "解析",
     "audio": "audio/file.mp3",
     "image": "images/file.jpg"
@@ -195,8 +213,17 @@
 - **响应**：
   ```json
   {
-    "success": true,
-    "id": 1
+    "id": 1,
+    "subjectId": 1,
+    "subcategoryId": 1,
+    "type": "single",
+    "content": "题目内容",
+    "options": ["选项1", "选项2", "选项3", "选项4"],
+    "answer": "A",
+    "explanation": "解析",
+    "audio": "audio/file.mp3",
+    "image": "images/file.jpg",
+    "createdAt": "2023-10-01 10:00:00"
   }
   ```
 
@@ -211,7 +238,7 @@
     "type": "single",
     "content": "题目内容",
     "options": ["选项1", "选项2", "选项3", "选项4"],
-    "correctAnswer": "A",
+    "answer": "A",
     "explanation": "解析",
     "audio": "audio/file.mp3",
     "image": "images/file.jpg"
@@ -221,7 +248,17 @@
 - **响应**：
   ```json
   {
-    "success": true
+    "id": 1,
+    "subjectId": 1,
+    "subcategoryId": 1,
+    "type": "single",
+    "content": "题目内容",
+    "options": ["选项1", "选项2", "选项3", "选项4"],
+    "answer": "A",
+    "explanation": "解析",
+    "audio": "audio/file.mp3",
+    "image": "images/file.jpg",
+    "createdAt": "2023-10-01 10:00:00"
   }
   ```
 
@@ -516,11 +553,9 @@
   ]
   ```
 
-## 9. 题目尝试记录相关
-
-### 9.1 获取用户题目尝试记录
+### 8.3 获取用户题目尝试记录
 - **请求方法**：GET
-- **API路径**：`/api/question-attempts/:userId`
+- **API路径**：`/api/answer-records/question-attempts/:userId`
 - **查询参数**：
   - `answerRecordId`：答题记录ID
 - **功能**：获取指定用户的题目尝试记录
@@ -543,9 +578,9 @@
   ]
   ```
 
-## 10. 错误率分析相关
+## 9. 错误率分析相关
 
-### 10.1 获取错误率较高的题目
+### 9.1 获取错误率较高的题目
 - **请求方法**：GET
 - **API路径**：`/api/error-prone-questions`
 - **查询参数**：
@@ -570,9 +605,9 @@
   ]
   ```
 
-## 11. 数据分析相关
+## 10. 数据分析相关
 
-### 11.1 获取数据分析数据
+### 10.1 获取数据分析数据
 - **请求方法**：GET
 - **API路径**：`/api/analysis`
 - **查询参数**：
@@ -594,7 +629,7 @@
   }
   ```
 
-### 11.2 下载分析报告
+### 10.2 下载分析报告
 - **请求方法**：GET
 - **API路径**：`/api/analysis/download`
 - **查询参数**：
@@ -602,9 +637,9 @@
 - **功能**：下载Excel格式的分析报告
 - **响应**：Excel文件
 
-## 12. 用户统计相关
+## 11. 用户统计相关
 
-### 12.1 获取用户统计数据
+### 11.1 获取用户统计数据
 - **请求方法**：GET
 - **API路径**：`/api/user-stats/:userId`
 - **功能**：获取指定用户的统计数据
@@ -629,43 +664,30 @@
   }
   ```
 
-## 13. 文件上传相关
+## 12. 文件上传相关
 
-### 13.1 上传音频文件
+### 12.1 上传图片文件
 - **请求方法**：POST
-- **API路径**：`/api/upload-audio`
-- **请求体**：FormData，包含音频文件
-- **功能**：上传音频文件
-- **响应**：
-  ```json
-  {
-    "filePath": "audio/file.mp3"
-  }
-  ```
-
-### 13.2 上传图片文件
-- **请求方法**：POST
-- **API路径**：`/api/upload-image`
+- **API路径**：`/api/upload/image`
 - **请求体**：FormData，包含图片文件
-- **功能**：上传图片文件
+- **功能**：上传图片文件到images目录
 - **响应**：
   ```json
   {
-    "filePath": "images/file.jpg"
+    "success": true,
+    "url": "images/file.jpg"
   }
   ```
 
-### 13.3 上传DataURL
+### 12.2 上传音频文件
 - **请求方法**：POST
-- **API路径**：`/api/upload-data-url`
-- **请求体**：
-  ```json
-  {"dataUrl": "data:image/jpeg;base64,..."}
-  ```
-- **功能**：上传DataURL格式的图片
+- **API路径**：`/api/upload/audio`
+- **请求体**：FormData，包含音频文件
+- **功能**：上传音频文件到audio目录
 - **响应**：
   ```json
   {
-    "filePath": "images/file.jpg"
+    "success": true,
+    "url": "audio/file.mp3"
   }
   ```

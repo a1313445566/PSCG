@@ -10,6 +10,7 @@
 - **后端**：Node.js、Express、SQLite
 - **构建工具**：Vite
 - **进程管理**：PM2
+- **文件上传**：Multer
 
 ## 核心功能
 
@@ -19,9 +20,9 @@
 - **批量添加题目**：支持从文本批量导入题目，自动解析题目内容、选项和答案
 - **富文本编辑器**：支持文本格式化、图片插入等功能
 - **音频管理**：支持音频文件上传、播放和删除
-- **图片管理**：支持图片上传和显示
+- **图片管理**：支持图片上传和显示，自动存储到images目录
 - **题目列表**：直观显示题目信息，包括图片和音频指示器
-- **数据库管理**：支持数据备份、恢复和导出
+- **数据库管理**：支持数据备份、恢复和导出，包含音频和图片文件
 - **错误率分析**：展示错误率较高的题目，支持分页和筛选
 
 ### 2. 学生答题系统
@@ -58,7 +59,7 @@ VITE_API_URL=http://您的域名:3001/api
 1. **克隆仓库**
    ```bash
    git clone <仓库地址>
-   cd web2.0
+   cd PSCG
    ```
 
 2. **安装项目依赖**
@@ -66,16 +67,21 @@ VITE_API_URL=http://您的域名:3001/api
    npm install
    ```
 
-3. **启动开发服务器**
+3. **创建必要的目录**
+   ```bash
+   mkdir -p audio images
+   ```
+
+4. **启动开发服务器**
    - 前端：`npm run dev`
    - 后端：`npm run server`
 
-4. **数据库说明**
+5. **数据库说明**
    - 数据库文件 `quiz.db` 已包含在项目中
    - 首次运行时会自动创建必要的表结构
    - 已添加外键约束，确保数据一致性
 
-5. **访问项目**
+6. **访问项目**
    - 前端：`http://localhost:5173`
    - 后端：`http://localhost:3001`
    - 后台管理：`http://localhost:5173/admin`
@@ -121,14 +127,22 @@ VITE_API_URL=http://您的域名:3001/api
 ## 项目结构
 
 ```
-web2.0/
+PSCG/
 ├── src/                # 前端源码
 │   ├── views/          # 页面组件
 │   │   ├── AdminView.vue     # 后台管理页面
-│   │   ├── StudentView.vue   # 学生答题页面
-│   │   └── LeaderboardView.vue # 排行榜页面
+│   │   ├── HomeView.vue      # 首页
+│   │   ├── QuizView.vue      # 答题页面
+│   │   ├── ResultView.vue    # 结果页面
+│   │   ├── LeaderboardView.vue # 排行榜页面
+│   │   └── AnalysisView.vue  # 数据分析页面
+│   ├── components/      # 组件
+│   │   ├── admin/       # 后台组件
+│   │   ├── quiz/        # 答题组件
+│   │   └── common/      # 通用组件
 │   ├── stores/         # 状态管理
-│   │   └── questionStore.js  # 题目状态管理
+│   │   ├── questionStore.js  # 题目状态管理
+│   │   └── analysisStore.js  # 分析状态管理
 │   ├── utils/          # 工具函数
 │   │   └── database.js        # API 调用工具
 │   ├── router/         # 路由配置
@@ -136,14 +150,23 @@ web2.0/
 │   ├── assets/         # 静态资源
 │   ├── App.vue         # 根组件
 │   ├── main.js         # 入口文件
-│   └── style.css       # 全局样式
+│   └── styles/         # 样式文件
 ├── public/             # 静态资源
 ├── server.cjs          # 后端服务器
+├── services/           # 后端服务
+│   └── database.js     # 数据库服务
+├── routes/             # 后端路由
+│   ├── data.js         # 数据管理路由
+│   ├── questions.js    # 题目管理路由
+│   ├── subjects.js     # 学科管理路由
+│   └── ...             # 其他路由
 ├── package.json        # 项目配置
 ├── .env.development    # 开发环境配置
 ├── .env.production     # 生产环境配置
 ├── vite.config.js      # Vite 配置
 ├── quiz.db             # SQLite 数据库
+├── audio/              # 音频文件目录
+├── images/             # 图片文件目录
 └── API.md              # API 文档
 ```
 

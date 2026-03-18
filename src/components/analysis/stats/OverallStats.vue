@@ -53,7 +53,7 @@
           <i class="el-icon-check"></i>
         </div>
         <div class="stats-content">
-          <div class="stats-value">{{ (analysisData?.overallAccuracy || 0).toFixed(1) }}%</div>
+          <div class="stats-value">{{ typeof (analysisData?.overallAccuracy || 0) === 'number' ? (analysisData?.overallAccuracy || 0).toFixed(1) : '0.0' }}%</div>
           <div class="stats-label">总体正确率</div>
         </div>
       </div>

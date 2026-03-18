@@ -1,132 +1,241 @@
-const sqlite3 = require('sqlite3').verbose();
+const mysql = require('mysql2/promise');
 
 class DatabaseService {
   constructor() {
-    this.db = null;
+    this.pool = null;
+    this.isConnected = false;
+    this.reconnectAttempts = 0;
+    this.maxReconnectAttempts = 5;
   }
 
-  connect() {
-    return new Promise((resolve, reject) => {
-      this.db = new sqlite3.Database('./quiz.db', (err) => {
-        if (err) {
-          console.error('数据库连接失败:', err);
-          reject(err);
-        } else {
-          // 设置编码为 UTF-8
-          this.db.run('PRAGMA encoding = "UTF-8";', (err) => {
-            if (err) {
-              console.error('设置编码失败:', err);
-              reject(err);
-            } else {
-              this.createTables()
-                .then(() => resolve(this.db))
-                .catch(reject);
-            }
-          });
-        }
+  async connect() {
+    try {
+      this.pool = mysql.createPool({
+        host: '127.0.0.1',
+        port: 3306,
+        user: 'PSCG',
+        password: 'xgsy@8188',
+        database: 'pscg',
+        charset: 'utf8mb4',
+        multipleStatements: true,
+        waitForConnections: true,
+        connectionLimit: 10,
+        queueLimit: 0,
+        connectTimeout: 10000,
+        acquireTimeout: 10000,
+        timeout: 30000
       });
-    });
+      
+      // 测试连接
+      const connection = await this.pool.getConnection();
+      connection.release();
+      
+      console.log('数据库连接池创建成功');
+      this.isConnected = true;
+      this.reconnectAttempts = 0;
+      
+      await this.createTables();
+      return this.pool;
+    } catch (err) {
+      console.error('数据库连接失败:', err);
+      this.isConnected = false;
+      this.reconnectAttempts++;
+      
+      if (this.reconnectAttempts <= this.maxReconnectAttempts) {
+        console.log(`尝试重新连接... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        return this.connect();
+      }
+      
+      throw err;
+    }
   }
 
-  createTables() {
-    return new Promise((resolve, reject) => {
-      // 使用serialize确保表创建顺序执行
-      this.db.serialize(() => {
+  async createTables() {
+    try {
+      if (!this.pool) {
+        await this.connect();
+      }
+      
+      const tables = [
         // 创建学科表
-        this.db.run(`CREATE TABLE IF NOT EXISTS subjects (id INTEGER PRIMARY KEY, name TEXT NOT NULL, icon_index INTEGER DEFAULT 0)`);
+        `CREATE TABLE IF NOT EXISTS subjects (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(255) NOT NULL,
+          icon_index INT DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建子分类表
-        this.db.run(`CREATE TABLE IF NOT EXISTS subcategories (id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL, name TEXT NOT NULL, icon_index INTEGER DEFAULT 0, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE)`);
+        `CREATE TABLE IF NOT EXISTS subcategories (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          subject_id INT NOT NULL,
+          name VARCHAR(255) NOT NULL,
+          icon_index INT DEFAULT 0
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建题目表
-        this.db.run(`CREATE TABLE IF NOT EXISTS questions (id INTEGER PRIMARY KEY, subject_id INTEGER NOT NULL, subcategory_id INTEGER NOT NULL, content TEXT NOT NULL, type TEXT NOT NULL, options TEXT NOT NULL, correct_answer TEXT NOT NULL, explanation TEXT, audio_url TEXT, image_url TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE)`);
+        `CREATE TABLE IF NOT EXISTS questions (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          subject_id INT NOT NULL,
+          subcategory_id INT NOT NULL,
+          content LONGTEXT NOT NULL,
+          type VARCHAR(50) NOT NULL,
+          options LONGTEXT NOT NULL,
+          correct_answer TEXT NOT NULL,
+          explanation TEXT,
+          audio_url VARCHAR(255),
+          image_url VARCHAR(255),
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建年级表
-        this.db.run(`CREATE TABLE IF NOT EXISTS grades (id INTEGER PRIMARY KEY, name TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+        `CREATE TABLE IF NOT EXISTS grades (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(255) NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建班级表
-        this.db.run(`CREATE TABLE IF NOT EXISTS classes (id INTEGER PRIMARY KEY, name TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+        `CREATE TABLE IF NOT EXISTS classes (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(255) NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建用户表
-        this.db.run(`CREATE TABLE IF NOT EXISTS users (id INTEGER PRIMARY KEY AUTOINCREMENT, student_id TEXT UNIQUE NOT NULL, name TEXT, grade INTEGER, class INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
+        `CREATE TABLE IF NOT EXISTS users (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          student_id VARCHAR(255) UNIQUE NOT NULL,
+          name VARCHAR(255),
+          grade INT,
+          class INT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建答题记录表
-        this.db.run(`CREATE TABLE IF NOT EXISTS answer_records (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, subject_id INTEGER NOT NULL, subcategory_id INTEGER, total_questions INTEGER NOT NULL, correct_count INTEGER NOT NULL, time_spent INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE)`);
+        `CREATE TABLE IF NOT EXISTS answer_records (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          user_id INT NOT NULL,
+          subject_id INT NOT NULL,
+          subcategory_id INT,
+          total_questions INT NOT NULL,
+          correct_count INT NOT NULL,
+          time_spent INT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建题目答题记录表
-        this.db.run(`CREATE TABLE IF NOT EXISTS question_attempts (id INTEGER PRIMARY KEY AUTOINCREMENT, user_id INTEGER NOT NULL, question_id INTEGER NOT NULL, subject_id INTEGER NOT NULL, subcategory_id INTEGER, user_answer TEXT NOT NULL, correct_answer TEXT, is_correct INTEGER NOT NULL, answer_record_id INTEGER, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE, FOREIGN KEY (question_id) REFERENCES questions(id) ON DELETE CASCADE, FOREIGN KEY (subject_id) REFERENCES subjects(id) ON DELETE CASCADE, FOREIGN KEY (subcategory_id) REFERENCES subcategories(id) ON DELETE CASCADE, FOREIGN KEY (answer_record_id) REFERENCES answer_records(id) ON DELETE CASCADE)`);
+        `CREATE TABLE IF NOT EXISTS question_attempts (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          user_id INT NOT NULL,
+          question_id INT NOT NULL,
+          subject_id INT NOT NULL,
+          subcategory_id INT,
+          user_answer TEXT NOT NULL,
+          correct_answer TEXT,
+          is_correct TINYINT NOT NULL,
+          answer_record_id INT,
+          shuffled_options TEXT,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建设置表
-        this.db.run(`CREATE TABLE IF NOT EXISTS settings (id INTEGER PRIMARY KEY, key TEXT UNIQUE NOT NULL, value TEXT NOT NULL, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)`);
-        
-        resolve();
-      });
-    });
-  }
-
-  run(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      this.db.run(sql, params, function(err) {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(this);
-        }
-      });
-    });
-  }
-
-  get(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      this.db.get(sql, params, (err, row) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(row);
-        }
-      });
-    });
-  }
-
-  all(sql, params = []) {
-    return new Promise((resolve, reject) => {
-      this.db.all(sql, params, (err, rows) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(rows);
-        }
-      });
-    });
-  }
-
-  serialize(callback) {
-    return new Promise((resolve, reject) => {
-      this.db.serialize(() => {
-        try {
-          callback();
-          resolve();
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
-  }
-
-  close() {
-    return new Promise((resolve, reject) => {
-      if (this.db) {
-        this.db.close((err) => {
-          if (err) {
-            reject(err);
-          } else {
-            resolve();
-          }
-        });
-      } else {
-        resolve();
+        `CREATE TABLE IF NOT EXISTS settings (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          setting_key VARCHAR(255) UNIQUE NOT NULL,
+          value TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+      ];
+      
+      for (const sql of tables) {
+        await this.pool.execute(sql);
       }
-    });
+      
+      console.log('表结构创建成功');
+    } catch (err) {
+      console.error('创建表结构失败:', err);
+      throw err;
+    }
+  }
+
+  async ensureConnection() {
+    if (!this.pool || !this.isConnected) {
+      await this.connect();
+    }
+  }
+
+  async run(sql, params = []) {
+    try {
+      await this.ensureConnection();
+      const [result] = await this.pool.query(sql, params);
+      return result;
+    } catch (err) {
+      console.error('执行SQL失败:', sql, err);
+      this.isConnected = false;
+      // 尝试重新连接
+      await this.connect();
+      // 重新执行
+      const [result] = await this.pool.query(sql, params);
+      return result;
+    }
+  }
+
+  async get(sql, params = []) {
+    try {
+      await this.ensureConnection();
+      const [rows] = await this.pool.query(sql, params);
+      return rows[0] || null;
+    } catch (err) {
+      console.error('查询SQL失败:', sql, err);
+      this.isConnected = false;
+      // 尝试重新连接
+      await this.connect();
+      // 重新执行
+      const [rows] = await this.pool.query(sql, params);
+      return rows[0] || null;
+    }
+  }
+
+  async all(sql, params = []) {
+    try {
+      await this.ensureConnection();
+      const [rows] = await this.pool.query(sql, params);
+      return rows;
+    } catch (err) {
+      console.error('查询SQL失败:', sql, err);
+      this.isConnected = false;
+      // 尝试重新连接
+      await this.connect();
+      // 重新执行
+      const [rows] = await this.pool.query(sql, params);
+      return rows;
+    }
+  }
+
+  async close() {
+    try {
+      if (this.pool) {
+        await this.pool.end();
+        console.log('数据库连接池已关闭');
+        this.isConnected = false;
+      }
+    } catch (err) {
+      console.error('关闭数据库连接池失败:', err);
+      throw err;
+    }
+  }
+
+  async healthCheck() {
+    try {
+      await this.ensureConnection();
+      const [rows] = await this.pool.query('SELECT 1 as health_check');
+      return { status: 'ok', timestamp: new Date().toISOString() };
+    } catch (err) {
+      console.error('数据库健康检查失败:', err);
+      return { status: 'error', message: err.message, timestamp: new Date().toISOString() };
+    }
   }
 }
 

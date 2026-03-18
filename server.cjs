@@ -2,6 +2,20 @@ const express = require('express');
 const compression = require('compression');
 const cors = require('cors');
 const path = require('path');
+const multer = require('multer');
+
+// 配置multer存储
+const storage = multer.diskStorage({
+  destination: function (req, file, cb) {
+    cb(null, './images');
+  },
+  filename: function (req, file, cb) {
+    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+  }
+});
+
+const upload = multer({ storage: storage });
 
 const dataRoutes = require('./routes/data');
 const settingsRoutes = require('./routes/settings');
@@ -69,6 +83,26 @@ app.use('/api/users', usersRoutes);
 app.use('/api/leaderboard', leaderboardRoutes);
 app.use('/api/answer-records', answerRecordsRoutes);
 app.use('/api/analysis', analysisRoutes);
+
+// 图片上传路由
+app.post('/api/upload/image', upload.single('image'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: '没有上传文件' });
+  }
+  
+  const imageUrl = `/images/${req.file.filename}`;
+  res.json({ success: true, url: imageUrl });
+});
+
+// 音频上传路由
+app.post('/api/upload/audio', upload.single('audio'), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ error: '没有上传文件' });
+  }
+  
+  const audioUrl = `/audio/${req.file.filename}`;
+  res.json({ success: true, url: audioUrl });
+});
 
 process.on('uncaughtException', (err) => {
   console.error(`未捕获异常:`, err.message);

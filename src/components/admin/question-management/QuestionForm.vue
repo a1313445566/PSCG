@@ -139,7 +139,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { QuillEditor } from '@vueup/vue-quill';
 import '@vueup/vue-quill/dist/vue-quill.snow.css';
 import { ElMessage } from 'element-plus';
@@ -317,9 +317,29 @@ const removeOption = (index) => {
 };
 
 // 处理音频文件变化
-const handleAudioChange = (file) => {
-  // 暂时不上传，只保存文件对象，在保存时上传
-  form.value.audio = `audio/${file.name}`;
+const handleAudioChange = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('audio', file.raw);
+    
+    const response = await fetch('/api/upload/audio', {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.success) {
+        form.value.audio = result.url;
+      } else {
+        ElMessage.error('音频上传失败');
+      }
+    } else {
+      ElMessage.error('音频上传失败');
+    }
+  } catch (error) {
+    ElMessage.error('音频上传失败');
+  }
 };
 
 // 删除音频
@@ -436,6 +456,44 @@ const onQuillReady = (quill) => {
   if (form.value.content) {
     quill.root.innerHTML = form.value.content;
   }
+  
+  // 添加图片上传处理
+  const toolbar = quill.getModule('toolbar');
+  toolbar.addHandler('image', function() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = 'image/*';
+    input.onchange = async function() {
+      const file = input.files[0];
+      if (file) {
+        try {
+          const formData = new FormData();
+          formData.append('image', file);
+          
+          const response = await fetch('/api/upload/image', {
+            method: 'POST',
+            body: formData
+          });
+          
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              const range = quill.getSelection();
+              quill.insertEmbed(range.index, 'image', result.url);
+              quill.setSelection(range.index + 1);
+            } else {
+              ElMessage.error('图片上传失败');
+            }
+          } else {
+            ElMessage.error('图片上传失败');
+          }
+        } catch (error) {
+          ElMessage.error('图片上传失败');
+        }
+      }
+    };
+    input.click();
+  });
 };
 </script>
 

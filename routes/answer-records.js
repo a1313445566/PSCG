@@ -8,15 +8,7 @@ router.get('/all', async (req, res) => {
   try {
     const { limit = 50, grade, class: className, subjectId, startDate, endDate } = req.query;
     
-    let query = `
-      SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.class, s.name as subject_name,
-             sc.name as subcategory_name
-      FROM answer_records ar
-      LEFT JOIN users u ON ar.user_id = u.id
-      LEFT JOIN subjects s ON ar.subject_id = s.id
-      LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id
-      WHERE 1=1
-    `;
+    let query = 'SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.`class`, s.name as subject_name, sc.name as subcategory_name FROM answer_records ar LEFT JOIN users u ON ar.user_id = u.id LEFT JOIN subjects s ON ar.subject_id = s.id LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id WHERE 1=1';
     
     const params = [];
     
@@ -26,7 +18,7 @@ router.get('/all', async (req, res) => {
     }
     
     if (className) {
-      query += ' AND u.class = ?';
+      query += ' AND u.`class` = ?';
       params.push(className);
     }
     
@@ -46,7 +38,7 @@ router.get('/all', async (req, res) => {
     }
     
     query += ' ORDER BY ar.created_at DESC LIMIT ?';
-    params.push(parseInt(limit));
+    params.push(Number(limit) || 50);
     
     const records = await db.all(query, params);
     res.json(records);
@@ -159,7 +151,7 @@ router.get('/error-prone-questions', async (req, res) => {
     }
     
     if (className) {
-      query += ' AND u.class = ?';
+      query += ' AND u.\`class\` = ?';
       params.push(className);
     }
     
@@ -243,7 +235,7 @@ router.post('/', async (req, res) => {
       [userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent]
     );
     
-    res.json({ success: true, recordId: result.lastID });
+    res.json({ success: true, recordId: result.insertId });
   } catch (error) {
     // console.error('保存答题记录失败:', error);
     res.status(500).json({ error: '保存答题记录失败' });

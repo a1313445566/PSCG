@@ -12,12 +12,12 @@ router.get('/', async (req, res) => {
     
     if (subjectId) {
       query += ' AND subject_id = ?';
-      params.push(subjectId);
+      params.push(Number(subjectId));
     }
     
     if (subcategoryId) {
       query += ' AND subcategory_id = ?';
-      params.push(subcategoryId);
+      params.push(Number(subcategoryId));
     }
     
     if (type) {
@@ -25,8 +25,11 @@ router.get('/', async (req, res) => {
       params.push(type);
     }
     
-    query += ' ORDER BY created_at DESC LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 20;
+    const offset = (pageNum - 1) * limitNum;
+    
+    query += ` ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
     
     const questions = await db.all(query, params);
     
@@ -143,7 +146,7 @@ router.post('/', async (req, res) => {
     );
     
     // 返回新添加的题目
-    const newQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [result.lastID]);
+    const newQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [result.insertId]);
     
     // 格式化题目数据
     let formattedOptions = [];

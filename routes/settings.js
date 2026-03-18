@@ -5,10 +5,10 @@ const db = require('../services/database');
 // 获取所有设置
 router.get('/', async (req, res) => {
   try {
-    const settings = await db.all('SELECT key, value FROM settings');
+    const settings = await db.all('SELECT setting_key, value FROM settings');
     const settingsObj = {};
     settings.forEach(setting => {
-      settingsObj[setting.key] = setting.value;
+      settingsObj[setting.setting_key] = setting.value;
     });
     res.json(settingsObj);
   } catch (error) {
@@ -36,7 +36,7 @@ router.post('/', async (req, res) => {
     for (const [key, value] of Object.entries(settings)) {
       // 使用UPSERT操作：如果键存在则更新，不存在则插入
       await db.run(
-        'INSERT INTO settings (key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON CONFLICT(key) DO UPDATE SET value = ?, updated_at = CURRENT_TIMESTAMP',
+        'INSERT INTO settings (setting_key, value, updated_at) VALUES (?, ?, CURRENT_TIMESTAMP) ON DUPLICATE KEY UPDATE value = ?, updated_at = CURRENT_TIMESTAMP',
         [key, value, value]
       );
     }

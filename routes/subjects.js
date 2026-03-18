@@ -83,7 +83,7 @@ router.post('/', async (req, res) => {
     cacheService.del('subjects');
     
     // 返回新添加的学科
-    const newSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [result.lastID]);
+    const newSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [result.insertId]);
     // 转换字段名为驼峰命名
     const formattedSubject = {
       id: newSubject.id,
@@ -163,7 +163,7 @@ router.post('/:subjectId/subcategories', async (req, res) => {
     cacheService.del(cacheService.generateSubcategoryKey(subjectId));
     
     // 返回新添加的子分类
-    const newSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [result.lastID]);
+    const newSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [result.insertId]);
     // 转换字段名为驼峰命名
     const formattedSubcategory = {
       id: newSubcategory.id,

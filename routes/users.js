@@ -11,17 +11,18 @@ router.get('/', async (req, res) => {
     const params = [];
     
     if (grade) {
-      query += ' AND grade = ?';
-      params.push(grade);
+      query += ' AND grade = ' + Number(grade);
     }
     
     if (className) {
-      query += ' AND class = ?';
-      params.push(className);
+      query += ' AND class = ' + Number(className);
     }
     
-    query += ' ORDER BY student_id LIMIT ? OFFSET ?';
-    params.push(parseInt(limit), (parseInt(page) - 1) * parseInt(limit));
+    const pageNum = parseInt(page) || 1;
+    const limitNum = parseInt(limit) || 50;
+    const offset = (pageNum - 1) * limitNum;
+    
+    query += ` ORDER BY student_id LIMIT ${limitNum} OFFSET ${offset}`;
     
     const users = await db.all(query, params);
     res.json(users);
@@ -62,7 +63,7 @@ router.post('/', async (req, res) => {
     const result = await db.run('INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)', [student_id, name, grade, className]);
     
     // 返回新添加的用户
-    const newUser = await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
+    const newUser = await db.get('SELECT * FROM users WHERE id = ?', [result.insertId]);
     res.json(newUser);
   } catch (error) {
     // console.error('添加用户失败:', error);
@@ -198,7 +199,7 @@ router.post('/login', async (req, res) => {
     if (!user) {
       // 如果用户不存在，创建新用户
       const result = await db.run('INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)', [studentId, name, grade, className]);
-      user = await db.get('SELECT * FROM users WHERE id = ?', [result.lastID]);
+      user = await db.get('SELECT * FROM users WHERE id = ?', [result.insertId]);
     } else {
       // 如果用户存在，更新用户信息
       await db.run('UPDATE users SET name = ?, grade = ?, class = ? WHERE id = ?', [name, grade, className, user.id]);

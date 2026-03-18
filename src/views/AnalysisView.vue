@@ -39,7 +39,7 @@
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
                     <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
-                      {{ scope.row.accuracy.toFixed(1) }}%
+                      {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
                 </el-table-column>
@@ -68,7 +68,7 @@
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
                     <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
-                      {{ scope.row.accuracy.toFixed(1) }}%
+                      {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
                 </el-table-column>
@@ -92,7 +92,7 @@
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
                     <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
-                      {{ scope.row.accuracy.toFixed(1) }}%
+                      {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
                 </el-table-column>
@@ -121,7 +121,7 @@
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
                     <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
-                      {{ scope.row.accuracy.toFixed(1) }}%
+                      {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
                 </el-table-column>
@@ -146,7 +146,7 @@
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
                     <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
-                      {{ scope.row.accuracy.toFixed(1) }}%
+                      {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
                 </el-table-column>
@@ -170,7 +170,7 @@
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
                     <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
-                      {{ scope.row.accuracy.toFixed(1) }}%
+                      {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
                 </el-table-column>
@@ -193,7 +193,7 @@
                 <el-table-column label="错误率" sortable>
                   <template #default="scope">
                     <span :class="{'text-danger': scope.row.error_rate >= 30, 'text-warning': scope.row.error_rate >= 10 && scope.row.error_rate < 30, 'text-success': scope.row.error_rate < 10}">
-                      {{ scope.row.error_rate.toFixed(1) }}%
+                      {{ typeof scope.row.error_rate === 'number' ? scope.row.error_rate.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
                 </el-table-column>

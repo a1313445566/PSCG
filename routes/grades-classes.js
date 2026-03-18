@@ -39,7 +39,7 @@ router.post('/grades', async (req, res) => {
     cacheService.del('grades');
     
     // 返回新添加的年级
-    const newGrade = await db.get('SELECT * FROM grades WHERE id = ?', [result.lastID]);
+    const newGrade = await db.get('SELECT * FROM grades WHERE id = ?', [result.insertId]);
     res.json(newGrade);
   } catch (error) {
     // console.error('添加年级失败:', error);
@@ -157,7 +157,7 @@ router.post('/classes', async (req, res) => {
     cacheService.del('classes');
     
     // 返回新添加的班级
-    const newClass = await db.get('SELECT * FROM classes WHERE id = ?', [result.lastID]);
+    const newClass = await db.get('SELECT * FROM classes WHERE id = ?', [result.insertId]);
     res.json(newClass);
   } catch (error) {
     // console.error('添加班级失败:', error);
