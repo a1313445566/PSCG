@@ -62,6 +62,50 @@
       <!-- 排行榜管理 -->
       <el-tab-pane label="排行榜管理" name="leaderboard">
         <div class="leaderboard-management">
+          <!-- 筛选区域 -->
+          <div class="filter-section">
+            <div style="display: flex; align-items: center; gap: 15px; overflow-x: auto; padding-bottom: 5px;">
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <label style="font-weight: 500; width: 60px;">学号</label>
+                <el-input v-model="filterStudentId" placeholder="输入学号" style="width: 180px;"></el-input>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <label style="font-weight: 500; width: 60px;">年级</label>
+                <el-select v-model="filterGrade" placeholder="选择年级" style="width: 120px;">
+                  <el-option label="全部" value=""></el-option>
+                  <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.id || grade"></el-option>
+                </el-select>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <label style="font-weight: 500; width: 60px;">班级</label>
+                <el-select v-model="filterClass" placeholder="选择班级" style="width: 120px;">
+                  <el-option label="全部" value=""></el-option>
+                  <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.id || classNum"></el-option>
+                </el-select>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px;">
+                <label style="font-weight: 500; width: 60px;">学科</label>
+                <el-select v-model="filterSubject" placeholder="选择学科" style="width: 150px;">
+                  <el-option label="全部" value=""></el-option>
+                  <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+                </el-select>
+              </div>
+              <div style="display: flex; align-items: center; gap: 5px; white-space: nowrap;">
+                <label style="font-weight: 500; width: 70px;">时间范围</label>
+                <el-select v-model="filterTimeRange" placeholder="选择时间" style="width: 140px;">
+                  <el-option label="全部" value=""></el-option>
+                  <el-option label="今日" value="today"></el-option>
+                  <el-option label="近一周" value="week"></el-option>
+                  <el-option label="近一月" value="month"></el-option>
+                </el-select>
+              </div>
+            </div>
+            <div style="margin-top: 15px; display: flex; gap: 10px;">
+              <el-button type="primary" @click="applyFilters">应用筛选</el-button>
+              <el-button @click="resetFilters">重置</el-button>
+            </div>
+          </div>
+          
           <UserStats 
             :user-stats="userStats"
             @open-user-detail="openUserDetailDialog"
@@ -133,8 +177,8 @@
 
     <!-- 题目详情对话框 -->
     <QuestionDetailDialog
-      v-model:visible="questionDetailDialogVisible"
-      :question="selectedQuestionDetail"
+      v-model:dialogVisible="questionDetailDialogVisible"
+      :selectedQuestionDetail="selectedQuestionDetail"
     />
 
     <!-- 学科题库管理对话框 -->
@@ -164,10 +208,13 @@
   
   <!-- 用户详情对话框 -->
   <UserDetailDialog
-    v-model:visible="userDetailDialogVisible"
-    :user="selectedUser"
-    :answer-record-id="currentAnswerRecordId"
-    :dialog-source="dialogSource"
+    v-model:dialogVisible="userDetailDialogVisible"
+    :selectedUser="selectedUser"
+    :currentAnswerRecordId="currentAnswerRecordId"
+    :dialogSource="dialogSource"
+    :selectedUserRecords="selectedUserRecords"
+    :selectedUserQuestionAttempts="selectedUserQuestionAttempts"
+    @show-question-detail="showQuestionDetail"
   />
 </template>
 
@@ -178,6 +225,9 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
+  background-repeat: repeat;
 }
 
 .admin-header {
@@ -345,7 +395,7 @@
 </style>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -368,7 +418,8 @@ import UserDetailDialog from '../components/admin/common/UserDetailDialog.vue'
 import QuestionDetailDialog from '../components/admin/common/QuestionDetailDialog.vue'
 import SubcategoryDialog from '../components/admin/common/SubcategoryDialog.vue'
 
-import AnalysisView from './AnalysisView.vue'
+// 动态导入AnalysisView，减少初始加载体积
+const AnalysisView = defineAsyncComponent(() => import('./AnalysisView.vue'))
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
@@ -380,6 +431,15 @@ const subjects = computed(() => questionStore.subjects)
 const questions = computed(() => questionStore.questions)
 const userStats = computed(() => questionStore.userStats)
 const recentRecords = computed(() => questionStore.recentRecords)
+const grades = computed(() => questionStore.grades)
+const classes = computed(() => questionStore.classes)
+
+// 排行榜筛选相关
+const filterStudentId = ref('')
+const filterGrade = ref('')
+const filterClass = ref('')
+const filterSubject = ref('')
+const filterTimeRange = ref('')
 
 // 界面名称设置
 const interfaceName = computed({
@@ -439,6 +499,8 @@ const userDetailDialogVisible = ref(false)
 const selectedUser = ref(null)
 const dialogSource = ref('')
 const currentAnswerRecordId = ref(null)
+const selectedUserRecords = ref([])
+const selectedUserQuestionAttempts = ref([])
 const questionDetailDialogVisible = ref(false)
 const selectedQuestionDetail = ref(null)
 
@@ -503,6 +565,12 @@ const handleDataManagementClick = () => {
 
 const showDataManagementPasswordDialog = () => {
   dataManagementPasswordDialogVisible.value = true
+}
+
+// 显示题目详情
+const showQuestionDetail = (row) => {
+  selectedQuestionDetail.value = row
+  questionDetailDialogVisible.value = true
 }
 
 const verifyDataManagementPassword = () => {
@@ -657,11 +725,107 @@ const deleteSubcategory = async (subjectId, subcategoryId) => {
   }
 }
 
-const openUserDetailDialog = (user, source = 'userStats', answerRecordId = null) => {
-  selectedUser.value = user
+const openUserDetailDialog = async (user, source = 'userStats', answerRecordId = null) => {
+  // 确定用户ID，优先使用user_id字段，特别是在从recentRecords点击时
+  const userId = user.user_id || user.id
+  
+  // 加载用户的统计数据
+  try {
+    const statsResponse = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000&id=${userId}`)
+    if (statsResponse.ok) {
+      const statsData = await statsResponse.json()
+      if (statsData && statsData.length > 0) {
+        selectedUser.value = statsData[0]
+      } else {
+        // 如果没有统计数据，使用传入的用户对象
+        selectedUser.value = user
+      }
+    } else {
+      // 如果获取统计数据失败，使用传入的用户对象
+      selectedUser.value = user
+    }
+  } catch (error) {
+    console.error('加载用户统计数据失败:', error)
+    selectedUser.value = user
+  }
+  
   dialogSource.value = source
   currentAnswerRecordId.value = answerRecordId
+  
+  // 加载用户的答题记录和做题记录
+  try {
+    if (source === 'userStats' && userId) {
+      // 加载用户的答题记录
+      const recordsResponse = await fetch(`${getApiBaseUrl()}/answer-records/${userId}`)
+      if (recordsResponse.ok) {
+        selectedUserRecords.value = await recordsResponse.json()
+      }
+    } else if (source === 'recentRecords' && answerRecordId && userId) {
+      // 加载用户的做题记录
+      // 使用正确的接口路径格式
+      const attemptsResponse = await fetch(`${getApiBaseUrl()}/answer-records/question-attempts/${userId}?answerRecordId=${answerRecordId}`)
+      if (attemptsResponse.ok) {
+        const attemptsData = await attemptsResponse.json()
+        selectedUserQuestionAttempts.value = attemptsData
+      } else {
+        // 尝试使用备用接口获取用户的所有做题记录
+        const allAttemptsResponse = await fetch(`${getApiBaseUrl()}/answer-records/question-attempts/${userId}`)
+        if (allAttemptsResponse.ok) {
+          const allAttemptsData = await allAttemptsResponse.json()
+          // 过滤出与当前answerRecordId相关的记录，确保类型一致
+          selectedUserQuestionAttempts.value = allAttemptsData.filter(attempt => {
+            return String(attempt.answer_record_id) === String(answerRecordId)
+          })
+        }
+      }
+    }
+  } catch (error) {
+    console.error('加载用户记录失败:', error)
+  }
+  
   userDetailDialogVisible.value = true
+}
+
+// 排行榜筛选相关方法
+const applyFilters = async () => {
+  try {
+    // 构建筛选参数
+    const userStatsParams = new URLSearchParams()
+    const recentRecordsParams = new URLSearchParams()
+    
+    if (filterGrade.value) {
+      userStatsParams.append('grade', filterGrade.value)
+      recentRecordsParams.append('grade', filterGrade.value)
+    }
+    if (filterClass.value) {
+      userStatsParams.append('class', filterClass.value)
+      recentRecordsParams.append('class', filterClass.value)
+    }
+    if (filterSubject.value) {
+      recentRecordsParams.append('subjectId', filterSubject.value)
+    }
+    
+    // 加载筛选后的数据
+    const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000&${userStatsParams.toString()}`).then(res => res.json())
+    const recentRecordsData = await fetch(`${getApiBaseUrl()}/answer-records/all?${recentRecordsParams.toString()}`).then(res => res.json())
+    
+    questionStore.userStats = userStatsData
+    questionStore.recentRecords = recentRecordsData
+  } catch (error) {
+    ElMessage.error('筛选数据失败，请稍后重试')
+  }
+}
+
+const resetFilters = () => {
+  filterStudentId.value = ''
+  filterGrade.value = ''
+  filterClass.value = ''
+  filterSubject.value = ''
+  filterTimeRange.value = ''
+  
+  // 重新加载所有数据
+  questionStore.loadUserStats()
+  questionStore.loadRecentRecords()
 }
 
 // 处理批量添加题目
@@ -843,6 +1007,9 @@ onMounted(async () => {
     }
     // 加载设置
     await loadSettings()
+    // 加载排行榜数据
+    await questionStore.loadUserStats()
+    await questionStore.loadRecentRecords()
   } else {
     // 设置密码对话框为可见，确保登录框自动弹出
     passwordDialogVisible.value = true

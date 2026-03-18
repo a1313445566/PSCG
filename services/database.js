@@ -9,13 +9,13 @@ class DatabaseService {
     return new Promise((resolve, reject) => {
       this.db = new sqlite3.Database('./quiz.db', (err) => {
         if (err) {
-          // console.error('数据库连接失败:', err);
+          console.error('数据库连接失败:', err);
           reject(err);
         } else {
           // 设置编码为 UTF-8
           this.db.run('PRAGMA encoding = "UTF-8";', (err) => {
             if (err) {
-              // console.error('设置编码失败:', err);
+              console.error('设置编码失败:', err);
               reject(err);
             } else {
               this.createTables()

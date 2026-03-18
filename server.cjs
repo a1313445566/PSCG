@@ -71,14 +71,14 @@ app.use('/api/answer-records', answerRecordsRoutes);
 app.use('/api/analysis', analysisRoutes);
 
 process.on('uncaughtException', (err) => {
-  // console.error(`未捕获异常:`, err.message);
+  console.error(`未捕获异常:`, err.message);
   if (err.message.includes('SQLITE_CANTOPEN') || err.message.includes('database is locked')) {
-    // console.log('数据库错误，尝试重新连接...');
+    console.log('数据库错误，尝试重新连接...');
   }
 });
 
 process.on('unhandledRejection', (reason, promise) => {
-  // console.error(`未处理 Promise 拒绝:`, reason);
+  console.error(`未处理 Promise 拒绝:`, reason);
 });
 
 async function startServer() {
@@ -87,14 +87,14 @@ async function startServer() {
 
     
     const server = app.listen(port, '0.0.0.0', () => {
-
+      console.log(`服务器已启动，监听端口 ${port}`);
     });
 
     server.on('error', (err) => {
       if (err.code === 'EADDRINUSE') {
-        // console.error(`端口 ${port} 被占用`);
+        console.error(`端口 ${port} 被占用`);
       } else {
-        // console.error('服务器错误:', err);
+        console.error('服务器错误:', err);
       }
     });
 
@@ -103,7 +103,7 @@ async function startServer() {
     server.headersTimeout = 66000;
     
   } catch (error) {
-    // console.error('服务器启动失败:', error);
+    console.error('服务器启动失败:', error);
     process.exit(1);
   }
 }

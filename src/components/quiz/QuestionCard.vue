@@ -12,7 +12,7 @@
       
       <div class="options">
         <div 
-          v-for="(option, index) in question.shuffledOptions || question.options" 
+          v-for="(option, index) in parsedOptions" 
           :key="index"
           class="option-item"
           :class="{
@@ -48,6 +48,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue';
+
 const props = defineProps({
   question: {
     type: Object,
@@ -69,6 +71,56 @@ const props = defineProps({
 
 const emit = defineEmits(['select-option'])
 
+// 解析选项
+const parsedOptions = computed(() => {
+  const { question } = props;
+  
+  // 优先使用shuffledOptions（如果有）
+  let options = question.shuffledOptions || question.options;
+  
+  // 解析JSON字符串
+  if (typeof options === 'string') {
+    try {
+      options = JSON.parse(options);
+    } catch (e) {
+      console.error('解析选项失败:', e);
+      options = [];
+    }
+  }
+  
+  return Array.isArray(options) ? options : [];
+});
+
+// 解析用户答案
+const parsedUserAnswer = computed(() => {
+  let userAnswer = props.userAnswer || props.question.user_answer;
+  
+  if (typeof userAnswer === 'string') {
+    try {
+      userAnswer = JSON.parse(userAnswer);
+    } catch (e) {
+      // 解析失败，使用原始值
+    }
+  }
+  
+  return userAnswer;
+});
+
+// 解析正确答案
+const parsedCorrectAnswer = computed(() => {
+  let correctAnswer = props.question.correct_answer || props.question.answer;
+  
+  if (typeof correctAnswer === 'string') {
+    try {
+      correctAnswer = JSON.parse(correctAnswer);
+    } catch (e) {
+      // 解析失败，使用原始值
+    }
+  }
+  
+  return correctAnswer;
+});
+
 // 获取题目类型名称
 const getQuestionTypeName = (type) => {
   const typeMap = {
@@ -84,43 +136,49 @@ const getQuestionTypeName = (type) => {
 
 // 检查选项是否被用户选择
 const isOptionSelected = (option) => {
-  if (!props.userAnswer) return false
+  const userAnswer = parsedUserAnswer.value;
+  if (!userAnswer) return false
   
   if (props.question.type === 'multiple') {
-    return Array.isArray(props.userAnswer) && props.userAnswer.includes(option)
+    if (Array.isArray(userAnswer)) {
+      return userAnswer.includes(option);
+    } else if (typeof userAnswer === 'string') {
+      return userAnswer.includes(option);
+    }
+    return false;
   } else {
-    return props.userAnswer === option
+    return userAnswer === option;
   }
 }
 
 // 检查选项是否是正确答案
 const isOptionCorrect = (option) => {
-  const correctAnswer = props.question.correct_answer || props.question.answer
+  const correctAnswer = parsedCorrectAnswer.value;
   
   if (props.question.type === 'multiple') {
-    let correctAnswers
+    let correctAnswers;
     if (Array.isArray(correctAnswer)) {
-      correctAnswers = correctAnswer
+      correctAnswers = correctAnswer;
     } else if (typeof correctAnswer === 'string' && correctAnswer.length > 0) {
-      correctAnswers = correctAnswer.split('')
+      correctAnswers = correctAnswer.split('');
     } else {
-      correctAnswers = []
+      correctAnswers = [];
     }
-    return correctAnswers.includes(option)
+    return correctAnswers.includes(option);
   } else {
-    return option === correctAnswer
+    return option === correctAnswer;
   }
 }
 
 // 检查选项是否是用户选择的错误答案
 const isOptionWrong = (option) => {
-  return isOptionSelected(option) && !isOptionCorrect(option)
+  return isOptionSelected(option) && !isOptionCorrect(option);
 }
 
 // 选择选项
 const selectOption = (option) => {
   if (!props.showResult) {
-    emit('select-option', option)
+    emit('select-option', option);
   }
 }
 </script>

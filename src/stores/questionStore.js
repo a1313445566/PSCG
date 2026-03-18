@@ -74,20 +74,73 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         
-        // 并行加载所有数据，提高性能
-        const [subjectsData, questionsData, gradesData, classesData] = await Promise.all([
-          fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()),
-          fetch(`${getApiBaseUrl()}/questions?limit=1000`).then(res => res.json()),
-          fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()),
-          fetch(`${getApiBaseUrl()}/classes`).then(res => res.json())
+        // 并行加载所有数据，提高性能，但每个请求独立处理，一个失败不影响其他
+        const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []);
+        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=1000`).then(res => res.json()).catch(() => []);
+        const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []);
+        const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => []);
+        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000`).then(res => res.json()).catch(() => []);
+        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all`).then(res => res.json()).catch(() => []);
+        
+        const [subjectsData, questionsData, gradesData, classesData, userStatsData, recentRecordsData] = await Promise.all([
+          subjectsPromise,
+          questionsPromise,
+          gradesPromise,
+          classesPromise,
+          userStatsPromise,
+          recentRecordsPromise
         ]);
         
         this.subjects = subjectsData
         this.questions = questionsData
         this.grades = gradesData
         this.classes = classesData
+        this.userStats = userStatsData
+        this.recentRecords = recentRecordsData
       } catch (error) {
         this.error = error.message
+        console.error('加载数据失败:', error)
+
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 加载用户统计数据
+    async loadUserStats() {
+      try {
+        this.isLoading = true
+        this.error = null
+        const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000`).then(res => res.json())
+        this.userStats = userStatsData
+      } catch (error) {
+        this.error = error.message
+        console.error('加载用户统计数据失败:', error)
+
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 加载最近答题记录
+    async loadRecentRecords() {
+      try {
+        this.isLoading = true
+        this.error = null
+        // 获取所有用户的最近答题记录
+        const response = await fetch(`${getApiBaseUrl()}/answer-records/all`)
+        if (response.ok) {
+          const recentRecordsData = await response.json()
+          this.recentRecords = recentRecordsData
+        } else {
+          // 如果没有专门的all端点，尝试获取所有用户的记录
+          // 这里可以根据实际情况调整
+          this.recentRecords = []
+        }
+      } catch (error) {
+        this.error = error.message
+        this.recentRecords = []
+        console.error('加载最近答题记录失败:', error)
 
       } finally {
         this.isLoading = false

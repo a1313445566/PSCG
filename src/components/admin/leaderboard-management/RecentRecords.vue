@@ -90,7 +90,7 @@ const paginatedRecentRecords = computed(() => {
 
 // 打开用户详情对话框
 const openUserDetailDialog = (row) => {
-  emit('open-user-detail', row, 'recentRecords');
+  emit('open-user-detail', row, 'recentRecords', row.id);
 };
 
 // 格式化日期

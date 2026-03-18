@@ -2,7 +2,7 @@
   <footer class="app-footer">
     <div class="footer-content">
       <div class="footer-section">
-        <h3 class="footer-title">小学刷题闯关</h3>
+        <h3 class="footer-title">西关实验小学</h3>
         <p class="footer-description">让学习变得更有趣</p>
       </div>
       <div class="footer-section">
@@ -15,12 +15,12 @@
       </div>
       <div class="footer-section">
         <h4 class="footer-subtitle">联系我们</h4>
-        <p class="footer-contact">邮箱: contact@example.com</p>
-        <p class="footer-contact">电话: 123-456-7890</p>
+        <p class="footer-contact">邮箱: xxxxxxxxxx</p>
+        <p class="footer-contact">电话: xxxxxxxxxx</p>
       </div>
     </div>
     <div class="footer-bottom">
-      <p class="footer-copyright">© 2026 小学刷题闯关. 保留所有权利.</p>
+      <p class="footer-copyright">© 2026 西关实验小学. 保留所有权利.</p>
     </div>
   </footer>
 </template>

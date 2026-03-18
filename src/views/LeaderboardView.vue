@@ -550,6 +550,8 @@ watch(activeTab, (newTab) => {
 .leaderboard-view {
   min-height: 100vh;
   background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
+  background-repeat: repeat;
   padding-bottom: 2rem;
 }
 

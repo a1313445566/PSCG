@@ -170,8 +170,9 @@ const submitAnswers = async () => {
         
         // 计算是否正确
         let isCorrect = false
+        const correctAnswer = question.correct_answer || question.answer
         if (question.type === 'multiple') {
-          const correctAnswers = Array.isArray(question.answer) ? question.answer : question.answer.split('')
+          const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('')
           if (Array.isArray(userAnswer)) {
             const sortedUserAnswer = userAnswer.sort()
             const sortedCorrectAnswer = correctAnswers.sort()
@@ -180,9 +181,9 @@ const submitAnswers = async () => {
         } else {
           if (Array.isArray(userAnswer)) {
             // 如果用户答案是数组，取第一个元素
-            isCorrect = userAnswer[0] === question.answer
+            isCorrect = userAnswer[0] === correctAnswer
           } else {
-            isCorrect = userAnswer === question.answer
+            isCorrect = userAnswer === correctAnswer
           }
         }
         

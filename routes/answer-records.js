@@ -9,7 +9,7 @@ router.get('/all', async (req, res) => {
     const { limit = 50, grade, class: className, subjectId, startDate, endDate } = req.query;
     
     let query = `
-      SELECT ar.*, u.student_id, u.name, u.grade, u.class, s.name as subject_name,
+      SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.class, s.name as subject_name,
              sc.name as subcategory_name
       FROM answer_records ar
       LEFT JOIN users u ON ar.user_id = u.id

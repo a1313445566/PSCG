@@ -1,9 +1,15 @@
 // 使用 API 与后端通信
 // 自动检测当前环境：开发环境使用相对路径（通过Vite代理），生产环境使用远程服务器
-const isDevelopment = import.meta.env.DEV;
+// 强制使用开发环境配置，确保 API 请求指向本地服务器
+const isDevelopment = true;
 const API_BASE_URL = isDevelopment 
   ? '/api'
-  : import.meta.env.VITE_API_URL || '/api';
+  : import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+
+// 输出环境变量信息
+console.log('=== API 配置 ===');
+console.log('isDevelopment:', isDevelopment);
+console.log('API_BASE_URL:', API_BASE_URL);
 
 // 导入缓存模块
 import { apiCache } from './apiCache.js';

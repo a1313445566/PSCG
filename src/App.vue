@@ -32,10 +32,7 @@ watch(() => route.path, async (newPath, oldPath) => {
       await questionStore.loadData()
     }
     
-    // 模拟加载时间
-    setTimeout(() => {
-      isLoading.value = false
-    }, 300)
+    isLoading.value = false
   }
 })
 </script>
@@ -43,7 +40,6 @@ watch(() => route.path, async (newPath, oldPath) => {
 <style scoped>
 .app {
   min-height: 100vh;
-  background-color: #f5f7fa;
   position: relative;
 }
 

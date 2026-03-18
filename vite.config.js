@@ -6,17 +6,23 @@ export default defineConfig({
   plugins: [vue()],
   base: './',
   optimizeDeps: {
-    include: ['element-plus', '@vueup/vue-quill'],
+    include: ['element-plus', '@vueup/vue-quill', 'echarts'],
+    exclude: []
   },
   build: {
-    chunkSizeWarningLimit: 1000,
+    chunkSizeWarningLimit: 500,
+    minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
           'element-plus': ['element-plus'],
           'echarts': ['echarts'],
-          'quill': ['@vueup/vue-quill']
-        }
+          'quill': ['@vueup/vue-quill'],
+          'vue': ['vue', 'vue-router', 'pinia']
+        },
+        chunkFileNames: 'assets/[name]-[hash].js',
+        entryFileNames: 'assets/[name]-[hash].js',
+        assetFileNames: 'assets/[name]-[hash].[ext]'
       }
     }
   },
