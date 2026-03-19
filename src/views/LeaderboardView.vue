@@ -23,42 +23,50 @@
                 <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
               </el-select>
             </div>
-            <div class="leaderboard-content">
-              <div v-if="globalLeaderboard.length > 0" class="leaderboard-table">
-                <div class="leaderboard-header">
-                  <div class="rank-col">排名</div>
-                  <div class="student-col">学号</div>
-                  <div class="name-col">姓名</div>
-                  <div class="grade-col">年级</div>
-                  <div class="class-col">班级</div>
-                  <div class="score-col">正确率</div>
-                  <div class="correct-col">正确数</div>
-                  <div class="questions-col">答题数</div>
-                  <div class="sessions-col">答题次数</div>
-                  <div class="points-col">积分</div>
-                </div>
-                <div v-for="(item, index) in globalLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
-                  <div class="rank-col">
-                    <span v-if="index === 0" class="rank-number rank-1">🥇</span>
-                    <span v-else-if="index === 1" class="rank-number rank-2">🥈</span>
-                    <span v-else-if="index === 2" class="rank-number rank-3">🥉</span>
-                    <span v-else class="rank-number">{{ index + 1 }}</span>
-                  </div>
-                  <div class="student-col">{{ item.student_id || '未知' }}</div>
-                  <div class="name-col">{{ item.name || '未知' }}</div>
-                  <div class="grade-col">{{ item.grade || '-' }}年级</div>
-                  <div class="class-col">{{ item.class || '-' }}班</div>
-                  <div class="score-col">{{ Math.round(item.avg_accuracy || 0) }}%</div>
-                  <div class="correct-col">{{ item.correct_count || 0 }}</div>
-                  <div class="questions-col">{{ item.total_questions || 0 }}</div>
-                  <div class="sessions-col">{{ item.total_sessions || 0 }}</div>
-                  <div class="points-col">{{ item.points || 0 }}</div>
-                </div>
+            <div class="leaderboard-rules">
+              <h3 class="rules-title">🏆 排行榜规则</h3>
+              <ul class="rules-list">
+                <li>📝 排名根据用户的答题正确率、答题数和积分综合计算</li>
+                <li>🏅 TOP 3 玩家将获得特殊标识和动画效果</li>
+                <li>🎖️ TOP 10 玩家将获得特殊背景和边框效果</li>
+                <li>📊 积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
+                <li>🔄 排行榜数据每日更新，确保公平公正</li>
+              </ul>
+            </div>
+            <div v-if="globalLeaderboard.length > 0" class="leaderboard-table">
+              <div class="leaderboard-header">
+                <div class="rank-col">排名</div>
+                <div class="student-col">学号</div>
+                <div class="name-col">姓名</div>
+                <div class="grade-col">年级</div>
+                <div class="class-col">班级</div>
+                <div class="score-col">正确率</div>
+                <div class="correct-col">正确数</div>
+                <div class="questions-col">答题数</div>
+                <div class="sessions-col">答题次数</div>
+                <div class="points-col">积分</div>
               </div>
-              <div v-else class="leaderboard-empty">
-                <p>暂无排行数据</p>
-                <p>全局排行榜数据长度: {{ globalLeaderboard.length }}</p>
+              <div v-for="(item, index) in globalLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
+                <div class="rank-col">
+                  <span v-if="index === 0" class="rank-number rank-1">🥇</span>
+                  <span v-else-if="index === 1" class="rank-number rank-2">🥈</span>
+                  <span v-else-if="index === 2" class="rank-number rank-3">🥉</span>
+                  <span v-else class="rank-number">{{ index + 1 }}</span>
+                </div>
+                <div class="student-col">{{ item.student_id || '未知' }}</div>
+                <div class="name-col">{{ item.name || '未知' }}</div>
+                <div class="grade-col">{{ item.grade || '-' }}年级</div>
+                <div class="class-col">{{ item.class || '-' }}班</div>
+                <div class="score-col">{{ Math.round(item.avg_accuracy || 0) }}%</div>
+                <div class="correct-col">{{ item.correct_count || 0 }}</div>
+                <div class="questions-col">{{ item.total_questions || 0 }}</div>
+                <div class="sessions-col">{{ item.total_sessions || 0 }}</div>
+                <div class="points-col">{{ item.points || 0 }}</div>
               </div>
+            </div>
+            <div v-else class="leaderboard-empty">
+              <p>暂无排行数据</p>
+              <p>全局排行榜数据长度: {{ globalLeaderboard.length }}</p>
             </div>
           </el-tab-pane>
           <el-tab-pane label="学科排行榜" name="subject">
@@ -89,42 +97,50 @@
                 <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
               </el-select>
             </div>
-            <div class="leaderboard-content">
-              <div v-if="subjectLeaderboard.length > 0 && selectedSubjectId" class="leaderboard-table">
-                <div class="leaderboard-header">
-                  <div class="rank-col">排名</div>
-                  <div class="student-col">学号</div>
-                  <div class="name-col">姓名</div>
-                  <div class="grade-col">年级</div>
-                  <div class="class-col">班级</div>
-                  <div class="score-col">正确率</div>
-                  <div class="correct-col">正确数</div>
-                  <div class="questions-col">答题数</div>
-                  <div class="sessions-col">答题次数</div>
-                  <div class="points-col">积分</div>
-                </div>
-                <div v-for="(item, index) in subjectLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
-                  <div class="rank-col">
-                    <span v-if="index === 0" class="rank-number rank-1">🥇</span>
-                    <span v-else-if="index === 1" class="rank-number rank-2">🥈</span>
-                    <span v-else-if="index === 2" class="rank-number rank-3">🥉</span>
-                    <span v-else class="rank-number">{{ index + 1 }}</span>
-                  </div>
-                  <div class="student-col">{{ item.student_id || '未知' }}</div>
-                  <div class="name-col">{{ item.name || '未知' }}</div>
-                  <div class="grade-col">{{ item.grade || '-' }}年级</div>
-                  <div class="class-col">{{ item.class || '-' }}班</div>
-                  <div class="score-col">{{ Math.round(item.avg_accuracy || 0) }}%</div>
-                  <div class="correct-col">{{ item.correct_count || 0 }}</div>
-                  <div class="questions-col">{{ item.total_questions || 0 }}</div>
-                  <div class="sessions-col">{{ item.total_sessions || 0 }}</div>
-                  <div class="points-col">{{ item.points || 0 }}</div>
-                </div>
+            <div class="leaderboard-rules">
+              <h3 class="rules-title">🏆 排行榜规则</h3>
+              <ul class="rules-list">
+                <li>📝 排名根据用户的答题正确率、答题数和积分综合计算</li>
+                <li>🏅 TOP 3 玩家将获得特殊标识和动画效果</li>
+                <li>🎖️ TOP 10 玩家将获得特殊背景和边框效果</li>
+                <li>📊 积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
+                <li>🔄 排行榜数据每日更新，确保公平公正</li>
+              </ul>
+            </div>
+            <div v-if="subjectLeaderboard.length > 0 && selectedSubjectId" class="leaderboard-table">
+              <div class="leaderboard-header">
+                <div class="rank-col">排名</div>
+                <div class="student-col">学号</div>
+                <div class="name-col">姓名</div>
+                <div class="grade-col">年级</div>
+                <div class="class-col">班级</div>
+                <div class="score-col">正确率</div>
+                <div class="correct-col">正确数</div>
+                <div class="questions-col">答题数</div>
+                <div class="sessions-col">答题次数</div>
+                <div class="points-col">积分</div>
               </div>
-              <div v-else class="leaderboard-empty">
-                <p>{{ selectedSubjectId ? '暂无排行数据' : '请选择一个学科查看排行榜' }}</p>
-                <p v-if="selectedSubjectId">学科排行榜数据长度: {{ subjectLeaderboard.length }}</p>
+              <div v-for="(item, index) in subjectLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
+                <div class="rank-col">
+                  <span v-if="index === 0" class="rank-number rank-1">🥇</span>
+                  <span v-else-if="index === 1" class="rank-number rank-2">🥈</span>
+                  <span v-else-if="index === 2" class="rank-number rank-3">🥉</span>
+                  <span v-else class="rank-number">{{ index + 1 }}</span>
+                </div>
+                <div class="student-col">{{ item.student_id || '未知' }}</div>
+                <div class="name-col">{{ item.name || '未知' }}</div>
+                <div class="grade-col">{{ item.grade || '-' }}年级</div>
+                <div class="class-col">{{ item.class || '-' }}班</div>
+                <div class="score-col">{{ Math.round(item.avg_accuracy || 0) }}%</div>
+                <div class="correct-col">{{ item.correct_count || 0 }}</div>
+                <div class="questions-col">{{ item.total_questions || 0 }}</div>
+                <div class="sessions-col">{{ item.total_sessions || 0 }}</div>
+                <div class="points-col">{{ item.points || 0 }}</div>
               </div>
+            </div>
+            <div v-else class="leaderboard-empty">
+              <p>{{ selectedSubjectId ? '暂无排行数据' : '请选择一个学科查看排行榜' }}</p>
+              <p v-if="selectedSubjectId">学科排行榜数据长度: {{ subjectLeaderboard.length }}</p>
             </div>
           </el-tab-pane>
           <el-tab-pane label="个人成绩" name="personal">
@@ -665,6 +681,9 @@ watch(activeTab, (newTab) => {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   border: 3px solid var(--border-color);
   background: white;
+  overflow: hidden;
+  position: relative;
+  z-index: 10;
 }
 
 .filter-section .el-select:hover {
@@ -768,13 +787,77 @@ watch(activeTab, (newTab) => {
   font-weight: 900;
   padding: 0.8rem 1.8rem;
   background: var(--header-gradient);
-  border: 2px solid var(--primary-color);
+  border: 3px solid var(--border-color);
   color: white;
-  box-shadow: 0 4px 0 #D9534F;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   transition: all 0.3s ease;
   font-family: var(--game-font);
   text-transform: uppercase;
   letter-spacing: 1px;
+  animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.back-home-btn .el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+  border-color: var(--primary-color);
+}
+
+.back-home-btn .el-button:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+}
+
+.leaderboard-rules {
+  background: white;
+  border-radius: 16px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  border: 3px solid var(--border-color);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.rules-title {
+  font-family: 'Fredoka One', 'Comic Sans MS', cursive;
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  margin-bottom: 1rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+.rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rules-list li {
+  color: var(--text-primary);
+  font-family: var(--game-font);
+  font-size: 0.9rem;
+  margin-bottom: 0.5rem;
+  padding-left: 1.5rem;
+  position: relative;
+  line-height: 1.4;
+}
+
+.rules-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: 1rem;
+  width: 1rem;
+  height: 1rem;
+  text-align: center;
+  font-size: 0.8rem;
 }
 
 .leaderboard-table {
@@ -788,7 +871,7 @@ watch(activeTab, (newTab) => {
 
 .leaderboard-header {
   display: grid;
-  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px 90px;
+  grid-template-columns: 80px 100px 90px 60px 60px 100px 80px 80px 80px 80px;
   background: var(--header-gradient);
   color: white;
   font-weight: bold;
@@ -803,7 +886,7 @@ watch(activeTab, (newTab) => {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px 90px;
+  grid-template-columns: 80px 100px 90px 60px 60px 100px 80px 80px 80px 80px;
   padding: 1rem;
   text-align: center;
   border-bottom: 1px solid #f0f0f0;

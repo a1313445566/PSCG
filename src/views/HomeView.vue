@@ -51,6 +51,14 @@
           <h3 class="section-title">🏆 排行榜 Top 10</h3>
           <router-link to="/leaderboard" class="view-full-link">查看完整排行榜</router-link>
         </div>
+        <div class="leaderboard-rules">
+          <h4 class="rules-title">📝 排行榜规则</h4>
+          <ul class="rules-list">
+            <li>排名根据用户的答题正确率、答题数和积分综合计算</li>
+            <li>TOP 3 玩家将获得特殊标识和动画效果</li>
+            <li>积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
+          </ul>
+        </div>
         <LeaderboardTable :leaderboardData="leaderboardData" />
       </div>
     </div>
@@ -378,6 +386,53 @@ onMounted(async () => {
 .view-full-link:active {
   transform: translateY(2px);
   box-shadow: 0 2px 0 #D9534F;
+}
+
+.leaderboard-rules {
+  background: white;
+  border-radius: 16px;
+  padding: 1.2rem;
+  margin-bottom: 1.5rem;
+  border: 2px solid var(--border-color);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.rules-title {
+  font-family: var(--game-font);
+  font-size: 1rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  margin-bottom: 0.8rem;
+  text-align: center;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+.rules-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.rules-list li {
+  color: var(--text-primary);
+  font-family: var(--game-font);
+  font-size: 0.8rem;
+  margin-bottom: 0.4rem;
+  padding-left: 1.2rem;
+  position: relative;
+  line-height: 1.3;
+}
+
+.rules-list li::before {
+  content: '•';
+  position: absolute;
+  left: 0;
+  top: 0.2rem;
+  color: var(--primary-color);
+  font-weight: bold;
+  font-size: 1rem;
 }
 
 /* 响应式设计 */
