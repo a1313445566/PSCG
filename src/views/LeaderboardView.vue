@@ -549,7 +549,7 @@ watch(activeTab, (newTab) => {
 <style scoped>
 .leaderboard-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
+  background: var(--header-gradient);
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
   background-repeat: repeat;
   padding-bottom: 2rem;
@@ -593,7 +593,7 @@ watch(activeTab, (newTab) => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  background: var(--header-gradient);
 }
 
 .leaderboard-header-container {
@@ -626,7 +626,7 @@ watch(activeTab, (newTab) => {
   justify-content: center;
   align-items: center;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  background: var(--header-gradient);
   border-radius: 16px;
   border: 3px solid var(--border-color);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
@@ -763,7 +763,7 @@ watch(activeTab, (newTab) => {
   border-radius: 25px;
   font-weight: 900;
   padding: 0.8rem 1.8rem;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--header-gradient);
   border: 2px solid var(--primary-color);
   color: white;
   box-shadow: 0 4px 0 #D9534F;
@@ -785,7 +785,7 @@ watch(activeTab, (newTab) => {
 .leaderboard-header {
   display: grid;
   grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--header-gradient);
   color: white;
   font-weight: bold;
   padding: 1rem;
@@ -825,7 +825,7 @@ watch(activeTab, (newTab) => {
   height: 32px;
   line-height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--header-gradient);
   color: white;
   font-weight: bold;
   font-size: 1rem;
@@ -923,7 +923,7 @@ watch(activeTab, (newTab) => {
 }
 
 .stat-card {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--header-gradient);
   border-radius: 16px;
   padding: 2rem;
   text-align: center;
@@ -1009,7 +1009,7 @@ watch(activeTab, (newTab) => {
 .user-detail-info {
   margin-bottom: 1.5rem;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background: var(--header-gradient);
   border-radius: 12px;
   border: 2px solid var(--border-color);
   font-family: var(--game-font);
@@ -1018,7 +1018,7 @@ watch(activeTab, (newTab) => {
 .user-detail-info div {
   font-size: 1rem;
   font-weight: bold;
-  color: var(--text-primary);
+  color: white;
 }
 
 @keyframes fadeIn {
