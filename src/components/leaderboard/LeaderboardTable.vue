@@ -72,7 +72,7 @@ const getRankClass = (index) => {
 .leaderboard-header {
   display: grid;
   grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px;
-  background: linear-gradient(135deg, #4A90E2 0%, #50E3C2 100%);
+  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
   color: white;
   font-weight: bold;
   padding: 1rem;
@@ -109,7 +109,7 @@ const getRankClass = (index) => {
   height: 32px;
   line-height: 32px;
   border-radius: 50%;
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
   color: white;
   font-weight: bold;
   font-size: 1rem;

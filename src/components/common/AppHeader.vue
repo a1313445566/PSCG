@@ -1,8 +1,13 @@
 <template>
   <header class="app-header">
-    <!-- 装饰星星：语义化类名 -->
-    <span class="decor-star decor-star--left">⭐</span>
-    <span class="decor-star decor-star--right">🌟</span>
+    <!-- 装饰元素 -->
+    <span class="decor-element decor-star decor-star--left">⭐</span>
+    <span class="decor-element decor-heart">💖</span>
+    <span class="decor-element decor-star decor-star--right">🌟</span>
+    <span class="decor-element decor-star decor-star--top-left">✨</span>
+    <span class="decor-element decor-star decor-star--top-right">✨</span>
+    <span class="decor-element decor-star decor-star--bottom-left">🌟</span>
+    <span class="decor-element decor-star decor-star--bottom-right">⭐</span>
     
     <div class="header-content">
       <h1 class="header-title">🎊 {{ interfaceName }} 🎊</h1>
@@ -47,76 +52,157 @@ onMounted(async () => {
   --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
-/* 3. Header 核心样式（精简+语义化） */
-.app-header {
-  background: var(--header-gradient) !important;
-  padding: 35px 20px !important;
-  text-align: center !important;
-  border-radius: 0 0 30px 30px !important;
-  box-shadow: var(--el-shadow-light) !important;
-  position: relative !important;
-  overflow: hidden !important;
-  border-bottom: 8px dashed var(--header-border-color) !important;
-  margin: 0 !important;
-  width: 100% !important;
+/* 动画效果 */
+@keyframes header-float {
+  0%, 100% {
+    transform: translateY(0) rotate(0deg);
+  }
+  50% {
+    transform: translateY(-10px) rotate(5deg);
+  }
 }
 
-/* 4. 装饰元素（星星） */
+@keyframes header-twinkle {
+  0%, 100% {
+    opacity: 0.6;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+}
+
+@keyframes header-pulse {
+  0%, 100% {
+    transform: translateX(-50%) scale(1);
+  }
+  50% {
+    transform: translateX(-50%) scale(1.2);
+  }
+}
+
+/* 3. Header 核心样式（精简+语义化） */
+.app-header {
+  background: var(--header-gradient);
+  padding: 35px 20px;
+  text-align: center;
+  border-radius: 0 0 30px 30px;
+  box-shadow: var(--el-shadow-light);
+  position: relative;
+  overflow: hidden;
+  border-bottom: 8px dashed var(--header-border-color);
+  margin: 0;
+  width: 100%;
+}
+
+/* 4. 装饰元素 */
+.decor-element {
+  position: absolute;
+  font-size: 24px;
+  z-index: 10;
+}
+
+/* 星星装饰 */
 .decor-star {
-  position: absolute !important;
-  font-size: 24px !important;
-  z-index: 10 !important;
-  bottom: 20px !important;
+  animation: header-twinkle 2s ease-in-out infinite;
 }
+
 .decor-star--left {
-  left: 40px !important;
-  color: var(--el-color-white) !important;
+  left: 40px;
+  bottom: 20px;
+  color: var(--el-color-white);
+  animation-delay: 0s;
 }
+
 .decor-star--right {
-  right: 40px !important;
-  color: var(--accent-color) !important;
-  text-shadow: 0 0 2px var(--el-color-black) !important;
+  right: 40px;
+  bottom: 20px;
+  color: var(--accent-color);
+  text-shadow: 0 0 2px var(--el-color-black);
+  animation-delay: 0.5s;
+}
+
+.decor-star--top-left {
+  left: 60px;
+  top: 20px;
+  color: var(--el-color-white);
+  animation-delay: 1s;
+}
+
+.decor-star--top-right {
+  right: 60px;
+  top: 20px;
+  color: var(--accent-color);
+  text-shadow: 0 0 2px var(--el-color-black);
+  animation-delay: 1.5s;
+}
+
+.decor-star--bottom-left {
+  left: 80px;
+  bottom: 10px;
+  color: var(--el-color-white);
+  animation-delay: 2s;
+}
+
+.decor-star--bottom-right {
+  right: 80px;
+  bottom: 10px;
+  color: var(--accent-color);
+  text-shadow: 0 0 2px var(--el-color-black);
+  animation-delay: 2.5s;
+}
+
+/* 爱心装饰 */
+.decor-heart {
+  left: 50%;
+  top: 15px;
+  transform: translateX(-50%);
+  color: #FF6B6B;
+  animation: header-pulse 2s ease-in-out infinite;
 }
 
 /* 5. 内容区域 */
 .header-content {
-  position: relative !important;
-  z-index: 5 !important;
+  position: relative;
+  z-index: 5;
 }
+
 .header-title {
-  font-size: var(--el-font-size-extra-large) !important;
-  font-weight: bold !important;
-  color: var(--el-color-white) !important;
-  margin-bottom: 15px !important;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif !important;
+  font-size: var(--el-font-size-extra-large);
+  font-weight: bold;
+  color: var(--el-color-white);
+  margin-bottom: 15px;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
 }
+
 .header-subtitle {
-  font-size: var(--el-font-size-base) !important;
-  color: var(--el-color-white) !important;
-  line-height: 1.6 !important;
-  letter-spacing: 1px !important;
-  background: rgba(255,255,255,0.2) !important;
-  padding: 8px 20px !important;
-  border-radius: var(--el-border-radius-round) !important;
-  display: inline-block !important;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif !important;
+  font-size: var(--el-font-size-base);
+  color: var(--el-color-white);
+  line-height: 1.6;
+  letter-spacing: 1px;
+  background: rgba(255,255,255,0.2);
+  padding: 8px 20px;
+  border-radius: var(--el-border-radius-round);
+  display: inline-block;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
 }
 
 /* 6. 响应式适配（媒体查询精简） */
 @media (max-width: 768px) {
   .app-header {
-    padding: 25px 15px !important;
+    padding: 25px 15px;
   }
   .header-title {
-    font-size: var(--el-font-size-large) !important;
+    font-size: var(--el-font-size-large);
   }
   .header-subtitle {
-    font-size: var(--el-font-size-small) !important;
-    padding: 6px 15px !important;
+    font-size: var(--el-font-size-small);
+    padding: 6px 15px;
   }
-  .decor-star {
-    font-size: 20px !important;
+  .decor-element {
+    font-size: 20px;
   }
 }
 </style>
