@@ -37,6 +37,11 @@
           {{ row.correct_count || 0 }}
         </template>
       </el-table-column>
+      <el-table-column label="积分" width="80" align="center">
+        <template #default="{ row }">
+          {{ row.points || 0 }}
+        </template>
+      </el-table-column>
       <el-table-column label="正确率" width="120" align="center">
         <template #default="{ row }">
           <el-progress 

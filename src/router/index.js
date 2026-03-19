@@ -61,9 +61,37 @@ router.beforeEach((to, from, next) => {
   if (to.path === '/admin') {
     next()
   }
-  // 如果用户已登录且要访问登录页面，重定向到首页
-  else if (isLoggedIn && to.path === '/login') {
-    next('/home')
+  // 如果用户已登录
+  else if (isLoggedIn) {
+    // 检查token是否过期
+    const tokenExpiresAt = localStorage.getItem('tokenExpiresAt')
+    if (tokenExpiresAt && Date.now() > parseInt(tokenExpiresAt)) {
+      // token过期，清除登录状态
+      localStorage.clear()
+      sessionStorage.clear()
+      next('/login')
+      return
+    }
+    
+    // 检查会话是否超时（30分钟无活动）
+    const lastActivity = sessionStorage.getItem('lastActivity')
+    if (lastActivity && Date.now() - parseInt(lastActivity) > 30 * 60 * 1000) {
+      // 会话超时，清除登录状态
+      localStorage.clear()
+      sessionStorage.clear()
+      next('/login')
+      return
+    }
+    
+    // 更新最后活动时间
+    sessionStorage.setItem('lastActivity', Date.now())
+    
+    // 如果要访问登录页面，重定向到首页
+    if (to.path === '/login') {
+      next('/home')
+    } else {
+      next()
+    }
   } 
   // 如果用户未登录且要访问非登录页面，重定向到登录页面
   else if (!isLoggedIn && to.path !== '/login') {

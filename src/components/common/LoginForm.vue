@@ -168,6 +168,9 @@ const saveStudentId = async () => {
       localStorage.setItem('userName', inputName.value.trim())
       localStorage.setItem('userGrade', inputGrade.value)
       localStorage.setItem('userClass', inputClass.value)
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('tokenExpiresAt', Date.now() + (24 * 60 * 60 * 1000)) // 24小时过期
+      sessionStorage.setItem('lastActivity', Date.now()) // 记录最后活动时间
       ElMessage.success('登录成功')
       
       // 跳转到首页

@@ -4,7 +4,32 @@
     
     <div class="home-content">
       <div class="welcome-section">
-        <h2 class="welcome-title">欢迎回来，{{ currentUserGrade }}年级{{ currentUserClass }}班的 {{ currentUserName || (currentStudentId + '学号') }}同学！</h2>
+        <div class="welcome-header">
+          <h2 class="welcome-title">欢迎回来，{{ currentUserGrade }}年级{{ currentUserClass }}班的 {{ currentUserName || (currentStudentId + '学号') }}同学！</h2>
+          <button class="logout-btn" @click="logout">退出登录</button>
+        </div>
+        <div class="user-stats" v-if="userStats">
+          <div class="stat-item">
+            <span class="stat-label">答题次数:</span>
+            <span class="stat-value">{{ userStats.totalSessions || 0 }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">答题总数:</span>
+            <span class="stat-value">{{ userStats.totalQuestions || 0 }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">正确数:</span>
+            <span class="stat-value">{{ userStats.totalCorrect || 0 }}</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">正确率:</span>
+            <span class="stat-value">{{ Math.round(userStats.avgAccuracy || 0) }}%</span>
+          </div>
+          <div class="stat-item">
+            <span class="stat-label">积分:</span>
+            <span class="stat-value">{{ userStats.points || 0 }}</span>
+          </div>
+        </div>
         <p class="welcome-message">选择一个学科开始学习之旅吧！</p>
       </div>
       
@@ -56,6 +81,8 @@ const currentUserClass = computed(() => localStorage.getItem('userClass'))
 
 // 排行榜数据
 const leaderboardData = ref([])
+// 用户统计数据
+const userStats = ref(null)
 
 // 调试：监控 subjects 数据变化
 watch(() => questionStore.subjects, (newSubjects) => {
@@ -80,9 +107,38 @@ const fetchLeaderboardData = async () => {
   }
 }
 
+// 获取用户统计数据
+const fetchUserStats = async () => {
+  try {
+    const userId = localStorage.getItem('userId')
+    if (userId) {
+      const response = await fetch(`${getApiBaseUrl()}/users/stats/${userId}`)
+      if (response.ok) {
+        const data = await response.json()
+        // 获取用户积分
+        const userResponse = await fetch(`${getApiBaseUrl()}/users/${userId}`)
+        if (userResponse.ok) {
+          const userData = await userResponse.json()
+          data.points = userData.points || 0
+        }
+        userStats.value = data
+      }
+    }
+  } catch (error) {
+
+  }
+}
+
 // 选择学科
 const selectSubject = (subjectId) => {
   router.push(`/subcategory/${subjectId}`)
+}
+
+// 退出登录
+const logout = () => {
+  localStorage.clear()
+  sessionStorage.clear()
+  router.push('/login')
 }
 
 onMounted(async () => {
@@ -90,6 +146,8 @@ onMounted(async () => {
   await questionStore.initialize()
   // 获取排行榜数据
   await fetchLeaderboardData()
+  // 获取用户统计数据
+  await fetchUserStats()
   
   // 检查是否已登录
   if (!currentStudentId.value) {
@@ -114,7 +172,6 @@ onMounted(async () => {
 }
 
 .welcome-section {
-  text-align: center;
   margin-bottom: 3rem;
   padding: 2.5rem;
   background: white;
@@ -124,6 +181,86 @@ onMounted(async () => {
   position: relative;
   overflow: hidden;
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.welcome-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.welcome-title {
+  font-family: var(--game-font);
+  font-size: 2.2rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 2px;
+  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+.logout-btn {
+  background-color: var(--primary-color);
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
+  border: none;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 0 #D9534F;
+}
+
+.logout-btn:hover {
+  background-color: var(--primary-color);
+  transform: translateY(-3px);
+  box-shadow: 0 7px 0 #D9534F, 0 10px 15px rgba(255, 107, 107, 0.4);
+}
+
+.logout-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #D9534F;
+}
+
+.user-stats {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.stat-label {
+  font-size: 1rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  font-family: var(--game-font);
+  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
 }
 
 .welcome-section::before {
@@ -136,16 +273,7 @@ onMounted(async () => {
   background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
 }
 
-.welcome-title {
-  font-family: var(--game-font);
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: var(--primary-color);
-  margin: 0 0 1rem 0;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
-}
+
 
 
 
@@ -262,6 +390,29 @@ onMounted(async () => {
   .subject-section,
   .leaderboard-preview {
     padding: 2rem;
+  }
+  
+  .welcome-header {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+  
+  .user-stats {
+    gap: 1rem;
+    padding: 1rem;
+  }
+  
+  .stat-item {
+    gap: 0.3rem;
+  }
+  
+  .stat-label {
+    font-size: 0.9rem;
+  }
+  
+  .stat-value {
+    font-size: 1.2rem;
   }
   
   .welcome-title {

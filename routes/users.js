@@ -1,6 +1,11 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
+const jwt = require('jsonwebtoken');
+
+// JWT密钥
+const JWT_SECRET = 'your-secret-key';
+const JWT_EXPIRES_IN = '24h'; // 24小时过期
 
 // 获取用户列表
 router.get('/', async (req, res) => {
@@ -206,13 +211,22 @@ router.post('/login', async (req, res) => {
       user = await db.get('SELECT * FROM users WHERE id = ?', [user.id]);
     }
     
-    // 返回用户信息
+    // 生成JWT token
+    const token = jwt.sign(
+      { userId: user.id, studentId: user.student_id },
+      JWT_SECRET,
+      { expiresIn: JWT_EXPIRES_IN }
+    );
+    
+    // 返回用户信息和token
     res.json({
       userId: user.id,
       studentId: user.student_id,
       name: user.name,
       grade: user.grade,
-      class: user.class
+      class: user.class,
+      token: token,
+      expiresIn: JWT_EXPIRES_IN
     });
   } catch (error) {
     // console.error('用户登录失败:', error);

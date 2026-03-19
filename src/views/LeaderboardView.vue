@@ -35,6 +35,7 @@
                   <div class="correct-col">正确数</div>
                   <div class="questions-col">答题数</div>
                   <div class="sessions-col">答题次数</div>
+                  <div class="points-col">积分</div>
                 </div>
                 <div v-for="(item, index) in globalLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
                   <div class="rank-col">
@@ -51,6 +52,7 @@
                   <div class="correct-col">{{ item.correct_count || 0 }}</div>
                   <div class="questions-col">{{ item.total_questions || 0 }}</div>
                   <div class="sessions-col">{{ item.total_sessions || 0 }}</div>
+                  <div class="points-col">{{ item.points || 0 }}</div>
                 </div>
               </div>
               <div v-else class="leaderboard-empty">
@@ -99,6 +101,7 @@
                   <div class="correct-col">正确数</div>
                   <div class="questions-col">答题数</div>
                   <div class="sessions-col">答题次数</div>
+                  <div class="points-col">积分</div>
                 </div>
                 <div v-for="(item, index) in subjectLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
                   <div class="rank-col">
@@ -115,6 +118,7 @@
                   <div class="correct-col">{{ item.correct_count || 0 }}</div>
                   <div class="questions-col">{{ item.total_questions || 0 }}</div>
                   <div class="sessions-col">{{ item.total_sessions || 0 }}</div>
+                  <div class="points-col">{{ item.points || 0 }}</div>
                 </div>
               </div>
               <div v-else class="leaderboard-empty">
@@ -784,7 +788,7 @@ watch(activeTab, (newTab) => {
 
 .leaderboard-header {
   display: grid;
-  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px;
+  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px 90px;
   background: var(--header-gradient);
   color: white;
   font-weight: bold;
@@ -799,7 +803,7 @@ watch(activeTab, (newTab) => {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px;
+  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px 90px;
   padding: 1rem;
   text-align: center;
   border-bottom: 1px solid #f0f0f0;

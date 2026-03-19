@@ -230,12 +230,39 @@ router.post('/', async (req, res) => {
   try {
     const { userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent } = req.body;
     
-    const result = await db.run(
-      'INSERT INTO answer_records (user_id, subject_id, subcategory_id, total_questions, correct_count, time_spent) VALUES (?, ?, ?, ?, ?, ?)',
-      [userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent]
-    );
+    // 计算积分：答对1分，答错扣1分
+    let points = correctCount - (totalQuestions - correctCount);
     
-    res.json({ success: true, recordId: result.insertId });
+    // 全对积分翻倍
+    if (correctCount === totalQuestions && totalQuestions > 0) {
+      points *= 2;
+    }
+    
+    // 开始事务
+    await db.run('START TRANSACTION');
+    
+    try {
+      // 保存答题记录
+      const result = await db.run(
+        'INSERT INTO answer_records (user_id, subject_id, subcategory_id, total_questions, correct_count, time_spent) VALUES (?, ?, ?, ?, ?, ?)',
+        [userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent]
+      );
+      
+      // 更新用户积分
+      await db.run(
+        'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
+        [points, userId]
+      );
+      
+      // 提交事务
+      await db.run('COMMIT');
+      
+      res.json({ success: true, recordId: result.insertId, points });
+    } catch (error) {
+      // 回滚事务
+      await db.run('ROLLBACK');
+      throw error;
+    }
   } catch (error) {
     // console.error('保存答题记录失败:', error);
     res.status(500).json({ error: '保存答题记录失败' });

@@ -9,7 +9,7 @@ router.get('/global', async (req, res) => {
     const { limit = 100, grade, class: className, id } = req.query;
     
     let query = `
-      SELECT u.id, u.student_id, u.name, u.grade, u.class,
+      SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
              COUNT(DISTINCT ar.id) as total_sessions,
              SUM(ar.total_questions) as total_questions,
              SUM(ar.correct_count) as correct_count,
@@ -56,7 +56,7 @@ router.get('/subject/:subjectId', async (req, res) => {
     const { grade, class: className, subcategoryId } = req.query;
     
     let query = `
-      SELECT u.id, u.student_id, u.name, u.grade, u.class,
+      SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
              COUNT(DISTINCT ar.id) as total_sessions,
              SUM(ar.total_questions) as total_questions,
              SUM(ar.correct_count) as correct_count,

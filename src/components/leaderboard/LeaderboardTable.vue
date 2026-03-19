@@ -9,6 +9,7 @@
       <div class="score-col">正确率</div>
       <div class="correct-col">正确数</div>
       <div class="questions-col">答题数</div>
+      <div class="points-col">积分</div>
     </div>
     
     <div class="leaderboard-body">
@@ -31,6 +32,7 @@
         <div class="score-col">{{ Math.round(item.avg_accuracy) }}%</div>
         <div class="correct-col">{{ item.correct_count || 0 }}</div>
         <div class="questions-col">{{ item.total_questions }}</div>
+        <div class="points-col">{{ item.points || 0 }}</div>
       </div>
       
       <div v-if="leaderboardData.length === 0" class="leaderboard-empty">
@@ -71,7 +73,7 @@ const getRankClass = (index) => {
 
 .leaderboard-header {
   display: grid;
-  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px;
+  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px;
   background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
   color: white;
   font-weight: bold;
@@ -87,7 +89,7 @@ const getRankClass = (index) => {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px;
+  grid-template-columns: 90px 120px 100px 70px 70px 120px 90px 90px 90px;
   padding: 1rem;
   text-align: center;
   border-bottom: 1px solid #F0F0F0;
@@ -195,7 +197,7 @@ const getRankClass = (index) => {
 @media (max-width: 1024px) {
   .leaderboard-header,
   .leaderboard-row {
-    grid-template-columns: 80px 100px 90px 60px 60px 100px 80px 80px;
+    grid-template-columns: 80px 100px 90px 60px 60px 100px 80px 80px 80px;
   }
   
   .leaderboard-header,
