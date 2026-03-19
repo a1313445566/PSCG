@@ -72,8 +72,7 @@ const calculatePoints = computed(() => {
     points *= 2
   }
   
-  // 确保积分不为负数
-  return Math.max(0, points)
+  return points
 })
 
 // 错题列表

@@ -230,7 +230,7 @@ router.post('/', async (req, res) => {
   try {
     const { userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent } = req.body;
     
-    // 计算积分：答对1分，答错扣1分
+    // 计算积分：答对1分，答错一题扣1分
     let points = correctCount - (totalQuestions - correctCount);
     
     // 全对积分翻倍
