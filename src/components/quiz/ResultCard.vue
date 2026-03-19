@@ -5,14 +5,24 @@
       <div class="result-icon">{{ resultIcon }}</div>
     </div>
     
-    <div class="score-section">
-      <div class="score-circle">
-        <div class="score-number">{{ score }}</div>
-        <div class="score-total">/{{ totalQuestions }}</div>
+    <div class="score-main">
+      <div class="score-number">{{ score }}</div>
+      <div class="score-divider">/</div>
+      <div class="score-total">{{ totalQuestions }}</div>
+    </div>
+    
+    <div class="stats-grid">
+      <div class="stat-item">
+        <div class="stat-label">正确率</div>
+        <div class="stat-value">{{ Math.round((score / totalQuestions) * 100) }}%</div>
       </div>
-      <div class="score-info">
-        <div class="accuracy">正确率: {{ Math.round((score / totalQuestions) * 100) }}%</div>
-        <div class="time-spent">用时: {{ formatTime(timeSpent) }}</div>
+      <div class="stat-item">
+        <div class="stat-label">用时</div>
+        <div class="stat-value">{{ formatTime(timeSpent) }}</div>
+      </div>
+      <div class="stat-item">
+        <div class="stat-label">积分</div>
+        <div class="stat-value">{{ points }} 分</div>
       </div>
     </div>
     
@@ -44,6 +54,10 @@ const props = defineProps({
     required: true
   },
   timeSpent: {
+    type: Number,
+    default: 0
+  },
+  points: {
     type: Number,
     default: 0
   }
@@ -96,13 +110,18 @@ const backToSubjects = () => {
 <style scoped>
 .result-card {
   background: white;
-  border-radius: 20px;
+  border-radius: 24px;
   padding: 2rem;
   text-align: center;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
   animation: slideIn 0.8s ease;
   position: relative;
   overflow: hidden;
+  min-height: 300px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 1.5rem;
 }
 
 @keyframes slideIn {
@@ -122,58 +141,53 @@ const backToSubjects = () => {
   top: 0;
   left: 0;
   width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, #4A90E2, #50E3C2);
+  height: 6px;
+  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
 }
 
 .result-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
 }
 
 .result-title {
-  font-family: 'Fredoka One', 'Comic Sans MS', cursive;
-  font-size: 1.8rem;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-size: 1.5rem;
   font-weight: bold;
   color: #333;
   margin: 0;
 }
 
 .result-icon {
-  font-size: 3rem;
+  font-size: 2.5rem;
   animation: pulse 2s infinite;
 }
 
 @keyframes pulse {
-  0% {
+  0%, 100% {
     transform: scale(1);
   }
   50% {
     transform: scale(1.2);
   }
-  100% {
-    transform: scale(1);
-  }
 }
 
-.score-section {
-  margin-bottom: 2rem;
-}
-
-.score-circle {
-  display: inline-flex;
+.score-main {
+  display: flex;
   align-items: baseline;
-  margin-bottom: 1rem;
+  justify-content: center;
+  gap: 0.5rem;
+  margin: 0 auto;
 }
 
 .score-number {
-  font-size: 5rem;
+  font-size: 4rem;
   font-weight: bold;
-  color: #4A90E2;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  color: #7DD3F8;
+  text-shadow: 2px 2px 4px rgba(125, 211, 248, 0.3);
   animation: bounce 1s ease-in-out;
+  line-height: 1;
 }
 
 @keyframes bounce {
@@ -188,125 +202,118 @@ const backToSubjects = () => {
   }
 }
 
+.score-divider {
+  font-size: 2rem;
+  color: #666;
+  font-weight: bold;
+}
+
 .score-total {
   font-size: 2rem;
   color: #666;
-  margin-left: 0.5rem;
-}
-
-.score-info {
-  display: flex;
-  justify-content: center;
-  gap: 2rem;
-  margin-top: 1rem;
-}
-
-.accuracy,
-.time-spent {
-  background-color: #F0F4F8;
-  padding: 0.5rem 1rem;
-  border-radius: 15px;
   font-weight: bold;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin: 0 auto;
+  max-width: 80%;
+}
+
+.stat-item {
+  background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
+  padding: 1rem;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+}
+
+.stat-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(125, 211, 248, 0.2);
+}
+
+.stat-label {
+  font-size: 0.9rem;
   color: #666;
+  margin-bottom: 0.3rem;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+}
+
+.stat-value {
+  font-size: 1.1rem;
+  font-weight: bold;
+  color: #333;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
 }
 
 .encouragement {
-  font-size: 1.2rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #333;
-  margin-bottom: 2rem;
   padding: 1rem;
-  background-color: #F8F9FA;
-  border-radius: 10px;
+  background: linear-gradient(135deg, #F0F8FF 0%, #E6F7FF 100%);
+  border-radius: 12px;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  border-left: 4px solid #7DD3F8;
+  box-shadow: 0 4px 12px rgba(125, 211, 248, 0.1);
 }
 
 .action-buttons {
   display: flex;
   justify-content: center;
-  gap: 1rem;
+  gap: 1.5rem;
   flex-wrap: wrap;
 }
 
 .action-btn {
-  padding: 1rem 2rem;
+  padding: 0.8rem 1.8rem;
   border: none;
-  border-radius: 10px;
-  font-size: 1rem;
+  border-radius: 25px;
+  font-size: 0.9rem;
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  min-width: 120px;
+  justify-content: center;
 }
 
 .action-btn.primary {
-  background: linear-gradient(135deg, #4A90E2 0%, #50E3C2 100%);
+  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
   color: white;
+  border: 2px solid #7DD3F8;
+  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
 }
 
 .action-btn.secondary {
   background-color: #F0F4F8;
   color: #333;
   border: 2px solid #E8E8E8;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.05);
 }
 
 .action-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(125, 211, 248, 0.4);
 }
 
 .action-btn:active {
-  transform: scale(0.98);
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 rgba(125, 211, 248, 0.5);
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
   .result-card {
     padding: 1.5rem;
-  }
-  
-  .result-title {
-    font-size: 1.5rem;
-  }
-  
-  .result-icon {
-    font-size: 2.5rem;
-  }
-  
-  .score-number {
-    font-size: 4rem;
-  }
-  
-  .score-total {
-    font-size: 1.5rem;
-  }
-  
-  .score-info {
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
-  }
-  
-  .encouragement {
-    font-size: 1.1rem;
-  }
-  
-  .action-buttons {
-    flex-direction: column;
-    align-items: center;
-  }
-  
-  .action-btn {
-    width: 100%;
-    max-width: 200px;
-    justify-content: center;
-  }
-}
-
-@media (max-width: 480px) {
-  .result-card {
-    padding: 1.2rem;
+    min-height: auto;
+    gap: 1.2rem;
   }
   
   .result-title {
@@ -318,20 +325,69 @@ const backToSubjects = () => {
   }
   
   .score-number {
+    font-size: 3.5rem;
+  }
+  
+  .score-divider,
+  .score-total {
+    font-size: 1.5rem;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+    max-width: 100%;
+  }
+  
+  .encouragement {
+    font-size: 0.9rem;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+  }
+  
+  .action-btn {
+    width: 100%;
+    max-width: 200px;
+  }
+}
+
+@media (max-width: 480px) {
+  .result-card {
+    padding: 1.2rem;
+    min-height: auto;
+    gap: 1rem;
+  }
+  
+  .result-title {
+    font-size: 1.2rem;
+  }
+  
+  .result-icon {
+    font-size: 1.8rem;
+  }
+  
+  .score-number {
     font-size: 3rem;
   }
   
+  .score-divider,
   .score-total {
     font-size: 1.2rem;
   }
   
   .encouragement {
-    font-size: 1rem;
+    font-size: 0.85rem;
   }
   
   .action-btn {
-    padding: 0.8rem 1.5rem;
-    font-size: 0.9rem;
+    padding: 0.7rem 1.5rem;
+    font-size: 0.85rem;
+    width: 100%;
+    max-width: none;
   }
 }
 </style>

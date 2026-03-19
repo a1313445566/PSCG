@@ -225,6 +225,9 @@ const submitAnswers = async () => {
     score: score.value
   }))
   
+  // 存储用时数据到localStorage
+  localStorage.setItem('timeSpent', timeSpentSeconds.toString())
+  
   // 跳转到结果页面
   router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
 }
@@ -308,11 +311,22 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
+/* 引入全局CSS变量 */
+:root {
+  --primary-color: #FF6B6B;
+  --accent-color: #FFD166;
+  --background-color: #F7FFF7;
+  --header-gradient: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  --header-border-color: #FF9999;
+  --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
+  --el-border-radius-round: 20px;
+}
+
 .quiz-view {
   min-height: 100vh;
   background: linear-gradient(135deg, var(--background-color) 0%, #E8F5E9 100%);
   padding-bottom: 2rem;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%237DD3F8" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%23A8E6CF" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD88B" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%23FF9999" opacity="0.3"/></svg>');
   background-repeat: repeat;
 }
 
@@ -326,8 +340,8 @@ onUnmounted(() => {
   background: white;
   border-radius: 24px;
   padding: 2.5rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border: 3px solid var(--border-color);
+  box-shadow: var(--el-shadow-light);
+  border: 2px solid #E8E8E8;
   overflow: hidden;
   margin-bottom: 2rem;
   position: relative;
@@ -340,7 +354,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  background: var(--header-gradient);
 }
 
 .quiz-info {
@@ -348,14 +362,13 @@ onUnmounted(() => {
 }
 
 .quiz-title {
-  font-family: var(--game-font);
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
   font-size: 2.2rem;
-  font-weight: 900;
-  color: var(--primary-color);
+  font-weight: bold;
+  color: #7DD3F8;
   margin: 0 0 1.5rem 0;
-  text-transform: uppercase;
   letter-spacing: 2px;
-  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
+  text-shadow: 2px 2px 4px rgba(125, 211, 248, 0.3);
 }
 
 .quiz-stats {
@@ -367,17 +380,18 @@ onUnmounted(() => {
 
 .question-count,
 .time-spent {
-  background-color: var(--accent-color);
-  color: var(--text-primary);
+  background: var(--header-gradient);
+  color: white;
   padding: 0.8rem 1.5rem;
   border-radius: 25px;
-  font-weight: 900;
+  font-weight: bold;
   font-size: 1.1rem;
-  border: 2px solid var(--accent-color);
-  box-shadow: 0 4px 0 #E6BF50;
+  border: 2px solid #7DD3F8;
+  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
 }
 
 .progress-section {
@@ -391,22 +405,23 @@ onUnmounted(() => {
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 1rem;
-  border: 2px solid var(--border-color);
+  border: 2px solid #E8E8E8;
 }
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  background: var(--header-gradient);
   border-radius: 8px;
   transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+  box-shadow: 0 0 10px rgba(125, 211, 248, 0.5);
 }
 
 .progress-text {
   font-size: 1.1rem;
-  color: var(--text-secondary);
+  color: #333;
   text-align: right;
-  font-weight: 700;
+  font-weight: bold;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
 }
 
 .questions-section {
@@ -419,31 +434,31 @@ onUnmounted(() => {
 }
 
 .submit-btn {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+  background: var(--header-gradient);
   color: white;
-  border: 3px solid var(--primary-color);
+  border: 3px solid #7DD3F8;
   padding: 1.2rem 3rem;
   border-radius: 50px;
   font-size: 1.3rem;
-  font-weight: 900;
+  font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: 1rem;
-  text-transform: uppercase;
   letter-spacing: 2px;
-  box-shadow: 0 6px 0 #D9534F;
+  box-shadow: 0 6px 0 rgba(125, 211, 248, 0.5);
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-4px);
-  box-shadow: 0 10px 0 #D9534F, 0 15px 20px rgba(255, 107, 107, 0.4);
+  box-shadow: 0 10px 0 rgba(125, 211, 248, 0.5), 0 15px 20px rgba(125, 211, 248, 0.4);
 }
 
 .submit-btn:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #D9534F;
+  box-shadow: 0 2px 0 rgba(125, 211, 248, 0.5);
 }
 
 .submit-btn:disabled {
@@ -461,7 +476,6 @@ onUnmounted(() => {
   
   .quiz-header {
     padding: 2rem;
-    top: 90px;
   }
   
   .quiz-title {
@@ -483,7 +497,6 @@ onUnmounted(() => {
 @media (max-width: 480px) {
   .quiz-header {
     padding: 1.5rem;
-    top: 80px;
   }
   
   .quiz-title {

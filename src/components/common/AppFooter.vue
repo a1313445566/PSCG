@@ -126,18 +126,18 @@
 /* 响应式设计 */
 @media (max-width: 768px) {
   .footer-content {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, 1fr);
     gap: 1.5rem;
   }
-  
+
   .footer-title {
     font-size: 1.3rem;
   }
-  
+
   .footer-subtitle {
     font-size: 1rem;
   }
-  
+
   .footer-description,
   .footer-contact {
     font-size: 0.9rem;
@@ -145,32 +145,37 @@
 }
 
 @media (max-width: 480px) {
+  .footer-content {
+    grid-template-columns: 1fr;
+    gap: 1.2rem;
+  }
+
   .app-footer {
     padding: 1.5rem 0;
   }
-  
+
   .footer-content {
     padding: 0 1rem;
   }
-  
+
   .footer-title {
     font-size: 1.2rem;
   }
-  
+
   .footer-subtitle {
     font-size: 0.9rem;
   }
-  
+
   .footer-description,
   .footer-contact {
     font-size: 0.8rem;
   }
-  
+
   .footer-bottom {
     margin-top: 1.5rem;
     padding-top: 1rem;
   }
-  
+
   .footer-copyright {
     font-size: 0.8rem;
   }

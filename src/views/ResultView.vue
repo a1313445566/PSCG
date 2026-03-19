@@ -7,6 +7,7 @@
         :score="score" 
         :totalQuestions="totalQuestions"
         :timeSpent="timeSpent"
+        :points="calculatePoints"
         @generate-new="generateNewQuestions"
         @back-to-subjects="backToSubcategory"
       />
@@ -51,10 +52,28 @@ const userAnswers = computed(() => quizData.value?.userAnswers || {})
 // 计算总题目数
 const totalQuestions = computed(() => currentQuestions.value.length)
 
-// 计算用时（从quizStore中获取）
+// 计算用时（从localStorage中读取）
 const timeSpent = computed(() => {
-  // 这里简化处理，实际应该从localStorage中读取
-  return 0
+  // 从localStorage中读取用时数据
+  const timeSpentData = localStorage.getItem('timeSpent')
+  return timeSpentData ? parseInt(timeSpentData) : 0
+})
+
+// 计算获得的积分
+const calculatePoints = computed(() => {
+  const correctCount = score.value
+  const wrongCount = totalQuestions.value - correctCount
+  
+  // 基础积分：答对一题得1分，答错一题扣1分
+  let points = correctCount - wrongCount
+  
+  // 全对积分翻倍
+  if (correctCount === totalQuestions.value && totalQuestions.value > 0) {
+    points *= 2
+  }
+  
+  // 确保积分不为负数
+  return Math.max(0, points)
 })
 
 // 错题列表
