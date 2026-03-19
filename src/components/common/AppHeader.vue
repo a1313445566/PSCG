@@ -1,15 +1,12 @@
 <template>
   <header class="app-header">
+    <!-- 装饰星星：语义化类名 -->
+    <span class="decor-star decor-star--left">⭐</span>
+    <span class="decor-star decor-star--right">🌟</span>
+    
     <div class="header-content">
-      <div class="header-left">
-        <h1 class="app-title">{{ interfaceName }}</h1>
-      </div>
-      <div class="header-right">
-        <div v-if="currentStudentId" class="user-info">
-          <span class="user-name">{{ currentUserName || currentStudentId }}</span>
-          <button class="logout-btn" @click="logout">退出登录</button>
-        </div>
-      </div>
+      <h1 class="header-title">🎊 {{ interfaceName }} 🎊</h1>
+      <p class="header-subtitle">快乐学习 · 智慧闯关 · 勇敢挑战 · 争做小达人</p>
     </div>
   </header>
 </template>
@@ -27,131 +24,99 @@ const interfaceName = computed(() => settingsStore.interfaceName)
 onMounted(async () => {
   await settingsStore.loadSettings()
 })
-
-// 用户信息
-const currentStudentId = computed(() => localStorage.getItem('studentId'))
-const currentUserName = computed(() => localStorage.getItem('userName'))
-
-// 退出登录
-const logout = () => {
-  // 清除本地存储
-  localStorage.removeItem('userId')
-  localStorage.removeItem('studentId')
-  localStorage.removeItem('userName')
-  localStorage.removeItem('userGrade')
-  localStorage.removeItem('userClass')
-  
-  // 刷新页面
-  window.location.reload()
-}
 </script>
 
-<style scoped>
+<style>
+/* 1. CSS 变量抽离（仅保留核心业务变量，通用UI变量按需引用） */
+:root {
+  /* 业务核心变量 */
+  --primary-color: #FF6B6B;
+  --accent-color: #FFD166;
+  --background-color: #F7FFF7;
+  --header-gradient: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  --header-border-color: #FF9999;
+  
+  /* 通用UI变量（精简版，仅保留使用到的） */
+  --el-color-white: #fff;
+  --el-color-black: #000;
+  --el-font-size-extra-large: 28px;
+  --el-font-size-large: 24px;
+  --el-font-size-base: 14px;
+  --el-font-size-small: 13px;
+  --el-border-radius-round: 20px;
+  --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+/* 3. Header 核心样式（精简+语义化） */
 .app-header {
-  background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
-  padding: 1.2rem 2rem;
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
-  border-bottom: 4px solid var(--accent-color);
+  background: var(--header-gradient) !important;
+  padding: 35px 20px !important;
+  text-align: center !important;
+  border-radius: 0 0 30px 30px !important;
+  box-shadow: var(--el-shadow-light) !important;
+  position: relative !important;
+  overflow: hidden !important;
+  border-bottom: 8px dashed var(--header-border-color) !important;
+  margin: 0 !important;
+  width: 100% !important;
 }
 
+/* 4. 装饰元素（星星） */
+.decor-star {
+  position: absolute !important;
+  font-size: 24px !important;
+  z-index: 10 !important;
+  bottom: 20px !important;
+}
+.decor-star--left {
+  left: 40px !important;
+  color: var(--el-color-white) !important;
+}
+.decor-star--right {
+  right: 40px !important;
+  color: var(--accent-color) !important;
+  text-shadow: 0 0 2px var(--el-color-black) !important;
+}
+
+/* 5. 内容区域 */
 .header-content {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  max-width: 1200px;
-  margin: 0 auto;
+  position: relative !important;
+  z-index: 5 !important;
+}
+.header-title {
+  font-size: var(--el-font-size-extra-large) !important;
+  font-weight: bold !important;
+  color: var(--el-color-white) !important;
+  margin-bottom: 15px !important;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.1) !important;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif !important;
+}
+.header-subtitle {
+  font-size: var(--el-font-size-base) !important;
+  color: var(--el-color-white) !important;
+  line-height: 1.6 !important;
+  letter-spacing: 1px !important;
+  background: rgba(255,255,255,0.2) !important;
+  padding: 8px 20px !important;
+  border-radius: var(--el-border-radius-round) !important;
+  display: inline-block !important;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif !important;
 }
 
-.app-title {
-  font-family: var(--game-font);
-  font-size: 2.2rem;
-  font-weight: 900;
-  color: white;
-  text-shadow: 3px 3px 6px rgba(0, 0, 0, 0.3);
-  margin: 0;
-  text-transform: uppercase;
-  letter-spacing: 2px;
-  animation: pulse 2s infinite;
-}
-
-.user-info {
-  display: flex;
-  align-items: center;
-  gap: 1.5rem;
-  background-color: rgba(255, 255, 255, 0.2);
-  padding: 0.8rem 1.5rem;
-  border-radius: 50px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-}
-
-.user-name {
-  color: white;
-  font-weight: 900;
-  font-size: 1.1rem;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
-}
-
-.logout-btn {
-  background-color: var(--accent-color);
-  color: var(--text-primary);
-  border: 2px solid var(--accent-color);
-  padding: 0.6rem 1.2rem;
-  border-radius: 25px;
-  font-weight: 900;
-  font-size: 1rem;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  box-shadow: 0 4px 0 #E6BF50;
-}
-
-.logout-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 7px 0 #E6BF50, 0 10px 15px rgba(255, 209, 102, 0.4);
-}
-
-.logout-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 #E6BF50;
-}
-
-/* 响应式设计 */
+/* 6. 响应式适配（媒体查询精简） */
 @media (max-width: 768px) {
   .app-header {
-    padding: 1rem;
+    padding: 25px 15px !important;
   }
-  
-  .app-title {
-    font-size: 1.8rem;
+  .header-title {
+    font-size: var(--el-font-size-large) !important;
   }
-  
-  .user-info {
-    gap: 1rem;
-    padding: 0.6rem 1.2rem;
+  .header-subtitle {
+    font-size: var(--el-font-size-small) !important;
+    padding: 6px 15px !important;
   }
-  
-  .user-name {
-    font-size: 1rem;
-  }
-  
-  .logout-btn {
-    padding: 0.5rem 1rem;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .app-title {
-    font-size: 1.5rem;
-  }
-  
-  .user-name {
-    display: none;
-  }
-  
-  .user-info {
-    padding: 0.5rem 1rem;
+  .decor-star {
+    font-size: 20px !important;
   }
 }
 </style>

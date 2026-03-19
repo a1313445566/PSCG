@@ -145,7 +145,6 @@ onMounted(async () => {
   text-transform: uppercase;
   letter-spacing: 2px;
   text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
-  animation: pulse 2s infinite;
 }
 
 
@@ -190,7 +189,6 @@ onMounted(async () => {
   text-transform: uppercase;
   letter-spacing: 2px;
   text-shadow: 2px 2px 4px rgba(255, 209, 102, 0.3);
-  animation: pulse 2s infinite;
 }
 
 .subject-grid {
