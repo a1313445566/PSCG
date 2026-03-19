@@ -289,11 +289,11 @@ export const useQuestionStore = defineStore('question', {
     },
     
     // 添加子分类
-    async addSubcategory(subjectId, name, iconIndex = 0) {
+    async addSubcategory(subjectId, name, iconIndex = 0, difficulty = 1) {
       try {
         this.isLoading = true
         this.error = null
-        const newSubcategory = await addSubcategory(subjectId, name, iconIndex)
+        const newSubcategory = await addSubcategory(subjectId, name, iconIndex, difficulty)
         if (newSubcategory) {
           // 直接添加到本地状态，避免重新加载所有数据
           const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
@@ -313,11 +313,11 @@ export const useQuestionStore = defineStore('question', {
     },
     
     // 更新子分类
-    async updateSubcategory(subjectId, subcategoryId, name, iconIndex = 0) {
+    async updateSubcategory(subjectId, subcategoryId, name, iconIndex = 0, difficulty = 1) {
       try {
         this.isLoading = true
         this.error = null
-        const result = await updateSubcategoryApi(subcategoryId, name, iconIndex)
+        const result = await updateSubcategoryApi(subcategoryId, name, iconIndex, difficulty)
         if (result) {
           // 直接更新本地状态，避免重新加载所有数据
           const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
@@ -327,7 +327,8 @@ export const useQuestionStore = defineStore('question', {
               this.subjects[subjectIndex].subcategories[subcategoryIndex] = {
                 ...this.subjects[subjectIndex].subcategories[subcategoryIndex],
                 name,
-                iconIndex
+                iconIndex,
+                difficulty
               }
             }
           }

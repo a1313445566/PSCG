@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
 const cacheService = require('../services/cache');
+const difficultyService = require('../services/difficultyService');
 
 // 获取所有答题记录（支持筛选）
 router.get('/all', async (req, res) => {
@@ -278,6 +279,9 @@ router.post('/question-attempts', async (req, res) => {
       'INSERT INTO question_attempts (user_id, question_id, subject_id, subcategory_id, user_answer, correct_answer, is_correct, answer_record_id, shuffled_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions]
     );
+    
+    // 保存后自动调整题目难度
+    await difficultyService.adjustQuestionDifficulty(questionId);
     
     res.json({ success: true });
   } catch (error) {

@@ -19,6 +19,16 @@
               <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
             </el-select>
           </div>
+          <div style="display: flex; flex-direction: column; gap: 6px;">
+            <label style="font-size: 14px; color: #606266; font-weight: 500;">难度</label>
+            <el-select v-model="newSubcategoryDifficulty" placeholder="选择难度" style="width: 120px;">
+              <el-option label="简单" value="1"></el-option>
+              <el-option label="较简单" value="2"></el-option>
+              <el-option label="中等" value="3"></el-option>
+              <el-option label="较难" value="4"></el-option>
+              <el-option label="困难" value="5"></el-option>
+            </el-select>
+          </div>
           <el-button type="primary" @click="addSubcategory" style="margin-bottom: 0;">添加学科题库</el-button>
         </div>
       </div>
@@ -37,6 +47,13 @@
               <el-select v-model="editingSubcategoryIcon" placeholder="选择图标" style="width: 150px; margin-right: 10px;">
                 <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index"></el-option>
               </el-select>
+              <el-select v-model="editingSubcategoryDifficulty" placeholder="选择难度" style="width: 120px; margin-right: 10px;">
+                <el-option label="简单" value="1"></el-option>
+                <el-option label="较简单" value="2"></el-option>
+                <el-option label="中等" value="3"></el-option>
+                <el-option label="较难" value="4"></el-option>
+                <el-option label="困难" value="5"></el-option>
+              </el-select>
               <el-button type="primary" size="small" @click="saveSubcategoryEdit(row.id)">保存</el-button>
               <el-button size="small" @click="cancelSubcategoryEdit">取消</el-button>
             </div>
@@ -44,6 +61,11 @@
               <span>{{ row.name }}</span>
               <el-button link size="small" @click="editSubcategory(row)">编辑</el-button>
             </div>
+          </template>
+        </el-table-column>
+        <el-table-column label="难度" width="100">
+          <template #default="{ row }">
+            <span>{{ getDifficultyText(row.difficulty || 1) }}</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="120">
@@ -84,14 +106,28 @@ const emit = defineEmits(['update:visible', 'add-subcategory', 'update-subcatego
 const subjectIcons = ['📚', '🔬', '🧮', '🏛️', '🎨', '🎵', '⚽', '🌍', '💻', '⚗️'];
 const subjectIconNames = ['书籍', '科学', '数学', '历史', '艺术', '音乐', '体育', '地理', '计算机', '化学'];
 
+// 难度文本映射
+const getDifficultyText = (difficulty) => {
+  const difficultyMap = {
+    1: '简单',
+    2: '较简单',
+    3: '中等',
+    4: '较难',
+    5: '困难'
+  };
+  return difficultyMap[difficulty] || '简单';
+};
+
 // 新学科题库信息
 const newSubcategoryName = ref('');
 const newSubcategoryIcon = ref(0);
+const newSubcategoryDifficulty = ref(1);
 
 // 编辑学科题库信息
 const editingSubcategoryId = ref(null);
 const editingSubcategoryName = ref('');
 const editingSubcategoryIcon = ref(0);
+const editingSubcategoryDifficulty = ref(1);
 
 // 添加学科题库
 const addSubcategory = () => {
@@ -103,7 +139,8 @@ const addSubcategory = () => {
   const newSubcategory = {
     id: Date.now(),
     name: newSubcategoryName.value.trim(),
-    iconIndex: newSubcategoryIcon.value
+    iconIndex: newSubcategoryIcon.value,
+    difficulty: newSubcategoryDifficulty.value
   };
   
   emit('add-subcategory', props.subject.id, newSubcategory);
@@ -111,6 +148,7 @@ const addSubcategory = () => {
   // 重置表单
   newSubcategoryName.value = '';
   newSubcategoryIcon.value = 0;
+  newSubcategoryDifficulty.value = 1;
   
   ElMessage.success('学科题库添加成功');
 };
@@ -120,6 +158,7 @@ const editSubcategory = (subcategory) => {
   editingSubcategoryId.value = subcategory.id;
   editingSubcategoryName.value = subcategory.name;
   editingSubcategoryIcon.value = subcategory.iconIndex || 0;
+  editingSubcategoryDifficulty.value = subcategory.difficulty || 1;
 };
 
 // 保存学科题库编辑
@@ -132,7 +171,8 @@ const saveSubcategoryEdit = (subcategoryId) => {
   const updatedSubcategory = {
     id: subcategoryId,
     name: editingSubcategoryName.value.trim(),
-    iconIndex: editingSubcategoryIcon.value
+    iconIndex: editingSubcategoryIcon.value,
+    difficulty: editingSubcategoryDifficulty.value
   };
   
   emit('update-subcategory', props.subject.id, updatedSubcategory);
@@ -145,6 +185,7 @@ const cancelSubcategoryEdit = () => {
   editingSubcategoryId.value = null;
   editingSubcategoryName.value = '';
   editingSubcategoryIcon.value = 0;
+  editingSubcategoryDifficulty.value = 1;
 };
 
 // 删除学科题库

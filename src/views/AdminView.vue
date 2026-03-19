@@ -695,7 +695,7 @@ const manageSubcategories = (subject) => {
 // 添加学科题库
 const addSubcategory = async (subjectId, subcategory) => {
   try {
-    await questionStore.addSubcategory(subjectId, subcategory.name, subcategory.iconIndex)
+    await questionStore.addSubcategory(subjectId, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
     ElMessage.success('学科题库添加成功！')
   } catch (error) {
 
@@ -706,7 +706,7 @@ const addSubcategory = async (subjectId, subcategory) => {
 // 更新学科题库
 const updateSubcategory = async (subjectId, subcategory) => {
   try {
-    await questionStore.updateSubcategory(subjectId, subcategory.id, subcategory.name, subcategory.iconIndex)
+    await questionStore.updateSubcategory(subjectId, subcategory.id, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
     ElMessage.success('学科题库更新成功！')
   } catch (error) {
 

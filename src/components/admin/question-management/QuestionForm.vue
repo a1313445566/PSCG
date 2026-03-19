@@ -40,6 +40,17 @@
               <el-option label="看图题" value="image"></el-option>
             </el-select>
           </div>
+          
+          <div class="form-item-group">
+            <label class="form-label">难度</label>
+            <el-select v-model="form.difficulty" placeholder="选择难度" class="modern-select">
+              <el-option label="简单" value="1"></el-option>
+              <el-option label="较简单" value="2"></el-option>
+              <el-option label="中等" value="3"></el-option>
+              <el-option label="较难" value="4"></el-option>
+              <el-option label="困难" value="5"></el-option>
+            </el-select>
+          </div>
         </div>
       </div>
       
@@ -222,7 +233,8 @@ const form = ref({
   selectedAnswers: [],
   answer: '',
   explanation: '',
-  audio: ''
+  audio: '',
+  difficulty: 1
 });
 
 // 编辑器key，用于重置编辑器
@@ -320,7 +332,8 @@ const editQuestion = (question) => {
     correct_answer: question.correct_answer || answer,
     explanation: question.explanation || '',
     audio: audio,
-    image: image
+    image: image,
+    difficulty: question.difficulty || 1
   };
   
   // 增加一个key来强制重新渲染编辑器
@@ -341,7 +354,8 @@ const resetForm = () => {
     answer: '',
     selectedAnswers: [],
     explanation: '',
-    audio: ''
+    audio: '',
+    difficulty: 1
   };
   // 重置编辑器key
   editorKey.value++;
@@ -495,7 +509,8 @@ const saveQuestion = async () => {
     answer: form.value.selectedAnswers.sort().join(''),
     explanation: form.value.explanation,
     audio: form.value.audio,
-    image: form.value.image
+    image: form.value.image,
+    difficulty: form.value.difficulty
   };
   
   // 发送保存事件

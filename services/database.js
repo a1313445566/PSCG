@@ -70,7 +70,8 @@ class DatabaseService {
           id INT PRIMARY KEY AUTO_INCREMENT,
           subject_id INT NOT NULL,
           name VARCHAR(255) NOT NULL,
-          icon_index INT DEFAULT 0
+          icon_index INT DEFAULT 0,
+          difficulty INT DEFAULT 1
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建题目表
@@ -85,6 +86,7 @@ class DatabaseService {
           explanation TEXT,
           audio_url VARCHAR(255),
           image_url VARCHAR(255),
+          difficulty INT DEFAULT 1,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
