@@ -38,6 +38,17 @@ router.put('/question/:questionId', async (req, res) => {
   }
 });
 
+// 批量调整题库难度
+router.post('/subcategory/batch', async (req, res) => {
+  try {
+    const result = await difficultyService.batchAdjustSubcategoryDifficulty();
+    res.json(result);
+  } catch (error) {
+    console.error('批量调整题库难度失败:', error);
+    res.status(500).json({ success: false, message: '批量调整题库难度失败' });
+  }
+});
+
 // 手动设置题库难度
 router.put('/subcategory/:subcategoryId', async (req, res) => {
   try {
@@ -48,6 +59,18 @@ router.put('/subcategory/:subcategoryId', async (req, res) => {
   } catch (error) {
     console.error('设置题库难度失败:', error);
     res.status(500).json({ success: false, message: '设置难度失败' });
+  }
+});
+
+// 自动调整题库难度
+router.post('/subcategory/:subcategoryId', async (req, res) => {
+  try {
+    const { subcategoryId } = req.params;
+    const result = await difficultyService.adjustSubcategoryDifficulty(subcategoryId);
+    res.json(result);
+  } catch (error) {
+    console.error('调整题库难度失败:', error);
+    res.status(500).json({ success: false, message: '调整题库难度失败' });
   }
 });
 

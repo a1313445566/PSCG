@@ -4,9 +4,19 @@
     <div class="subcategory-name">{{ subcategory.name }}</div>
     <div class="subcategory-info">
       <span class="question-count">{{ getQuestionCount(subcategory.id) }} 题</span>
-      <span class="difficulty" :class="getDifficultyClass(subcategory.id)">
-        {{ getDifficultyLevel(subcategory.id) }}
-      </span>
+      <div class="difficulty-wrapper">
+        <span class="difficulty" :class="getDifficultyClass(subcategory.id)">
+          {{ getDifficultyLevel(subcategory.id) }}
+        </span>
+        <div class="difficulty-tooltip">
+          <div class="tooltip-title">难度说明</div>
+          <div class="tooltip-content">
+            <div><strong>简单</strong>：适合初学者，题目较为基础</div>
+            <div><strong>中等</strong>：适合有一定基础的学生</div>
+            <div><strong>困难</strong>：适合挑战自我，题目较为复杂</div>
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 </template>
@@ -172,6 +182,62 @@ const selectSubcategory = () => {
 .difficulty-hard {
   background-color: #FFEBEE;
   color: #C62828;
+}
+
+/* 难度提示样式 */
+.difficulty-wrapper {
+  position: relative;
+  display: inline-block;
+}
+
+.difficulty-tooltip {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: white;
+  padding: 10px;
+  border-radius: 8px;
+  font-size: 0.75rem;
+  white-space: nowrap;
+  z-index: 1000;
+  margin-bottom: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  opacity: 0;
+  visibility: hidden;
+  transition: all 0.3s ease;
+  width: 180px;
+  white-space: normal;
+  text-align: left;
+}
+
+.difficulty-tooltip::after {
+  content: '';
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  border-width: 5px;
+  border-style: solid;
+  border-color: #333 transparent transparent transparent;
+}
+
+.difficulty-wrapper:hover .difficulty-tooltip {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(-5px);
+}
+
+.tooltip-title {
+  font-weight: bold;
+  margin-bottom: 5px;
+  color: #FFD166;
+}
+
+.tooltip-content div {
+  margin-bottom: 3px;
+  font-size: 0.7rem;
 }
 
 /* 响应式设计 */
