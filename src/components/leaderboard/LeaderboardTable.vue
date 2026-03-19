@@ -7,9 +7,6 @@
       <div class="grade-col">年级</div>
       <div class="class-col">班级</div>
       <div class="score-col">正确率</div>
-      <div class="correct-col">正确数</div>
-      <div class="questions-col">答题数</div>
-      <div class="sessions-col">答题次数</div>
       <div class="points-col">积分</div>
     </div>
     
@@ -31,9 +28,6 @@
         <div class="grade-col">{{ item.grade || '-' }}年级</div>
         <div class="class-col">{{ item.class || '-' }}班</div>
         <div class="score-col">{{ Math.round(item.avg_accuracy) }}%</div>
-        <div class="correct-col">{{ item.correct_count || 0 }}</div>
-        <div class="questions-col">{{ item.total_questions }}</div>
-        <div class="sessions-col">{{ item.total_sessions || 0 }}</div>
         <div class="points-col">{{ item.points || 0 }}</div>
       </div>
       
@@ -75,7 +69,7 @@ const getRankClass = (index) => {
 
 .leaderboard-header {
   display: grid;
-  grid-template-columns: 80px 100px 90px 60px 60px 100px 80px 80px 80px 80px;
+  grid-template-columns: 70px 100px 90px 70px 70px 100px 100px;
   background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
   color: white;
   font-weight: bold;
@@ -91,7 +85,7 @@ const getRankClass = (index) => {
 
 .leaderboard-row {
   display: grid;
-  grid-template-columns: 80px 100px 90px 60px 60px 100px 80px 80px 80px 80px;
+  grid-template-columns: 70px 100px 90px 70px 70px 100px 100px;
   padding: 1rem;
   text-align: center;
   border-bottom: 1px solid #F0F0F0;
@@ -199,7 +193,7 @@ const getRankClass = (index) => {
 @media (max-width: 1024px) {
   .leaderboard-header,
   .leaderboard-row {
-    grid-template-columns: 70px 90px 80px 50px 50px 90px 70px 70px 70px 70px;
+    grid-template-columns: 70px 100px 90px 70px 70px 100px 90px;
   }
   
   .leaderboard-header,
@@ -211,7 +205,7 @@ const getRankClass = (index) => {
 @media (max-width: 768px) {
   .leaderboard-header,
   .leaderboard-row {
-    grid-template-columns: 60px 80px 70px 40px 40px 80px 60px 60px 60px 60px;
+    grid-template-columns: 60px 90px 80px 60px 60px 90px 80px;
     font-size: 14px;
   }
   
@@ -247,7 +241,7 @@ const getRankClass = (index) => {
 @media (max-width: 480px) {
   .leaderboard-header,
   .leaderboard-row {
-    grid-template-columns: 50px 70px 60px 35px 35px 70px 50px 50px 50px 50px;
+    grid-template-columns: 50px 80px 70px 50px 50px 80px 70px;
     font-size: 12px;
   }
   

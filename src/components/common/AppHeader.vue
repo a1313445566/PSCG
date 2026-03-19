@@ -44,9 +44,9 @@ onMounted(async () => {
   /* 通用UI变量（精简版，仅保留使用到的） */
   --el-color-white: #fff;
   --el-color-black: #000;
-  --el-font-size-extra-large: 28px;
+  --el-font-size-extra-large: 42px;
   --el-font-size-large: 24px;
-  --el-font-size-base: 14px;
+  --el-font-size-base: 18px;
   --el-font-size-small: 13px;
   --el-border-radius-round: 20px;
   --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);

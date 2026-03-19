@@ -23,16 +23,6 @@
                 <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
               </el-select>
             </div>
-            <div class="leaderboard-rules">
-              <h3 class="rules-title">🏆 排行榜规则</h3>
-              <ul class="rules-list">
-                <li>📝 排名根据用户的答题正确率、答题数和积分综合计算</li>
-                <li>🏅 TOP 3 玩家将获得特殊标识和动画效果</li>
-                <li>🎖️ TOP 10 玩家将获得特殊背景和边框效果</li>
-                <li>📊 积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
-                <li>🔄 排行榜数据每日更新，确保公平公正</li>
-              </ul>
-            </div>
             <div v-if="globalLeaderboard.length > 0" class="leaderboard-table">
               <div class="leaderboard-header">
                 <div class="rank-col">排名</div>
@@ -68,13 +58,26 @@
               <p>暂无排行数据</p>
               <p>全局排行榜数据长度: {{ globalLeaderboard.length }}</p>
             </div>
+            <div class="leaderboard-content-row">
+              <div class="leaderboard-rules">
+                <h3 class="rules-title">🏆 排行榜规则</h3>
+                <ul class="rules-list">
+                  <li>📝 排名根据用户的答题正确率、答题数和积分综合计算</li>
+                  <li>🏅 TOP 3 玩家将获得特殊标识和动画效果</li>
+                  <li>🎖️ TOP 10 玩家将获得特殊背景和边框效果</li>
+                  <li>📊 积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
+                  <li>🔄 排行榜数据每日更新，确保公平公正</li>
+                </ul>
+              </div>
+
+            </div>
           </el-tab-pane>
           <el-tab-pane label="学科排行榜" name="subject">
             <div class="filter-section">
               <el-select v-model="selectedSubjectId" placeholder="选择学科" @change="async (value) => { await loadSubcategories(value); loadSubjectLeaderboard(); }">
                 <el-option 
                   v-for="subject in subjects" 
-                  :key="subject.id" 
+                  :key="subject.id"
                   :label="subject.name" 
                   :value="subject.id"
                 ></el-option>
@@ -83,7 +86,7 @@
                 <el-option label="全部题库" :value="null"></el-option>
                 <el-option 
                   v-for="subcategory in subcategories" 
-                  :key="subcategory.id" 
+                  :key="subcategory.id"
                   :label="subcategory.name" 
                   :value="subcategory.id"
                 ></el-option>
@@ -96,16 +99,6 @@
                 <el-option label="全部班级" :value="null"></el-option>
                 <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
               </el-select>
-            </div>
-            <div class="leaderboard-rules">
-              <h3 class="rules-title">🏆 排行榜规则</h3>
-              <ul class="rules-list">
-                <li>📝 排名根据用户的答题正确率、答题数和积分综合计算</li>
-                <li>🏅 TOP 3 玩家将获得特殊标识和动画效果</li>
-                <li>🎖️ TOP 10 玩家将获得特殊背景和边框效果</li>
-                <li>📊 积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
-                <li>🔄 排行榜数据每日更新，确保公平公正</li>
-              </ul>
             </div>
             <div v-if="subjectLeaderboard.length > 0 && selectedSubjectId" class="leaderboard-table">
               <div class="leaderboard-header">
@@ -141,6 +134,19 @@
             <div v-else class="leaderboard-empty">
               <p>{{ selectedSubjectId ? '暂无排行数据' : '请选择一个学科查看排行榜' }}</p>
               <p v-if="selectedSubjectId">学科排行榜数据长度: {{ subjectLeaderboard.length }}</p>
+            </div>
+            <div class="leaderboard-content-row">
+              <div class="leaderboard-rules">
+                <h3 class="rules-title">🏆 排行榜规则</h3>
+                <ul class="rules-list">
+                  <li>📝 排名根据用户的答题正确率、答题数和积分综合计算</li>
+                  <li>🏅 TOP 3 玩家将获得特殊标识和动画效果</li>
+                  <li>🎖️ TOP 10 玩家将获得特殊背景和边框效果</li>
+                  <li>📊 积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
+                  <li>🔄 排行榜数据每日更新，确保公平公正</li>
+                </ul>
+              </div>
+
             </div>
           </el-tab-pane>
           <el-tab-pane label="个人成绩" name="personal">
@@ -808,14 +814,133 @@ watch(activeTab, (newTab) => {
   box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
 }
 
+.leaderboard-content-row {
+  display: flex;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
 .leaderboard-rules {
   background: white;
   border-radius: 16px;
   padding: 1.5rem;
-  margin-bottom: 1.5rem;
   border: 3px solid var(--border-color);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  flex: 1;
+  min-width: 300px;
+}
+
+/* 第一名卡片样式 */
+.first-place-content {
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color);
+  animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  min-width: 440px;
+  min-height: 210px;
+  flex: 1;
+  max-width: 440px;
+}
+
+.first-place-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1.5rem;
+}
+
+.first-place-title {
+  font-family: 'Fredoka One', 'Comic Sans MS', cursive;
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #FFD700;
+  margin: 0;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.first-place-badge {
+  font-size: 2.5rem;
+  animation: bounce 2s infinite;
+}
+
+.first-place-info {
+  margin-bottom: 1.5rem;
+}
+
+.first-place-user {
+  text-align: center;
+  margin-bottom: 1.5rem;
+}
+
+.user-name {
+  font-family: var(--game-font);
+  font-size: 1.8rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  margin-bottom: 0.5rem;
+}
+
+.user-class {
+  font-size: 1.1rem;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.first-place-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+}
+
+.first-place-stats .stat-item {
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+}
+
+.first-place-stats .stat-label {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+
+.first-place-stats .stat-value {
+  display: block;
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  font-family: var(--game-font);
+}
+
+.first-place-message {
+  text-align: center;
+  padding: 1rem;
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1) 0%, rgba(255, 255, 255, 0.8) 100%);
+  border-radius: 12px;
+  border: 2px solid rgba(255, 215, 0, 0.3);
+}
+
+.first-place-message p {
+  margin: 0.5rem 0;
+  font-family: var(--game-font);
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.first-place-message p:first-child {
+  color: #FFD700;
+  font-size: 1.1rem;
+  font-weight: 900;
 }
 
 .rules-title {
@@ -997,6 +1122,8 @@ watch(activeTab, (newTab) => {
   font-family: var(--game-font);
   font-size: 1.2rem;
 }
+
+
 
 .personal-stats {
   padding: 1.5rem;

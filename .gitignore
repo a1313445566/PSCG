@@ -28,6 +28,8 @@ package-lock.json
 
 # Test files
 test-*.js
+test*.json
+add-*.js
 
 # Compressed files
 *.zip
