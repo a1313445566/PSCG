@@ -1,7 +1,7 @@
 {
   "total": 5,
-  "passed": 3,
-  "failed": 2,
+  "passed": 5,
+  "failed": 0,
   "details": [
     {
       "name": "测试难度服务基本功能",
@@ -9,13 +9,11 @@
     },
     {
       "name": "测试自动难度调整",
-      "status": "FAILED",
-      "error": "自动调整失败"
+      "status": "PASSED"
     },
     {
       "name": "测试手动难度调整",
-      "status": "FAILED",
-      "error": "手动调整题目难度失败"
+      "status": "PASSED"
     },
     {
       "name": "测试获取难度分布",

@@ -2,9 +2,11 @@ const db = require('./services/database');
 
 async function checkAndAddColumn(table, column, definition) {
   try {
-    // 检查列是否存在
-    const result = await db.get(`SHOW COLUMNS FROM ${table} LIKE '${column}'`);
-    if (!result) {
+    // 检查列是否存在 (SQLite语法)
+    const result = await db.get(`PRAGMA table_info(${table})`);
+    const columnExists = result.some(col => col.name === column);
+    
+    if (!columnExists) {
       // 列不存在，添加列
       await db.run(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
       console.log(`成功为 ${table} 表添加 ${column} 字段`);
