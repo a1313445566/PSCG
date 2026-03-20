@@ -1,53 +1,72 @@
-# 小学刷题闯关系统
+# PSCG - 智能题库系统
 
 ## 项目简介
 
-小学刷题闯关系统是一款专为小学生设计的在线学习平台，通过多样化的题目类型和直观的界面，帮助学生巩固知识、提高学习兴趣。系统支持多种题目类型，包括单选题、多选题、判断题、听力题、阅读题和看图题，满足不同学科的教学需求。
+PSCG (Primary School Comprehensive Quiz) 是一个基于现代Web技术构建的智能题库系统，旨在为学生提供个性化的学习体验，为教师提供高效的教学管理工具。系统支持多学科题库管理、智能难度调整、答题统计分析和排行榜功能，帮助用户高效学习和提高成绩。
 
 ## 技术栈
 
-- **前端**：Vue 3 + Composition API、Element Plus、Vue Quill (富文本编辑器)、ECharts (数据可视化)
-- **后端**：Node.js、Express、SQLite
+### 前端技术
+- **框架**：Vue 3 + Composition API
+- **状态管理**：Pinia
+- **路由**：Vue Router
+- **UI 组件库**：Element Plus
+- **富文本编辑器**：Vue Quill
+- **数据可视化**：ECharts
 - **构建工具**：Vite
-- **进程管理**：PM2
+
+### 后端技术
+- **运行环境**：Node.js 16+
+- **框架**：Express.js 4.x
+- **数据库**：MySQL 8.0
 - **文件上传**：Multer
+- **响应压缩**：compression
+- **跨域支持**：cors
+- **进程管理**：PM2
 
 ## 核心功能
 
 ### 1. 后台管理系统
-- **学科与子分类管理**：支持添加、编辑、删除学科和子分类，支持图标选择
-- **题目管理**：支持添加、编辑、删除题目
-- **批量添加题目**：支持从文本批量导入题目，自动解析题目内容、选项和答案
-- **富文本编辑器**：支持文本格式化、图片插入等功能
-- **音频管理**：支持音频文件上传、播放和删除
-- **图片管理**：支持图片上传和显示，自动存储到images目录
-- **题目列表**：直观显示题目信息，包括图片和音频指示器
-- **数据库管理**：支持数据备份、恢复和导出，包含音频和图片文件
+- **学科与题库管理**：支持添加、编辑、删除学科和题库，支持图标选择
+- **题目管理**：支持添加、编辑、删除题目，支持多种题型
+- **批量导入**：支持从文本批量导入题目，自动解析题目内容、选项和答案
+- **多媒体支持**：支持图片和音频上传、管理和播放
+- **数据管理**：支持数据备份、恢复和导出
 - **错误率分析**：展示错误率较高的题目，支持分页和筛选
 
 ### 2. 学生答题系统
-- **题目展示**：清晰展示题目内容、选项和多媒体资源
-- **音频播放**：支持听力题音频播放
-- **图片显示**：支持题目和答案中的图片显示
-- **答题功能**：支持多种题型的答题操作
+- **智能出题**：根据难度自动筛选题目
+- **选项随机**：答题时选项随机排序，防止作弊
+- **多媒体展示**：支持图片和音频题目的展示和播放
+- **实时反馈**：答题过程中实时反馈答题状态
 - **错题回顾**：答题完成后显示错题并提供解析
 
-### 3. 排行榜系统
-- **个人成绩**：展示学生个人答题记录和成绩
-- **班级排行榜**：按班级展示学生成绩排名
-- **学科排行榜**：按学科展示学生成绩排名
+### 3. 智能难度调整
+- **自动调整**：基于错误率自动调整题目难度
+- **时间加权**：最近答题记录权重更高
+- **批量调整**：支持批量调整题目和题库难度
+- **手动设置**：支持手动设置题目和题库难度
+
+### 4. 排行榜系统
+- **全局排行榜**：展示所有学生的排名
+- **个人排名**：显示个人在排行榜中的位置
+- **积分系统**：基于答题正确率和数量计算积分
 - **筛选功能**：支持按年级、班级、学科进行筛选
 
-## 环境变量配置
+### 5. 数据分析系统
+- **个人统计**：展示个人答题统计和学习进度
+- **学科分析**：分析各学科的学习情况
+- **难度分布**：展示题目难度分布情况
+- **趋势分析**：分析学习成绩的变化趋势
 
-项目使用环境变量来管理API地址，方便在不同环境间切换：
+## 环境配置
 
-### 开发环境 (`env.development`)
+### 开发环境 (`.env.development`)
 ```
 VITE_API_URL=http://localhost:3001/api
 ```
 
-### 生产环境 (`env.production`)
+### 生产环境 (`.env.production`)
 ```
 VITE_API_URL=http://您的域名:3001/api
 ```
@@ -76,16 +95,11 @@ VITE_API_URL=http://您的域名:3001/api
    - 前端：`npm run dev`
    - 后端：`npm run server`
 
-5. **数据库说明**
-   - 数据库文件 `quiz.db` 已包含在项目中
-   - 首次运行时会自动创建必要的表结构
-   - 已添加外键约束，确保数据一致性
-
-6. **访问项目**
+5. **访问项目**
    - 前端：`http://localhost:5173`
    - 后端：`http://localhost:3001`
    - 后台管理：`http://localhost:5173/admin`
-   - 排行榜页面：`http://localhost:5173/leaderboard`
+   - 排行榜：`http://localhost:5173/leaderboard`
 
 ### 生产环境部署
 
@@ -95,7 +109,7 @@ VITE_API_URL=http://您的域名:3001/api
 
 2. **安装项目依赖**
    ```bash
-   cd /www/wwwroot/您的域名
+   cd /www/wwwroot/PSCG
    npm install
    ```
 
@@ -107,7 +121,7 @@ VITE_API_URL=http://您的域名:3001/api
 4. **启动服务**
    ```bash
    # 使用PM2启动服务
-   pm2 start server.cjs --name "quiz-app"
+   pm2 start server.cjs --name "pscg-app"
    
    # 保存PM2配置
    pm2 save
@@ -117,7 +131,21 @@ VITE_API_URL=http://您的域名:3001/api
    ```
 
 5. **配置 Nginx 反向代理**
-   - 目标 URL：`http://127.0.0.1:3001`
+   ```nginx
+   server {
+     listen 80;
+     server_name 您的域名;
+     
+     location / {
+       proxy_pass http://127.0.0.1:3001;
+       proxy_http_version 1.1;
+       proxy_set_header Upgrade $http_upgrade;
+       proxy_set_header Connection 'upgrade';
+       proxy_set_header Host $host;
+       proxy_cache_bypass $http_upgrade;
+     }
+   }
+   ```
 
 6. **访问项目**
    - 前端：`http://您的域名`
@@ -132,42 +160,53 @@ PSCG/
 │   ├── views/          # 页面组件
 │   │   ├── AdminView.vue     # 后台管理页面
 │   │   ├── HomeView.vue      # 首页
+│   │   ├── LoginView.vue     # 登录页面
 │   │   ├── QuizView.vue      # 答题页面
 │   │   ├── ResultView.vue    # 结果页面
-│   │   ├── LeaderboardView.vue # 排行榜页面
-│   │   └── AnalysisView.vue  # 数据分析页面
+│   │   ├── SubcategoryView.vue # 题库选择页面
+│   │   └── LeaderboardView.vue # 排行榜页面
 │   ├── components/      # 组件
 │   │   ├── admin/       # 后台组件
+│   │   ├── common/      # 通用组件
+│   │   ├── leaderboard/ # 排行榜组件
 │   │   ├── quiz/        # 答题组件
-│   │   └── common/      # 通用组件
+│   │   └── subject/     # 学科组件
 │   ├── stores/         # 状态管理
-│   │   ├── questionStore.js  # 题目状态管理
-│   │   └── analysisStore.js  # 分析状态管理
+│   │   └── questionStore.js  # 题目和数据管理
 │   ├── utils/          # 工具函数
 │   │   └── database.js        # API 调用工具
 │   ├── router/         # 路由配置
 │   │   └── index.js           # 路由定义
-│   ├── assets/         # 静态资源
+│   ├── styles/         # 样式文件
+│   │   ├── global.css         # 全局样式
+│   │   └── loading.css        # 加载动画样式
 │   ├── App.vue         # 根组件
-│   ├── main.js         # 入口文件
-│   └── styles/         # 样式文件
-├── public/             # 静态资源
-├── server.cjs          # 后端服务器
-├── services/           # 后端服务
-│   └── database.js     # 数据库服务
+│   └── main.js         # 入口文件
 ├── routes/             # 后端路由
+│   ├── answer-records.js # 答题记录路由
+│   ├── analysis.js     # 数据分析路由
+│   ├── backup.js       # 数据备份路由
 │   ├── data.js         # 数据管理路由
+│   ├── difficulty.js   # 难度调整路由
+│   ├── grades-classes.js # 年级班级路由
+│   ├── leaderboard.js  # 排行榜路由
 │   ├── questions.js    # 题目管理路由
+│   ├── settings.js     # 设置路由
 │   ├── subjects.js     # 学科管理路由
-│   └── ...             # 其他路由
-├── package.json        # 项目配置
-├── .env.development    # 开发环境配置
-├── .env.production     # 生产环境配置
-├── vite.config.js      # Vite 配置
-├── quiz.db             # SQLite 数据库
+│   └── users.js        # 用户管理路由
+├── services/           # 后端服务
+│   ├── database.js     # 数据库服务
+│   └── difficultyService.js # 难度调整服务
+├── server.cjs          # 后端服务器
+├── public/             # 静态资源
 ├── audio/              # 音频文件目录
 ├── images/             # 图片文件目录
-└── API.md              # API 文档
+├── package.json        # 项目配置
+├── vite.config.js      # Vite 配置
+├── .env.development    # 开发环境配置
+├── .env.production     # 生产环境配置
+├── API.md              # API 文档
+└── TECHNICAL_DOCUMENT.md # 技术文档
 ```
 
 ## 批量添加题目格式
@@ -195,17 +234,26 @@ D. 选项4
 - 支持多选题答案（如：(BCD)、(ABCD)等）
 - 支持【多选】标记
 
-## API文档
+## 安全配置
 
-API 文档已移至单独的文件 `API.md`，请查看该文件获取详细的 API 说明。
+- **文件上传**：已添加文件类型白名单和大小限制（最大10MB）
+- **数据库**：已添加外键约束，确保数据一致性
+- **CORS**：已配置CORS中间件，支持跨域请求
+- **会话管理**：实现了30分钟无活动自动登出
 
-## 注意事项
+## 性能优化
 
-- 确保服务器端口 3001 未被占用
-- 检查防火墙设置，确保端口 3001 可以访问
-- 定期备份 `quiz.db` 数据库文件
-- 如遇到问题，可查看 PM2 日志排查错误：`pm2 logs quiz-app`
-- 如需更改API地址，只需修改对应环境的 `.env` 文件
+- **前端**：
+  - 路由懒加载
+  - 组件按需加载
+  - 图片和资源优化
+  - 首屏快速加载（应用立即挂载，数据后台加载）
+
+- **后端**：
+  - 数据库连接池
+  - 响应压缩
+  - 静态资源缓存
+  - SQL 查询优化
 
 ## 常见问题
 
@@ -231,11 +279,26 @@ API 文档已移至单独的文件 `API.md`，请查看该文件获取详细的 
 - 确保学生已完成答题
 - 检查数据库中是否有答题记录
 
-## 安全配置
+### 6. 白屏问题
+- 检查静态资源路径是否正确
+- 确保前端构建成功
+- 检查浏览器控制台是否有错误信息
 
-- **文件上传**：已添加文件类型白名单和大小限制（最大10MB）
-- **数据库**：已添加外键约束，确保数据一致性
-- **CORS**：已配置CORS中间件，支持跨域请求
+## 注意事项
+
+- 确保服务器端口 3001 未被占用
+- 检查防火墙设置，确保端口 3001 可以访问
+- 定期备份数据库文件
+- 如遇到问题，可查看 PM2 日志排查错误：`pm2 logs pscg-app`
+- 如需更改API地址，只需修改对应环境的 `.env` 文件
+
+## 技术文档
+
+详细的技术实现文档请查看 `TECHNICAL_DOCUMENT.md` 文件。
+
+## API文档
+
+API 文档请查看 `API.md` 文件。
 
 ## 许可证
 
