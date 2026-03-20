@@ -841,7 +841,7 @@ watch(activeTab, (newTab) => {
   box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
   border: 2px solid var(--border-color);
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-  min-width: 440px;
+  min-width: 300px;
   min-height: 210px;
   flex: 1;
   max-width: 440px;
@@ -1285,9 +1285,23 @@ watch(activeTab, (newTab) => {
     font-size: 1rem;
     padding: 0.8rem 1.2rem;
   }
+  
+  /* 第一名卡片响应式调整 */
+  .first-place-content {
+    min-width: 350px;
+    max-width: 380px;
+  }
 }
 
 @media (max-width: 768px) {
+  .leaderboard-content {
+    padding: 1.5rem;
+  }
+  
+  .leaderboard-section {
+    padding: 2rem;
+  }
+  
   .filter-section {
     flex-wrap: wrap;
     gap: 0.8rem;
@@ -1304,9 +1318,43 @@ watch(activeTab, (newTab) => {
     font-size: 0.9rem;
     padding: 0.7rem 1rem;
   }
+  
+  /* 第一名卡片响应式调整 */
+  .leaderboard-content-row {
+    gap: 1.5rem;
+  }
+  
+  .first-place-content {
+    min-width: 100%;
+    max-width: 100%;
+  }
+  
+  .first-place-title {
+    font-size: 1.3rem;
+  }
+  
+  .first-place-badge {
+    font-size: 2.2rem;
+  }
+  
+  .user-name {
+    font-size: 1.6rem;
+  }
+  
+  .first-place-stats {
+    gap: 0.9rem;
+  }
 }
 
 @media (max-width: 480px) {
+  .leaderboard-content {
+    padding: 1rem;
+  }
+  
+  .leaderboard-section {
+    padding: 1.5rem;
+  }
+  
   .filter-section {
     flex-direction: column;
     align-items: stretch;
@@ -1322,6 +1370,58 @@ watch(activeTab, (newTab) => {
   .filter-section .el-select .el-input__inner {
     font-size: 0.8rem;
     padding: 0.6rem 0.9rem;
+  }
+  
+  /* 第一名卡片响应式调整 */
+  .leaderboard-content-row {
+    gap: 1rem;
+  }
+  
+  .first-place-content {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 1rem;
+  }
+  
+  .first-place-title {
+    font-size: 1.2rem;
+  }
+  
+  .first-place-badge {
+    font-size: 2rem;
+  }
+  
+  .user-name {
+    font-size: 1.5rem;
+  }
+  
+  .user-class {
+    font-size: 1rem;
+  }
+  
+  .first-place-stats {
+    grid-template-columns: repeat(3, 1fr);
+    gap: 0.8rem;
+  }
+  
+  .first-place-stats .stat-item {
+    padding: 0.8rem;
+  }
+  
+  .first-place-stats .stat-value {
+    font-size: 1.1rem;
+  }
+  
+  .first-place-stats .stat-label {
+    font-size: 0.8rem;
+  }
+  
+  .first-place-message p {
+    font-size: 0.9rem;
+  }
+  
+  .first-place-message p:first-child {
+    font-size: 1rem;
   }
 }
 </style>
