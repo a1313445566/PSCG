@@ -17,13 +17,14 @@ app.use(pinia)
 app.use(router)
 app.use(ElementPlus)
 
-// 初始化数据库
+// 立即挂载应用
+app.mount('#app')
+
+// 后台初始化数据库和加载数据
 const questionStore = useQuestionStore()
 questionStore.initialize().then(() => {
   // 重新加载数据到 store
   questionStore.loadData()
-  app.mount('#app')
 }).catch(error => {
-
-  app.mount('#app')
+  console.error('初始化数据失败:', error)
 })
