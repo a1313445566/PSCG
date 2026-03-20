@@ -1,0 +1,503 @@
+# PSCG 项目技术文档
+
+## 1. 项目概述
+
+PSCG 是一个基于 Vue 3 和 Express.js 的智能题库系统，旨在为用户提供个性化的学习体验。系统支持多学科题库管理、智能难度调整、答题统计分析和排行榜功能，帮助用户高效学习和提高成绩。
+
+### 1.1 核心功能
+
+- **用户认证**：学生登录、会话管理
+- **学科管理**：多学科支持、题库分类
+- **智能答题**：随机出题、选项随机排序
+- **难度调整**：基于错误率的自动难度调整
+- **数据分析**：答题统计、正确率分析
+- **排行榜系统**：基于积分和正确率的排名
+- **后台管理**：题目管理、用户管理、数据备份
+
+### 1.2 技术特点
+
+- **前后端分离**：Vue 3 前端 + Express.js 后端
+- **响应式设计**：适配不同设备屏幕
+- **智能难度系统**：基于用户答题情况自动调整难度
+- **实时数据**：实时更新的排行榜和统计数据
+- **高性能**：数据库优化、缓存机制
+
+## 2. 技术栈
+
+### 2.1 前端技术
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Vue 3 | 3.x | 前端框架 |
+| Pinia | 2.x | 状态管理 |
+| Vue Router | 4.x | 路由管理 |
+| Element Plus | 2.x | UI 组件库 |
+| ECharts | 5.x | 数据可视化 |
+| Vite | 5.x | 构建工具 |
+
+### 2.2 后端技术
+
+| 技术 | 版本 | 用途 |
+|------|------|------|
+| Node.js | 16+ | 运行环境 |
+| Express.js | 4.x | 后端框架 |
+| MySQL | 8.0 | 数据库 |
+| multer | 1.x | 文件上传 |
+| compression | 1.x | 响应压缩 |
+| cors | 2.x | 跨域支持 |
+
+## 3. 项目结构
+
+### 3.1 前端结构
+
+```
+src/
+├── components/          # 组件
+│   ├── admin/          # 后台管理组件
+│   ├── common/         # 通用组件
+│   ├── leaderboard/    # 排行榜组件
+│   ├── quiz/           # 答题相关组件
+│   ├── subject/        # 学科相关组件
+│   └── user/           # 用户相关组件
+├── views/              # 页面
+│   ├── AdminView.vue   # 后台管理页面
+│   ├── HomeView.vue    # 首页
+│   ├── LeaderboardView.vue # 排行榜页面
+│   ├── LoginView.vue   # 登录页面
+│   ├── QuizView.vue    # 答题页面
+│   ├── ResultView.vue  # 结果页面
+│   └── SubcategoryView.vue # 题库选择页面
+├── router/             # 路由配置
+│   └── index.js        # 路由定义
+├── stores/             # 状态管理
+│   └── questionStore.js # 题目和数据管理
+├── utils/              # 工具函数
+│   └── database.js     # 数据库操作工具
+├── styles/             # 样式
+│   ├── global.css      # 全局样式
+│   └── loading.css     # 加载动画样式
+├── App.vue             # 根组件
+└── main.js             # 入口文件
+```
+
+### 3.2 后端结构
+
+```
+/
+├── routes/             # 后端路由
+│   ├── answer-records.js # 答题记录路由
+│   ├── analysis.js     # 数据分析路由
+│   ├── backup.js       # 数据备份路由
+│   ├── data.js         # 数据管理路由
+│   ├── difficulty.js   # 难度调整路由
+│   ├── grades-classes.js # 年级班级路由
+│   ├── leaderboard.js  # 排行榜路由
+│   ├── questions.js    # 题目管理路由
+│   ├── settings.js     # 设置路由
+│   ├── subjects.js     # 学科管理路由
+│   └── users.js        # 用户管理路由
+├── services/           # 服务
+│   ├── database.js     # 数据库服务
+│   └── difficultyService.js # 难度调整服务
+├── server.cjs          # 后端服务器
+└── package.json        # 依赖配置
+```
+
+## 4. 核心功能模块
+
+### 4.1 用户认证系统
+
+**功能**：
+- 学生登录
+- 会话管理
+- 自动登出
+
+**实现**：
+- 基于 localStorage 存储登录信息
+- 会话超时检测（30分钟无活动）
+- 路由守卫保护需要登录的页面
+
+**关键代码**：
+- `src/router/index.js`：导航守卫
+- `src/views/LoginView.vue`：登录页面
+
+### 4.2 学科和题库管理
+
+**功能**：
+- 学科管理（添加、编辑、删除）
+- 题库管理（添加、编辑、删除）
+- 题目管理（添加、编辑、删除、导入）
+
+**实现**：
+- 后台管理界面
+- 多级分类结构（学科 -> 题库 -> 题目）
+- 支持图片和音频上传
+
+**关键代码**：
+- `src/views/AdminView.vue`：后台管理
+- `routes/subjects.js`：学科API
+- `routes/questions.js`：题目API
+
+### 4.3 智能答题系统
+
+**功能**：
+- 随机出题
+- 选项随机排序
+- 答题记录
+- 实时反馈
+
+**实现**：
+- 基于 Pinia 的状态管理
+- 前端随机算法
+- 后端答题记录存储
+
+**关键代码**：
+- `src/views/QuizView.vue`：答题页面
+- `src/stores/questionStore.js`：答题状态管理
+- `routes/answer-records.js`：答题记录API
+
+### 4.4 难度调整系统
+
+**功能**：
+- 基于错误率的自动难度调整
+- 时间加权（最近答题权重更高）
+- 批量难度调整
+- 手动难度设置
+
+**实现**：
+- 错误率计算算法
+- 时间加权机制
+- 多级难度阈值
+
+**关键代码**：
+- `services/difficultyService.js`：难度调整逻辑
+- `routes/difficulty.js`：难度API
+
+### 4.5 排行榜系统
+
+**功能**：
+- 全局排行榜
+- 个人排名
+- 积分系统
+- 排名规则
+
+**实现**：
+- 基于积分和正确率的排名算法
+- 实时更新
+- 动画效果
+
+**关键代码**：
+- `src/views/LeaderboardView.vue`：排行榜页面
+- `routes/leaderboard.js`：排行榜API
+
+### 4.6 数据分析系统
+
+**功能**：
+- 个人答题统计
+- 学科正确率分析
+- 题目难度分布
+- 学习进度跟踪
+
+**实现**：
+- ECharts 数据可视化
+- 后端统计查询
+- 前端数据展示
+
+**关键代码**：
+- `routes/analysis.js`：数据分析API
+- `src/components/analysis/`：分析组件
+
+## 5. API 设计
+
+### 5.1 学科管理 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/subjects` | GET | 获取所有学科 |
+| `/api/subjects` | POST | 添加学科 |
+| `/api/subjects/:id` | PUT | 更新学科 |
+| `/api/subjects/:id` | DELETE | 删除学科 |
+
+### 5.2 题目管理 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/questions` | GET | 获取题目列表 |
+| `/api/questions` | POST | 添加题目 |
+| `/api/questions/:id` | PUT | 更新题目 |
+| `/api/questions/:id` | DELETE | 删除题目 |
+| `/api/questions/import` | POST | 导入题目 |
+
+### 5.3 用户管理 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/users` | GET | 获取用户列表 |
+| `/api/users` | POST | 添加用户 |
+| `/api/users/:id` | PUT | 更新用户 |
+| `/api/users/:id` | DELETE | 删除用户 |
+| `/api/users/stats/:id` | GET | 获取用户统计 |
+
+### 5.4 答题记录 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/answer-records` | GET | 获取答题记录 |
+| `/api/answer-records` | POST | 添加答题记录 |
+| `/api/answer-records/all` | GET | 获取所有答题记录 |
+
+### 5.5 难度调整 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/difficulty/question/:questionId` | POST | 调整题目难度 |
+| `/api/difficulty/batch` | POST | 批量调整题目难度 |
+| `/api/difficulty/question/:questionId` | PUT | 手动设置题目难度 |
+| `/api/difficulty/subcategory/:subcategoryId` | POST | 调整题库难度 |
+| `/api/difficulty/subcategory/batch` | POST | 批量调整题库难度 |
+| `/api/difficulty/subcategory/:subcategoryId` | PUT | 手动设置题库难度 |
+| `/api/difficulty/distribution` | GET | 获取难度分布 |
+
+### 5.6 排行榜 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/leaderboard/global` | GET | 获取全局排行榜 |
+| `/api/leaderboard/user/:id` | GET | 获取用户排名 |
+
+### 5.7 数据分析 API
+
+| 端点 | 方法 | 功能 |
+|------|------|------|
+| `/api/analysis/user/:id` | GET | 获取用户分析 |
+| `/api/analysis/subject/:id` | GET | 获取学科分析 |
+| `/api/analysis/questions` | GET | 获取题目分析 |
+
+## 6. 数据库设计
+
+### 6.1 核心表结构
+
+**subjects 表**
+| 字段名 | 数据类型 | 描述 |
+|--------|----------|------|
+| id | INT | 学科ID |
+| name | VARCHAR(255) | 学科名称 |
+| icon_index | INT | 图标索引 |
+
+**subcategories 表**
+| 字段名 | 数据类型 | 描述 |
+|--------|----------|------|
+| id | INT | 题库ID |
+| subject_id | INT | 所属学科ID |
+| name | VARCHAR(255) | 题库名称 |
+| icon_index | INT | 图标索引 |
+| difficulty | INT | 难度等级 |
+
+**questions 表**
+| 字段名 | 数据类型 | 描述 |
+|--------|----------|------|
+| id | INT | 题目ID |
+| subject_id | INT | 所属学科ID |
+| subcategory_id | INT | 所属题库ID |
+| content | LONGTEXT | 题目内容 |
+| type | VARCHAR(50) | 题目类型 |
+| options | LONGTEXT | 选项 |
+| correct_answer | TEXT | 正确答案 |
+| explanation | TEXT | 解析 |
+| audio_url | VARCHAR(255) | 音频URL |
+| image_url | VARCHAR(255) | 图片URL |
+| difficulty | INT | 难度等级 |
+| created_at | DATETIME | 创建时间 |
+
+**users 表**
+| 字段名 | 数据类型 | 描述 |
+|--------|----------|------|
+| id | INT | 用户ID |
+| student_id | VARCHAR(255) | 学号 |
+| name | VARCHAR(255) | 姓名 |
+| grade | INT | 年级 |
+| class | INT | 班级 |
+| created_at | DATETIME | 创建时间 |
+
+**answer_records 表**
+| 字段名 | 数据类型 | 描述 |
+|--------|----------|------|
+| id | INT | 记录ID |
+| user_id | INT | 用户ID |
+| subject_id | INT | 学科ID |
+| subcategory_id | INT | 题库ID |
+| total_questions | INT | 总题目数 |
+| correct_count | INT | 正确数 |
+| time_spent | INT | 用时(秒) |
+| created_at | DATETIME | 创建时间 |
+
+**question_attempts 表**
+| 字段名 | 数据类型 | 描述 |
+|--------|----------|------|
+| id | INT | 尝试ID |
+| user_id | INT | 用户ID |
+| question_id | INT | 题目ID |
+| subject_id | INT | 学科ID |
+| subcategory_id | INT | 题库ID |
+| user_answer | TEXT | 用户答案 |
+| correct_answer | TEXT | 正确答案 |
+| is_correct | TINYINT | 是否正确 |
+| answer_record_id | INT | 答题记录ID |
+| shuffled_options | TEXT | 随机选项 |
+| created_at | DATETIME | 创建时间 |
+
+## 7. 关键技术实现
+
+### 7.1 智能难度调整算法
+
+**实现原理**：
+- 基于题目错误率计算难度
+- 时间加权：最近7天的尝试权重为1，更早的为0.5
+- 多级阈值：根据错误率范围调整难度
+- 题目类型差异：多选题和单选题使用不同的阈值
+
+**核心代码**：
+```javascript
+// 计算加权错误率
+const weightedErrorRate = (weighted_attempts - weighted_correct_count) / weighted_attempts;
+
+// 根据错误率调整难度
+if (weightedErrorRate > 0.8) {
+  // 错误率很高，大幅提升难度
+  newDifficulty = Math.min(5, newDifficulty + 2);
+} else if (weightedErrorRate > thresholdHigh) {
+  // 错误率高，小幅提升难度
+  newDifficulty = Math.min(5, newDifficulty + 1);
+} else if (weightedErrorRate < 0.2) {
+  // 错误率很低，大幅降低难度
+  newDifficulty = Math.max(1, newDifficulty - 2);
+} else if (weightedErrorRate < thresholdLow) {
+  // 错误率低，小幅降低难度
+  newDifficulty = Math.max(1, newDifficulty - 1);
+}
+```
+
+### 7.2 性能优化
+
+**实现措施**：
+- 前端：
+  - 路由懒加载
+  - 组件按需加载
+  - 图片和资源优化
+  - 首屏快速加载（应用立即挂载，数据后台加载）
+
+- 后端：
+  - 数据库连接池
+  - 响应压缩
+  - 静态资源缓存
+  - SQL 查询优化
+
+**关键代码**：
+```javascript
+// 前端路由懒加载
+const routes = [
+  {
+    path: '/login',
+    name: 'Login',
+    component: () => import('../views/LoginView.vue')
+  },
+  // 其他路由...
+]
+
+// 后端响应压缩
+app.use(compression());
+
+// 静态资源缓存
+app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
+  maxAge: '30d',
+  etag: true,
+  lastModified: false,
+  immutable: true
+}));
+```
+
+### 7.3 响应式设计
+
+**实现原理**：
+- 使用 CSS Grid 和 Flexbox 布局
+- 媒体查询适配不同屏幕尺寸
+- 动态字体大小和间距
+- 移动优先设计
+
+**关键代码**：
+```css
+/* 响应式布局 */
+@media (max-width: 768px) {
+  .home-content {
+    padding: 1rem;
+  }
+  
+  .subject-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 1.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .subject-grid {
+    grid-template-columns: 1fr;
+  }
+}
+```
+
+## 8. 部署与维护
+
+### 8.1 部署流程
+
+1. **前端构建**：
+   ```bash
+   npm run build
+   ```
+
+2. **后端启动**：
+   ```bash
+   node server.cjs
+   ```
+
+3. **环境配置**：
+   - 数据库连接配置（services/database.js）
+   - 端口配置（server.cjs）
+   - 静态资源路径配置
+
+### 8.2 维护要点
+
+- **数据备份**：定期备份数据库
+- **日志监控**：监控服务器日志
+- **性能监控**：监控系统性能
+- **安全更新**：定期更新依赖包
+
+### 8.3 常见问题排查
+
+| 问题 | 可能原因 | 解决方案 |
+|------|----------|----------|
+| 白屏 | 前端资源加载失败 | 检查静态资源路径 |
+| 数据库连接失败 | 数据库服务未启动 | 检查数据库服务状态 |
+| API 响应慢 | 数据库查询未优化 | 优化 SQL 查询 |
+| 上传失败 | 文件大小超限 | 调整 multer 配置 |
+
+## 9. 未来规划
+
+### 9.1 功能扩展
+
+- **AI 智能出题**：基于学习情况自动生成题目
+- **个性化学习路径**：根据用户薄弱环节推荐学习内容
+- **多人对战模式**：支持实时答题竞赛
+- **家长监控系统**：家长查看孩子学习情况
+
+### 9.2 技术升级
+
+- **TypeScript 迁移**：提高代码类型安全性
+- **Docker 容器化**：简化部署流程
+- **CI/CD 集成**：自动化测试和部署
+- **云服务迁移**：提高系统可靠性和可扩展性
+
+## 10. 总结
+
+PSCG 项目是一个功能完整、技术先进的智能题库系统，采用现代化的前后端分离架构，实现了智能难度调整、数据分析和排行榜等核心功能。系统设计注重用户体验和性能优化，为用户提供了一个高效、有趣的学习平台。
+
+通过不断的技术迭代和功能扩展，PSCG 有望成为教育领域的重要工具，帮助学生提高学习效率，教师优化教学策略，为教育数字化转型做出贡献。
