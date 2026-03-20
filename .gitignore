@@ -36,6 +36,7 @@ add-*.js
 *.rar
 *.7z
 *.bak
+*.db
 
 # Environment variables
 .env

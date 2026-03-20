@@ -122,11 +122,39 @@
         <AnalysisView />
       </el-tab-pane>
       
+      <!-- 用户管理 -->
+      <el-tab-pane label="用户管理" name="user-management">
+        <div class="user-management-tab">
+          <UserManagement 
+            :users="userStats"
+            :grades="grades"
+            :classes="classes"
+            @update-users="updateUserList"
+          />
+        </div>
+      </el-tab-pane>
+      
       <!-- 数据库管理 -->
       <el-tab-pane label="数据库管理" name="data-management" @click="handleDataManagementClick">
         <div v-if="isDataManagementAuthenticated" class="data-management">
-          <BackupRestore />
-          <DataCleanup />
+          <BackupRestore 
+            :backup-history="backupHistory"
+            @backup-data="backupData"
+            @restore-data="restoreData"
+            @export-data="exportData"
+            @upload-backup="uploadBackup"
+            @download-backup="downloadBackup"
+            @delete-backup="deleteBackup"
+            @get-backup-history="getBackupHistory"
+            @verify-backup="verifyBackup"
+          />
+          <DataCleanup 
+            @clear-all-data="clearAllData"
+            @clear-user-records="clearUserRecords"
+            @clear-leaderboard="clearLeaderboard"
+            @clear-grades="clearGrades"
+            @clear-classes="clearClasses"
+          />
         </div>
         <div v-else class="data-management-locked">
           <el-icon class="lock-icon"><i class="el-icon-lock"></i></el-icon>
@@ -417,6 +445,7 @@ import DataCleanup from '../components/admin/data-management/DataCleanup.vue'
 import UserDetailDialog from '../components/admin/common/UserDetailDialog.vue'
 import QuestionDetailDialog from '../components/admin/common/QuestionDetailDialog.vue'
 import SubcategoryDialog from '../components/admin/common/SubcategoryDialog.vue'
+import UserManagement from '../components/admin/user-management/UserManagement.vue'
 
 // 动态导入AnalysisView，减少初始加载体积
 const AnalysisView = defineAsyncComponent(() => import('./AnalysisView.vue'))
@@ -433,6 +462,7 @@ const userStats = computed(() => questionStore.userStats)
 const recentRecords = computed(() => questionStore.recentRecords)
 const grades = computed(() => questionStore.grades)
 const classes = computed(() => questionStore.classes)
+const backupHistory = ref([])
 
 // 排行榜筛选相关
 const filterStudentId = ref('')
@@ -841,102 +871,114 @@ const handleBatchAddQuestions = async (questions) => {
   }
 }
 
+// 更新用户列表
+const updateUserList = async () => {
+  try {
+    await questionStore.loadUserStats()
+    ElMessage.success('用户列表已更新')
+  } catch (error) {
+    console.error('更新用户列表失败:', error)
+    ElMessage.error('更新用户列表失败，请稍后重试')
+  }
+}
+
 // 数据管理相关方法
 const clearAllData = async () => {
   try {
-    await fetch(`${getApiBaseUrl()}/data`, { method: 'DELETE' })
+    await fetch(`${getApiBaseUrl()}/data/clear-all`, { method: 'POST' })
     await questionStore.loadData()
     ElMessage.success('所有数据已清空')
   } catch (error) {
-
+    console.error('清空数据失败:', error)
     ElMessage.error('清空数据失败，请稍后重试')
   }
 }
 
 const clearUserRecords = async () => {
   try {
-    await fetch(`${getApiBaseUrl()}/user-records`, { method: 'DELETE' })
+    await fetch(`${getApiBaseUrl()}/data/clear-records`, { method: 'POST' })
     ElMessage.success('用户答题记录已清空')
   } catch (error) {
-
+    console.error('清空用户答题记录失败:', error)
     ElMessage.error('清空用户答题记录失败，请稍后重试')
   }
 }
 
 const clearLeaderboard = async () => {
   try {
-    await fetch(`${getApiBaseUrl()}/leaderboard`, { method: 'DELETE' })
+    await fetch(`${getApiBaseUrl()}/data/clear-leaderboard`, { method: 'POST' })
     ElMessage.success('排行榜数据已清空')
   } catch (error) {
-
+    console.error('清空排行榜数据失败:', error)
     ElMessage.error('清空排行榜数据失败，请稍后重试')
   }
 }
 
 const clearGrades = async () => {
   try {
-    await fetch(`${getApiBaseUrl()}/grades`, { method: 'DELETE' })
+    await fetch(`${getApiBaseUrl()}/data/clear-grades`, { method: 'POST' })
     await questionStore.loadData()
     ElMessage.success('年级数据已清空')
   } catch (error) {
-
+    console.error('清空年级数据失败:', error)
     ElMessage.error('清空年级数据失败，请稍后重试')
   }
 }
 
 const clearClasses = async () => {
   try {
-    await fetch(`${getApiBaseUrl()}/classes`, { method: 'DELETE' })
+    await fetch(`${getApiBaseUrl()}/data/clear-classes`, { method: 'POST' })
     await questionStore.loadData()
     ElMessage.success('班级数据已清空')
   } catch (error) {
-
+    console.error('清空班级数据失败:', error)
     ElMessage.error('清空班级数据失败，请稍后重试')
   }
 }
 
-const backupData = async () => {
+const backupData = async (backupParams = {}) => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/backup`)
-    const blob = await response.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `backup-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    ElMessage.success('数据备份成功')
+    // 构建API请求URL
+    const baseUrl = `${getApiBaseUrl()}/backup`;
+    const params = new URLSearchParams();
+    params.append('type', backupParams.type || 'full');
+    
+    const url = `${baseUrl}?${params.toString()}`;
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const downloadUrl = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = downloadUrl;
+    
+    // 使用.db格式
+    a.download = `backup-${new Date().toISOString().slice(0, 10)}-${backupParams.type || 'full'}.db`;
+    a.click();
+    URL.revokeObjectURL(downloadUrl);
+    ElMessage.success('数据备份成功');
   } catch (error) {
-
-    ElMessage.error('备份数据失败，请稍后重试')
+    console.error('备份数据失败:', error);
+    ElMessage.error('备份数据失败，请稍后重试');
   }
 }
 
 const restoreData = async () => {
-  try {
-    // 这里应该打开文件选择对话框，让用户选择备份文件
-    // 然后上传文件到服务器
-    ElMessage.info('请使用上传备份文件功能恢复数据')
-  } catch (error) {
-
-    ElMessage.error('恢复数据失败，请稍后重试')
-  }
+  // 恢复数据的逻辑现在由BackupRestore组件处理
 }
 
 const exportData = async () => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/export`)
-    const blob = await response.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `export-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    ElMessage.success('数据导出成功')
+    const response = await fetch(`${getApiBaseUrl()}/export`);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `export-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    ElMessage.success('数据导出成功');
   } catch (error) {
-
-    ElMessage.error('导出数据失败，请稍后重试')
+    console.error('导出数据失败:', error);
+    ElMessage.error('导出数据失败，请稍后重试');
   }
 }
 
@@ -959,6 +1001,91 @@ const uploadBackup = async (file) => {
   } catch (error) {
 
     ElMessage.error('上传备份文件失败，请稍后重试')
+  }
+}
+
+// 获取备份历史
+const getBackupHistory = async () => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/backup/history`);
+    const history = await response.json();
+    // 将历史数据存储到变量中
+    backupHistory.value = history;
+    return history;
+  } catch (error) {
+    console.error('获取备份历史失败:', error);
+    ElMessage.error('获取备份历史失败，请稍后重试');
+    backupHistory.value = [];
+    return [];
+  }
+}
+
+// 下载备份
+const downloadBackup = async (backupId) => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/backup/${backupId}`);
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `backup-${backupId}.db`;
+    a.click();
+    URL.revokeObjectURL(url);
+    ElMessage.success('备份文件下载成功');
+  } catch (error) {
+    console.error('下载备份失败:', error);
+    ElMessage.error('下载备份失败，请稍后重试');
+  }
+}
+
+// 删除备份
+const deleteBackup = async (backupId) => {
+  try {
+    await fetch(`${getApiBaseUrl()}/backup/${backupId}`, { method: 'DELETE' });
+    ElMessage.success('备份文件删除成功');
+  } catch (error) {
+    console.error('删除备份失败:', error);
+    ElMessage.error('删除备份失败，请稍后重试');
+  }
+}
+
+// 验证备份文件
+const verifyBackup = async (file) => {
+  try {
+    const formData = new FormData();
+    formData.append('backup', file.raw);
+    
+    const response = await fetch(`${getApiBaseUrl()}/backup/verify`, {
+      method: 'POST',
+      body: formData
+    });
+    
+    if (response.ok) {
+      const result = await response.json();
+      if (result.valid) {
+        ElMessageBox.alert(
+          `<div style="text-align: left;">
+            <p><strong>验证结果:</strong> 备份文件有效</p>
+            <p><strong>备份类型:</strong> ${result.type}</p>
+            <p><strong>备份时间:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+            <p><strong>数据大小:</strong> ${result.size}</p>
+            ${result.dataTypes ? `<p><strong>包含数据:</strong> ${result.dataTypes.join(', ')}</p>` : ''}
+          </div>`,
+          '备份文件验证成功',
+          {
+            dangerouslyUseHTMLString: true,
+            confirmButtonText: '确定'
+          }
+        );
+      } else {
+        ElMessage.error(`备份文件验证失败: ${result.message}`);
+      }
+    } else {
+      throw new Error('验证失败');
+    }
+  } catch (error) {
+    console.error('验证备份文件失败:', error);
+    ElMessage.error('验证备份文件失败，请稍后重试');
   }
 }
 

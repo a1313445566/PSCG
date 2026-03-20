@@ -1,0 +1,54 @@
+{
+  "timestamp": "2026-03-20T04:00:21.154Z",
+  "type": "integration_test",
+  "totalTests": 9,
+  "passedTests": 9,
+  "failedTests": 0,
+  "results": [
+    {
+      "name": "备份数据按钮",
+      "status": "PASS",
+      "message": "备份数据按钮操作流程正常"
+    },
+    {
+      "name": "导出数据按钮",
+      "status": "PASS",
+      "message": "导出数据按钮操作流程正常"
+    },
+    {
+      "name": "备份历史按钮",
+      "status": "PASS",
+      "message": "备份历史按钮操作流程正常"
+    },
+    {
+      "name": "健康检查按钮",
+      "status": "PASS",
+      "message": "健康检查按钮操作流程正常"
+    },
+    {
+      "name": "数据库状态按钮",
+      "status": "PASS",
+      "message": "数据库状态按钮操作流程正常"
+    },
+    {
+      "name": "恢复数据按钮",
+      "status": "PASS",
+      "message": "恢复数据按钮操作流程正常"
+    },
+    {
+      "name": "上传备份文件按钮",
+      "status": "PASS",
+      "message": "上传备份文件按钮操作流程正常"
+    },
+    {
+      "name": "验证备份文件按钮",
+      "status": "PASS",
+      "message": "验证备份文件按钮操作流程正常"
+    },
+    {
+      "name": "导入本地数据按钮",
+      "status": "PASS",
+      "message": "导入本地数据按钮操作流程正常"
+    }
+  ]
+}
