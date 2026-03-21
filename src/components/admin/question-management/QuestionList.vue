@@ -29,6 +29,9 @@
         <el-button type="info" @click="toggleViewMode">
           {{ isCategoryView ? '切换到列表视图' : '切换到分类视图' }}
         </el-button>
+        <el-button type="warning" @click="refreshQuestions">
+          <el-icon><Refresh /></el-icon> 刷新数据
+        </el-button>
       </div>
     </div>
     
@@ -223,6 +226,8 @@
 <script setup>
 import { ref, computed, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Refresh } from '@element-plus/icons-vue';
+import { useQuestionStore } from '../../../stores/questionStore';
 
 // 定义属性和事件
 const props = defineProps({
@@ -522,6 +527,19 @@ const showBatchAddQuestionDialog = () => {
   emit('show-batch-add-dialog');
 };
 
+// 刷新题目数据
+const refreshQuestions = async () => {
+  try {
+    const questionStore = useQuestionStore();
+    
+    // 重新加载数据
+    await questionStore.loadData();
+    ElMessage.success('数据刷新成功');
+  } catch (error) {
+    ElMessage.error('刷新数据失败，请稍后重试');
+  }
+};
+
 // 辅助方法
 const hasValidImage = (content) => {
   return content && content.includes('<img');
@@ -547,6 +565,12 @@ const getTypeName = (type) => {
   };
   return typeMap[type] || type;
 };
+
+// 监听题目变化，重置分页状态
+watch(() => props.questions, () => {
+  // 当题目列表变化时，重置到第一页，确保新添加的题目能显示出来
+  currentPage.value = 1;
+}, { deep: true });
 
 // 分页处理
 const handleSizeChange = (size) => {

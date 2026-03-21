@@ -104,6 +104,14 @@ const optionLayout = computed(() => {
   const options = parsedOptions.value;
   const optionCount = options.length;
   
+  // 检查是否有选项包含图片
+  const hasImageOption = options.some(opt => opt.includes('<img'));
+  
+  if (hasImageOption) {
+    // 有图片选项，使用垂直布局
+    return 'grid-1';
+  }
+  
   if (optionCount === 4) {
     // 检查选项长度
     const maxLength = Math.max(...options.map(opt => {

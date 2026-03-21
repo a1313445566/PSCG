@@ -86,7 +86,7 @@ export const useQuestionStore = defineStore('question', {
         
         // 并行加载所有数据，提高性能，但每个请求独立处理，一个失败不影响其他
         const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []);
-        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=0`).then(res => res.json()).catch(() => []);
+        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=10000`).then(res => res.json()).catch(() => []);
         const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []);
         const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => []);
         const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json()).catch(() => []);

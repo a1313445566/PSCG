@@ -91,7 +91,7 @@ const selectSubcategory = () => {
 .subcategory-card {
   background: white;
   border-radius: 15px;
-  padding: 1.5rem;
+  padding: 1.2rem;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -99,6 +99,10 @@ const selectSubcategory = () => {
   border: 2px solid transparent;
   position: relative;
   overflow: hidden;
+  min-height: 180px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .subcategory-card::before {
@@ -128,8 +132,8 @@ const selectSubcategory = () => {
 }
 
 .subcategory-icon {
-  font-size: 3rem;
-  margin-bottom: 1rem;
+  font-size: 2.5rem;
+  margin-bottom: 0.8rem;
   color: #F5A623;
   transition: all 0.3s ease;
 }
@@ -140,10 +144,16 @@ const selectSubcategory = () => {
 
 .subcategory-name {
   font-family: 'Fredoka One', 'Comic Sans MS', cursive;
-  font-size: 1.1rem;
+  font-size: 1rem;
   font-weight: bold;
   color: #333;
-  margin-bottom: 0.8rem;
+  margin-bottom: 0.6rem;
+  line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .subcategory-info {

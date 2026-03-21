@@ -15,8 +15,11 @@
       />
       
       <div class="difficulty-rules-section">
-        <h3 class="section-title">📊 难度调整规则</h3>
-        <div class="difficulty-rules-content">
+        <div class="rules-header" @click="toggleRules">
+          <h3 class="section-title">📊 难度调整规则</h3>
+          <div class="toggle-icon" :class="{ 'rotated': rulesExpanded }">▼</div>
+        </div>
+        <div class="difficulty-rules-content" v-show="rulesExpanded">
           <div class="rule-item">
             <h4>自动难度调整</h4>
             <p>系统会根据学生的答题情况自动调整题目难度：</p>
@@ -65,12 +68,15 @@
 </template>
 
 <script setup>
-import { computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onMounted as onMountedRef } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import SubcategoryCard from '../components/quiz/SubcategoryCard.vue'
 import ErrorCollectionCard from '../components/quiz/ErrorCollectionCard.vue'
 import { useQuestionStore } from '../stores/questionStore'
+
+// 难度规则展开状态
+const rulesExpanded = ref(true)
 
 const router = useRouter()
 const route = useRoute()
@@ -98,6 +104,11 @@ const backToHome = () => {
   router.push('/')
 }
 
+// 切换难度规则展开/折叠
+const toggleRules = () => {
+  rulesExpanded.value = !rulesExpanded.value
+}
+
 onMounted(async () => {
   // 初始化数据
   await questionStore.initialize()
@@ -111,6 +122,20 @@ onMounted(async () => {
   if (currentSubject.value.id) {
     await questionStore.loadErrorCollection(currentSubject.value.id)
   }
+  
+  // 在小屏幕上默认折叠难度规则
+  if (window.innerWidth <= 768) {
+    rulesExpanded.value = false
+  }
+  
+  // 监听窗口大小变化
+  window.addEventListener('resize', () => {
+    if (window.innerWidth <= 768) {
+      rulesExpanded.value = false
+    } else {
+      rulesExpanded.value = true
+    }
+  })
 })
 </script>
 
@@ -174,6 +199,24 @@ onMounted(async () => {
   padding: 2rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
+}
+
+.rules-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+  margin-bottom: 1.5rem;
+}
+
+.toggle-icon {
+  font-size: 1rem;
+  color: #4A90E2;
+  transition: transform 0.3s ease;
+}
+
+.toggle-icon.rotated {
+  transform: rotate(180deg);
 }
 
 .difficulty-rules-content {
@@ -270,8 +313,8 @@ onMounted(async () => {
 
 .subcategory-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1.2rem;
 }
 
 /* 响应式设计 */
@@ -302,6 +345,15 @@ onMounted(async () => {
   
   .subcategory-section {
     padding: 1.5rem;
+  }
+  
+  .difficulty-rules-section {
+    padding: 1.5rem;
+  }
+  
+  .difficulty-rules-content {
+    grid-template-columns: 1fr;
+    gap: 1rem;
   }
 }
 

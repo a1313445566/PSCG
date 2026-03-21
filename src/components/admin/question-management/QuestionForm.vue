@@ -652,14 +652,14 @@ const onQuillReady = (quill) => {
 /* 基本信息单行布局 */
 .basic-info-row {
   display: flex;
-  gap: 20px;
+  gap: 15px;
   align-items: flex-start;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 .basic-info-row .form-item-group {
   flex: 1;
-  min-width: 250px;
+  min-width: 0;
 }
 
 .form-item-group {
