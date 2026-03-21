@@ -6,8 +6,8 @@
     width="500px"
   >
     <el-form :model="form" label-width="100px" @submit.prevent="handleSubmit">
-      <el-form-item label="学号" prop="student_id" :rules="[{ required: true, message: '请输入学号', trigger: 'blur' }]">
-        <el-input v-model="form.student_id" placeholder="请输入学号" maxlength="20"></el-input>
+      <el-form-item label="学号" prop="student_id" :rules="[{ required: true, message: '请输入学号', trigger: 'blur' }, { pattern: /^\d{2}$/, message: '学号必须为2位数字', trigger: 'blur' }]">
+        <el-input v-model="form.student_id" placeholder="请输入2位学号" maxlength="2" @input="form.student_id = form.student_id.replace(/[^0-9]/g, '').slice(0, 2)"></el-input>
       </el-form-item>
       
       <el-form-item label="姓名" prop="name" :rules="[{ required: false, message: '请输入姓名', trigger: 'blur' }]">

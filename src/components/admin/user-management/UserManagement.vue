@@ -13,7 +13,7 @@
       <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
         <div style="display: flex; align-items: center; gap: 5px;">
           <label style="font-weight: 500; width: 60px;">学号</label>
-          <el-input v-model="searchStudentId" placeholder="输入学号" style="width: 180px;"></el-input>
+          <el-input v-model="searchStudentId" placeholder="输入学号" style="width: 180px;" @input="searchStudentId = searchStudentId.replace(/[^0-9]/g, '')"></el-input>
         </div>
         <div style="display: flex; align-items: center; gap: 5px;">
           <label style="font-weight: 500; width: 60px;">姓名</label>

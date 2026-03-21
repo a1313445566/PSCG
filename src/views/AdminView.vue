@@ -67,7 +67,7 @@
             <div style="display: flex; align-items: center; gap: 15px; overflow-x: auto; padding-bottom: 5px;">
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-weight: 500; width: 60px;">学号</label>
-                <el-input v-model="filterStudentId" placeholder="输入学号" style="width: 180px;"></el-input>
+                <el-input v-model="filterStudentId" placeholder="输入学号" style="width: 180px;" @input="filterStudentId = filterStudentId.replace(/[^0-9]/g, '')"></el-input>
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-weight: 500; width: 60px;">年级</label>
@@ -428,6 +428,7 @@ import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getApiBaseUrl } from '../utils/database'
+import { passwords } from '../config/passwords'
 
 // 导入模块化组件
 import PasswordDialog from '../components/admin/auth/PasswordDialog.vue'
@@ -605,8 +606,8 @@ const showQuestionDetail = (row) => {
 }
 
 const verifyDataManagementPassword = () => {
-  // 正确密码
-  const correctPassword = 'xgsy8188'
+  // 使用配置文件中的密码
+  const correctPassword = passwords.dataManagement
   
   if (dataManagementPasswordForm.value.password === correctPassword) {
     isDataManagementAuthenticated.value = true

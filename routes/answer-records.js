@@ -7,11 +7,16 @@ const difficultyService = require('../services/difficultyService');
 // 获取所有答题记录（支持筛选）
 router.get('/all', async (req, res) => {
   try {
-    const { limit = 50, grade, class: className, subjectId, startDate, endDate } = req.query;
+    const { limit = 50, grade, class: className, subjectId, startDate, endDate, student_id } = req.query;
     
     let query = 'SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.`class`, s.name as subject_name, sc.name as subcategory_name FROM answer_records ar LEFT JOIN users u ON ar.user_id = u.id LEFT JOIN subjects s ON ar.subject_id = s.id LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id WHERE 1=1';
     
     const params = [];
+    
+    if (student_id) {
+      query += ' AND u.student_id = ?';
+      params.push(student_id);
+    }
     
     if (grade) {
       query += ' AND u.grade = ?';

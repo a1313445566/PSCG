@@ -11,9 +11,12 @@
           <input 
             type="text" 
             v-model="inputStudentId" 
-            placeholder="请输入学号" 
+            placeholder="请输入2位学号" 
             class="form-input"
             required
+            inputmode="numeric"
+            maxlength="2"
+            @input="inputStudentId = inputStudentId.replace(/[^0-9]/g, '').slice(0, 2)"
           />
         </div>
         <div class="form-group">

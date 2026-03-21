@@ -6,7 +6,7 @@ const cacheService = require('../services/cache');
 // 全局排行榜API
 router.get('/global', async (req, res) => {
   try {
-    const { limit = 100, grade, class: className, id } = req.query;
+    const { limit = 100, grade, class: className, id, student_id } = req.query;
     
     let query = `
       SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
@@ -26,6 +26,11 @@ router.get('/global', async (req, res) => {
     if (id) {
       query += ' AND u.id = ?';
       params.push(id);
+    }
+    
+    if (student_id) {
+      query += ' AND u.student_id = ?';
+      params.push(student_id);
     }
     
     if (grade) {

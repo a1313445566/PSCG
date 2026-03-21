@@ -48,6 +48,7 @@
           style="width: 180px"
           clearable
           prefix-icon="User"
+          @input="filterForm.studentId = filterForm.studentId.replace(/[^0-9]/g, '')"
         ></el-input>
       </el-form-item>
       <el-form-item label="年级" class="form-item">

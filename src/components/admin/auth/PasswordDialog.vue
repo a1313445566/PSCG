@@ -28,6 +28,7 @@
 <script setup>
 import { ref, defineProps, defineEmits, watch } from 'vue';
 import { ElMessage } from 'element-plus';
+import { passwords } from '../../../config/passwords';
 
 // 定义属性
 const props = defineProps({
@@ -94,7 +95,7 @@ const verifyPassword = () => {
   const password = passwordForm.value.password;
   
   // 简单的密码验证，实际项目中应该使用更安全的方式
-  if (password === 'admin123') {
+  if (password === passwords.adminLogin) {
     emit('login-success', true);
     emit('update:visible', false);
     passwordForm.value.password = '';
