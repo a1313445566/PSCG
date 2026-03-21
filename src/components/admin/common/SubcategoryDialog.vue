@@ -59,7 +59,6 @@
             </div>
             <div v-else class="subcategory-info">
               <span>{{ row.name }}</span>
-              <el-button link size="small" @click="editSubcategory(row)">编辑</el-button>
             </div>
           </template>
         </el-table-column>
@@ -68,8 +67,9 @@
             <span>{{ getDifficultyText(row.difficulty || 1) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="120">
+        <el-table-column label="操作" width="180">
           <template #default="{ row }">
+            <el-button type="primary" size="small" @click="editSubcategory(row)" style="margin-right: 8px;">编辑</el-button>
             <el-button type="danger" size="small" @click="deleteSubcategory(row.id)">删除</el-button>
           </template>
         </el-table-column>
@@ -103,8 +103,8 @@ const props = defineProps({
 const emit = defineEmits(['update:visible', 'add-subcategory', 'update-subcategory', 'delete-subcategory']);
 
 // 学科图标和名称
-const subjectIcons = ['📚', '🔬', '🧮', '🏛️', '🎨', '🎵', '⚽', '🌍', '💻', '⚗️'];
-const subjectIconNames = ['书籍', '科学', '数学', '历史', '艺术', '音乐', '体育', '地理', '计算机', '化学'];
+const subjectIcons = ['📚', '🔬', '🧮', '🏛️', '🎨', '🎵', '⚽', '🌍', '💻', '⚗️', '🧬', '⚡', '📜', '🌎', '🚀', '💡', '📊', '🎭', '📱', '🌟', '🎯', '🎲', '🎸', '🏆', '🌱', '🔥', '💎', '🌈', '🌟', '🎪', '🎨'];
+const subjectIconNames = ['书籍', '科学', '数学', '历史', '艺术', '音乐', '体育', '地理', '计算机', '化学', '生物', '物理', '文学', '世界地理', '航天科技', '创新思维', '数据分析', '戏剧', '数字媒体', '综合', '目标', '游戏', '吉他', '奖杯', '生长', '火焰', '钻石', '彩虹', '星星', '马戏团', '创意'];
 
 // 难度文本映射
 const getDifficultyText = (difficulty) => {

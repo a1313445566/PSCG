@@ -118,7 +118,26 @@ const router = useRouter()
 const questionStore = useQuestionStore()
 
 // 学科和题目数据
-const subjects = computed(() => questionStore.subjects)
+const subjects = computed(() => {
+  let orderedSubjects = [...questionStore.subjects];
+  
+  // 获取保存的学科顺序
+  const savedSubjectOrder = localStorage.getItem('subjectOrder');
+  if (savedSubjectOrder) {
+    try {
+      const subjectOrder = JSON.parse(savedSubjectOrder);
+      orderedSubjects.sort((a, b) => {
+        const indexA = subjectOrder.indexOf(a.id);
+        const indexB = subjectOrder.indexOf(b.id);
+        return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
+      });
+    } catch (error) {
+      console.error('解析学科顺序失败:', error);
+    }
+  }
+  
+  return orderedSubjects;
+})
 const questions = computed(() => questionStore.questions)
 
 // 用户信息

@@ -38,6 +38,12 @@
               <el-checkbox label="users">用户</el-checkbox>
               <el-checkbox label="answers">答题记录</el-checkbox>
               <el-checkbox label="settings">系统设置</el-checkbox>
+              <el-checkbox label="subjects">学科</el-checkbox>
+              <el-checkbox label="subcategories">子分类</el-checkbox>
+              <el-checkbox label="grades">年级</el-checkbox>
+              <el-checkbox label="classes">班级</el-checkbox>
+              <el-checkbox label="leaderboard">排行榜数据</el-checkbox>
+              <el-checkbox label="analysis">分析数据</el-checkbox>
             </el-checkbox-group>
           </div>
         </div>
@@ -173,10 +179,12 @@
         show-icon
       >
         <div class="tips-content">
-          <p>• 备份数据：保存当前系统的所有数据，包括题目、用户、答题记录等</p>
+          <p>• 备份数据：根据选择的内容保存系统数据，可选择完整备份或增量备份</p>
           <p>• 恢复数据：将覆盖当前系统的数据，请谨慎操作</p>
           <p>• 导出数据：导出系统数据为JSON文件，用于数据迁移或备份</p>
           <p>• 上传备份：通过备份文件恢复系统数据</p>
+          <p>• 备份内容：可选择题目、用户、答题记录、系统设置、学科、子分类、年级、班级、排行榜数据和分析数据</p>
+          <p>• 备份格式：支持JSON和DB格式</p>
         </div>
       </el-alert>
     </div>
@@ -234,7 +242,7 @@ const emit = defineEmits(['backup-data', 'restore-data', 'export-data', 'upload-
 // 备份设置
 const backupType = ref('full'); // full 或 incremental
 const backupFormat = ref('json'); // json 或 compressed
-const selectedDataTypes = ref(['questions', 'users', 'answers', 'settings']);
+const selectedDataTypes = ref(['questions', 'users', 'answers', 'settings', 'subjects', 'subcategories', 'grades', 'classes', 'leaderboard', 'analysis']);
 
 // 备份进度
 const isBackuping = ref(false);
@@ -283,7 +291,9 @@ const backupData = () => {
         
         // 触发备份事件，传递备份参数
         emit('backup-data', {
-          type: backupType.value
+          type: backupType.value,
+          format: backupFormat.value,
+          dataTypes: selectedDataTypes.value
         });
         
         // 延迟关闭进度显示
@@ -599,6 +609,25 @@ const handleVerifyFileChange = (file) => {
   justify-content: center;
   width: 100%;
   gap: 8px;
+}
+
+/* 确保上传组件中的按钮与其他按钮对齐 */
+.button-wrapper .el-upload {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+
+.button-wrapper .el-upload .el-button {
+  width: 100%;
+  max-width: 150px;
+}
+
+/* 确保所有按钮大小一致 */
+.button-wrapper .el-button {
+  width: 100%;
+  max-width: 150px;
 }
 
 /* 进度条样式 */

@@ -961,6 +961,10 @@ const backupData = async (backupParams = {}) => {
     const baseUrl = `${getApiBaseUrl()}/backup`;
     const params = new URLSearchParams();
     params.append('type', backupParams.type || 'full');
+    params.append('format', backupParams.format || 'json');
+    if (backupParams.dataTypes && backupParams.dataTypes.length > 0) {
+      params.append('dataTypes', backupParams.dataTypes.join(','));
+    }
     
     const url = `${baseUrl}?${params.toString()}`;
     const response = await fetch(url);
@@ -969,8 +973,10 @@ const backupData = async (backupParams = {}) => {
     const a = document.createElement('a');
     a.href = downloadUrl;
     
-    // 使用.db格式
-    a.download = `backup-${new Date().toISOString().slice(0, 10)}-${backupParams.type || 'full'}.db`;
+    // 根据格式设置下载文件名
+    const format = backupParams.format || 'json';
+    const extension = format === 'json' ? 'json' : 'db';
+    a.download = `backup-${new Date().toISOString().slice(0, 10)}-${backupParams.type || 'full'}.${extension}`;
     a.click();
     URL.revokeObjectURL(downloadUrl);
     ElMessage.success('数据备份成功');
