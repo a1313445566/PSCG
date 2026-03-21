@@ -50,20 +50,29 @@
       <el-card class="action-card" shadow="hover">
         <template #header>
           <div class="card-header">
-            <el-icon class="card-icon"><i class="el-icon-download"></i></el-icon>
+            <el-icon class="card-icon"><Download /></el-icon>
             <span class="card-title">备份操作</span>
           </div>
         </template>
         <div class="action-buttons">
-          <el-button type="primary" icon="el-icon-document-copy" @click="backupData" class="action-btn primary">
-            备份数据
-          </el-button>
-          <el-button type="warning" icon="el-icon-upload2" @click="exportData" class="action-btn warning">
-            导出数据
-          </el-button>
-          <el-button type="info" icon="el-icon-time" @click="showBackupHistory" class="action-btn info">
-            备份历史
-          </el-button>
+          <div class="button-wrapper">
+            <el-button type="primary" @click="backupData">
+              <el-icon><DocumentCopy /></el-icon>
+              备份数据
+            </el-button>
+          </div>
+          <div class="button-wrapper">
+            <el-button type="warning" @click="exportData">
+              <el-icon><Upload /></el-icon>
+              导出数据
+            </el-button>
+          </div>
+          <div class="button-wrapper">
+            <el-button type="info" @click="showBackupHistory">
+              <el-icon><Clock /></el-icon>
+              备份历史
+            </el-button>
+          </div>
         </div>
       </el-card>
 
@@ -71,34 +80,45 @@
       <el-card class="action-card" shadow="hover">
         <template #header>
           <div class="card-header">
-            <el-icon class="card-icon"><i class="el-icon-upload"></i></el-icon>
+            <el-icon class="card-icon"><Upload /></el-icon>
             <span class="card-title">恢复操作</span>
           </div>
         </template>
         <div class="action-buttons">
-          <el-button type="success" icon="el-icon-refresh" @click="restoreData" class="action-btn success">
-            恢复数据
-          </el-button>
-          <el-upload
-            class="upload-btn"
-            action="#"
-            :auto-upload="false"
-            :on-change="handleFileChange"
-            accept=".db"
-            :limit="1"
-          >
-            <el-button type="info" icon="el-icon-folder-opened">上传备份文件</el-button>
-          </el-upload>
-          <el-upload
-            class="upload-btn"
-            action="#"
-            :auto-upload="false"
-            :on-change="handleVerifyFileChange"
-            accept=".db"
-            :limit="1"
-          >
-            <el-button type="info" icon="el-icon-check">验证备份文件</el-button>
-          </el-upload>
+          <div class="button-wrapper">
+            <el-button type="success" @click="restoreData">
+              <el-icon><Refresh /></el-icon>
+              恢复数据
+            </el-button>
+          </div>
+          <div class="button-wrapper">
+            <el-upload
+              action="#"
+              :auto-upload="false"
+              :on-change="handleFileChange"
+              accept=".db"
+              :limit="1"
+            >
+              <el-button type="info">
+                <el-icon><FolderOpened /></el-icon>
+                上传备份文件
+              </el-button>
+            </el-upload>
+          </div>
+          <div class="button-wrapper">
+            <el-upload
+              action="#"
+              :auto-upload="false"
+              :on-change="handleVerifyFileChange"
+              accept=".db"
+              :limit="1"
+            >
+              <el-button type="info">
+                <el-icon><Check /></el-icon>
+                验证备份文件
+              </el-button>
+            </el-upload>
+          </div>
         </div>
       </el-card>
 
@@ -106,20 +126,29 @@
       <el-card class="action-card" shadow="hover">
         <template #header>
           <div class="card-header">
-            <el-icon class="card-icon"><i class="el-icon-database"></i></el-icon>
+            <el-icon class="card-icon"><Files /></el-icon>
             <span class="card-title">数据库操作</span>
           </div>
         </template>
         <div class="action-buttons">
-          <el-button type="info" icon="el-icon-data-line" @click="checkDatabaseHealth" class="action-btn info">
-            健康检查
-          </el-button>
-          <el-button type="info" icon="el-icon-view" @click="checkDatabaseStatus" class="action-btn info">
-            数据库状态
-          </el-button>
-          <el-button type="info" icon="el-icon-s-grid" @click="importLocalData" class="action-btn info">
-            导入本地数据
-          </el-button>
+          <div class="button-wrapper">
+            <el-button type="info" @click="checkDatabaseHealth">
+              <el-icon><DataLine /></el-icon>
+              健康检查
+            </el-button>
+          </div>
+          <div class="button-wrapper">
+            <el-button type="info" @click="checkDatabaseStatus">
+              <el-icon><View /></el-icon>
+              数据库状态
+            </el-button>
+          </div>
+          <div class="button-wrapper">
+            <el-button type="info" @click="importLocalData">
+              <el-icon><Grid /></el-icon>
+              导入本地数据
+            </el-button>
+          </div>
         </div>
       </el-card>
     </div>
@@ -189,6 +218,7 @@
 import { ref, defineProps } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { healthCheck, importLocalData as importLocalDataApi } from '../../../utils/database';
+import { DocumentCopy, Upload, Clock, Refresh, FolderOpened, Check, DataLine, View, Grid, Download, Files } from '@element-plus/icons-vue';
 
 // 定义props
 const props = defineProps({
@@ -538,20 +568,37 @@ const handleVerifyFileChange = (file) => {
 
 .action-buttons {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 12px;
-  padding: 10px 0;
-}
-
-.action-btn {
-  width: 100%;
+  padding: 20px;
   justify-content: center;
-  padding: 12px;
-  font-size: 14px;
+  align-items: center;
 }
 
-.upload-btn {
+.button-wrapper {
+  flex: 1;
+  min-width: 120px;
+  text-align: center;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 确保带图标的按钮文本居中 */
+.button-wrapper .el-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+}
+
+.button-wrapper .el-button span {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   width: 100%;
+  gap: 8px;
 }
 
 /* 进度条样式 */
