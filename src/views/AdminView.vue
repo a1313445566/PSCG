@@ -59,8 +59,8 @@
         </div>
       </el-tab-pane> 
       
-      <!-- 排行榜管理 -->
-      <el-tab-pane label="排行榜管理" name="leaderboard">
+      <!-- 用户做题数据 -->
+      <el-tab-pane label="用户做题数据" name="leaderboard">
         <div class="leaderboard-management">
           <!-- 筛选区域 -->
           <div class="filter-section">

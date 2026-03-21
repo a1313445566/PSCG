@@ -41,7 +41,7 @@ const questionStore = useQuestionStore()
 
 // 获取学科和题库ID
 const subjectId = computed(() => parseInt(route.params.subjectId))
-const subcategoryId = computed(() => parseInt(route.params.subcategoryId))
+const subcategoryId = computed(() => route.params.subcategoryId === 'error-collection' ? 'error-collection' : parseInt(route.params.subcategoryId))
 
 // 答题数据
 const quizData = ref(null)
@@ -128,11 +128,11 @@ const formatUserAnswer = (questionId, questionType) => {
   }
 }
 
-// 返回题库选择
+// 返回首页
 const backToSubcategory = () => {
   // 清除旧的答题数据
   localStorage.removeItem('quizData')
-  router.push(`/subcategory/${subjectId.value}`)
+  router.push('/home')
 }
 
 onMounted(async () => {

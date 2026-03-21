@@ -28,6 +28,7 @@ const answerRecordsRoutes = require('./routes/answer-records');
 const analysisRoutes = require('./routes/analysis');
 const difficultyRoutes = require('./routes/difficulty');
 const backupRoutes = require('./routes/backup');
+const errorCollectionRoutes = require('./routes/error-collection');
 
 const db = require('./services/database');
 
@@ -87,6 +88,7 @@ app.use('/api/answer-records', answerRecordsRoutes);
 app.use('/api/analysis', analysisRoutes);
 app.use('/api/difficulty', difficultyRoutes);
 app.use('/api', backupRoutes);
+app.use('/api/error-collection', errorCollectionRoutes);
 
 // 图片上传路由
 app.post('/api/upload/image', upload.single('image'), (req, res) => {

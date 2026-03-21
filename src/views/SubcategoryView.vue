@@ -8,6 +8,12 @@
         <button class="back-btn" @click="backToHome">🔙 返回学科选择</button>
       </div>
       
+      <!-- 错题巩固题库 -->
+      <ErrorCollectionCard 
+        :subjectId="currentSubject.id"
+        :subjectName="currentSubject.name"
+      />
+      
       <div class="difficulty-rules-section">
         <h3 class="section-title">📊 难度调整规则</h3>
         <div class="difficulty-rules-content">
@@ -63,6 +69,7 @@ import { computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import SubcategoryCard from '../components/quiz/SubcategoryCard.vue'
+import ErrorCollectionCard from '../components/quiz/ErrorCollectionCard.vue'
 import { useQuestionStore } from '../stores/questionStore'
 
 const router = useRouter()
@@ -98,6 +105,11 @@ onMounted(async () => {
   // 检查是否已登录
   if (!localStorage.getItem('studentId')) {
     router.push('/login')
+  }
+  
+  // 确保 subjects 加载完成后，加载错题巩固题库
+  if (currentSubject.value.id) {
+    await questionStore.loadErrorCollection(currentSubject.value.id)
   }
 })
 </script>

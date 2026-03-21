@@ -34,6 +34,8 @@ export const useQuestionStore = defineStore('question', {
     classes: [],
     userStats: [],
     recentRecords: [],
+    errorCollections: {}, // 错题巩固题库，格式: { subjectId: [questions] }
+    errorCollectionStats: {}, // 错题巩固统计，格式: { questionId: { correctCount: number } }
     isLoading: false,
     error: null
   }),
@@ -50,6 +52,14 @@ export const useQuestionStore = defineStore('question', {
     },
     getSubjectById: (state) => (subjectId) => {
       return state.subjects.find(s => s.id === subjectId) || null
+    },
+    // 获取错题巩固题库
+    getErrorCollection: (state) => (subjectId) => {
+      return state.errorCollections[subjectId] || []
+    },
+    // 获取错题的正确次数
+    getErrorQuestionCorrectCount: (state) => (questionId) => {
+      return state.errorCollectionStats[questionId]?.correctCount || 0
     }
   },
   actions: {
@@ -524,6 +534,115 @@ export const useQuestionStore = defineStore('question', {
       } catch (error) {
         this.error = error.message
 
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 加载错题巩固题库
+    async loadErrorCollection(subjectId) {
+      try {
+        // 确保subjectId存在
+        if (!subjectId) {
+          return
+        }
+        
+        this.isLoading = true
+        this.error = null
+        const studentId = localStorage.getItem('studentId')
+        if (!studentId) {
+          this.errorCollections[subjectId] = []
+          return
+        }
+        
+        // 这里需要调用后端API获取错题巩固题库
+        // 暂时使用模拟数据
+        const response = await fetch(`${getApiBaseUrl()}/error-collection/${subjectId}?studentId=${studentId}`)
+        if (response.ok) {
+          const data = await response.json()
+          this.errorCollections[subjectId] = data.questions || []
+          // 加载错题统计
+          if (data.stats) {
+            this.errorCollectionStats = { ...this.errorCollectionStats, ...data.stats }
+          }
+        } else {
+          // 如果API返回错误，显示空数据
+          this.errorCollections[subjectId] = []
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('加载错题巩固题库失败:', error)
+        // 发生错误时显示空数据
+        if (subjectId) {
+          this.errorCollections[subjectId] = []
+        }
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 更新错题的正确次数
+    async updateErrorQuestionCorrectCount(questionId) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const studentId = localStorage.getItem('studentId')
+        if (!studentId) {
+          return
+        }
+        
+        // 增加正确次数
+        const currentCount = this.errorCollectionStats[questionId]?.correctCount || 0
+        const newCount = currentCount + 1
+        this.errorCollectionStats[questionId] = { correctCount: newCount }
+        
+        // 调用后端API更新正确次数
+        await fetch(`${getApiBaseUrl()}/error-collection/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ studentId, questionId, correctCount: newCount })
+        })
+        
+        // 检查是否达到3次正确，若是则从所有错题巩固题库中移除
+        if (newCount >= 3) {
+          for (const subjectId in this.errorCollections) {
+            this.errorCollections[subjectId] = this.errorCollections[subjectId].filter(q => q.id !== questionId)
+          }
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('更新错题正确次数失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 重置错题的正确次数（当用户再次做错时）
+    async resetErrorQuestionCorrectCount(questionId) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const studentId = localStorage.getItem('studentId')
+        if (!studentId) {
+          return
+        }
+        
+        // 重置正确次数为0
+        this.errorCollectionStats[questionId] = { correctCount: 0 }
+        
+        // 调用后端API重置正确次数
+        await fetch(`${getApiBaseUrl()}/error-collection/reset`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ studentId, questionId })
+        })
+      } catch (error) {
+        this.error = error.message
+        console.error('重置错题正确次数失败:', error)
       } finally {
         this.isLoading = false
       }

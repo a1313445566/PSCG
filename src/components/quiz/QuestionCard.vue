@@ -7,6 +7,12 @@
       </div>
     </div>
     
+    <!-- 题目来源信息 -->
+    <div v-if="question.subcategory_name" class="question-source">
+      <span class="source-label">来源：</span>
+      <span class="source-name">{{ question.subcategory_name }}</span>
+    </div>
+    
     <div class="question-content">
         <div class="question-text" v-html="question.content"></div>
       
@@ -258,9 +264,31 @@ const selectOption = (option) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.8rem;
+  margin-bottom: 0.5rem;
+  padding-bottom: 0.5rem;
   border-bottom: 2px dashed #F0F0F0;
+}
+
+/* 题目来源信息 */
+.question-source {
+  margin-bottom: 1rem;
+  padding: 0.5rem 1rem;
+  background-color: #F8F9FA;
+  border-radius: 10px;
+  border-left: 3px solid #7DD3F8;
+  font-size: 0.9rem;
+  display: inline-block;
+}
+
+.source-label {
+  font-weight: bold;
+  color: #666;
+  margin-right: 0.5rem;
+}
+
+.source-name {
+  color: #4A90E2;
+  font-weight: 500;
 }
 
 .question-number {

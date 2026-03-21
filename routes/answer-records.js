@@ -236,41 +236,49 @@ router.post('/', async (req, res) => {
   try {
     const { userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent } = req.body;
     
-    // 计算积分：答对1分，答错一题扣1分
-    let points = correctCount - (totalQuestions - correctCount);
-    
-    // 全对积分翻倍
-    if (correctCount === totalQuestions && totalQuestions > 0) {
-      points *= 2;
+    // 查找用户ID
+    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [userId]);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
     }
     
-    // 开始事务
-    await db.run('START TRANSACTION');
+    const actualUserId = user.id;
     
-    try {
-      // 保存答题记录
-      const result = await db.run(
-        'INSERT INTO answer_records (user_id, subject_id, subcategory_id, total_questions, correct_count, time_spent) VALUES (?, ?, ?, ?, ?, ?)',
-        [userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent]
-      );
+    // 处理错题巩固题库的情况，subcategoryId为字符串
+    const actualSubcategoryId = subcategoryId === 'error-collection' ? null : subcategoryId;
+    
+    // 计算积分
+    let points = 0;
+    if (subcategoryId === 'error-collection') {
+      // 错题巩固题库规则：错误不扣分，每题累计正确3次+1分
+      // 这里只记录答题记录，积分在error-collection/update中处理
+      points = 0;
+    } else {
+      // 普通题库规则：答对1分，答错一题扣1分
+      points = correctCount - (totalQuestions - correctCount);
       
-      // 更新用户积分
-      await db.run(
-        'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
-        [points, userId]
-      );
-      
-      // 提交事务
-      await db.run('COMMIT');
-      
-      res.json({ success: true, recordId: result.insertId, points });
-    } catch (error) {
-      // 回滚事务
-      await db.run('ROLLBACK');
-      throw error;
+      // 全对积分翻倍
+      if (correctCount === totalQuestions && totalQuestions > 0) {
+        points *= 2;
+      }
     }
+    
+    // 直接执行操作，不使用事务
+    // 保存答题记录
+    const result = await db.run(
+      'INSERT INTO answer_records (user_id, subject_id, subcategory_id, total_questions, correct_count, time_spent) VALUES (?, ?, ?, ?, ?, ?)',
+      [actualUserId, subjectId, actualSubcategoryId, totalQuestions, correctCount, timeSpent]
+    );
+    
+    // 更新用户积分
+    await db.run(
+      'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
+      [points, actualUserId]
+    );
+    
+    res.json({ success: true, recordId: result.insertId, points });
   } catch (error) {
-    // console.error('保存答题记录失败:', error);
+    console.error('保存答题记录失败:', error);
     res.status(500).json({ error: '保存答题记录失败' });
   }
 });
@@ -280,9 +288,20 @@ router.post('/question-attempts', async (req, res) => {
   try {
     const { userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions } = req.body;
     
+    // 查找用户ID
+    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [userId]);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    
+    const actualUserId = user.id;
+    
+    // 处理错题巩固题库的情况，subcategoryId为字符串
+    const actualSubcategoryId = subcategoryId === 'error-collection' ? null : subcategoryId;
+    
     await db.run(
       'INSERT INTO question_attempts (user_id, question_id, subject_id, subcategory_id, user_answer, correct_answer, is_correct, answer_record_id, shuffled_options) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions]
+      [actualUserId, questionId, subjectId, actualSubcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions]
     );
     
     // 保存后自动调整题目难度
@@ -290,7 +309,7 @@ router.post('/question-attempts', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    // console.error('保存题目尝试记录失败:', error);
+    console.error('保存题目尝试记录失败:', error);
     res.status(500).json({ error: '保存题目尝试记录失败' });
   }
 });

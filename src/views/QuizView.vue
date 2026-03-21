@@ -62,7 +62,10 @@ const settingsStore = useSettingsStore()
 
 // 获取学科和题库ID
 const subjectId = computed(() => parseInt(route.params.subjectId))
-const subcategoryId = computed(() => parseInt(route.params.subcategoryId))
+const subcategoryId = computed(() => route.params.subcategoryId)
+
+// 检测是否是错题巩固题库
+const isErrorCollection = computed(() => subcategoryId.value === 'error-collection')
 
 // 当前学科和题库
 const currentSubject = computed(() => {
@@ -70,8 +73,11 @@ const currentSubject = computed(() => {
 })
 
 const currentSubcategory = computed(() => {
+  if (isErrorCollection.value) {
+    return { name: '错题巩固题库' }
+  }
   if (currentSubject.value.subcategories) {
-    return currentSubject.value.subcategories.find(sc => sc.id === subcategoryId.value) || { name: '未知题库' }
+    return currentSubject.value.subcategories.find(sc => sc.id === parseInt(subcategoryId.value)) || { name: '未知题库' }
   }
   return { name: '未知题库' }
 })
@@ -140,6 +146,38 @@ const submitAnswers = async () => {
   // 计算分数
   quizStore.calculateScore()
   
+  // 处理错题巩固题库的特殊逻辑
+  if (isErrorCollection.value) {
+    for (const question of currentQuestions.value) {
+      const userAnswer = userAnswers.value[question.id]
+      const correctAnswer = question.correct_answer || question.answer
+      
+      let isCorrect = false
+      if (question.type === 'multiple') {
+        const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('')
+        if (Array.isArray(userAnswer)) {
+          const sortedUserAnswer = userAnswer.sort()
+          const sortedCorrectAnswer = correctAnswers.sort()
+          isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)
+        }
+      } else {
+        if (Array.isArray(userAnswer)) {
+          isCorrect = userAnswer[0] === correctAnswer
+        } else {
+          isCorrect = userAnswer === correctAnswer
+        }
+      }
+      
+      // 更新错题的正确次数
+      if (isCorrect) {
+        await questionStore.updateErrorQuestionCorrectCount(question.id)
+      } else {
+        // 做错时重置正确次数
+        await questionStore.resetErrorQuestionCorrectCount(question.id)
+      }
+    }
+  }
+  
   // 保存答题记录
   const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
   
@@ -152,7 +190,7 @@ const submitAnswers = async () => {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        userId: localStorage.getItem('userId'),
+        userId: localStorage.getItem('studentId'),
         subjectId: subjectId.value,
         subcategoryId: subcategoryId.value,
         totalQuestions: totalQuestions.value,
@@ -189,7 +227,7 @@ const submitAnswers = async () => {
         
         // 处理答案格式
         const formattedUserAnswer = question.type === 'multiple' && Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
-        const formattedCorrectAnswer = question.type === 'multiple' && Array.isArray(question.answer) ? question.answer.join('') : question.answer
+        const formattedCorrectAnswer = question.type === 'multiple' && Array.isArray(correctAnswer) ? correctAnswer.join('') : correctAnswer
         
         // 保存随机排序的选项
         const shuffledOptions = question.shuffledOptions ? JSON.stringify(question.shuffledOptions) : null
@@ -200,7 +238,7 @@ const submitAnswers = async () => {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
-            userId: localStorage.getItem('userId'),
+            userId: localStorage.getItem('studentId'),
             questionId: question.id,
             subjectId: subjectId.value,
             subcategoryId: subcategoryId.value,
@@ -229,6 +267,7 @@ const submitAnswers = async () => {
   localStorage.setItem('timeSpent', timeSpentSeconds.toString())
   
   // 跳转到结果页面
+  // 错题巩固题库也跳转到结果页面，与普通题库保持一致
   router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
 }
 
@@ -296,7 +335,23 @@ onMounted(async () => {
   }
   
   // 生成题目
-  quizStore.generateQuestionsBySubcategory(parseInt(subjectId.value), parseInt(subcategoryId.value), questionCount, randomizeAnswers)
+  if (isErrorCollection.value) {
+    // 加载错题巩固题库
+    await questionStore.loadErrorCollection(subjectId.value)
+    const errorQuestions = questionStore.getErrorCollection(subjectId.value)
+    // 固定答案顺序，加载全部待巩固题目
+    quizStore.currentQuestions = errorQuestions.map(question => ({
+      ...question,
+      shuffledOptions: question.options || question.shuffledOptions,
+      type: question.type || 'single'
+    }))
+    quizStore.userAnswers = {}
+    quizStore.score = null
+    quizStore.startTime = Date.now()
+  } else {
+    // 生成普通题库题目
+    quizStore.generateQuestionsBySubcategory(parseInt(subjectId.value), parseInt(subcategoryId.value), questionCount, randomizeAnswers)
+  }
   
   // 开始计时
   startTime.value = Date.now()

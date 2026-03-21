@@ -1,0 +1,164 @@
+const express = require('express');
+const router = express.Router();
+const db = require('../services/database');
+
+// 获取用户的错题巩固题库
+router.get('/:subjectId', async (req, res) => {
+  try {
+    const { subjectId } = req.params;
+    const { studentId } = req.query;
+    
+    if (!studentId) {
+      return res.status(400).json({ error: '缺少学生ID参数' });
+    }
+    
+    // 查找用户ID
+    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [studentId]);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    
+    const userId = user.id;
+    
+    // 获取该用户在该学科下的错题记录，且累计正确次数小于3
+    const query = `
+      SELECT q.id, q.subject_id, q.subcategory_id, q.content, q.type, q.options, q.correct_answer,
+             COALESCE(ec.correct_count, 0) as correct_count, sc.name as subcategory_name
+      FROM questions q
+      LEFT JOIN (
+        SELECT question_id, MAX(correct_count) as correct_count
+        FROM error_collection
+        WHERE user_id = ?
+        GROUP BY question_id
+      ) ec ON q.id = ec.question_id
+      LEFT JOIN subcategories sc ON q.subcategory_id = sc.id
+      WHERE q.subject_id = ?
+      AND q.id IN (
+        SELECT DISTINCT question_id
+        FROM question_attempts
+        WHERE user_id = ?
+        AND subject_id = ?
+        AND is_correct = 0
+      )
+      AND COALESCE(ec.correct_count, 0) < 3
+    `;
+    
+    const questions = await db.all(query, [userId, subjectId, userId, subjectId]);
+    
+    // 处理选项和答案格式
+    const processedQuestions = questions.map(question => {
+      try {
+        question.options = JSON.parse(question.options);
+      } catch (e) {
+        question.options = [];
+      }
+      return question;
+    });
+    
+    // 获取错题统计
+    const statsQuery = `
+      SELECT question_id, correct_count
+      FROM error_collection
+      WHERE user_id = ?
+      AND question_id IN (${processedQuestions.map(() => '?').join(', ')})
+    `;
+    
+    const statsParams = [userId, ...processedQuestions.map(q => q.id)];
+    const stats = await db.all(statsQuery, statsParams);
+    
+    const statsObj = {};
+    stats.forEach(item => {
+      statsObj[item.question_id] = { correctCount: item.correct_count };
+    });
+    
+    res.json({ questions: processedQuestions, stats: statsObj });
+  } catch (error) {
+    console.error('获取错题巩固题库失败:', error);
+    res.status(500).json({ error: '获取错题巩固题库失败' });
+  }
+});
+
+// 更新错题的正确次数
+router.post('/update', async (req, res) => {
+  try {
+    const { studentId, questionId, correctCount } = req.body;
+    
+    if (!studentId || !questionId || correctCount === undefined) {
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
+    
+    // 查找用户ID
+    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [studentId]);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    
+    const userId = user.id;
+    
+    // 检查是否已存在记录
+    const existingRecord = await db.get(
+      'SELECT id FROM error_collection WHERE user_id = ? AND question_id = ?',
+      [userId, questionId]
+    );
+    
+    if (existingRecord) {
+      // 更新现有记录
+      await db.run(
+        'UPDATE error_collection SET correct_count = ? WHERE user_id = ? AND question_id = ?',
+        [correctCount, userId, questionId]
+      );
+    } else {
+      // 创建新记录
+      await db.run(
+        'INSERT INTO error_collection (user_id, question_id, correct_count) VALUES (?, ?, ?)',
+        [userId, questionId, correctCount]
+      );
+    }
+    
+    // 错题巩固题库积分规则：每题累计正确3次+1分
+    if (correctCount === 3) {
+      // 当累计正确次数达到3次时，增加1分
+      await db.run(
+        'UPDATE users SET points = COALESCE(points, 0) + 1 WHERE id = ?',
+        [userId]
+      );
+    }
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('更新错题正确次数失败:', error);
+    res.status(500).json({ error: '更新错题正确次数失败' });
+  }
+});
+
+// 重置错题的正确次数
+router.post('/reset', async (req, res) => {
+  try {
+    const { studentId, questionId } = req.body;
+    
+    if (!studentId || !questionId) {
+      return res.status(400).json({ error: '缺少必要参数' });
+    }
+    
+    // 查找用户ID
+    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [studentId]);
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' });
+    }
+    
+    const userId = user.id;
+    
+    // 重置正确次数为0
+    await db.run(
+      'UPDATE error_collection SET correct_count = 0 WHERE user_id = ? AND question_id = ?',
+      [userId, questionId]
+    );
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('重置错题正确次数失败:', error);
+    res.status(500).json({ error: '重置错题正确次数失败' });
+  }
+});
+
+module.exports = router;

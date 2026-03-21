@@ -113,6 +113,7 @@ class DatabaseService {
           name VARCHAR(255),
           grade INT,
           class INT,
+          points INT DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
@@ -148,6 +149,16 @@ class DatabaseService {
           id INT PRIMARY KEY AUTO_INCREMENT,
           setting_key VARCHAR(255) UNIQUE NOT NULL,
           value TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+        
+        // 创建错题巩固表
+        `CREATE TABLE IF NOT EXISTS error_collection (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          user_id INT NOT NULL,
+          question_id INT NOT NULL,
+          correct_count INT DEFAULT 0,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
