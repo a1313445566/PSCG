@@ -223,8 +223,8 @@ router.post('/login', async (req, res) => {
       return;
     }
     
-    // 检查用户是否存在
-    let user = await db.get('SELECT * FROM users WHERE student_id = ?', [studentId]);
+    // 检查用户是否存在（根据学号、年级和班级的组合）
+    let user = await db.get('SELECT * FROM users WHERE student_id = ? AND grade = ? AND class = ?', [studentId, grade, className]);
     
     if (!user) {
       // 如果用户不存在，创建新用户
@@ -232,7 +232,7 @@ router.post('/login', async (req, res) => {
       user = await db.get('SELECT * FROM users WHERE id = ?', [result.insertId]);
     } else {
       // 如果用户存在，更新用户信息
-      await db.run('UPDATE users SET name = ?, grade = ?, class = ? WHERE id = ?', [name, grade, className, user.id]);
+      await db.run('UPDATE users SET name = ? WHERE id = ?', [name, user.id]);
       user = await db.get('SELECT * FROM users WHERE id = ?', [user.id]);
     }
     

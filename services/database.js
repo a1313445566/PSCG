@@ -109,12 +109,13 @@ class DatabaseService {
         // 创建用户表
         `CREATE TABLE IF NOT EXISTS users (
           id INT PRIMARY KEY AUTO_INCREMENT,
-          student_id VARCHAR(255) UNIQUE NOT NULL,
+          student_id VARCHAR(255) NOT NULL,
           name VARCHAR(255),
           grade INT,
           class INT,
           points INT DEFAULT 0,
-          created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          UNIQUE KEY unique_student_grade_class (student_id, grade, class)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建答题记录表

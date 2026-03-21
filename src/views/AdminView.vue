@@ -123,7 +123,7 @@
       </el-tab-pane>
       
       <!-- 用户管理 -->
-      <el-tab-pane label="用户管理" name="user-management">
+      <el-tab-pane label="用户管理" name="user-management" @tab-click="handleUserManagementTabClick">
         <div class="user-management-tab">
           <UserManagement 
             :users="allUsers"
@@ -1170,6 +1170,12 @@ const updateAnswerSettings = async (settings) => {
   } else {
     ElMessage.error('答题设置更新失败')
   }
+}
+
+// 处理用户管理标签点击
+const handleUserManagementTabClick = async () => {
+  // 重新加载用户数据
+  await loadAllUsers()
 }
 
 // 初始化

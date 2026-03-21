@@ -227,23 +227,23 @@
                 </el-table-column>
                 <el-table-column label="选项及选择次数" min-width="400">
                   <template #default="scope">
-                    <div v-if="scope.row.options && scope.row.options.length > 0" style="padding: 10px; background-color: #f9f9f9; border-radius: 4px;">
-                      <div v-for="(option, index) in scope.row.options" :key="index" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; font-size: 13px; padding: 4px 0;">
-                        <div style="flex: 1; display: flex; align-items: center;">
-                          <el-tooltip placement="top" :effect="isCorrectAnswer(scope.row.correctAnswer, option, index) ? 'light' : 'dark'">
-                            <template #content>
-                              <div v-html="typeof option === 'string' ? option : option.text || option.label || option.value"></div>
-                            </template>
-                            <span :class="{ 'correct-option': isCorrectAnswer(scope.row.correctAnswer, option, index) }" style="font-weight: bold; margin-right: 8px; cursor: help; min-width: 20px; text-align: center;">
+                    <div v-if="scope.row.options && scope.row.options.length > 0" style="padding: 8px; background-color: #f9f9f9; border-radius: 4px;">
+                      <div style="display: flex; flex-wrap: wrap; gap: 12px;">
+                        <el-tooltip v-for="(option, index) in scope.row.options" :key="index" placement="top" :effect="isCorrectAnswer(scope.row.correctAnswer, option, index) ? 'light' : 'dark'">
+                          <template #content>
+                            <div v-html="typeof option === 'string' ? option : option.text || option.label || option.value"></div>
+                          </template>
+                          <div style="display: flex; align-items: center; font-size: 12px; padding: 2px 6px; background-color: white; border-radius: 12px; border: 1px solid #e0e0e0; cursor: help;">
+                            <span :class="{ 'correct-option': isCorrectAnswer(scope.row.correctAnswer, option, index) }" style="font-weight: bold; margin-right: 4px;">
                               {{ String.fromCharCode(65 + index) }}
-                              <span v-if="isCorrectAnswer(scope.row.correctAnswer, option, index)" style="color: #67c23a; margin-left: 2px; font-size: 11px;">(正确)</span>
+                              <span v-if="isCorrectAnswer(scope.row.correctAnswer, option, index)" style="color: #67c23a; margin-left: 2px; font-size: 10px;">(正确)</span>
                             </span>
-                          </el-tooltip>
-                          <span style="color: #666;">选项</span>
-                        </div>
-                        <div style="color: #666; font-size: 12px; min-width: 80px; text-align: right;">
-                          选择次数: {{ getOptionCount(scope.row.optionCounts, option, index) }}
-                        </div>
+                            <span style="color: #666; font-size: 11px; margin-right: 6px;">选项</span>
+                            <span style="color: #666; font-size: 11px; background-color: #f0f0f0; padding: 1px 6px; border-radius: 8px;">
+                              {{ getOptionCount(scope.row.optionCounts, option, index) }}次
+                            </span>
+                          </div>
+                        </el-tooltip>
                       </div>
                     </div>
                     <div v-else style="color: #999; font-size: 12px;">无选项数据</div>

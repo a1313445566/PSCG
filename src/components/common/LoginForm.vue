@@ -151,13 +151,16 @@ const saveStudentId = async () => {
   isLoading.value = true
   
   try {
+    // 处理学号格式，确保是两位数
+    const formattedStudentId = inputStudentId.value.trim().padStart(2, '0')
+    
     const response = await fetch(`${getApiBaseUrl()}/users/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        studentId: inputStudentId.value.trim(),
+        studentId: formattedStudentId,
         name: inputName.value.trim(),
         grade: parseInt(inputGrade.value),
         class: parseInt(inputClass.value)
@@ -167,7 +170,7 @@ const saveStudentId = async () => {
     if (response.ok) {
       const data = await response.json()
       localStorage.setItem('userId', data.userId)
-      localStorage.setItem('studentId', data.studentId)
+      localStorage.setItem('studentId', formattedStudentId)
       localStorage.setItem('userName', inputName.value.trim())
       localStorage.setItem('userGrade', inputGrade.value)
       localStorage.setItem('userClass', inputClass.value)
