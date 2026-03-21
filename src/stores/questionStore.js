@@ -217,13 +217,14 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const newSubject = await addSubject(subjectName, iconIndex)
-        if (newSubject) {
-          // 直接添加到本地状态，避免重新加载所有数据
-          this.subjects.push(newSubject)
+        if (!newSubject) {
+          throw new Error('添加学科失败')
         }
+        // 直接添加到本地状态，避免重新加载所有数据
+        this.subjects.push(newSubject)
       } catch (error) {
         this.error = error.message
-
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -235,16 +236,17 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const result = await updateSubjectApi(subjectId, subjectName, iconIndex)
-        if (result) {
-          // 直接更新本地状态，避免重新加载所有数据
-          const index = this.subjects.findIndex(s => s.id === subjectId)
-          if (index !== -1) {
-            this.subjects[index] = { ...this.subjects[index], name: subjectName, iconIndex }
-          }
+        if (!result) {
+          throw new Error('更新学科失败')
+        }
+        // 直接更新本地状态，避免重新加载所有数据
+        const index = this.subjects.findIndex(s => s.id === subjectId)
+        if (index !== -1) {
+          this.subjects[index] = { ...this.subjects[index], name: subjectName, iconIndex }
         }
       } catch (error) {
         this.error = error.message
-
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -276,13 +278,14 @@ export const useQuestionStore = defineStore('question', {
         
         // 最后删除学科本身
         const result = await deleteSubject(id)
-        if (result) {
-          // 直接从本地状态中删除，避免重新加载所有数据
-          this.subjects = this.subjects.filter(s => s.id !== id)
+        if (!result) {
+          throw new Error('删除学科失败')
         }
+        // 直接从本地状态中删除，避免重新加载所有数据
+        this.subjects = this.subjects.filter(s => s.id !== id)
       } catch (error) {
         this.error = error.message
-
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -294,19 +297,20 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const newSubcategory = await addSubcategory(subjectId, name, iconIndex, difficulty)
-        if (newSubcategory) {
-          // 直接添加到本地状态，避免重新加载所有数据
-          const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
-          if (subjectIndex !== -1) {
-            if (!this.subjects[subjectIndex].subcategories) {
-              this.subjects[subjectIndex].subcategories = []
-            }
-            this.subjects[subjectIndex].subcategories.push(newSubcategory)
+        if (!newSubcategory) {
+          throw new Error('添加子分类失败')
+        }
+        // 直接添加到本地状态，避免重新加载所有数据
+        const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
+        if (subjectIndex !== -1) {
+          if (!this.subjects[subjectIndex].subcategories) {
+            this.subjects[subjectIndex].subcategories = []
           }
+          this.subjects[subjectIndex].subcategories.push(newSubcategory)
         }
       } catch (error) {
         this.error = error.message
-
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -318,24 +322,25 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const result = await updateSubcategoryApi(subcategoryId, name, iconIndex, difficulty)
-        if (result) {
-          // 直接更新本地状态，避免重新加载所有数据
-          const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
-          if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
-            const subcategoryIndex = this.subjects[subjectIndex].subcategories.findIndex(sc => sc.id === subcategoryId)
-            if (subcategoryIndex !== -1) {
-              this.subjects[subjectIndex].subcategories[subcategoryIndex] = {
-                ...this.subjects[subjectIndex].subcategories[subcategoryIndex],
-                name,
-                iconIndex,
-                difficulty
-              }
+        if (!result) {
+          throw new Error('更新子分类失败')
+        }
+        // 直接更新本地状态，避免重新加载所有数据
+        const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
+        if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
+          const subcategoryIndex = this.subjects[subjectIndex].subcategories.findIndex(sc => sc.id === subcategoryId)
+          if (subcategoryIndex !== -1) {
+            this.subjects[subjectIndex].subcategories[subcategoryIndex] = {
+              ...this.subjects[subjectIndex].subcategories[subcategoryIndex],
+              name,
+              iconIndex,
+              difficulty
             }
           }
         }
       } catch (error) {
         this.error = error.message
-
+        throw error
       } finally {
         this.isLoading = false
       }
@@ -359,16 +364,17 @@ export const useQuestionStore = defineStore('question', {
         
         // 然后删除子分类本身
         const result = await deleteSubcategory(id)
-        if (result) {
-          // 直接从本地状态中删除，避免重新加载所有数据
-          const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
-          if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
-            this.subjects[subjectIndex].subcategories = this.subjects[subjectIndex].subcategories.filter(sc => sc.id !== id)
-          }
+        if (!result) {
+          throw new Error('删除子分类失败')
+        }
+        // 直接从本地状态中删除，避免重新加载所有数据
+        const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
+        if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
+          this.subjects[subjectIndex].subcategories = this.subjects[subjectIndex].subcategories.filter(sc => sc.id !== id)
         }
       } catch (error) {
         this.error = error.message
-
+        throw error
       } finally {
         this.isLoading = false
       }

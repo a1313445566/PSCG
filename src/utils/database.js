@@ -141,11 +141,11 @@ export const addSubcategory = async (subjectId, name, iconIndex = 0) => {
 };
 
 // 更新子分类
-export const updateSubcategory = async (subcategoryId, name, iconIndex = 0) => {
+export const updateSubcategory = async (subcategoryId, name, iconIndex = 0, difficulty = 1) => {
   try {
     return await fetchApi(`${API_BASE_URL}/subjects/subcategories/${subcategoryId}`, {
       method: 'PUT',
-      body: JSON.stringify({ name, iconIndex })
+      body: JSON.stringify({ name, iconIndex, difficulty })
     });
   } catch (error) {
     console.error('更新子分类失败:', error);

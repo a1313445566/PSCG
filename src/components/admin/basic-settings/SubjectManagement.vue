@@ -17,6 +17,8 @@
       <!-- 树结构 -->
       <div class="tree-container" style="border: 1px solid #e4e7ed; border-radius: 8px; overflow: hidden;">
         <el-tree
+          v-if="treeVisible"
+          ref="treeRef"
           :lazy="true"
           :load="loadNode"
           :props="treeProps"
@@ -70,25 +72,25 @@
               </div>
               
               <!-- 编辑模式 -->
-              <div v-else style="display: flex; flex-direction: column; gap: 12px; width: 100%; padding: 8px 0;">
-                <div style="display: flex; gap: 12px; align-items: center;">
+              <div v-else style="display: flex; flex-direction: column; gap: 12px; width: 100%; padding: 16px; background-color: white; border-radius: 6px; min-height: 120px;">
+                <div style="display: flex; flex-wrap: wrap; gap: 12px; align-items: center;">
                   <el-select
                     v-model="editingData.iconIndex"
                     placeholder="选择图标"
-                    style="width: 140px; font-size: 16px;"
+                    style="min-width: 140px; font-size: 16px; flex: 1;"
                   >
                     <el-option v-for="(icon, index) in subjectIcons" :key="index" :label="icon + ' ' + subjectIconNames[index]" :value="index" />
                   </el-select>
                   <el-input
                     v-model="editingData.name"
                     placeholder="请输入名称"
-                    style="width: 200px; font-size: 16px;"
+                    style="min-width: 200px; font-size: 16px; flex: 2;"
                   />
                   <el-select
                     v-if="editingData.type === 'subcategory'"
                     v-model="editingData.difficulty"
                     placeholder="选择难度"
-                    style="width: 120px; font-size: 16px;"
+                    style="min-width: 120px; font-size: 16px; flex: 1;"
                   >
                     <el-option label="简单" value="1" />
                     <el-option label="较简单" value="2" />
@@ -223,14 +225,12 @@ const loadNode = async (node, resolve) => {
   if (node.level === 0) {
     // 加载根节点（学科）
     try {
-      // 确保数据已加载
-      if (subjects.value.length === 0) {
-        await questionStore.loadData();
-      }
+      // 总是重新加载数据，确保使用最新数据
+      await questionStore.loadData();
       
       // 获取保存的学科顺序
       const savedSubjectOrder = localStorage.getItem('subjectOrder');
-      let orderedSubjects = [...subjects.value];
+      let orderedSubjects = [...questionStore.subjects];
       
       console.log('Subjects loaded:', orderedSubjects);
       
@@ -265,8 +265,10 @@ const loadNode = async (node, resolve) => {
   } else if (node.data.type === 'subject') {
     // 加载学科的子节点（题库）
     try {
+      // 确保使用最新数据
+      await questionStore.loadData();
       const subjectId = node.data.id;
-      const subject = subjects.value.find(s => s.id === subjectId);
+      const subject = questionStore.subjects.find(s => s.id === subjectId);
       if (subject && subject.subcategories) {
         // 获取保存的题库顺序
         const savedSubcategoryOrder = localStorage.getItem(`subcategoryOrder_${subjectId}`);
@@ -324,6 +326,11 @@ const loading = ref(false);
 // 展开的节点
 const expandedKeys = ref([]);
 
+// 树的引用
+const treeRef = ref(null);
+// 控制树组件的显示和隐藏，用于强制刷新
+const treeVisible = ref(true);
+
 // 难度文本映射
 const getDifficultyText = (difficulty) => {
   const difficultyMap = {
@@ -343,6 +350,11 @@ const refreshTree = async () => {
   loading.value = true;
   try {
     await questionStore.loadData();
+    // 强制刷新树组件
+    treeVisible.value = false;
+    // 等待DOM更新
+    await new Promise(resolve => setTimeout(resolve, 100));
+    treeVisible.value = true;
     ElMessage.success('刷新成功');
   } catch (error) {
     ElMessage.error('刷新失败，请稍后重试');
@@ -367,11 +379,18 @@ const confirmAddSubject = async () => {
   loading.value = true;
   try {
     await questionStore.addSubject(newSubjectData.value.name.trim(), newSubjectData.value.iconIndex);
-    addSubjectDialogVisible.value = false;
     ElMessage.success('学科添加成功');
   } catch (error) {
     ElMessage.error('学科添加失败，请稍后重试');
   } finally {
+    // 无论成功还是失败，都重新加载数据并强制刷新树
+    await questionStore.loadData();
+    // 强制刷新树组件
+    treeVisible.value = false;
+    // 等待DOM更新
+    await new Promise(resolve => setTimeout(resolve, 100));
+    treeVisible.value = true;
+    addSubjectDialogVisible.value = false;
     loading.value = false;
   }
 };
@@ -398,11 +417,18 @@ const confirmAddSubcategory = async () => {
       newSubcategoryData.value.iconIndex,
       newSubcategoryData.value.difficulty
     );
-    addSubcategoryDialogVisible.value = false;
     ElMessage.success('题库添加成功');
   } catch (error) {
     ElMessage.error('题库添加失败，请稍后重试');
   } finally {
+    // 无论成功还是失败，都重新加载数据并强制刷新树
+    await questionStore.loadData();
+    // 强制刷新树组件
+    treeVisible.value = false;
+    // 等待DOM更新
+    await new Promise(resolve => setTimeout(resolve, 100));
+    treeVisible.value = true;
+    addSubcategoryDialogVisible.value = false;
     loading.value = false;
   }
 };
@@ -444,17 +470,23 @@ const saveEdit = async () => {
       );
     }
     
-    // 重置编辑状态
-    if (editingData.value.nodeRef) {
+    ElMessage.success('更新成功');
+  } catch (error) {
+    console.error('更新失败:', error);
+    ElMessage.error('更新失败，请稍后重试');
+  } finally {
+    // 无论成功还是失败，都重置编辑状态并刷新数据
+    if (editingData.value && editingData.value.nodeRef) {
       editingData.value.nodeRef.isEditing = false;
     }
     // 重新加载数据，确保前端显示最新数据
     await questionStore.loadData();
+    // 强制刷新树组件
+    treeVisible.value = false;
+    // 等待DOM更新
+    await new Promise(resolve => setTimeout(resolve, 100));
+    treeVisible.value = true;
     editingData.value = null;
-    ElMessage.success('更新成功');
-  } catch (error) {
-    ElMessage.error('更新失败，请稍后重试');
-  } finally {
     loading.value = false;
   }
 };
@@ -590,6 +622,13 @@ const deleteNode = async (data) => {
     } catch (error) {
       ElMessage.error('删除失败，请稍后重试');
     } finally {
+      // 无论成功还是失败，都重新加载数据并强制刷新树
+      await questionStore.loadData();
+      // 强制刷新树组件
+      treeVisible.value = false;
+      // 等待DOM更新
+      await new Promise(resolve => setTimeout(resolve, 100));
+      treeVisible.value = true;
       loading.value = false;
     }
   }).catch(() => {
@@ -619,7 +658,8 @@ const deleteNode = async (data) => {
 
 .tree-container {
   min-height: 400px;
-  max-height: 600px;
+  max-height: none;
+  height: auto;
   overflow-y: auto;
   background-color: #fafafa;
   border-radius: 8px;
