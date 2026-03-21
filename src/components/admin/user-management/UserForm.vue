@@ -10,7 +10,7 @@
         <el-input v-model="form.student_id" placeholder="请输入2位学号" maxlength="2" @input="form.student_id = form.student_id.replace(/[^0-9]/g, '').slice(0, 2)"></el-input>
       </el-form-item>
       
-      <el-form-item label="姓名" prop="name" :rules="[{ required: false, message: '请输入姓名', trigger: 'blur' }]">
+      <el-form-item label="姓名" prop="name" :rules="[{ required: false }]">
         <el-input v-model="form.name" placeholder="请输入姓名（选填）" maxlength="20"></el-input>
       </el-form-item>
       

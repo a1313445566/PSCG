@@ -86,11 +86,11 @@ export const useQuestionStore = defineStore('question', {
         
         // 并行加载所有数据，提高性能，但每个请求独立处理，一个失败不影响其他
         const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []);
-        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=1000`).then(res => res.json()).catch(() => []);
+        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=0`).then(res => res.json()).catch(() => []);
         const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []);
         const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => []);
-        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000`).then(res => res.json()).catch(() => []);
-        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all`).then(res => res.json()).catch(() => []);
+        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json()).catch(() => []);
+        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`).then(res => res.json()).catch(() => []);
         
         const [subjectsData, questionsData, gradesData, classesData, userStatsData, recentRecordsData] = await Promise.all([
           subjectsPromise,
@@ -121,7 +121,7 @@ export const useQuestionStore = defineStore('question', {
       try {
         this.isLoading = true
         this.error = null
-        const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000`).then(res => res.json())
+        const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json())
         this.userStats = userStatsData
       } catch (error) {
         this.error = error.message
@@ -138,7 +138,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         // 获取所有用户的最近答题记录
-        const response = await fetch(`${getApiBaseUrl()}/answer-records/all`)
+        const response = await fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`)
         if (response.ok) {
           const recentRecordsData = await response.json()
           this.recentRecords = recentRecordsData

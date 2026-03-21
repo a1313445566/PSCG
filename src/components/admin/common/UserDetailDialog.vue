@@ -72,7 +72,7 @@
               <el-table-column prop="content" label="题目内容" min-width="200" align="center">
                 <template #default="{ row }">
                   <el-tooltip :content="row.content" placement="top" effect="dark">
-                    <div class="question-content-preview">{{ row.content.replace(/<[^>]*>/g, '').substring(0, 50) }}{{ row.content.length > 50 ? '...' : '' }}</div>
+                    <div class="question-content-preview">{{ (row.content || '').replace(/<[^>]*>/g, '').substring(0, 50) }}{{ (row.content || '').length > 50 ? '...' : '' }}</div>
                   </el-tooltip>
                 </template>
             </el-table-column>

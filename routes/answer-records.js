@@ -43,8 +43,14 @@ router.get('/all', async (req, res) => {
       params.push(endDate);
     }
     
-    query += ' ORDER BY ar.created_at DESC LIMIT ?';
-    params.push(Number(limit) || 50);
+    query += ' ORDER BY ar.created_at DESC';
+    
+    // 如果limit不为0，添加LIMIT子句
+    const limitNum = Number(limit);
+    if (limitNum > 0) {
+      query += ' LIMIT ?';
+      params.push(limitNum);
+    }
     
     const records = await db.all(query, params);
     res.json(records);

@@ -56,15 +56,18 @@ router.get('/:subjectId', async (req, res) => {
     });
     
     // 获取错题统计
-    const statsQuery = `
-      SELECT question_id, correct_count
-      FROM error_collection
-      WHERE user_id = ?
-      AND question_id IN (${processedQuestions.map(() => '?').join(', ')})
-    `;
-    
-    const statsParams = [userId, ...processedQuestions.map(q => q.id)];
-    const stats = await db.all(statsQuery, statsParams);
+    let stats = [];
+    if (processedQuestions.length > 0) {
+      const statsQuery = `
+        SELECT question_id, correct_count
+        FROM error_collection
+        WHERE user_id = ?
+        AND question_id IN (${processedQuestions.map(() => '?').join(', ')})
+      `;
+      
+      const statsParams = [userId, ...processedQuestions.map(q => q.id)];
+      stats = await db.all(statsQuery, statsParams);
+    }
     
     const statsObj = {};
     stats.forEach(item => {

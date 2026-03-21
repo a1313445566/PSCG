@@ -67,7 +67,7 @@
             <div style="display: flex; align-items: center; gap: 15px; overflow-x: auto; padding-bottom: 5px;">
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-weight: 500; width: 60px;">学号</label>
-                <el-input v-model="filterStudentId" placeholder="输入学号" style="width: 180px;" @input="filterStudentId = filterStudentId.replace(/[^0-9]/g, '')"></el-input>
+                <el-input v-model="filterStudentId" placeholder="输入学号" style="width: 180px;" @input="filterStudentId = (filterStudentId || '').replace(/[^0-9]/g, '')"></el-input>
               </div>
               <div style="display: flex; align-items: center; gap: 5px;">
                 <label style="font-weight: 500; width: 60px;">年级</label>
@@ -842,8 +842,8 @@ const applyFilters = async () => {
     }
     
     // 加载筛选后的数据
-    const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000&${userStatsParams.toString()}`).then(res => res.json())
-    const recentRecordsData = await fetch(`${getApiBaseUrl()}/answer-records/all?${recentRecordsParams.toString()}`).then(res => res.json())
+    const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0&${userStatsParams.toString()}`).then(res => res.json())
+    const recentRecordsData = await fetch(`${getApiBaseUrl()}/answer-records/all?limit=0&${recentRecordsParams.toString()}`).then(res => res.json())
     
     questionStore.userStats = userStatsData
     questionStore.recentRecords = recentRecordsData
@@ -880,9 +880,34 @@ const handleBatchAddQuestions = async (questions) => {
 // 加载所有用户数据
 const loadAllUsers = async () => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/users`)
+    const response = await fetch(`${getApiBaseUrl()}/users?limit=0`)
     if (response.ok) {
-      allUsers.value = await response.json()
+      const users = await response.json()
+      
+      // 为每个用户加载统计数据
+      for (const user of users) {
+        try {
+          const statsResponse = await fetch(`${getApiBaseUrl()}/users/stats/${user.id}`)
+          if (statsResponse.ok) {
+            const stats = await statsResponse.json()
+            user.total_sessions = stats.totalSessions || 0
+            user.avg_accuracy = stats.avgAccuracy || 0
+          }
+        } catch (error) {
+          console.error(`加载用户 ${user.id} 统计数据失败:`, error)
+          user.total_sessions = 0
+          user.avg_accuracy = 0
+        }
+      }
+      
+      // 按学号数字排序
+      users.sort((a, b) => {
+        const studentIdA = parseInt(a.student_id) || 0
+        const studentIdB = parseInt(b.student_id) || 0
+        return studentIdA - studentIdB
+      })
+      
+      allUsers.value = users
     }
   } catch (error) {
     console.error('加载所有用户失败:', error)

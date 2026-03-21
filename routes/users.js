@@ -10,7 +10,7 @@ const JWT_EXPIRES_IN = '24h'; // 24小时过期
 // 获取用户列表
 router.get('/', async (req, res) => {
   try {
-    const { grade, class: className, page = 1, limit = 50 } = req.query;
+    const { grade, class: className, page = 1, limit } = req.query;
     
     let query = 'SELECT * FROM users WHERE 1=1';
     const params = [];
@@ -24,10 +24,15 @@ router.get('/', async (req, res) => {
     }
     
     const pageNum = parseInt(page) || 1;
-    const limitNum = parseInt(limit) || 50;
-    const offset = (pageNum - 1) * limitNum;
+    let limitNum = limit === '0' ? 0 : parseInt(limit) || 50;
     
-    query += ` ORDER BY student_id LIMIT ${limitNum} OFFSET ${offset}`;
+    // 如果limit为0或负数，返回所有用户
+    if (limitNum <= 0) {
+      query += ' ORDER BY CAST(student_id AS UNSIGNED)';
+    } else {
+      const offset = (pageNum - 1) * limitNum;
+      query += ` ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`;
+    }
     
     const users = await db.all(query, params);
     res.json(users);
@@ -114,9 +119,9 @@ router.post('/batch', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, grade, class: className } = req.body;
+    const { name, grade, class: className, student_id } = req.body;
     
-    await db.run('UPDATE users SET name = ?, grade = ?, class = ? WHERE id = ?', [name, grade, className, id]);
+    await db.run('UPDATE users SET name = ?, grade = ?, class = ?, student_id = ? WHERE id = ?', [name, grade, className, student_id, id]);
     
     res.json({ success: true });
   } catch (error) {

@@ -269,7 +269,8 @@ const saveUser = async (userData) => {
     const userToSave = {
       name: userData.name,
       grade: parseInt(userData.grade),
-      class: parseInt(userData.class)
+      class: parseInt(userData.class),
+      student_id: userData.student_id
     };
     
     let response;
@@ -284,16 +285,12 @@ const saveUser = async (userData) => {
       });
     } else {
       // 添加用户
-      const newUser = {
-        ...userToSave,
-        student_id: userData.student_id
-      };
       response = await fetch(`${getApiBaseUrl()}/users`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(newUser)
+        body: JSON.stringify(userToSave)
       });
     }
     

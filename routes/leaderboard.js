@@ -43,8 +43,14 @@ router.get('/global', async (req, res) => {
       params.push(className);
     }
     
-    query += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC LIMIT ?';
-    params.push(parseInt(limit));
+    query += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';
+    
+    // 如果limit不为0，添加LIMIT子句
+    const limitNum = parseInt(limit);
+    if (limitNum > 0) {
+      query += ' LIMIT ?';
+      params.push(limitNum);
+    }
     
     const users = await db.all(query, params);
     res.json(users);
