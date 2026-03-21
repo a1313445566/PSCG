@@ -55,3 +55,4 @@ add-*.js
 *.sw?
 Dockerfile
 .dockerignore
+backups/backup*.json
