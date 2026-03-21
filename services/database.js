@@ -62,7 +62,8 @@ class DatabaseService {
         `CREATE TABLE IF NOT EXISTS subjects (
           id INT PRIMARY KEY AUTO_INCREMENT,
           name VARCHAR(255) NOT NULL,
-          icon_index INT DEFAULT 0
+          icon_index INT DEFAULT 0,
+          sort_order INT DEFAULT 0
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建子分类表
@@ -71,7 +72,8 @@ class DatabaseService {
           subject_id INT NOT NULL,
           name VARCHAR(255) NOT NULL,
           icon_index INT DEFAULT 0,
-          difficulty INT DEFAULT 1
+          difficulty INT DEFAULT 1,
+          sort_order INT DEFAULT 0
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
         
         // 创建题目表

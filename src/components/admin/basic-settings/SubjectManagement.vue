@@ -221,32 +221,14 @@ const treeProps = {
 
 // 加载节点数据
 const loadNode = async (node, resolve) => {
-  console.log('loadNode called', node.level, node.data);
   if (node.level === 0) {
     // 加载根节点（学科）
     try {
       // 总是重新加载数据，确保使用最新数据
       await questionStore.loadData();
       
-      // 获取保存的学科顺序
-      const savedSubjectOrder = localStorage.getItem('subjectOrder');
+      // 使用从数据库获取的排序（已在后端按sort_order排序）
       let orderedSubjects = [...questionStore.subjects];
-      
-      console.log('Subjects loaded:', orderedSubjects);
-      
-      // 如果有保存的顺序，则按照保存的顺序排序
-      if (savedSubjectOrder) {
-        try {
-          const subjectOrder = JSON.parse(savedSubjectOrder);
-          orderedSubjects.sort((a, b) => {
-            const indexA = subjectOrder.indexOf(a.id);
-            const indexB = subjectOrder.indexOf(b.id);
-            return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
-          });
-        } catch (error) {
-          console.error('解析学科顺序失败:', error);
-        }
-      }
       
       const formattedSubjects = orderedSubjects.map(subject => ({
         id: subject.id,
@@ -256,7 +238,6 @@ const loadNode = async (node, resolve) => {
         hasChildren: subject.subcategories && subject.subcategories.length > 0
       }));
       
-      console.log('Formatted subjects:', formattedSubjects);
       resolve(formattedSubjects);
     } catch (error) {
       console.error('加载学科失败:', error);
@@ -270,23 +251,8 @@ const loadNode = async (node, resolve) => {
       const subjectId = node.data.id;
       const subject = questionStore.subjects.find(s => s.id === subjectId);
       if (subject && subject.subcategories) {
-        // 获取保存的题库顺序
-        const savedSubcategoryOrder = localStorage.getItem(`subcategoryOrder_${subjectId}`);
+        // 使用从数据库获取的排序（已在后端按sort_order排序）
         let orderedSubcategories = [...subject.subcategories];
-        
-        // 如果有保存的顺序，则按照保存的顺序排序
-        if (savedSubcategoryOrder) {
-          try {
-            const subcategoryOrder = JSON.parse(savedSubcategoryOrder);
-            orderedSubcategories.sort((a, b) => {
-              const indexA = subcategoryOrder.indexOf(a.id);
-              const indexB = subcategoryOrder.indexOf(b.id);
-              return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
-            });
-          } catch (error) {
-            console.error('解析题库顺序失败:', error);
-          }
-        }
         
         const formattedSubcategories = orderedSubcategories.map(subcategory => ({
           id: subcategory.id,
@@ -566,9 +532,23 @@ const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
     // 更新questionStore中的subjects
     questionStore.subjects = subjectsCopy;
     
-    // 保存学科顺序到本地存储
-    const subjectOrder = subjectsCopy.map(subject => subject.id);
-    localStorage.setItem('subjectOrder', JSON.stringify(subjectOrder));
+    // 保存学科顺序到数据库
+      const subjectOrder = subjectsCopy.map(subject => subject.id);
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/subjects/sort`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ subjectOrder })
+        });
+        if (!response.ok) {
+          throw new Error('保存学科排序失败');
+        }
+      } catch (error) {
+        console.error('保存学科排序失败:', error);
+        ElMessage.error('保存排序失败，请稍后重试');
+      }
   }
   // 对于题库排序（同一学科下）
   else if (draggingData.type === 'subcategory' && dropData.type === 'subcategory' && draggingData.subjectId === dropData.subjectId) {
@@ -589,9 +569,23 @@ const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
       // 更新questionStore中的subjects
       questionStore.subjects = subjectsCopy;
       
-      // 保存题库顺序到本地存储
+      // 保存题库顺序到数据库
       const subcategoryOrder = subcategoriesCopy.map(subcategory => subcategory.id);
-      localStorage.setItem(`subcategoryOrder_${draggingData.subjectId}`, JSON.stringify(subcategoryOrder));
+      try {
+        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/subjects/${draggingData.subjectId}/subcategories/sort`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ subcategoryOrder })
+        });
+        if (!response.ok) {
+          throw new Error('保存题库排序失败');
+        }
+      } catch (error) {
+        console.error('保存题库排序失败:', error);
+        ElMessage.error('保存排序失败，请稍后重试');
+      }
     }
   }
   

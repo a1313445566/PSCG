@@ -74,24 +74,8 @@ const subjectId = computed(() => parseInt(route.params.subjectId))
 
 // 当前学科
 const currentSubject = computed(() => {
-  const subject = questionStore.subjects.find(s => s.id === subjectId.value) || { name: '未知学科', subcategories: [] };
-  
-  // 获取保存的题库顺序
-  const savedSubcategoryOrder = localStorage.getItem(`subcategoryOrder_${subjectId.value}`);
-  if (savedSubcategoryOrder && subject.subcategories) {
-    try {
-      const subcategoryOrder = JSON.parse(savedSubcategoryOrder);
-      subject.subcategories.sort((a, b) => {
-        const indexA = subcategoryOrder.indexOf(a.id);
-        const indexB = subcategoryOrder.indexOf(b.id);
-        return (indexA === -1 ? 9999 : indexA) - (indexB === -1 ? 9999 : indexB);
-      });
-    } catch (error) {
-      console.error('解析题库顺序失败:', error);
-    }
-  }
-  
-  return subject;
+  // 直接使用从数据库获取的排序（已在后端按sort_order排序）
+  return questionStore.subjects.find(s => s.id === subjectId.value) || { name: '未知学科', subcategories: [] };
 })
 
 // 题目数据

@@ -13,11 +13,13 @@ router.get('/', async (req, res) => {
       return;
     }
     
-    const subjects = await db.all('SELECT * FROM subjects');
+    const subjects = await db.all('SELECT * FROM subjects ORDER BY sort_order ASC');
+
     
     // 为每个学科获取子分类
     for (const subject of subjects) {
-      const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ?', [subject.id]);
+      const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ? ORDER BY sort_order ASC', [subject.id]);
+
       subject.subcategories = subcategories || [];
     }
     
@@ -56,7 +58,8 @@ router.get('/:id/subcategories', async (req, res) => {
       return;
     }
     
-    const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ?', [subjectId]);
+    const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ? ORDER BY sort_order ASC', [subjectId]);
+
     
     // 缓存结果
     cacheService.set(cacheKey, subcategories);
@@ -94,6 +97,44 @@ router.post('/', async (req, res) => {
   } catch (error) {
 
     res.status(500).json({ error: '添加学科失败' });
+  }
+});
+
+// 更新学科排序
+router.put('/sort', async (req, res) => {
+  try {
+    const { subjectOrder } = req.body;
+    
+    if (!Array.isArray(subjectOrder)) {
+      res.status(400).json({ error: '学科排序数据格式错误' });
+      return;
+    }
+    
+    // 开启事务
+    await db.run('START TRANSACTION');
+    
+    try {
+      // 更新每个学科的排序值
+      for (let i = 0; i < subjectOrder.length; i++) {
+        const subjectId = subjectOrder[i];
+        await db.run('UPDATE subjects SET sort_order = ? WHERE id = ?', [i, subjectId]);
+      }
+      
+      // 提交事务
+      await db.run('COMMIT');
+      
+      // 清除缓存
+      cacheService.del('subjects');
+      
+      res.json({ success: true });
+    } catch (error) {
+      // 回滚事务
+      await db.run('ROLLBACK');
+      throw error;
+    }
+  } catch (error) {
+
+    res.status(500).json({ error: '更新学科排序失败' });
   }
 });
 
@@ -233,9 +274,49 @@ router.delete('/subcategories/:id', async (req, res) => {
     }
     
     res.json({ success: true });
+} catch (error) {
+
+  res.status(500).json({ error: '删除子分类失败' });
+}
+});
+
+// 更新子分类排序
+router.put('/:subjectId/subcategories/sort', async (req, res) => {
+  try {
+    const { subjectId } = req.params;
+    const { subcategoryOrder } = req.body;
+    
+    if (!Array.isArray(subcategoryOrder)) {
+      res.status(400).json({ error: '子分类排序数据格式错误' });
+      return;
+    }
+    
+    // 开启事务
+    await db.run('START TRANSACTION');
+    
+    try {
+      // 更新每个子分类的排序值
+      for (let i = 0; i < subcategoryOrder.length; i++) {
+        const subcategoryId = subcategoryOrder[i];
+        await db.run('UPDATE subcategories SET sort_order = ? WHERE id = ? AND subject_id = ?', [i, subcategoryId, subjectId]);
+      }
+      
+      // 提交事务
+      await db.run('COMMIT');
+      
+      // 清除缓存
+      cacheService.del('subjects');
+      cacheService.del(cacheService.generateSubcategoryKey(subjectId));
+      
+      res.json({ success: true });
+    } catch (error) {
+      // 回滚事务
+      await db.run('ROLLBACK');
+      throw error;
+    }
   } catch (error) {
 
-    res.status(500).json({ error: '删除子分类失败' });
+    res.status(500).json({ error: '更新子分类排序失败' });
   }
 });
 

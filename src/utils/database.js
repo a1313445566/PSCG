@@ -128,11 +128,11 @@ export const deleteSubject = async (subjectId) => {
 };
 
 // 添加子分类
-export const addSubcategory = async (subjectId, name, iconIndex = 0) => {
+export const addSubcategory = async (subjectId, name, iconIndex = 0, difficulty = 1) => {
   try {
     return await fetchApi(`${API_BASE_URL}/subjects/${subjectId}/subcategories`, {
       method: 'POST',
-      body: JSON.stringify({ name, iconIndex })
+      body: JSON.stringify({ name, iconIndex, difficulty })
     });
   } catch (error) {
     console.error('添加子分类失败:', error);
