@@ -611,28 +611,50 @@ const deleteNode = async (data) => {
   min-height: 400px;
   max-height: 600px;
   overflow-y: auto;
+  background-color: #fafafa;
+  border-radius: 8px;
 }
 
 .tree-node-content {
   transition: all 0.3s ease;
+  border-radius: 6px;
+  padding: 8px 12px;
+  margin: 2px 8px;
 }
 
 .tree-node-content:hover {
-  background-color: #f5f7fa;
+  background-color: #f0f2f5;
+  transform: translateX(4px);
 }
 
 :deep(.el-tree-node__content) {
   height: auto !important;
-  min-height: 40px;
-  padding: 4px 0;
+  min-height: 50px;
+  padding: 8px 0;
+  border-radius: 6px;
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
   background-color: #ecf5ff;
+  border-left: 4px solid #409eff;
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content:hover) {
   background-color: #ecf5ff;
+}
+
+:deep(.el-tree-node__expand-icon) {
+  font-size: 16px;
+  margin-right: 8px;
+  color: #909399;
+}
+
+:deep(.el-tree-node__expand-icon:hover) {
+  color: #409eff;
+}
+
+:deep(.el-tree) {
+  padding: 12px 0;
 }
 
 .action-buttons {
