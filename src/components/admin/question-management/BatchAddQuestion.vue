@@ -258,8 +258,6 @@ const saveBatchQuestions = () => {
   batchSubcategoryId.value = '';
   batchQuestionText.value = '';
   parsedQuestions.value = [];
-  
-  ElMessage.success(`成功添加 ${questionsToAdd.length} 个题目`);
 };
 </script>
 

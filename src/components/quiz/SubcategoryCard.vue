@@ -39,8 +39,8 @@ const props = defineProps({
 
 const emit = defineEmits(['select'])
 
-// 学科图标
-const subjectIcons = ['📚', '🔢', '🔬', '🎨', '🎵', '⚽', '🌍', '🖥️', '📝', '🌟']
+// 导入共享图标配置
+import { subjectIcons } from '../../config/iconConfig';
 
 // 计算该题库的题目数量
 const getQuestionCount = (subcategoryId) => {

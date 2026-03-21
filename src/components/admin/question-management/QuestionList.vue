@@ -35,7 +35,7 @@
     <!-- 列表视图 -->
     <div class="table-container" v-if="!isCategoryView">
       <el-table 
-        :data="filteredQuestions" 
+        :data="paginatedQuestions" 
         style="margin-top: 20px; width: 100%"
         @selection-change="handleSelectionChange"
         @row-click="editQuestion"
@@ -369,6 +369,13 @@ const filteredQuestions = computed(() => {
 
 // 计算总数
 const total = computed(() => filteredQuestions.value.length);
+
+// 计算分页后的题目
+const paginatedQuestions = computed(() => {
+  const start = (currentPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return filteredQuestions.value.slice(start, end);
+});
 
 // 计算分类视图的题目
 const categoryQuestions = computed(() => {

@@ -208,9 +208,8 @@ const questionStore = useQuestionStore();
 // 使用计算属性获取最新的学科数据
 const subjects = computed(() => questionStore.subjects);
 
-// 学科图标和名称
-const subjectIcons = ['📚', '🔢', '🔬', '🎨', '🎵', '⚽', '🌍', '🖥️', '📝', '🌟', '⚗️', '🧬', '⚡', '📜', '🌎', '🚀', '💡', '📊', '🎭', '📱']
-const subjectIconNames = ['语文', '数学', '科学', '美术', '音乐', '体育', '地理', '信息技术', '道德与法治', '综合实践', '化学', '生物', '物理', '历史', '世界地理', '航天科技', '创新思维', '数据分析', '戏剧', '数字媒体'];
+// 导入共享图标配置
+import { subjectIcons, subjectIconNames } from '../../../config/iconConfig';
 
 // 树结构配置
 const treeProps = {
