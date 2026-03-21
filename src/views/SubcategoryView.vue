@@ -13,11 +13,25 @@
         :subjectId="currentSubject.id"
         :subjectName="currentSubject.name"
       />
+
+      <div class="subcategory-section">
+        <h3 class="section-title">🎯 选择题库</h3>
+        <div class="subcategory-grid">
+          <SubcategoryCard 
+            v-for="subcategory in currentSubject.subcategories" 
+            :key="subcategory.id"
+            :subcategory="subcategory"
+            :subjectId="currentSubject.id"
+            :questions="questions"
+            @select="selectSubcategory"
+          />
+        </div>
+      </div>
       
       <div class="difficulty-rules-section">
         <div class="rules-header" @click="toggleRules">
           <h3 class="section-title">📊 难度调整规则</h3>
-          <div class="toggle-icon" :class="{ 'rotated': rulesExpanded }">▼</div>
+          <div class="toggle-icon" :class="{ 'rotated': rulesExpanded }">{{ rulesExpanded ? '▼' : '▼' }}</div>
         </div>
         <div class="difficulty-rules-content" v-show="rulesExpanded">
           <div class="rule-item">
@@ -47,20 +61,6 @@
               <li>多选题的难度阈值会适当提高</li>
             </ul>
           </div>
-        </div>
-      </div>
-
-      <div class="subcategory-section">
-        <h3 class="section-title">🎯 选择题库</h3>
-        <div class="subcategory-grid">
-          <SubcategoryCard 
-            v-for="subcategory in currentSubject.subcategories" 
-            :key="subcategory.id"
-            :subcategory="subcategory"
-            :subjectId="currentSubject.id"
-            :questions="questions"
-            @select="selectSubcategory"
-          />
         </div>
       </div>
     </div>
@@ -300,6 +300,7 @@ onMounted(async () => {
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: 2rem;
 }
 
 .section-title {
@@ -318,9 +319,9 @@ onMounted(async () => {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@media (max-width: 992px) {
   .subcategory-content {
-    padding: 1rem;
+    padding: 1.5rem;
   }
   
   .page-header {
@@ -357,7 +358,11 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 768px) {
+  .subcategory-content {
+    padding: 1rem;
+  }
+  
   .page-header {
     padding: 1rem;
   }
@@ -366,12 +371,64 @@ onMounted(async () => {
     font-size: 1.3rem;
   }
   
+  .section-title {
+    font-size: 1.2rem;
+  }
+  
   .subcategory-grid {
     grid-template-columns: 1fr;
+    gap: 0.8rem;
   }
   
   .subcategory-section {
     padding: 1.2rem;
+  }
+  
+  .difficulty-rules-section {
+    padding: 1.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .page-header {
+    padding: 0.8rem;
+  }
+  
+  .page-title {
+    font-size: 1.2rem;
+  }
+  
+  .section-title {
+    font-size: 1.1rem;
+  }
+  
+  .subcategory-grid {
+    grid-template-columns: 1fr;
+    gap: 0.6rem;
+  }
+  
+  .subcategory-section {
+    padding: 1rem;
+  }
+  
+  .difficulty-rules-section {
+    padding: 1rem;
+  }
+  
+  .difficulty-rules-content {
+    gap: 0.8rem;
+  }
+  
+  .rule-item {
+    padding: 1rem;
+  }
+  
+  .rule-item h4 {
+    font-size: 1rem;
+  }
+  
+  .rule-item li {
+    font-size: 0.9rem;
   }
 }
 </style>

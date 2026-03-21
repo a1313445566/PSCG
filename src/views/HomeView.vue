@@ -402,7 +402,7 @@ onMounted(async () => {
 
 .leaderboard-header {
   display: flex;
-  justify-content: space-between;
+  justify-content: center;
   align-items: flex-start;
   width: 100%;
   gap: 2rem;
@@ -515,12 +515,7 @@ onMounted(async () => {
   gap: 0.5rem;
 }
 
-.leaderboard-title::before,
-.leaderboard-title::after {
-  content: '🏆';
-  font-size: 1.6rem;
-  animation: bounce 2s infinite;
-}
+
 
 .leaderboard-rules {
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
@@ -627,7 +622,7 @@ onMounted(async () => {
   flex-direction: column;
   gap: 0.5rem;
   flex: 1;
-  margin-top: 1rem;
+  margin: 1rem auto 0;
 }
 
 .first-place-content .leaderboard-info {
@@ -842,7 +837,7 @@ onMounted(async () => {
   
   .leaderboard-header {
     flex-direction: column;
-    align-items: flex-start;
+    align-items: center;
     gap: 1rem;
   }
 }

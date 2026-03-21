@@ -11,6 +11,22 @@
             <span class="time-spent">用时: {{ formatTime(timeSpent) }}</span>
           </div>
         </div>
+        
+        <!-- 答题规则及积分规则 -->
+        <div class="rules-section">
+          <h3 class="rules-title">答题规则</h3>
+          <div class="rules-content">
+            <template v-if="isErrorCollection">
+              <p>每道题累计正确3次后将自动移除，再次做错将重置已累计的正确次数。</p>
+              <p class="points-rule">积分规则：每道题目累计答对3次+1分。</p>
+            </template>
+            <template v-else>
+              <p>请回答所有题目后提交，提交后将显示结果。</p>
+              <p class="points-rule">积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍。</p>
+            </template>
+          </div>
+        </div>
+        
         <div class="progress-section">
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
@@ -400,6 +416,35 @@ onUnmounted(() => {
   overflow: hidden;
   margin-bottom: 2rem;
   position: relative;
+}
+
+.rules-section {
+  margin: 2rem 0;
+  padding: 1.5rem;
+  background-color: #F8F9FA;
+  border-radius: 12px;
+  border-left: 4px solid #7DD3F8;
+}
+
+.rules-title {
+  font-size: 1.3rem;
+  font-weight: bold;
+  color: #333;
+  margin: 0 0 1rem 0;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+}
+
+.rules-content p {
+  color: #555;
+  margin: 0.5rem 0;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+.points-rule {
+  font-weight: bold;
+  color: #FF6B6B;
+  margin-top: 1rem !important;
 }
 
 .quiz-header::before {

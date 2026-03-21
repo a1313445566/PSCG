@@ -549,7 +549,9 @@ const loadUserRecords = async (userId) => {
 // 打开用户详情对话框
 const openUserDetailDialog = async (user) => {
   selectedUser.value = user
-  await loadUserRecords(user.user_id)
+  // 确保使用正确的用户ID字段
+  const userId = user.id || user.user_id
+  await loadUserRecords(userId)
   userDetailDialogVisible.value = true
 }
 
