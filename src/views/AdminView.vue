@@ -824,6 +824,10 @@ const applyFilters = async () => {
     const userStatsParams = new URLSearchParams()
     const recentRecordsParams = new URLSearchParams()
     
+    if (filterStudentId.value) {
+      userStatsParams.append('student_id', filterStudentId.value)
+      recentRecordsParams.append('student_id', filterStudentId.value)
+    }
     if (filterGrade.value) {
       userStatsParams.append('grade', filterGrade.value)
       recentRecordsParams.append('grade', filterGrade.value)
@@ -1148,6 +1152,8 @@ onMounted(async () => {
     }
     // 加载设置
     await loadSettings()
+    // 加载题目和学科数据
+    await questionStore.loadData()
     // 加载排行榜数据
     await questionStore.loadUserStats()
     await questionStore.loadRecentRecords()
