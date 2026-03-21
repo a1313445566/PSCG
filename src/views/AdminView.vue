@@ -126,7 +126,7 @@
       <el-tab-pane label="用户管理" name="user-management">
         <div class="user-management-tab">
           <UserManagement 
-            :users="userStats"
+            :users="allUsers"
             :grades="grades"
             :classes="classes"
             @update-users="updateUserList"
@@ -463,6 +463,7 @@ const recentRecords = computed(() => questionStore.recentRecords)
 const grades = computed(() => questionStore.grades)
 const classes = computed(() => questionStore.classes)
 const backupHistory = ref([])
+const allUsers = ref([])
 
 // 排行榜筛选相关
 const filterStudentId = ref('')
@@ -871,10 +872,23 @@ const handleBatchAddQuestions = async (questions) => {
   }
 }
 
+// 加载所有用户数据
+const loadAllUsers = async () => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/users`)
+    if (response.ok) {
+      allUsers.value = await response.json()
+    }
+  } catch (error) {
+    console.error('加载所有用户失败:', error)
+  }
+}
+
 // 更新用户列表
 const updateUserList = async () => {
   try {
     await questionStore.loadUserStats()
+    await loadAllUsers()
     ElMessage.success('用户列表已更新')
   } catch (error) {
     console.error('更新用户列表失败:', error)
@@ -1137,6 +1151,8 @@ onMounted(async () => {
     // 加载排行榜数据
     await questionStore.loadUserStats()
     await questionStore.loadRecentRecords()
+    // 加载所有用户数据
+    await loadAllUsers()
   } else {
     // 设置密码对话框为可见，确保登录框自动弹出
     passwordDialogVisible.value = true

@@ -156,8 +156,8 @@ const saveStudentId = async () => {
       body: JSON.stringify({
         studentId: inputStudentId.value.trim(),
         name: inputName.value.trim(),
-        grade: inputGrade.value,
-        class: inputClass.value
+        grade: parseInt(inputGrade.value),
+        class: parseInt(inputClass.value)
       })
     })
     

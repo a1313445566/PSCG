@@ -43,7 +43,7 @@
     <!-- 用户列表 -->
     <div class="table-container" style="margin-top: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); padding: 24px; overflow: hidden;">
       <el-table 
-        :data="filteredUsers" 
+        :data="paginatedUsers" 
         stripe 
         style="width: 100%"
         @selection-change="handleSelectionChange"
@@ -199,19 +199,18 @@ const deleteUser = (user) => {
   })
   .then(async () => {
     try {
-      const userId = user.student_id || user.user_id || user.id;
+      const userId = user.id;
       if (userId) {
-        // 清除用户所有数据
-        await Promise.all([
-          // 清除用户答题记录
-          fetch(`${getApiBaseUrl()}/user-records/${userId}`, { method: 'DELETE' }),
-          // 清除用户排行榜数据
-          fetch(`${getApiBaseUrl()}/leaderboard/${userId}`, { method: 'DELETE' })
-        ]);
+        // 调用删除用户API
+        const response = await fetch(`${getApiBaseUrl()}/users/${userId}`, { method: 'DELETE' });
         
-        ElMessage.success('用户删除成功！');
-        // 触发更新用户列表
-        emit('update-users');
+        if (response.ok) {
+          ElMessage.success('用户删除成功！');
+          // 触发更新用户列表
+          emit('update-users');
+        } else {
+          throw new Error('删除用户失败');
+        }
       } else {
         ElMessage.error('用户ID不存在，无法删除');
       }
@@ -236,18 +235,19 @@ const batchDeleteUsers = () => {
   })
   .then(async () => {
     try {
+      let successCount = 0;
       for (const user of selectedUsers.value) {
-        const userId = user.student_id || user.user_id || user.id;
+        const userId = user.id;
         if (userId) {
-          // 清除用户所有数据
-          await Promise.all([
-            fetch(`${getApiBaseUrl()}/user-records/${userId}`, { method: 'DELETE' }),
-            fetch(`${getApiBaseUrl()}/leaderboard/${userId}`, { method: 'DELETE' })
-          ]);
+          // 调用删除用户API
+          const response = await fetch(`${getApiBaseUrl()}/users/${userId}`, { method: 'DELETE' });
+          if (response.ok) {
+            successCount++;
+          }
         }
       }
       
-      ElMessage.success(`成功删除 ${selectedUsers.value.length} 个用户！`);
+      ElMessage.success(`成功删除 ${successCount} 个用户！`);
       // 触发更新用户列表
       emit('update-users');
       // 清空选择
@@ -265,13 +265,47 @@ const batchDeleteUsers = () => {
 // 保存用户
 const saveUser = async (userData) => {
   try {
-    // 这里应该调用API保存用户数据
-    // 由于是现有API，我们假设用户数据是通过答题记录自动生成的
-    // 所以这里主要是模拟保存操作
-    ElMessage.success('用户保存成功！');
-    userFormVisible.value = false;
-    // 触发更新用户列表
-    emit('update-users');
+    // 构建用户数据对象
+    const userToSave = {
+      name: userData.name,
+      grade: parseInt(userData.grade),
+      class: parseInt(userData.class)
+    };
+    
+    let response;
+    if (userData.id) {
+      // 编辑用户
+      response = await fetch(`${getApiBaseUrl()}/users/${userData.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(userToSave)
+      });
+    } else {
+      // 添加用户
+      const newUser = {
+        ...userToSave,
+        student_id: userData.student_id
+      };
+      response = await fetch(`${getApiBaseUrl()}/users`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(newUser)
+      });
+    }
+    
+    if (response.ok) {
+      ElMessage.success('用户保存成功！');
+      userFormVisible.value = false;
+      // 触发更新用户列表
+      emit('update-users');
+    } else {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData.error || '保存用户失败');
+    }
   } catch (error) {
     console.error('保存用户失败:', error);
     ElMessage.error('保存用户失败，请稍后重试');

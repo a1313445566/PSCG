@@ -130,8 +130,28 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    await db.run('DELETE FROM users WHERE id = ?', [id]);
-    res.json({ success: true });
+    // 开始事务
+    await db.run('START TRANSACTION');
+    
+    try {
+      // 删除用户的题目尝试记录
+      await db.run('DELETE FROM question_attempts WHERE user_id = ?', [id]);
+      
+      // 删除用户的答题记录
+      await db.run('DELETE FROM answer_records WHERE user_id = ?', [id]);
+      
+      // 删除用户
+      await db.run('DELETE FROM users WHERE id = ?', [id]);
+      
+      // 提交事务
+      await db.run('COMMIT');
+      
+      res.json({ success: true });
+    } catch (error) {
+      // 回滚事务
+      await db.run('ROLLBACK');
+      throw error;
+    }
   } catch (error) {
     // console.error('删除用户失败:', error);
     res.status(500).json({ error: '删除用户失败' });

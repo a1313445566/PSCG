@@ -10,8 +10,8 @@
         <el-input v-model="form.student_id" placeholder="请输入学号" maxlength="20"></el-input>
       </el-form-item>
       
-      <el-form-item label="姓名" prop="name" :rules="[{ required: true, message: '请输入姓名', trigger: 'blur' }]">
-        <el-input v-model="form.name" placeholder="请输入姓名" maxlength="20"></el-input>
+      <el-form-item label="姓名" prop="name" :rules="[{ required: false, message: '请输入姓名', trigger: 'blur' }]">
+        <el-input v-model="form.name" placeholder="请输入姓名（选填）" maxlength="20"></el-input>
       </el-form-item>
       
       <el-form-item label="年级" prop="grade" :rules="[{ required: true, message: '请选择年级', trigger: 'change' }]">
@@ -73,6 +73,7 @@ const form = ref({
 watch(() => props.user, (newUser) => {
   if (newUser) {
     form.value = {
+      id: newUser.id,
       student_id: newUser.student_id || newUser.user_id || '',
       name: newUser.name || '',
       grade: newUser.grade || '',
@@ -81,6 +82,7 @@ watch(() => props.user, (newUser) => {
   } else {
     // 重置表单
     form.value = {
+      id: null,
       student_id: '',
       name: '',
       grade: '',
@@ -93,9 +95,6 @@ watch(() => props.user, (newUser) => {
 const handleSubmit = () => {
   // 验证表单
   if (!form.value.student_id) {
-    return;
-  }
-  if (!form.value.name) {
     return;
   }
   if (!form.value.grade) {
