@@ -415,6 +415,8 @@ const startEdit = (data) => {
   // 确保name字段正确赋值
   editingData.value.name = data.label;
   data.isEditing = true;
+  // 保存当前编辑的节点引用
+  editingData.value.nodeRef = data;
 };
 
 // 保存编辑
@@ -443,6 +445,11 @@ const saveEdit = async () => {
     }
     
     // 重置编辑状态
+    if (editingData.value.nodeRef) {
+      editingData.value.nodeRef.isEditing = false;
+    }
+    // 重新加载数据，确保前端显示最新数据
+    await questionStore.loadData();
     editingData.value = null;
     ElMessage.success('更新成功');
   } catch (error) {
@@ -454,7 +461,10 @@ const saveEdit = async () => {
 
 // 取消编辑
 const cancelEdit = () => {
-  // 直接重置编辑状态
+  // 重置编辑状态
+  if (editingData.value && editingData.value.nodeRef) {
+    editingData.value.nodeRef.isEditing = false;
+  }
   editingData.value = null;
 };
 
