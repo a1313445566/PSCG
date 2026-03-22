@@ -5,10 +5,12 @@ const API_BASE_URL = isDevelopment
   ? '/api'
   : import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
 
-// 输出环境变量信息
-console.log('=== API 配置 ===');
-console.log('isDevelopment:', isDevelopment);
-console.log('API_BASE_URL:', API_BASE_URL);
+// 输出环境变量信息（仅在开发环境）
+if (isDevelopment) {
+  console.log('=== API 配置 ===');
+  console.log('isDevelopment:', isDevelopment);
+  console.log('API_BASE_URL:', API_BASE_URL);
+}
 
 // 导入缓存模块
 import { apiCache } from './apiCache.js';
@@ -46,7 +48,11 @@ const fetchApi = async (url, options = {}) => {
       throw new Error('请求超时，请检查网络连接');
     }
     
-    console.error('API请求错误:', error);
+    // 仅在开发环境输出错误日志
+    if (isDevelopment) {
+      console.error('API请求错误:', error);
+    }
+    
     throw error;
   }
 };
@@ -62,7 +68,7 @@ export const initDatabase = async () => {
     // 后端会自动初始化数据库
     return true;
   } catch (error) {
-    console.error('初始化数据库失败:', error);
+
     return false;
   }
 };
@@ -72,7 +78,7 @@ export const getSubjects = async () => {
   try {
     return await apiCache.getCached(`${API_BASE_URL}/subjects`);
   } catch (error) {
-    console.error('获取学科失败:', error);
+
     return [];
   }
 };
@@ -83,7 +89,7 @@ export const getQuestions = async () => {
     // 添加较大的limit参数，确保获取所有题目
     return await apiCache.getCached(`${API_BASE_URL}/questions?limit=1000`);
   } catch (error) {
-    console.error('获取题目失败:', error);
+
     return [];
   }
 };
@@ -96,7 +102,7 @@ export const addSubject = async (name, iconIndex = 0) => {
       body: JSON.stringify({ name, iconIndex })
     });
   } catch (error) {
-    console.error('添加学科失败:', error);
+
     return null;
   }
 };
@@ -109,7 +115,7 @@ export const updateSubject = async (subjectId, name, iconIndex = 0) => {
       body: JSON.stringify({ name, iconIndex })
     });
   } catch (error) {
-    console.error('更新学科失败:', error);
+
     return null;
   }
 };
@@ -122,7 +128,7 @@ export const deleteSubject = async (subjectId) => {
     });
     return true;
   } catch (error) {
-    console.error('删除学科失败:', error);
+
     return false;
   }
 };
@@ -135,7 +141,7 @@ export const addSubcategory = async (subjectId, name, iconIndex = 0, difficulty 
       body: JSON.stringify({ name, iconIndex, difficulty })
     });
   } catch (error) {
-    console.error('添加子分类失败:', error);
+
     return null;
   }
 };
@@ -148,7 +154,7 @@ export const updateSubcategory = async (subcategoryId, name, iconIndex = 0, diff
       body: JSON.stringify({ name, iconIndex, difficulty })
     });
   } catch (error) {
-    console.error('更新子分类失败:', error);
+
     return null;
   }
 };
@@ -161,7 +167,7 @@ export const deleteSubcategory = async (subcategoryId) => {
     });
     return true;
   } catch (error) {
-    console.error('删除子分类失败:', error);
+
     return false;
   }
 };
@@ -174,7 +180,7 @@ export const addQuestion = async (question) => {
       body: JSON.stringify(question)
     });
   } catch (error) {
-    console.error('添加题目失败:', error);
+
     return null;
   }
 };
@@ -187,7 +193,7 @@ export const updateQuestion = async (updatedQuestion) => {
       body: JSON.stringify(updatedQuestion)
     });
   } catch (error) {
-    console.error('更新题目失败:', error);
+
     return null;
   }
 };
@@ -200,7 +206,7 @@ export const deleteQuestion = async (questionId) => {
     });
     return true;
   } catch (error) {
-    console.error('删除题目失败:', error);
+
     return false;
   }
 };
@@ -213,7 +219,7 @@ export const clearAllData = async () => {
     });
     return true;
   } catch (error) {
-    console.error('清空数据失败:', error);
+
     return false;
   }
 };
@@ -243,7 +249,7 @@ export const importLocalData = async () => {
     
     return response;
   } catch (error) {
-    console.error('导入数据失败:', error);
+
     return { success: false, error: error.message };
   }
 };
@@ -253,7 +259,7 @@ export const getGrades = async () => {
   try {
     return await apiCache.getCached(`${API_BASE_URL}/grades`);
   } catch (error) {
-    console.error('获取年级失败:', error);
+
     return [];
   }
 };
@@ -263,7 +269,7 @@ export const getClasses = async () => {
   try {
     return await apiCache.getCached(`${API_BASE_URL}/classes`);
   } catch (error) {
-    console.error('获取班级失败:', error);
+
     return [];
   }
 };
@@ -276,7 +282,7 @@ export const addGrade = async (name) => {
       body: JSON.stringify({ name })
     });
   } catch (error) {
-    console.error('添加年级失败:', error);
+
     return null;
   }
 };
@@ -289,7 +295,7 @@ export const updateGrade = async (gradeId, name) => {
       body: JSON.stringify({ name })
     });
   } catch (error) {
-    console.error('更新年级失败:', error);
+
     return null;
   }
 };
@@ -302,7 +308,7 @@ export const deleteGrade = async (gradeId) => {
     });
     return true;
   } catch (error) {
-    console.error('删除年级失败:', error);
+
     return false;
   }
 };
@@ -315,7 +321,7 @@ export const addClass = async (name) => {
       body: JSON.stringify({ name })
     });
   } catch (error) {
-    console.error('添加班级失败:', error);
+
     return null;
   }
 };
@@ -328,7 +334,7 @@ export const updateClass = async (classId, name) => {
       body: JSON.stringify({ name })
     });
   } catch (error) {
-    console.error('更新班级失败:', error);
+
     return null;
   }
 };
@@ -341,7 +347,7 @@ export const deleteClass = async (classId) => {
     });
     return true;
   } catch (error) {
-    console.error('删除班级失败:', error);
+
     return false;
   }
 };
@@ -352,7 +358,7 @@ export const healthCheck = async () => {
     const response = await fetchApi(`${API_BASE_URL}/data/health`);
     return response;
   } catch (error) {
-    console.error('健康检查失败:', error);
+
     return { status: 'error', message: error.message };
   }
 };

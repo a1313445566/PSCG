@@ -13,6 +13,16 @@
           {{ row.user_name || '未设置' }}
         </template>
       </el-table-column>
+      <el-table-column prop="grade" label="年级" width="80" align="center">
+        <template #default="{ row }">
+          {{ row.grade || '未设置' }}
+        </template>
+      </el-table-column>
+      <el-table-column prop="class" label="班级" width="80" align="center">
+        <template #default="{ row }">
+          {{ row.class || '未设置' }}
+        </template>
+      </el-table-column>
       <el-table-column prop="subject_name" label="学科" width="100" align="center"></el-table-column>
       <el-table-column prop="subcategory_name" label="学科题库" width="180" align="center">
         <template #default="{ row }">

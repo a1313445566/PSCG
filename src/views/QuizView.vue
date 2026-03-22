@@ -254,23 +254,8 @@ const submitAnswers = async () => {
   const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
   
   try {
-    console.log('开始保存答题记录...')
-    console.log('用户信息:', {
-      studentId: localStorage.getItem('studentId'),
-      userGrade: localStorage.getItem('userGrade'),
-      userClass: localStorage.getItem('userClass')
-    })
-    console.log('答题信息:', {
-      subjectId: subjectId.value,
-      subcategoryId: subcategoryId.value,
-      totalQuestions: totalQuestions.value,
-      correctCount: score.value,
-      timeSpent: timeSpentSeconds
-    })
-    
     // 保存整体答题记录
     const apiUrl = `${getApiBaseUrl()}/answer-records`
-    console.log('保存整体答题记录的API URL:', apiUrl)
     
     const answerRecordResponse = await fetch(apiUrl, {
       method: 'POST',
@@ -289,11 +274,8 @@ const submitAnswers = async () => {
         })
     })
     
-    console.log('保存整体答题记录的响应状态:', answerRecordResponse.status)
-    
     if (answerRecordResponse.ok) {
       const successData = await answerRecordResponse.json()
-      console.log('保存整体答题记录成功:', successData)
       
       // 保存每道题的答题记录
       const questionAttemptPromises = []
@@ -310,11 +292,6 @@ const submitAnswers = async () => {
         
         // 保存随机排序的选项
         const shuffledOptions = question.shuffledOptions ? JSON.stringify(question.shuffledOptions) : null
-        
-        console.log('保存题目尝试记录:', {
-          questionId: question.id,
-          isCorrect: isCorrect
-        })
         
         const questionAttemptPromise = fetch(`${getApiBaseUrl()}/answer-records/question-attempts`, {
           method: 'POST',
@@ -334,9 +311,6 @@ const submitAnswers = async () => {
             answerRecordId: successData.recordId,
             shuffledOptions: shuffledOptions
           })
-        }).then(response => {
-          console.log('保存题目尝试记录的响应状态:', response.status)
-          return response
         })
         
         questionAttemptPromises.push(questionAttemptPromise)
@@ -345,11 +319,9 @@ const submitAnswers = async () => {
       // 等待所有题目尝试记录保存完成，添加错误处理
       await Promise.all(questionAttemptPromises.map(p => p.catch(e => { console.error('保存题目尝试记录失败:', e); return null; })))
     } else {
-      const errorData = await answerRecordResponse.json().catch(() => ({}))
-      console.error('保存整体答题记录失败:', errorData)
+      await answerRecordResponse.json().catch(() => ({}))
     }
   } catch (error) {
-    console.error('保存答题记录时发生错误:', error)
     ElMessage.error('保存答题记录失败，请检查网络连接')
   } finally {
     // 重置提交状态
