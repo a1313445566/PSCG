@@ -213,6 +213,8 @@ const submitAnswers = async () => {
       },
       body: JSON.stringify({
         userId: localStorage.getItem('studentId'),
+        grade: localStorage.getItem('userGrade'),
+        class: localStorage.getItem('userClass'),
         subjectId: subjectId.value,
         subcategoryId: subcategoryId.value,
         totalQuestions: totalQuestions.value,
@@ -261,6 +263,8 @@ const submitAnswers = async () => {
           },
           body: JSON.stringify({
             userId: localStorage.getItem('studentId'),
+            grade: localStorage.getItem('userGrade'),
+            class: localStorage.getItem('userClass'),
             questionId: question.id,
             subjectId: subjectId.value,
             subcategoryId: subcategoryId.value,

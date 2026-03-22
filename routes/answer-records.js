@@ -16,16 +16,25 @@ router.get('/all', async (req, res) => {
     if (student_id) {
       query += ' AND u.student_id = ?';
       params.push(student_id);
-    }
-    
-    if (grade) {
-      query += ' AND u.grade = ?';
-      params.push(grade);
-    }
-    
-    if (className) {
-      query += ' AND u.`class` = ?';
-      params.push(className);
+      // 当使用student_id查询时，确保同时使用grade和class进行过滤
+      if (grade) {
+        query += ' AND u.grade = ?';
+        params.push(grade);
+      }
+      if (className) {
+        query += ' AND u.`class` = ?';
+        params.push(className);
+      }
+    } else {
+      // 当不使用student_id查询时，可以单独使用grade或class进行过滤
+      if (grade) {
+        query += ' AND u.grade = ?';
+        params.push(grade);
+      }
+      if (className) {
+        query += ' AND u.`class` = ?';
+        params.push(className);
+      }
     }
     
     if (subjectId) {
@@ -240,10 +249,10 @@ router.get('/error-prone-questions', async (req, res) => {
 // 保存答题记录
 router.post('/', async (req, res) => {
   try {
-    const { userId, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent } = req.body;
+    const { userId, grade, class: className, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent } = req.body;
     
-    // 查找用户ID
-    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [userId]);
+    // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
+    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [userId, grade, className]);
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }
@@ -292,10 +301,10 @@ router.post('/', async (req, res) => {
 // 保存题目尝试记录
 router.post('/question-attempts', async (req, res) => {
   try {
-    const { userId, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions } = req.body;
+    const { userId, grade, class: className, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions } = req.body;
     
-    // 查找用户ID
-    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [userId]);
+    // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
+    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [userId, grade, className]);
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }

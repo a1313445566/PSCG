@@ -6,14 +6,14 @@ const db = require('../services/database');
 router.get('/:subjectId', async (req, res) => {
   try {
     const { subjectId } = req.params;
-    const { studentId } = req.query;
+    const { studentId, grade, class: className } = req.query;
     
-    if (!studentId) {
-      return res.status(400).json({ error: '缺少学生ID参数' });
+    if (!studentId || !grade || !className) {
+      return res.status(400).json({ error: '缺少必要参数' });
     }
     
-    // 查找用户ID
-    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [studentId]);
+    // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
+    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [studentId, grade, className]);
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }
@@ -84,14 +84,14 @@ router.get('/:subjectId', async (req, res) => {
 // 更新错题的正确次数
 router.post('/update', async (req, res) => {
   try {
-    const { studentId, questionId, correctCount } = req.body;
+    const { studentId, grade, class: className, questionId, correctCount } = req.body;
     
-    if (!studentId || !questionId || correctCount === undefined) {
+    if (!studentId || !grade || !className || !questionId || correctCount === undefined) {
       return res.status(400).json({ error: '缺少必要参数' });
     }
     
-    // 查找用户ID
-    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [studentId]);
+    // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
+    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [studentId, grade, className]);
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }
@@ -137,14 +137,14 @@ router.post('/update', async (req, res) => {
 // 重置错题的正确次数
 router.post('/reset', async (req, res) => {
   try {
-    const { studentId, questionId } = req.body;
+    const { studentId, grade, class: className, questionId } = req.body;
     
-    if (!studentId || !questionId) {
+    if (!studentId || !grade || !className || !questionId) {
       return res.status(400).json({ error: '缺少必要参数' });
     }
     
-    // 查找用户ID
-    const user = await db.get('SELECT id FROM users WHERE student_id = ?', [studentId]);
+    // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
+    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [studentId, grade, className]);
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }

@@ -679,14 +679,16 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const studentId = localStorage.getItem('studentId')
-        if (!studentId) {
+        const userGrade = localStorage.getItem('userGrade')
+        const userClass = localStorage.getItem('userClass')
+        if (!studentId || !userGrade || !userClass) {
           this.errorCollections[subjectId] = []
           return
         }
         
         // 这里需要调用后端API获取错题巩固题库
         // 暂时使用模拟数据
-        const response = await fetch(`${getApiBaseUrl()}/error-collection/${subjectId}?studentId=${studentId}`)
+        const response = await fetch(`${getApiBaseUrl()}/error-collection/${subjectId}?studentId=${studentId}&grade=${userGrade}&class=${userClass}`)
         if (response.ok) {
           const data = await response.json()
           this.errorCollections[subjectId] = data.questions || []
@@ -716,7 +718,9 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const studentId = localStorage.getItem('studentId')
-        if (!studentId) {
+        const userGrade = localStorage.getItem('userGrade')
+        const userClass = localStorage.getItem('userClass')
+        if (!studentId || !userGrade || !userClass) {
           return
         }
         
@@ -731,7 +735,7 @@ export const useQuestionStore = defineStore('question', {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ studentId, questionId, correctCount: newCount })
+          body: JSON.stringify({ studentId, grade: userGrade, class: userClass, questionId, correctCount: newCount })
         })
         
         // 检查是否达到3次正确，若是则从所有错题巩固题库中移除
@@ -754,7 +758,9 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const studentId = localStorage.getItem('studentId')
-        if (!studentId) {
+        const userGrade = localStorage.getItem('userGrade')
+        const userClass = localStorage.getItem('userClass')
+        if (!studentId || !userGrade || !userClass) {
           return
         }
         
@@ -767,7 +773,7 @@ export const useQuestionStore = defineStore('question', {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ studentId, questionId })
+          body: JSON.stringify({ studentId, grade: userGrade, class: userClass, questionId })
         })
       } catch (error) {
         this.error = error.message
