@@ -8,24 +8,92 @@
         :totalQuestions="totalQuestions"
         :timeSpent="timeSpent"
         :points="calculatePoints"
+        :isErrorCollection="isErrorCollection"
+        :errorCollectionProgress="errorCollectionProgress"
         @generate-new="generateNewQuestions"
         @back-to-subjects="backToSubcategory"
       />
       
-      <div v-if="wrongQuestions.length > 0" class="wrong-questions-section">
-        <h3 class="section-title">📝 错题回顾</h3>
+      <div v-if="currentQuestions.length > 0" class="questions-section">
+        <h3 class="section-title">{{ isErrorCollection ? '📝 巩固题目' : '📝 错题回顾' }}</h3>
         <QuestionCard 
-          v-for="(question, index) in wrongQuestions" 
+          v-for="(question, index) in currentQuestions" 
           :key="question.id"
           :question="question"
           :question-number="index + 1"
           :user-answer="formatUserAnswer(question.id, question.type)"
           :show-result="true"
+          :is-error-collection="isErrorCollection"
+          :error-collection-progress="getQuestionProgress(question.id)"
         />
       </div>
     </div>
   </div>
 </template>
+
+<style scoped>
+.result-view {
+  min-height: 100vh;
+  background-color: #f5f7fa;
+  padding: 20px;
+}
+
+.result-content {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.section-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin: 30px 0 20px;
+  color: #303133;
+}
+
+.wrong-questions-section {
+  margin-top: 30px;
+}
+
+/* 错题巩固进度部分样式 */
+.error-collection-progress-section {
+  margin-top: 30px;
+  background: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+}
+
+.progress-item {
+  margin-bottom: 20px;
+  padding: 15px;
+  background: #f9f9f9;
+  border-radius: 6px;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.progress-question {
+  color: #303133;
+}
+
+.progress-status {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.progress-info {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #606266;
+}
+</style>
 
 <script setup>
 import { computed, ref, onMounted } from 'vue'
@@ -34,6 +102,7 @@ import AppHeader from '../components/common/AppHeader.vue'
 import ResultCard from '../components/quiz/ResultCard.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
 import { useQuestionStore } from '../stores/questionStore'
+import { MAX_CORRECT_COUNT, getProgressColor } from '../utils/errorCollectionUtils'
 
 const router = useRouter()
 const route = useRoute()
@@ -42,6 +111,9 @@ const questionStore = useQuestionStore()
 // 获取学科和题库ID
 const subjectId = computed(() => parseInt(route.params.subjectId))
 const subcategoryId = computed(() => route.params.subcategoryId === 'error-collection' ? 'error-collection' : parseInt(route.params.subcategoryId))
+
+// 检测是否是错题巩固题库
+const isErrorCollection = computed(() => subcategoryId.value === 'error-collection')
 
 // 答题数据
 const quizData = ref(null)
@@ -61,6 +133,11 @@ const timeSpent = computed(() => {
 
 // 计算获得的积分
 const calculatePoints = computed(() => {
+  if (isErrorCollection.value) {
+    // 错题巩固题库：积分在后端处理
+    return 0
+  }
+  
   const correctCount = score.value
   const wrongCount = totalQuestions.value - correctCount
   
@@ -74,6 +151,40 @@ const calculatePoints = computed(() => {
   
   return points
 })
+
+// 错题巩固进度
+const errorCollectionProgress = computed(() => {
+  if (!isErrorCollection.value || !currentQuestions.value.length) {
+    return []
+  }
+  
+  return currentQuestions.value.map(question => {
+    const correctCount = questionStore.getErrorQuestionCorrectCount(question.id)
+    let status = '进行中'
+    if (correctCount >= 3) {
+      status = '已完成'
+    } else if (correctCount === 0) {
+      status = '开始巩固'
+    }
+    
+    return {
+      questionId: question.id,
+      correctCount: correctCount,
+      status: status
+    }
+  })
+})
+
+
+
+// 根据题目ID获取巩固进度
+const getQuestionProgress = (questionId) => {
+  if (!isErrorCollection.value) {
+    return null
+  }
+  const progress = errorCollectionProgress.value.find(item => item.questionId === questionId)
+  return progress || { questionId: questionId, correctCount: 0, status: '开始巩固' }
+}
 
 // 错题列表
 const wrongQuestions = computed(() => {

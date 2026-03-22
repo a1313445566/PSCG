@@ -1,7 +1,7 @@
 <template>
   <div class="result-card">
     <div class="result-header">
-      <h2 class="result-title">答题结果</h2>
+      <h2 class="result-title">{{ isErrorCollection ? '错题巩固结果' : '答题结果' }}</h2>
       <div class="result-icon">{{ resultIcon }}</div>
     </div>
     
@@ -26,13 +26,24 @@
       </div>
     </div>
     
+    <div v-if="isErrorCollection" class="error-collection-summary">
+      <div class="summary-item">
+        <span class="summary-label">巩固完成数：</span>
+        <span class="summary-value">{{ completedCount }} 题</span>
+      </div>
+      <div class="summary-item">
+        <span class="summary-label">整体进度：</span>
+        <span class="summary-value">{{ overallProgress }}%</span>
+      </div>
+    </div>
+    
     <div class="encouragement">
       {{ getEncouragement() }}
     </div>
     
     <div class="action-buttons">
       <button class="action-btn primary" @click="generateNewQuestions">
-        🔄 重新闯关
+        {{ isErrorCollection ? '🔄 继续巩固' : '🔄 重新闯关' }}
       </button>
       <button class="action-btn secondary" @click="backToSubjects">
         🏠 返回首页
@@ -43,6 +54,7 @@
 
 <script setup>
 import { computed } from 'vue'
+import { MAX_CORRECT_COUNT, getProgressColor } from '../../utils/errorCollectionUtils'
 
 const props = defineProps({
   score: {
@@ -60,6 +72,14 @@ const props = defineProps({
   points: {
     type: Number,
     default: 0
+  },
+  isErrorCollection: {
+    type: Boolean,
+    default: false
+  },
+  errorCollectionProgress: {
+    type: Array,
+    default: () => []
   }
 })
 
@@ -75,17 +95,50 @@ const resultIcon = computed(() => {
   return '😐'
 })
 
+
+
+// 巩固完成数
+const completedCount = computed(() => {
+  if (!props.isErrorCollection || !props.errorCollectionProgress || !props.errorCollectionProgress.length) {
+    return 0
+  }
+  return props.errorCollectionProgress.filter(item => item.correctCount >= MAX_CORRECT_COUNT).length
+})
+
+// 整体进度
+const overallProgress = computed(() => {
+  if (!props.isErrorCollection || !props.errorCollectionProgress || !props.errorCollectionProgress.length) {
+    return 0
+  }
+  const totalProgress = props.errorCollectionProgress.reduce((sum, item) => sum + item.correctCount, 0)
+  const maxProgress = props.errorCollectionProgress.length * MAX_CORRECT_COUNT
+  return maxProgress > 0 ? Math.round((totalProgress / maxProgress) * 100) : 0
+})
+
 // 鼓励信息
 const getEncouragement = () => {
-  const rate = props.score / props.totalQuestions
-  if (rate === 1) {
-    return '太棒了！你全部答对了，继续保持！'
-  } else if (rate >= 0.7) {
-    return '做得很好！继续努力！'
-  } else if (rate >= 0.5) {
-    return '不错，再接再厉！'
+  if (props.isErrorCollection) {
+    const rate = props.score / props.totalQuestions
+    if (rate === 1) {
+      return '太棒了！全部答对，巩固效果显著！'
+    } else if (rate >= 0.7) {
+      return '做得很好！继续巩固，你会越来越棒！'
+    } else if (rate >= 0.5) {
+      return '不错，再接再厉，错题会越来越少！'
+    } else {
+      return '加油，坚持巩固，你一定能攻克这些错题！'
+    }
   } else {
-    return '加油，你可以做得更好！'
+    const rate = props.score / props.totalQuestions
+    if (rate === 1) {
+      return '太棒了！你全部答对了，继续保持！'
+    } else if (rate >= 0.7) {
+      return '做得很好！继续努力！'
+    } else if (rate >= 0.5) {
+      return '不错，再接再厉！'
+    } else {
+      return '加油，你可以做得更好！'
+    }
   }
 }
 
@@ -101,7 +154,7 @@ const generateNewQuestions = () => {
   emit('generate-new')
 }
 
-// 返回学科选择
+// 返回学科首页
 const backToSubjects = () => {
   emit('back-to-subjects')
 }
@@ -109,285 +162,181 @@ const backToSubjects = () => {
 
 <style scoped>
 .result-card {
-  background: white;
-  border-radius: 24px;
-  padding: 2rem;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
-  animation: slideIn 0.8s ease;
-  position: relative;
-  overflow: hidden;
-  min-height: 300px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  gap: 1.5rem;
-}
-
-@keyframes slideIn {
-  from {
-    opacity: 0;
-    transform: translateY(30px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.result-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 6px;
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: #ffffff;
+  border-radius: 12px;
+  padding: 30px;
+  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
 }
 
 .result-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 20px;
 }
 
 .result-title {
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
+  font-size: 24px;
+  font-weight: 600;
+  color: #303133;
   margin: 0;
 }
 
 .result-icon {
-  font-size: 2.5rem;
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    transform: scale(1);
-  }
-  50% {
-    transform: scale(1.2);
-  }
+  font-size: 48px;
 }
 
 .score-main {
   display: flex;
   align-items: baseline;
   justify-content: center;
-  gap: 0.5rem;
-  margin: 0 auto;
+  margin: 30px 0;
 }
 
 .score-number {
-  font-size: 4rem;
-  font-weight: bold;
-  color: #7DD3F8;
-  text-shadow: 2px 2px 4px rgba(125, 211, 248, 0.3);
-  animation: bounce 1s ease-in-out;
-  line-height: 1;
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
-    transform: translateY(0);
-  }
-  40% {
-    transform: translateY(-20px);
-  }
-  60% {
-    transform: translateY(-10px);
-  }
+  font-size: 64px;
+  font-weight: 700;
+  color: #409EFF;
+  margin-right: 10px;
 }
 
 .score-divider {
-  font-size: 2rem;
-  color: #666;
-  font-weight: bold;
+  font-size: 32px;
+  color: #909399;
+  margin-right: 10px;
 }
 
 .score-total {
-  font-size: 2rem;
-  color: #666;
-  font-weight: bold;
+  font-size: 32px;
+  color: #909399;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 1rem;
-  margin: 0 auto;
-  max-width: 80%;
+  gap: 20px;
+  margin: 30px 0;
 }
 
 .stat-item {
-  background: linear-gradient(135deg, #F8F9FA 0%, #E9ECEF 100%);
-  padding: 1rem;
-  border-radius: 16px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  transition: all 0.3s ease;
-}
-
-.stat-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(125, 211, 248, 0.2);
+  text-align: center;
 }
 
 .stat-label {
-  font-size: 0.9rem;
-  color: #666;
-  margin-bottom: 0.3rem;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 5px;
 }
 
 .stat-value {
-  font-size: 1.1rem;
-  font-weight: bold;
-  color: #333;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+/* 错题巩固摘要样式 */
+.error-collection-summary {
+  background: #f0f9eb;
+  border: 1px solid #e1f5cb;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 20px 0;
+}
+
+.summary-item {
+  margin-bottom: 10px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.summary-item:last-child {
+  margin-bottom: 0;
+}
+
+.summary-label {
+  color: #67C23A;
+  font-weight: 500;
+}
+
+.summary-value {
+  color: #303133;
+  font-weight: 600;
 }
 
 .encouragement {
-  font-size: 1rem;
-  font-weight: bold;
-  color: #333;
-  padding: 1rem;
-  background: linear-gradient(135deg, #F0F8FF 0%, #E6F7FF 100%);
-  border-radius: 12px;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
-  border-left: 4px solid #7DD3F8;
-  box-shadow: 0 4px 12px rgba(125, 211, 248, 0.1);
+  text-align: center;
+  font-size: 16px;
+  color: #606266;
+  margin: 20px 0;
+  padding: 15px;
+  background: #f5f7fa;
+  border-radius: 8px;
 }
 
 .action-buttons {
   display: flex;
+  gap: 15px;
   justify-content: center;
-  gap: 1.5rem;
-  flex-wrap: wrap;
+  margin-top: 30px;
 }
 
 .action-btn {
-  padding: 0.8rem 1.8rem;
+  padding: 12px 30px;
   border: none;
-  border-radius: 25px;
-  font-size: 0.9rem;
-  font-weight: bold;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 500;
   cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
-  min-width: 120px;
-  justify-content: center;
+  transition: all 0.3s;
 }
 
 .action-btn.primary {
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: #409EFF;
   color: white;
-  border: 2px solid #7DD3F8;
-  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
+}
+
+.action-btn.primary:hover {
+  background: #66b1ff;
 }
 
 .action-btn.secondary {
-  background-color: #F0F4F8;
-  color: #333;
-  border: 2px solid #E8E8E8;
-  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.05);
+  background: #909399;
+  color: white;
 }
 
-.action-btn:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(125, 211, 248, 0.4);
+.action-btn.secondary:hover {
+  background: #a6a9ad;
 }
 
-.action-btn:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(125, 211, 248, 0.5);
-}
-
-/* 响应式设计 */
 @media (max-width: 768px) {
   .result-card {
-    padding: 1.5rem;
-    min-height: auto;
-    gap: 1.2rem;
-  }
-  
-  .result-title {
-    font-size: 1.3rem;
-  }
-  
-  .result-icon {
-    font-size: 2rem;
+    padding: 20px;
   }
   
   .score-number {
-    font-size: 3.5rem;
+    font-size: 48px;
   }
   
-  .score-divider,
+  .score-divider {
+    font-size: 24px;
+  }
+  
   .score-total {
-    font-size: 1.5rem;
+    font-size: 24px;
   }
   
   .stats-grid {
-    grid-template-columns: repeat(3, 1fr);
-    gap: 0.8rem;
-    max-width: 100%;
-  }
-  
-  .encouragement {
-    font-size: 0.9rem;
+    grid-template-columns: 1fr;
+    gap: 15px;
   }
   
   .action-buttons {
     flex-direction: column;
-    align-items: center;
-    gap: 1rem;
   }
   
   .action-btn {
     width: 100%;
-    max-width: 200px;
-  }
-}
-
-@media (max-width: 480px) {
-  .result-card {
-    padding: 1.2rem;
-    min-height: auto;
-    gap: 1rem;
-  }
-  
-  .result-title {
-    font-size: 1.2rem;
-  }
-  
-  .result-icon {
-    font-size: 1.8rem;
-  }
-  
-  .score-number {
-    font-size: 3rem;
-  }
-  
-  .score-divider,
-  .score-total {
-    font-size: 1.2rem;
-  }
-  
-  .encouragement {
-    font-size: 0.85rem;
-  }
-  
-  .action-btn {
-    padding: 0.7rem 1.5rem;
-    font-size: 0.85rem;
-    width: 100%;
-    max-width: none;
   }
 }
 </style>

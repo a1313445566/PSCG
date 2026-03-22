@@ -7,6 +7,26 @@
       </div>
     </div>
     
+    <!-- 错题巩固进度 -->
+    <div v-if="isErrorCollection && errorCollectionProgress" class="error-collection-progress">
+      <div class="progress-header">
+        <span class="progress-status">{{ errorCollectionProgress.status }}</span>
+        <span class="progress-count">{{ errorCollectionProgress.correctCount }}/{{ MAX_CORRECT_COUNT }}</span>
+      </div>
+      <div class="progress-bar-container">
+        <div 
+          class="progress-bar" 
+          :style="{
+            width: (errorCollectionProgress.correctCount / MAX_CORRECT_COUNT) * 100 + '%',
+            backgroundColor: getProgressColor(errorCollectionProgress.correctCount)
+          }"
+        ></div>
+      </div>
+      <div class="progress-info">
+        <span>当前正确次数：{{ errorCollectionProgress.correctCount }}/{{ MAX_CORRECT_COUNT }}</span>
+      </div>
+    </div>
+    
     <!-- 题目来源信息 -->
     <div v-if="question.subcategory_name" class="question-source">
       <span class="source-label">来源：</span>
@@ -57,6 +77,7 @@
 
 <script setup>
 import { computed } from 'vue';
+import { MAX_CORRECT_COUNT, getProgressColor } from '../../utils/errorCollectionUtils';
 
 const props = defineProps({
   question: {
@@ -74,6 +95,14 @@ const props = defineProps({
   showResult: {
     type: Boolean,
     default: false
+  },
+  isErrorCollection: {
+    type: Boolean,
+    default: false
+  },
+  errorCollectionProgress: {
+    type: Object,
+    default: null
   }
 })
 
@@ -178,6 +207,8 @@ const getQuestionTypeName = (type) => {
   return typeMap[type] || '未知类型'
 }
 
+
+
 // 检查选项是否被用户选择
 const isOptionSelected = (option) => {
   const userAnswer = parsedUserAnswer.value;
@@ -228,6 +259,52 @@ const selectOption = (option) => {
 </script>
 
 <style scoped>
+/* 错题巩固进度样式 */
+.error-collection-progress {
+  background: #f9f9f9;
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  padding: 15px;
+  margin: 15px 0;
+}
+
+.progress-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.progress-status {
+  color: #606266;
+  font-size: 14px;
+}
+
+.progress-count {
+  color: #409EFF;
+  font-weight: 600;
+}
+
+.progress-bar-container {
+  width: 100%;
+  height: 8px;
+  background: #e4e7ed;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 10px;
+}
+
+.progress-bar {
+  height: 100%;
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.progress-info {
+  font-size: 12px;
+  color: #909399;
+}
+
 /* 引入全局CSS变量 */
 :root {
   --primary-color: #FF6B6B;
