@@ -347,7 +347,8 @@ onMounted(async () => {
   
   // 确保数据已加载
   if (questionStore.questions.length === 0) {
-    await questionStore.loadData()
+    // 加载当前学科的题目数据
+    await questionStore.loadQuestions(subjectId.value, subcategoryId.value)
   }
   
   // 生成题目

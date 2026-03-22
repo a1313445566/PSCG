@@ -193,12 +193,18 @@ const logout = () => {
 }
 
 onMounted(async () => {
-  // 初始化数据
+  // 1. 加载核心数据
   await questionStore.initialize()
-  // 获取排行榜数据
-  await fetchLeaderboardData()
-  // 获取用户统计数据
-  await fetchUserStats()
+  
+  // 2. 延迟加载排行榜数据
+  setTimeout(async () => {
+    await fetchLeaderboardData()
+  }, 800)
+  
+  // 3. 延迟加载用户统计数据
+  setTimeout(async () => {
+    await fetchUserStats()
+  }, 1200)
   
   // 检查是否已登录
   if (!currentStudentId.value) {

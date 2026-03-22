@@ -69,7 +69,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         await initDatabase()
-        await this.loadData()
+        await this.loadCoreData()
       } catch (error) {
         this.error = error.message
 
@@ -78,19 +78,148 @@ export const useQuestionStore = defineStore('question', {
       }
     },
     
-    // 加载数据
+    // 加载核心数据（学科、年级、班级、题目数量统计）
+    async loadCoreData() {
+      try {
+        this.isLoading = true
+        this.error = null
+        
+        // 检查缓存
+        const cachedData = localStorage.getItem('coreData')
+        const cacheExpiry = localStorage.getItem('coreDataExpiry')
+        
+        if (cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)) {
+          const data = JSON.parse(cachedData)
+          this.subjects = data.subjects
+          this.grades = data.grades
+          this.classes = data.classes
+          return
+        }
+        
+        // 并行请求核心数据
+        const [subjectsData, gradesData, classesData, subjectStatsData] = await Promise.all([
+          fetch(`${getApiBaseUrl()}/subjects`)
+            .then(res => res.json())
+            .catch(error => {
+              console.error('获取学科数据失败:', error);
+              return [];
+            }),
+          fetch(`${getApiBaseUrl()}/grades`)
+            .then(res => res.json())
+            .catch(error => {
+              console.error('获取年级数据失败:', error);
+              return [];
+            }),
+          fetch(`${getApiBaseUrl()}/classes`)
+            .then(res => res.json())
+            .catch(error => {
+              console.error('获取班级数据失败:', error);
+              return [];
+            }),
+          fetch(`${getApiBaseUrl()}/subjects/stats`)
+            .then(res => res.json())
+            .catch(error => {
+              console.error('获取学科统计数据失败:', error);
+              return [];
+            })
+        ])
+        
+        // 合并题目数量统计
+        this.subjects = subjectsData.map(subject => {
+          const stat = subjectStatsData.find(s => s.id === subject.id)
+          return {
+            ...subject,
+            questionCount: stat ? stat.questionCount : 0
+          }
+        })
+        this.grades = gradesData
+        this.classes = classesData
+        
+        // 缓存数据
+        const coreData = {
+          subjects: this.subjects,
+          grades: this.grades,
+          classes: this.classes
+        }
+        localStorage.setItem('coreData', JSON.stringify(coreData))
+        localStorage.setItem('coreDataExpiry', Date.now() + 24 * 60 * 60 * 1000) // 24小时过期
+        
+      } catch (error) {
+        this.error = error.message
+        console.error('加载核心数据失败:', error)
+
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 加载题目数据（按需加载）
+    async loadQuestions(subjectId = null, subcategoryId = null) {
+      try {
+        this.isLoading = true
+        this.error = null
+        
+        let url = `${getApiBaseUrl()}/questions`
+        const params = []
+        
+        if (subjectId) {
+          params.push(`subjectId=${subjectId}`)
+        }
+        if (subcategoryId) {
+          params.push(`subcategoryId=${subcategoryId}`)
+        }
+        // 添加较大的limit参数，确保获取所有题目
+        params.push('limit=1000')
+        
+        if (params.length > 0) {
+          url += `?${params.join('&')}`
+        }
+        
+        const response = await fetch(url)
+        if (response.ok) {
+          const data = await response.json()
+          this.questions = data.questions || data // 兼容旧API
+        }
+      } catch (error) {
+        this.error = error.message
+        console.error('加载题目数据失败:', error)
+
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 加载数据（保留旧方法）
     async loadData() {
       try {
         this.isLoading = true
         this.error = null
         
         // 并行加载所有数据，提高性能，但每个请求独立处理，一个失败不影响其他
-        const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []);
-        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=10000`).then(res => res.json()).catch(() => []);
-        const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []);
-        const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => []);
-        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json()).catch(() => []);
-        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`).then(res => res.json()).catch(() => []);
+        const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(error => {
+          console.error('获取学科数据失败:', error);
+          return [];
+        });
+        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=10000`).then(res => res.json()).catch(error => {
+          console.error('获取题目数据失败:', error);
+          return [];
+        });
+        const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(error => {
+          console.error('获取年级数据失败:', error);
+          return [];
+        });
+        const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(error => {
+          console.error('获取班级数据失败:', error);
+          return [];
+        });
+        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json()).catch(error => {
+          console.error('获取用户统计数据失败:', error);
+          return [];
+        });
+        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`).then(res => res.json()).catch(error => {
+          console.error('获取最近答题记录失败:', error);
+          return [];
+        });
         
         const [subjectsData, questionsData, gradesData, classesData, userStatsData, recentRecordsData] = await Promise.all([
           subjectsPromise,

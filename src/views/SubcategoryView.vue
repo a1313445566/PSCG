@@ -113,6 +113,11 @@ onMounted(async () => {
   // 初始化数据
   await questionStore.initialize()
   
+  // 加载当前学科的题目数据
+  if (subjectId.value) {
+    await questionStore.loadQuestions(subjectId.value)
+  }
+  
   // 检查是否已登录
   if (!localStorage.getItem('studentId')) {
     router.push('/login')

@@ -9,7 +9,8 @@ class CacheService {
       CLASSES: 'classes',
       SUBCATEGORIES: 'subcategories',
       ANALYSIS: 'analysis',
-      ERROR_PRONE_QUESTIONS: 'error_prone_questions'
+      ERROR_PRONE_QUESTIONS: 'error_prone_questions',
+      SUBJECTS_STATS: 'subjects_stats'
     };
   }
 
