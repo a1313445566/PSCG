@@ -26,6 +26,10 @@
             v-model="inputName" 
             placeholder="请输入姓名（可选）" 
             class="form-input"
+            @input="handleNameInput"
+            @compositionstart="isComposing = true"
+            @compositionend="handleCompositionEnd"
+            maxlength="4"
           />
         </div>
         <div class="form-row">
@@ -73,6 +77,7 @@ const inputName = ref('')
 const inputGrade = ref('')
 const inputClass = ref('')
 const isLoading = ref(false)
+const isComposing = ref(false)
 
 // 年级和班级数据
 const grades = ref([])
@@ -81,53 +86,119 @@ const classes = ref([])
 // 加载年级和班级数据
 const loadGradesAndClasses = async () => {
   try {
+    // 定义默认数据作为 fallback
+    const defaultGrades = [1, 2, 3, 4, 5, 6]
+    const defaultClasses = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+    
     // 获取年级列表
-    const gradesResponse = await fetch(`${getApiBaseUrl()}/grades`)
-    if (gradesResponse.ok) {
-      const serverGrades = await gradesResponse.json()
-      if (Array.isArray(serverGrades) && serverGrades.length > 0) {
-        grades.value = serverGrades.map(grade => {
-          if (typeof grade === 'object' && grade.name) {
-            const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
-            return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
-          } else if (typeof grade === 'number') {
-            return grade
-          } else {
-            return 1
-          }
-        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+    try {
+      const gradesResponse = await fetch(`${getApiBaseUrl()}/grades`)
+      if (gradesResponse.ok) {
+        const serverGrades = await gradesResponse.json()
+        if (Array.isArray(serverGrades) && serverGrades.length > 0) {
+          grades.value = serverGrades.map(grade => {
+            if (typeof grade === 'object' && grade.name) {
+              const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
+              return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
+            } else if (typeof grade === 'number') {
+              return grade
+            } else {
+              return 1
+            }
+          }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+        } else {
+          // 使用默认数据
+          grades.value = defaultGrades
+        }
       } else {
-        grades.value = []
+        // 使用默认数据
+        grades.value = defaultGrades
       }
-    } else {
-      grades.value = []
+    } catch (error) {
+      // 网络错误时使用默认数据
+      grades.value = defaultGrades
     }
     
     // 获取班级列表
-    const classesResponse = await fetch(`${getApiBaseUrl()}/classes`)
-    if (classesResponse.ok) {
-      const serverClasses = await classesResponse.json()
-      if (Array.isArray(serverClasses) && serverClasses.length > 0) {
-        classes.value = serverClasses.map(classItem => {
-          if (typeof classItem === 'object' && classItem.name) {
-            const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
-            return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
-          } else if (typeof classItem === 'number') {
-            return classItem
-          } else {
-            return 1
-          }
-        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+    try {
+      const classesResponse = await fetch(`${getApiBaseUrl()}/classes`)
+      if (classesResponse.ok) {
+        const serverClasses = await classesResponse.json()
+        if (Array.isArray(serverClasses) && serverClasses.length > 0) {
+          classes.value = serverClasses.map(classItem => {
+            if (typeof classItem === 'object' && classItem.name) {
+              const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+              return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+            } else if (typeof classItem === 'number') {
+              return classItem
+            } else {
+              return 1
+            }
+          }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+        } else {
+          // 使用默认数据
+          classes.value = defaultClasses
+        }
       } else {
-        classes.value = []
+        // 使用默认数据
+        classes.value = defaultClasses
       }
-    } else {
-      classes.value = []
+    } catch (error) {
+      // 网络错误时使用默认数据
+      classes.value = defaultClasses
     }
   } catch (error) {
+    // 全局错误处理
     // console.error('加载年级和班级数据失败:', error)
-    grades.value = []
-    classes.value = []
+    // 使用默认数据
+    grades.value = [1, 2, 3, 4, 5, 6]
+    classes.value = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
+  }
+}
+
+// 处理姓名输入的公共函数
+const processNameInput = (value) => {
+  // 只允许输入中文，过滤非中文字符（包括表情和特殊符号）
+  const filteredValue = value.replace(/[^\u4e00-\u9fa5]/g, '')
+  
+  // 限制最多4个中文字符
+  const finalValue = filteredValue.slice(0, 4)
+  
+  // 检查是否需要显示警告
+  if (value !== filteredValue) {
+    ElMessage.warning('姓名只能输入中文字符')
+  }
+  
+  if (filteredValue.length > 4) {
+    ElMessage.warning('姓名最多只能输入4个中文字符')
+  }
+  
+  return finalValue
+}
+
+// 处理姓名输入
+const handleNameInput = (event) => {
+  // 避免在输入法组合过程中触发
+  if (isComposing.value) return
+  
+  const originalValue = event?.target?.value || inputName.value
+  const finalValue = processNameInput(originalValue)
+  
+  // 只有当值发生变化时才更新，避免输入闪烁
+  if (inputName.value !== finalValue) {
+    inputName.value = finalValue
+  }
+}
+
+// 处理输入法组合结束
+const handleCompositionEnd = (event) => {
+  isComposing.value = false
+  // 直接使用event.target.value进行处理
+  const originalValue = event.target.value
+  const finalValue = processNameInput(originalValue)
+  
+  if (inputName.value !== finalValue) {
+    inputName.value = finalValue
   }
 }
 
@@ -168,22 +239,22 @@ const saveStudentId = async () => {
     })
     
     if (response.ok) {
-        const data = await response.json()
-        localStorage.setItem('userId', data.userId)
-        localStorage.setItem('studentId', formattedStudentId)
-        localStorage.setItem('userName', data.name || '')
-        localStorage.setItem('userGrade', inputGrade.value)
-        localStorage.setItem('userClass', inputClass.value)
-        localStorage.setItem('token', data.token)
-        localStorage.setItem('tokenExpiresAt', Date.now() + (24 * 60 * 60 * 1000)) // 24小时过期
-        sessionStorage.setItem('lastActivity', Date.now()) // 记录最后活动时间
-        ElMessage.success('登录成功')
-        
-        // 跳转到首页
-        router.push('/home')
-      } else {
-        ElMessage.error('登录失败')
-      }
+      const data = await response.json()
+      localStorage.setItem('userId', data.userId)
+      localStorage.setItem('studentId', formattedStudentId)
+      localStorage.setItem('userName', data.name || '')
+      localStorage.setItem('userGrade', inputGrade.value)
+      localStorage.setItem('userClass', inputClass.value)
+      localStorage.setItem('token', data.token)
+      localStorage.setItem('tokenExpiresAt', Date.now() + (24 * 60 * 60 * 1000)) // 24小时过期
+      sessionStorage.setItem('lastActivity', Date.now()) // 记录最后活动时间
+      ElMessage.success('登录成功')
+      
+      // 跳转到首页
+      router.push('/home')
+    } else {
+      ElMessage.error('登录失败')
+    }
   } catch (error) {
     // console.error('登录失败:', error)
     ElMessage.error('登录失败，请检查网络连接')

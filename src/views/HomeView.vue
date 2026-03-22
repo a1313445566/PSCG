@@ -559,8 +559,20 @@ onUnmounted(() => {
 
 .leaderboard-table-container {
   flex: 2;
-  min-width: 600px;
   width: 100%;
+}
+
+/* 响应式调整 */
+@media (min-width: 769px) {
+  .leaderboard-table-container {
+    min-width: 600px;
+  }
+}
+
+@media (max-width: 768px) {
+  .leaderboard-table-container {
+    min-width: unset;
+  }
 }
 
 .leaderboard-info {

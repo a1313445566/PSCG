@@ -276,17 +276,39 @@ router.post('/login', async (req, res) => {
       return;
     }
     
+    // 验证学号格式
+    const studentIdRegex = /^\d{2}$/;
+    if (!studentIdRegex.test(studentId)) {
+      res.status(400).json({ error: '学号只能输入2位数字' });
+      return;
+    }
+    
+    let trimmedName = name;
+    if (name) {
+      trimmedName = name.trim();
+    }
+    
+    // 验证名字格式（如果提供了名字）
+    if (trimmedName) {
+      // 只允许中文字符，长度不超过4个
+      const chineseRegex = /^[\u4e00-\u9fa5]{1,4}$/;
+      if (!chineseRegex.test(trimmedName)) {
+        res.status(400).json({ error: '姓名只能输入1-4个中文字符' });
+        return;
+      }
+    }
+    
     // 检查用户是否存在（根据学号、年级和班级的组合）
     let user = await db.get('SELECT * FROM users WHERE student_id = ? AND grade = ? AND class = ?', [studentId, grade, className]);
     
     if (!user) {
       // 如果用户不存在，创建新用户
-      const result = await db.run('INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)', [studentId, name, grade, className]);
+      const result = await db.run('INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)', [studentId, trimmedName, grade, className]);
       user = await db.get('SELECT * FROM users WHERE id = ?', [result.insertId]);
     } else {
       // 如果用户存在且提供了名字，更新用户信息
-      if (name) {
-        await db.run('UPDATE users SET name = ? WHERE id = ?', [name, user.id]);
+      if (trimmedName) {
+        await db.run('UPDATE users SET name = ? WHERE id = ?', [trimmedName, user.id]);
         user = await db.get('SELECT * FROM users WHERE id = ?', [user.id]);
       }
     }
