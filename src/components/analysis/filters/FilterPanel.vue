@@ -54,13 +54,13 @@
       <el-form-item label="年级" class="form-item">
         <el-select v-model="filterForm.grade" placeholder="选择年级" style="width: 120px" clearable>
           <el-option label="全部" value=""></el-option>
-          <el-option v-for="grade in grades" :key="grade.id" :label="grade.name" :value="grade.id"></el-option>
+          <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="班级" class="form-item">
         <el-select v-model="filterForm.class" placeholder="选择班级" style="width: 120px" clearable>
           <el-option label="全部" value=""></el-option>
-          <el-option v-for="classItem in classes" :key="classItem.id" :label="classItem.name" :value="classItem.id"></el-option>
+          <el-option v-for="classItem in classes" :key="classItem.id || classItem" :label="classItem.name || classItem" :value="classItem.name || classItem"></el-option>
         </el-select>
       </el-form-item>
       <el-form-item label="学科" class="form-item">

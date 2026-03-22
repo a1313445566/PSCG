@@ -63,57 +63,82 @@
       <el-tab-pane label="用户做题数据" name="leaderboard">
         <div class="leaderboard-management">
           <!-- 筛选区域 -->
-          <div class="filter-section">
-            <div style="display: flex; align-items: center; gap: 15px; overflow-x: auto; padding-bottom: 5px;">
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">学号</label>
-                <el-input v-model="filterStudentId" placeholder="输入学号" style="width: 180px;" @input="filterStudentId = (filterStudentId || '').replace(/[^0-9]/g, '')"></el-input>
+          <el-card class="filter-card" shadow="hover">
+            <template #header>
+              <div class="card-header">
+                <span>筛选条件</span>
               </div>
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">年级</label>
-                <el-select v-model="filterGrade" placeholder="选择年级" style="width: 120px;">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.id || grade"></el-option>
-                </el-select>
+            </template>
+            <div class="filter-section">
+              <div class="filter-row">
+                <div class="filter-item">
+                  <label class="filter-label">学号</label>
+                  <el-input v-model="filterStudentId" placeholder="输入学号" @input="filterStudentId = (filterStudentId || '').replace(/[^0-9]/g, '')"></el-input>
+                </div>
+                <div class="filter-item">
+                  <label class="filter-label">年级</label>
+                  <el-select v-model="filterGrade" placeholder="选择年级">
+                    <el-option label="全部" value=""></el-option>
+                    <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
+                  </el-select>
+                </div>
+                <div class="filter-item">
+                  <label class="filter-label">班级</label>
+                  <el-select v-model="filterClass" placeholder="选择班级">
+                    <el-option label="全部" value=""></el-option>
+                    <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.name || classNum"></el-option>
+                  </el-select>
+                </div>
+                <div class="filter-item">
+                  <label class="filter-label">学科</label>
+                  <el-select v-model="filterSubject" placeholder="选择学科">
+                    <el-option label="全部" value=""></el-option>
+                    <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+                  </el-select>
+                </div>
+                <div class="filter-item">
+                  <label class="filter-label">时间范围</label>
+                  <el-select v-model="filterTimeRange" placeholder="选择时间">
+                    <el-option label="全部" value=""></el-option>
+                    <el-option label="今日" value="today"></el-option>
+                    <el-option label="近一周" value="week"></el-option>
+                    <el-option label="近一月" value="month"></el-option>
+                  </el-select>
+                </div>
               </div>
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">班级</label>
-                <el-select v-model="filterClass" placeholder="选择班级" style="width: 120px;">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.id || classNum"></el-option>
-                </el-select>
-              </div>
-              <div style="display: flex; align-items: center; gap: 5px;">
-                <label style="font-weight: 500; width: 60px;">学科</label>
-                <el-select v-model="filterSubject" placeholder="选择学科" style="width: 150px;">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
-                </el-select>
-              </div>
-              <div style="display: flex; align-items: center; gap: 5px; white-space: nowrap;">
-                <label style="font-weight: 500; width: 70px;">时间范围</label>
-                <el-select v-model="filterTimeRange" placeholder="选择时间" style="width: 140px;">
-                  <el-option label="全部" value=""></el-option>
-                  <el-option label="今日" value="today"></el-option>
-                  <el-option label="近一周" value="week"></el-option>
-                  <el-option label="近一月" value="month"></el-option>
-                </el-select>
+              <div class="filter-actions">
+                <el-button type="primary" @click="applyFilters">应用筛选</el-button>
+                <el-button @click="resetFilters">重置</el-button>
               </div>
             </div>
-            <div style="margin-top: 15px; display: flex; gap: 10px;">
-              <el-button type="primary" @click="applyFilters">应用筛选</el-button>
-              <el-button @click="resetFilters">重置</el-button>
-            </div>
-          </div>
+          </el-card>
           
-          <UserStats 
-            :user-stats="userStats"
-            @open-user-detail="openUserDetailDialog"
-          />
-          <RecentRecords 
-            :recent-records="recentRecords"
-            @open-user-detail="openUserDetailDialog"
-          />
+          <!-- 数据展示区域 -->
+          <div class="data-display">
+            <el-card class="data-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <span>用户答题统计</span>
+                </div>
+              </template>
+              <UserStats 
+                :user-stats="userStats"
+                @open-user-detail="openUserDetailDialog"
+              />
+            </el-card>
+            
+            <el-card class="data-card" shadow="hover">
+              <template #header>
+                <div class="card-header">
+                  <span>最近答题记录</span>
+                </div>
+              </template>
+              <RecentRecords 
+                :recent-records="recentRecords"
+                @open-user-detail="openUserDetailDialog"
+              />
+            </el-card>
+          </div>
         </div>
       </el-tab-pane>
       
@@ -342,11 +367,87 @@
 
 /* 筛选区域 */
 .filter-section {
-  margin-bottom: 20px !important;
-  padding: 16px !important;
-  background-color: #f8f9fa !important;
-  border-radius: 8px !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05) !important;
+  margin-bottom: 0 !important;
+  padding: 0 !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}
+
+/* 筛选卡片 */
+.filter-card {
+  margin-bottom: 24px !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+/* 卡片头部 */
+.card-header {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  color: #303133 !important;
+}
+
+/* 筛选行 */
+.filter-row {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 16px !important;
+  margin-bottom: 16px !important;
+}
+
+/* 筛选项 */
+.filter-item {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 4px !important;
+  min-width: 150px !important;
+  flex: 1 !important;
+  max-width: 220px !important;
+}
+
+/* 筛选标签 */
+.filter-label {
+  font-weight: 500 !important;
+  color: #606266 !important;
+  font-size: 14px !important;
+}
+
+/* 筛选操作 */
+.filter-actions {
+  display: flex !important;
+  gap: 10px !important;
+  justify-content: flex-end !important;
+  padding-top: 16px !important;
+  border-top: 1px solid #ebeef5 !important;
+}
+
+/* 数据展示区域 */
+.data-display {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 24px !important;
+}
+
+/* 数据卡片 */
+.data-card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+/* 数据卡片头部 */
+.data-card .card-header {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid #ebeef5 !important;
+  background-color: #f5f7fa !important;
+}
+
+/* 数据卡片内容 */
+.data-card .el-card__body {
+  padding: 20px !important;
 }
 
 /* 按钮样式 */
@@ -426,7 +527,7 @@
 import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { getApiBaseUrl } from '../utils/database'
 import { passwords } from '../config/passwords'
 
@@ -821,14 +922,21 @@ const openUserDetailDialog = async (user, source = 'userStats', answerRecordId =
 // 排行榜筛选相关方法
 const applyFilters = async () => {
   try {
+    // 显示加载状态
+    ElLoading.service({
+      lock: true,
+      text: '正在筛选数据...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    })
+    
     // 构建筛选参数
     const userStatsParams = new URLSearchParams()
     const recentRecordsParams = new URLSearchParams()
     
     // 处理学号筛选
     if (filterStudentId.value) {
-      userStatsParams.append('id', filterStudentId.value)
-      recentRecordsParams.append('userId', filterStudentId.value)
+      userStatsParams.append('student_id', filterStudentId.value)
+      recentRecordsParams.append('student_id', filterStudentId.value)
     }
     
     // 处理年级筛选
@@ -845,6 +953,7 @@ const applyFilters = async () => {
     
     // 处理学科筛选
     if (filterSubject.value) {
+      userStatsParams.append('subjectId', filterSubject.value)
       recentRecordsParams.append('subjectId', filterSubject.value)
     }
     
@@ -866,6 +975,9 @@ const applyFilters = async () => {
           startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
           endDate = new Date()
           break
+        default:
+          startDate = null
+          endDate = null
       }
       
       if (startDate && endDate) {
@@ -875,46 +987,79 @@ const applyFilters = async () => {
     }
     
     // 加载筛选后的数据
-    let userStatsUrl = `${getApiBaseUrl()}/leaderboard/global?limit=0`
-    if (userStatsParams.toString().length > 0) {
-      userStatsUrl += `&${userStatsParams.toString()}`
-    }
+    const [userStatsData, recentRecordsData] = await Promise.all([
+      // 获取用户统计数据
+      fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0${userStatsParams.toString() ? '&' + userStatsParams.toString() : ''}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
+        .catch(error => {
+          console.error('获取用户统计数据失败:', error)
+          return []
+        }),
+      // 获取最近答题记录
+      fetch(`${getApiBaseUrl()}/answer-records/all?limit=0${recentRecordsParams.toString() ? '&' + recentRecordsParams.toString() : ''}`)
+        .then(res => {
+          if (!res.ok) {
+            throw new Error(`HTTP error! status: ${res.status}`)
+          }
+          return res.json()
+        })
+        .catch(error => {
+          console.error('获取最近答题记录失败:', error)
+          return []
+        })
+    ])
     
-    let recentRecordsUrl = `${getApiBaseUrl()}/answer-records/all?limit=0`
-    if (recentRecordsParams.toString().length > 0) {
-      recentRecordsUrl += `&${recentRecordsParams.toString()}`
-    }
-    
-    const userStatsData = await fetch(userStatsUrl)
-      .then(res => res.json())
-      .catch(error => {
-        console.error('获取用户统计数据失败:', error)
-        return []
-      })
-    const recentRecordsData = await fetch(recentRecordsUrl)
-      .then(res => res.json())
-      .catch(error => {
-        console.error('获取最近答题记录失败:', error)
-        return []
-      })
-    
+    // 更新数据
     questionStore.userStats = userStatsData || []
     questionStore.recentRecords = recentRecordsData || []
+    
+    // 显示成功消息
+    ElMessage.success('筛选成功')
   } catch (error) {
+    console.error('筛选数据失败:', error)
     ElMessage.error('筛选数据失败，请稍后重试')
+  } finally {
+    // 关闭加载状态
+    ElLoading.service().close()
   }
 }
 
-const resetFilters = () => {
-  filterStudentId.value = ''
-  filterGrade.value = ''
-  filterClass.value = ''
-  filterSubject.value = ''
-  filterTimeRange.value = ''
-  
-  // 重新加载所有数据
-  questionStore.loadUserStats()
-  questionStore.loadRecentRecords()
+const resetFilters = async () => {
+  try {
+    // 显示加载状态
+    ElLoading.service({
+      lock: true,
+      text: '正在重置筛选...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    })
+    
+    // 重置筛选条件
+    filterStudentId.value = ''
+    filterGrade.value = ''
+    filterClass.value = ''
+    filterSubject.value = ''
+    filterTimeRange.value = ''
+    
+    // 重新加载所有数据
+    await Promise.all([
+      questionStore.loadUserStats(),
+      questionStore.loadRecentRecords()
+    ])
+    
+    // 显示成功消息
+    ElMessage.success('重置筛选成功')
+  } catch (error) {
+    console.error('重置筛选失败:', error)
+    ElMessage.error('重置筛选失败，请稍后重试')
+  } finally {
+    // 关闭加载状态
+    ElLoading.service().close()
+  }
 }
 
 // 处理批量添加题目

@@ -3,6 +3,7 @@ const router = express.Router();
 const db = require('../services/database');
 const cacheService = require('../services/cache');
 const difficultyService = require('../services/difficultyService');
+const { validateSubjectId } = require('../services/validationService');
 
 // 获取所有答题记录（支持筛选）
 router.get('/all', async (req, res) => {
@@ -51,8 +52,11 @@ router.get('/all', async (req, res) => {
     }
     
     if (subjectId) {
+      if (!validateSubjectId(subjectId)) {
+        return res.status(400).json({ error: '学科ID格式错误' });
+      }
       query += ' AND ar.subject_id = ?';
-      params.push(subjectId);
+      params.push(parseInt(subjectId));
     }
     
     if (startDate) {

@@ -2,11 +2,12 @@ const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
 const cacheService = require('../services/cache');
+const { validateSubjectId } = require('../services/validationService');
 
 // 全局排行榜API
 router.get('/global', async (req, res) => {
   try {
-    const { limit = 100, grade, class: className, id, student_id } = req.query;
+    const { limit = 100, grade, class: className, id, student_id, subjectId } = req.query;
     
     let query = `
       SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
@@ -57,6 +58,15 @@ router.get('/global', async (req, res) => {
         query += ' AND u.class = ?';
         params.push(className);
       }
+    }
+    
+    // 学科筛选
+    if (subjectId) {
+      if (!validateSubjectId(subjectId)) {
+        return res.status(400).json({ error: '学科ID格式错误' });
+      }
+      query += ' AND ar.subject_id = ?';
+      params.push(parseInt(subjectId));
     }
     
     query += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';

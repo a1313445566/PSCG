@@ -708,6 +708,8 @@
 - **请求方法**：GET
 - **API路径**：`/api/answer-records/all`
 - **查询参数**：
+  - `student_id`：学号
+  - `userId`：用户ID
   - `grade`：年级
   - `class`：班级
   - `subjectId`：学科ID
@@ -958,8 +960,11 @@
 - **请求方法**：GET
 - **API路径**：`/api/leaderboard/global`
 - **查询参数**：
+  - `id`：用户ID
+  - `student_id`：学号
   - `grade`：年级
   - `class`：班级
+  - `subjectId`：学科ID
   - `limit`：数量限制
 - **功能**：获取全局排行榜
 - **响应**：
