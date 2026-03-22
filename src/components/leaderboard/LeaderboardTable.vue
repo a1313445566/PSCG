@@ -65,6 +65,26 @@ const getRankClass = (index) => {
   overflow: hidden;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin: 1rem 0;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+.leaderboard-table::-webkit-scrollbar {
+  height: 6px;
+}
+
+.leaderboard-table::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 10px;
+}
+
+.leaderboard-table::-webkit-scrollbar-thumb {
+  background: #4A90E2;
+  border-radius: 10px;
+}
+
+.leaderboard-table::-webkit-scrollbar-thumb:hover {
+  background: #357ABD;
 }
 
 .leaderboard-header {

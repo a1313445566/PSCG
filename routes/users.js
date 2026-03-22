@@ -284,9 +284,11 @@ router.post('/login', async (req, res) => {
       const result = await db.run('INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)', [studentId, name, grade, className]);
       user = await db.get('SELECT * FROM users WHERE id = ?', [result.insertId]);
     } else {
-      // 如果用户存在，更新用户信息
-      await db.run('UPDATE users SET name = ? WHERE id = ?', [name, user.id]);
-      user = await db.get('SELECT * FROM users WHERE id = ?', [user.id]);
+      // 如果用户存在且提供了名字，更新用户信息
+      if (name) {
+        await db.run('UPDATE users SET name = ? WHERE id = ?', [name, user.id]);
+        user = await db.get('SELECT * FROM users WHERE id = ?', [user.id]);
+      }
     }
     
     // 生成JWT token

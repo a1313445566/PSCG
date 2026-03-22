@@ -983,11 +983,7 @@ onUnmounted(() => {
     gap: 1.5rem;
   }
   
-  .leaderboard-header {
-    flex-direction: column;
-    align-items: center;
-    gap: 1rem;
-  }
+
 }
 
 @media (max-width: 768px) {
@@ -1004,6 +1000,46 @@ onUnmounted(() => {
   .countdown-time {
     font-size: 1rem;
     min-width: 150px;
+  }
+}
+
+@media (max-width: 768px) {
+  .first-place-content {
+    min-width: 100%;
+    max-width: 100%;
+    padding: 1.2rem;
+  }
+  
+  .first-place-title {
+    font-size: 1.5rem;
+  }
+  
+  .first-place-badge {
+    font-size: 2rem;
+  }
+  
+  .user-name {
+    font-size: 1.8rem;
+  }
+  
+  .user-class {
+    font-size: 1rem;
+  }
+  
+  .first-place-stats {
+    gap: 0.6rem;
+  }
+  
+  .first-place-stats .stat-item {
+    padding: 0.6rem;
+  }
+  
+  .first-place-stats .stat-label {
+    font-size: 0.9rem;
+  }
+  
+  .first-place-stats .stat-value {
+    font-size: 1.4rem;
   }
 }
 
@@ -1050,6 +1086,50 @@ onUnmounted(() => {
   .countdown-time {
     font-size: 0.9rem;
     min-width: 130px;
+  }
+  
+  .first-place-content {
+    padding: 1rem;
+  }
+  
+  .first-place-title {
+    font-size: 1.3rem;
+  }
+  
+  .first-place-badge {
+    font-size: 1.8rem;
+  }
+  
+  .user-name {
+    font-size: 1.5rem;
+  }
+  
+  .user-class {
+    font-size: 0.9rem;
+  }
+  
+  .first-place-stats {
+    gap: 0.5rem;
+  }
+  
+  .first-place-stats .stat-item {
+    padding: 0.5rem;
+  }
+  
+  .first-place-stats .stat-label {
+    font-size: 0.8rem;
+  }
+  
+  .first-place-stats .stat-value {
+    font-size: 1.2rem;
+  }
+  
+  .first-place-message p {
+    font-size: 1rem;
+  }
+  
+  .first-place-message p:first-child {
+    font-size: 1.1rem;
   }
 }
 </style>

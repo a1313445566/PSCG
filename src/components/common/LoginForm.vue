@@ -168,22 +168,22 @@ const saveStudentId = async () => {
     })
     
     if (response.ok) {
-      const data = await response.json()
-      localStorage.setItem('userId', data.userId)
-      localStorage.setItem('studentId', formattedStudentId)
-      localStorage.setItem('userName', inputName.value.trim())
-      localStorage.setItem('userGrade', inputGrade.value)
-      localStorage.setItem('userClass', inputClass.value)
-      localStorage.setItem('token', data.token)
-      localStorage.setItem('tokenExpiresAt', Date.now() + (24 * 60 * 60 * 1000)) // 24小时过期
-      sessionStorage.setItem('lastActivity', Date.now()) // 记录最后活动时间
-      ElMessage.success('登录成功')
-      
-      // 跳转到首页
-      router.push('/home')
-    } else {
-      ElMessage.error('登录失败')
-    }
+        const data = await response.json()
+        localStorage.setItem('userId', data.userId)
+        localStorage.setItem('studentId', formattedStudentId)
+        localStorage.setItem('userName', data.name || '')
+        localStorage.setItem('userGrade', inputGrade.value)
+        localStorage.setItem('userClass', inputClass.value)
+        localStorage.setItem('token', data.token)
+        localStorage.setItem('tokenExpiresAt', Date.now() + (24 * 60 * 60 * 1000)) // 24小时过期
+        sessionStorage.setItem('lastActivity', Date.now()) // 记录最后活动时间
+        ElMessage.success('登录成功')
+        
+        // 跳转到首页
+        router.push('/home')
+      } else {
+        ElMessage.error('登录失败')
+      }
   } catch (error) {
     // console.error('登录失败:', error)
     ElMessage.error('登录失败，请检查网络连接')
