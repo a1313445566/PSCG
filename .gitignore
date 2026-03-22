@@ -57,3 +57,4 @@ Dockerfile
 .dockerignore
 backups/backup*.json
 cloudflared-setup.md
+backups/*.json
