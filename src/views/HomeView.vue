@@ -30,12 +30,18 @@
             <span class="stat-value">{{ userStats.points || 0 }}</span>
           </div>
         </div>
+        <div v-else class="user-stats-skeleton">
+          <div v-for="i in 5" :key="i" class="stat-item">
+            <SkeletonLoader type="text" width="80px" height="16px" style="margin-bottom: 8px;" />
+            <SkeletonLoader type="text" width="60px" height="20px" />
+          </div>
+        </div>
         <p class="welcome-message">选择一个学科开始学习之旅吧！</p>
       </div>
       
       <div class="subject-section">
         <h3 class="section-title">📚 选择学科</h3>
-        <div class="subject-grid">
+        <div class="subject-grid" v-if="subjects.length > 0">
           <SubjectCard 
             v-for="subject in subjects" 
             :key="subject.id"
@@ -43,6 +49,9 @@
             :questions="questions"
             @select="selectSubject"
           />
+        </div>
+        <div class="subject-grid skeleton-grid" v-else>
+          <SkeletonLoader v-for="i in 4" :key="i" type="subject-card" />
         </div>
       </div>
       
@@ -82,6 +91,17 @@
                 <p>你的努力和智慧为你赢得了这份荣誉，继续保持，加油！</p>
               </div>
             </div>
+            <div v-else class="first-place-skeleton">
+              <SkeletonLoader type="text" width="150px" height="24px" style="margin-bottom: 16px;" />
+              <SkeletonLoader type="circle" width="60px" height="60px" style="margin-bottom: 16px;" />
+              <SkeletonLoader type="text" width="80%" height="20px" style="margin-bottom: 8px;" />
+              <SkeletonLoader type="text" width="60%" height="16px" style="margin-bottom: 16px;" />
+              <div class="skeleton-stats">
+                <SkeletonLoader type="rect" width="80px" height="60px" style="margin-right: 12px; border-radius: 8px;" />
+                <SkeletonLoader type="rect" width="80px" height="60px" style="margin-right: 12px; border-radius: 8px;" />
+                <SkeletonLoader type="rect" width="80px" height="60px" style="border-radius: 8px;" />
+              </div>
+            </div>
             <!-- 排行榜规则和查看完整排行榜按钮 -->
             <div class="leaderboard-info">
               <div class="leaderboard-rules">
@@ -97,7 +117,10 @@
           </div>
           <!-- 右侧分栏：排行榜表格 -->
           <div class="leaderboard-table-container">
-            <LeaderboardTable :leaderboardData="leaderboardData" />
+            <LeaderboardTable v-if="leaderboardData.length > 0" :leaderboardData="leaderboardData" />
+            <div v-else class="leaderboard-skeleton">
+              <SkeletonLoader v-for="i in 5" :key="i" type="leaderboard" />
+            </div>
           </div>
         </div>
       </div>
@@ -111,6 +134,7 @@ import { useRouter } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import SubjectCard from '../components/subject/SubjectCard.vue'
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable.vue'
+import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import { useQuestionStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
 
@@ -221,6 +245,8 @@ onMounted(async () => {
   background-repeat: repeat;
   padding-bottom: 2rem;
 }
+
+
 
 .home-content {
   max-width: 1200px;

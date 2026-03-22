@@ -36,15 +36,20 @@
       </div>
       
       <div class="questions-section">
-        <QuestionCard 
-          v-for="(question, index) in currentQuestions" 
-          :key="question.id"
-          :question="question"
-          :question-number="index + 1"
-          :user-answer="userAnswers[question.id]"
-          :show-result="false"
-          @select-option="(option) => selectOption(question.id, option, question.type)"
-        />
+        <div v-if="currentQuestions.length > 0">
+          <QuestionCard 
+            v-for="(question, index) in currentQuestions" 
+            :key="question.id"
+            :question="question"
+            :question-number="index + 1"
+            :user-answer="userAnswers[question.id]"
+            :show-result="false"
+            @select-option="(option) => selectOption(question.id, option, question.type)"
+          />
+        </div>
+        <div v-else class="questions-skeleton">
+          <SkeletonLoader v-for="i in 3" :key="i" type="question-card" />
+        </div>
       </div>
       
       <div class="action-buttons">
@@ -66,6 +71,7 @@ import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
+import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
 import { ElMessage } from 'element-plus'
@@ -401,6 +407,8 @@ onUnmounted(() => {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%237DD3F8" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%23A8E6CF" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD88B" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%23FF9999" opacity="0.3"/></svg>');
   background-repeat: repeat;
 }
+
+
 
 .quiz-content {
   max-width: 1200px;

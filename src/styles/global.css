@@ -455,3 +455,100 @@ body:not(.admin-page) .form-select:focus {
   0% { transform: rotate(0deg); }
   100% { transform: rotate(360deg); }
 }
+
+/* 骨架屏样式 */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+.skeleton-grid {
+  gap: 2rem;
+}
+
+.skeleton-subject-card {
+  background: white;
+  border-radius: 24px;
+  padding: 2.5rem;
+  text-align: center;
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  border: 3px solid var(--border-color);
+  position: relative;
+  overflow: hidden;
+}
+
+.skeleton-question-card {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid #E8E8E8;
+  margin-bottom: 20px;
+}
+
+.skeleton-options {
+  margin-top: 16px;
+}
+
+.skeleton-stats {
+  display: flex;
+  gap: 12px;
+  margin-top: 12px;
+}
+
+.skeleton-leaderboard-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.user-stats-skeleton {
+  display: flex;
+  justify-content: center;
+  gap: 2rem;
+  margin: 1.5rem 0;
+  flex-wrap: wrap;
+  padding: 1.5rem;
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  border-radius: 16px;
+  border: 2px solid var(--border-color);
+}
+
+.first-place-skeleton {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  border-radius: 24px;
+  padding: 1.5rem;
+  box-shadow: 0 16px 32px rgba(0, 0, 0, 0.15);
+  border: 3px solid var(--border-color);
+  min-width: 400px;
+  min-height: 210px;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  flex: 1;
+  margin: 1rem auto 0;
+}
+
+.leaderboard-skeleton {
+  background: white;
+  border-radius: 16px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #E8E8E8;
+}
+
+.questions-skeleton {
+  margin-bottom: 2.5rem;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
