@@ -826,8 +826,8 @@ const applyFilters = async () => {
     const recentRecordsParams = new URLSearchParams()
     
     if (filterStudentId.value) {
-      userStatsParams.append('student_id', filterStudentId.value)
-      recentRecordsParams.append('student_id', filterStudentId.value)
+      userStatsParams.append('id', filterStudentId.value)
+      recentRecordsParams.append('userId', filterStudentId.value)
     }
     if (filterGrade.value) {
       userStatsParams.append('grade', filterGrade.value)
@@ -842,11 +842,31 @@ const applyFilters = async () => {
     }
     
     // 加载筛选后的数据
-    const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0&${userStatsParams.toString()}`).then(res => res.json())
-    const recentRecordsData = await fetch(`${getApiBaseUrl()}/answer-records/all?limit=0&${recentRecordsParams.toString()}`).then(res => res.json())
+    let userStatsUrl = `${getApiBaseUrl()}/leaderboard/global?limit=0`
+    if (userStatsParams.toString().length > 0) {
+      userStatsUrl += `&${userStatsParams.toString()}`
+    }
     
-    questionStore.userStats = userStatsData
-    questionStore.recentRecords = recentRecordsData
+    let recentRecordsUrl = `${getApiBaseUrl()}/answer-records/all?limit=0`
+    if (recentRecordsParams.toString().length > 0) {
+      recentRecordsUrl += `&${recentRecordsParams.toString()}`
+    }
+    
+    const userStatsData = await fetch(userStatsUrl)
+      .then(res => res.json())
+      .catch(error => {
+        console.error('获取用户统计数据失败:', error)
+        return []
+      })
+    const recentRecordsData = await fetch(recentRecordsUrl)
+      .then(res => res.json())
+      .catch(error => {
+        console.error('获取最近答题记录失败:', error)
+        return []
+      })
+    
+    questionStore.userStats = userStatsData || []
+    questionStore.recentRecords = recentRecordsData || []
   } catch (error) {
     ElMessage.error('筛选数据失败，请稍后重试')
   }
@@ -1117,7 +1137,7 @@ const verifyBackup = async (file) => {
           `<div style="text-align: left;">
             <p><strong>验证结果:</strong> 备份文件有效</p>
             <p><strong>备份类型:</strong> ${result.type}</p>
-            <p><strong>备份时间:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+            <p><strong>备份时间:</strong> ${new Date(result.timestamp).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</p>
             <p><strong>数据大小:</strong> ${result.size}</p>
             ${result.dataTypes ? `<p><strong>包含数据:</strong> ${result.dataTypes.join(', ')}</p>` : ''}
           </div>`,

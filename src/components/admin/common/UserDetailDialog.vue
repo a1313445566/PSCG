@@ -165,7 +165,7 @@ watch(() => props.dialogVisible, (newValue) => {
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleString();
+  return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
 };
 
 // 显示题目详情

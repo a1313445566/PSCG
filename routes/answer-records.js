@@ -7,7 +7,7 @@ const difficultyService = require('../services/difficultyService');
 // 获取所有答题记录（支持筛选）
 router.get('/all', async (req, res) => {
   try {
-    const { limit = 50, grade, class: className, subjectId, startDate, endDate, student_id } = req.query;
+    const { limit = 50, grade, class: className, subjectId, startDate, endDate, student_id, userId } = req.query;
     
     let query = 'SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.`class`, s.name as subject_name, sc.name as subcategory_name FROM answer_records ar LEFT JOIN users u ON ar.user_id = u.id LEFT JOIN subjects s ON ar.subject_id = s.id LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id WHERE 1=1';
     
@@ -25,8 +25,21 @@ router.get('/all', async (req, res) => {
         query += ' AND u.`class` = ?';
         params.push(className);
       }
+    } else if (userId) {
+      // 当使用userId查询时，根据用户ID筛选
+      query += ' AND ar.user_id = ?';
+      params.push(userId);
+      // 同时可以使用grade和class进行过滤
+      if (grade) {
+        query += ' AND u.grade = ?';
+        params.push(grade);
+      }
+      if (className) {
+        query += ' AND u.`class` = ?';
+        params.push(className);
+      }
     } else {
-      // 当不使用student_id查询时，可以单独使用grade或class进行过滤
+      // 当不使用student_id和userId查询时，可以单独使用grade或class进行过滤
       if (grade) {
         query += ' AND u.grade = ?';
         params.push(grade);

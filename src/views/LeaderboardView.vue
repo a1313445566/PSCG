@@ -194,6 +194,8 @@
                 <h3 class="section-title">最近答题记录</h3>
                 <div class="leaderboard-table">
                   <div class="leaderboard-header">
+                    <div class="grade-col">年级</div>
+                    <div class="class-col">班级</div>
                     <div class="subject-col">学科</div>
                     <div class="subcategory-col">学科题库</div>
                     <div class="score-col">成绩</div>
@@ -201,6 +203,8 @@
                     <div class="time-col">时间</div>
                   </div>
                   <div v-for="(item, index) in recentRecords" :key="item.id" class="leaderboard-row">
+                    <div class="grade-col">{{ item.grade || '-' }}</div>
+                    <div class="class-col">{{ item.class || '-' }}</div>
                     <div class="subject-col">{{ item.subject_name || '未知' }}</div>
                     <div class="subcategory-col">{{ item.subcategory_name || '全部' }}</div>
                     <div class="score-col">{{ item.correct_count }} / {{ item.total_questions }}</div>
@@ -387,7 +391,8 @@ const formatDate = (dateString) => {
       month: '2-digit',
       day: '2-digit',
       hour: '2-digit',
-      minute: '2-digit'
+      minute: '2-digit',
+      timeZone: 'Asia/Shanghai'
     })
   } catch (error) {
     // console.error('日期格式化失败:', error)
@@ -511,7 +516,24 @@ const loadRecentRecords = async () => {
   }
   
   try {
-    const url = `${getApiBaseUrl()}/answer-records/${currentUserId.value}`
+    let url = `${getApiBaseUrl()}/answer-records/all`
+    const params = new URLSearchParams()
+    
+    // 添加用户ID筛选
+    params.append('userId', currentUserId.value)
+    
+    // 添加年级和班级筛选
+    if (selectedGrade.value) {
+      params.append('grade', selectedGrade.value)
+    }
+    if (selectedClass.value) {
+      params.append('class', selectedClass.value)
+    }
+    
+    if (params.toString().length > 0) {
+      url += `?${params.toString()}`
+    }
+    
     const response = await fetch(url)
     
     if (response.ok) {
@@ -1191,12 +1213,12 @@ watch(activeTab, (newTab) => {
 }
 
 .recent-records .leaderboard-header {
-  grid-template-columns: 120px 1fr 100px 100px 180px;
+  grid-template-columns: 80px 80px 120px 1fr 100px 100px 180px;
   white-space: nowrap;
 }
 
 .recent-records .leaderboard-row {
-  grid-template-columns: 120px 1fr 100px 100px 180px;
+  grid-template-columns: 80px 80px 120px 1fr 100px 100px 180px;
   white-space: nowrap;
 }
 

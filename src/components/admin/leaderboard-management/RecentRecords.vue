@@ -107,7 +107,8 @@ const openUserDetailDialog = (row) => {
 const formatDate = (dateString) => {
   if (!dateString) return '';
   const date = new Date(dateString);
-  return date.toLocaleString();
+  // 使用北京时间（UTC+8）格式化日期
+  return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
 };
 
 // 分页处理

@@ -420,7 +420,7 @@ const checkDatabaseStatus = async () => {
     ElMessageBox.alert(
       `<div style="text-align: left;">
         <p><strong>数据库状态:</strong> ${result.status === 'ok' ? '正常' : '异常'}</p>
-        <p><strong>时间戳:</strong> ${new Date(result.timestamp).toLocaleString()}</p>
+        <p><strong>时间戳:</strong> ${new Date(result.timestamp).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</p>
         ${result.message ? `<p><strong>消息:</strong> ${result.message}</p>` : ''}
       </div>`,
       '数据库状态',

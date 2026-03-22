@@ -26,9 +26,16 @@ router.get('/global', async (req, res) => {
     if (id) {
       query += ' AND u.id = ?';
       params.push(id);
-    }
-    
-    if (student_id) {
+      // 当使用id查询时，也可以使用grade和class进行过滤
+      if (grade) {
+        query += ' AND u.grade = ?';
+        params.push(grade);
+      }
+      if (className) {
+        query += ' AND u.class = ?';
+        params.push(className);
+      }
+    } else if (student_id) {
       query += ' AND u.student_id = ?';
       params.push(student_id);
       // 当使用student_id查询时，确保同时使用grade和class进行过滤
@@ -41,7 +48,7 @@ router.get('/global', async (req, res) => {
         params.push(className);
       }
     } else {
-      // 当不使用student_id查询时，可以单独使用grade或class进行过滤
+      // 当不使用student_id和id查询时，可以单独使用grade或class进行过滤
       if (grade) {
         query += ' AND u.grade = ?';
         params.push(grade);

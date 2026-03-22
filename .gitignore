@@ -56,3 +56,4 @@ add-*.js
 Dockerfile
 .dockerignore
 backups/backup*.json
+cloudflared-setup.md
