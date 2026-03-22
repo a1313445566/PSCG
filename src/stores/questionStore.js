@@ -712,7 +712,7 @@ export const useQuestionStore = defineStore('question', {
       }
     },
     
-    // 更新错题的正确次数
+    // 更新错题的正确次数（在错题巩固题库中答对时）
     async updateErrorQuestionCorrectCount(questionId) {
       try {
         this.isLoading = true
@@ -735,7 +735,7 @@ export const useQuestionStore = defineStore('question', {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ studentId, grade: userGrade, class: userClass, questionId, correctCount: newCount })
+          body: JSON.stringify({ studentId, grade: parseInt(userGrade), class: parseInt(userClass), questionId, correctCount: newCount })
         })
         
         // 检查是否达到3次正确，若是则从所有错题巩固题库中移除
@@ -747,6 +747,39 @@ export const useQuestionStore = defineStore('question', {
       } catch (error) {
         this.error = error.message
         console.error('更新错题正确次数失败:', error)
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 添加错题到错题巩固题库（普通题库中答错时）
+    async addToErrorCollection(questionId) {
+      try {
+        this.isLoading = true
+        this.error = null
+        const studentId = localStorage.getItem('studentId')
+        const userGrade = localStorage.getItem('userGrade')
+        const userClass = localStorage.getItem('userClass')
+        if (!studentId || !userGrade || !userClass) {
+          return
+        }
+        
+        // 新错题，设置正确次数为0
+        this.errorCollectionStats[questionId] = { correctCount: 0 }
+        
+        // 调用后端API添加到错题巩固题库
+        await fetch(`${getApiBaseUrl()}/error-collection/update`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ studentId, grade: parseInt(userGrade), class: parseInt(userClass), questionId, correctCount: 0 })
+        })
+      } catch (error) {
+        this.error = error.message
+        console.error('添加错题到错题巩固题库失败:', error)
+        // 移除已设置的统计数据，避免数据不一致
+        delete this.errorCollectionStats[questionId]
       } finally {
         this.isLoading = false
       }
@@ -773,7 +806,7 @@ export const useQuestionStore = defineStore('question', {
           headers: {
             'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ studentId, grade: userGrade, class: userClass, questionId })
+          body: JSON.stringify({ studentId, grade: parseInt(userGrade), class: parseInt(userClass), questionId })
         })
       } catch (error) {
         this.error = error.message
@@ -1031,7 +1064,7 @@ export const useQuizStore = defineStore('quiz', {
       
       this.currentQuestions.forEach(question => {
         const userAnswer = this.userAnswers[question.id]
-        const correctAnswer = question.answer
+        const correctAnswer = question.correct_answer || question.answer
         
         let isCorrect = false
         

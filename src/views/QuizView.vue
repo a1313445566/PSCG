@@ -154,6 +154,28 @@ const selectOption = (questionId, option, questionType = 'single') => {
   quizStore.submitAnswer(questionId, option, questionType)
 }
 
+// 判断答案是否正确
+const isAnswerCorrect = (question, userAnswer) => {
+  if (!userAnswer) return false
+  const correctAnswer = question.correct_answer || question.answer
+  let isCorrect = false
+  if (question.type === 'multiple') {
+    const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('')
+    if (Array.isArray(userAnswer)) {
+      const sortedUserAnswer = [...userAnswer].sort()
+      const sortedCorrectAnswer = [...correctAnswers].sort()
+      isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)
+    }
+  } else {
+    if (Array.isArray(userAnswer)) {
+      isCorrect = userAnswer[0] === correctAnswer
+    } else {
+      isCorrect = userAnswer === correctAnswer
+    }
+  }
+  return isCorrect
+}
+
 // 提交答案
 const submitAnswers = async () => {
 
@@ -168,34 +190,25 @@ const submitAnswers = async () => {
   // 计算分数
   quizStore.calculateScore()
   
-  // 处理错题巩固题库的特殊逻辑
-  if (isErrorCollection.value) {
-    for (const question of currentQuestions.value) {
-      const userAnswer = userAnswers.value[question.id]
-      const correctAnswer = question.correct_answer || question.answer
-      
-      let isCorrect = false
-      if (question.type === 'multiple') {
-        const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('')
-        if (Array.isArray(userAnswer)) {
-          const sortedUserAnswer = userAnswer.sort()
-          const sortedCorrectAnswer = correctAnswers.sort()
-          isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)
-        }
-      } else {
-        if (Array.isArray(userAnswer)) {
-          isCorrect = userAnswer[0] === correctAnswer
-        } else {
-          isCorrect = userAnswer === correctAnswer
-        }
-      }
-      
-      // 更新错题的正确次数
+  // 处理错题巩固题库的逻辑
+  for (const question of currentQuestions.value) {
+    const userAnswer = userAnswers.value[question.id]
+    const isCorrect = isAnswerCorrect(question, userAnswer)
+    
+    // 处理错题
+    if (isErrorCollection.value) {
+      // 在错题巩固题库中答题
       if (isCorrect) {
         await questionStore.updateErrorQuestionCorrectCount(question.id)
       } else {
         // 做错时重置正确次数
         await questionStore.resetErrorQuestionCorrectCount(question.id)
+      }
+    } else {
+      // 在普通题库中答题，错题需要添加到错题巩固题库
+      if (!isCorrect) {
+        // 对于普通题库的错题，添加到错题巩固题库
+        await questionStore.addToErrorCollection(question.id)
       }
     }
   }
@@ -204,50 +217,55 @@ const submitAnswers = async () => {
   const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
   
   try {
+    console.log('开始保存答题记录...')
+    console.log('用户信息:', {
+      studentId: localStorage.getItem('studentId'),
+      userGrade: localStorage.getItem('userGrade'),
+      userClass: localStorage.getItem('userClass')
+    })
+    console.log('答题信息:', {
+      subjectId: subjectId.value,
+      subcategoryId: subcategoryId.value,
+      totalQuestions: totalQuestions.value,
+      correctCount: score.value,
+      timeSpent: timeSpentSeconds
+    })
+    
     // 保存整体答题记录
     const apiUrl = `${getApiBaseUrl()}/answer-records`
+    console.log('保存整体答题记录的API URL:', apiUrl)
+    
     const answerRecordResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
       body: JSON.stringify({
-        userId: localStorage.getItem('studentId'),
-        grade: localStorage.getItem('userGrade'),
-        class: localStorage.getItem('userClass'),
-        subjectId: subjectId.value,
-        subcategoryId: subcategoryId.value,
-        totalQuestions: totalQuestions.value,
-        correctCount: score.value,
-        timeSpent: timeSpentSeconds
-      })
+          userId: localStorage.getItem('studentId'),
+          grade: parseInt(localStorage.getItem('userGrade')),
+          class: parseInt(localStorage.getItem('userClass')),
+          subjectId: subjectId.value,
+          subcategoryId: subcategoryId.value,
+          totalQuestions: totalQuestions.value,
+          correctCount: score.value,
+          timeSpent: timeSpentSeconds
+        })
     })
+    
+    console.log('保存整体答题记录的响应状态:', answerRecordResponse.status)
     
     if (answerRecordResponse.ok) {
       const successData = await answerRecordResponse.json()
+      console.log('保存整体答题记录成功:', successData)
       
       // 保存每道题的答题记录
+      const questionAttemptPromises = []
       for (const question of currentQuestions.value) {
         const userAnswer = userAnswers.value[question.id]
+        const correctAnswer = question.correct_answer || question.answer
         
         // 计算是否正确
-        let isCorrect = false
-        const correctAnswer = question.correct_answer || question.answer
-        if (question.type === 'multiple') {
-          const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('')
-          if (Array.isArray(userAnswer)) {
-            const sortedUserAnswer = userAnswer.sort()
-            const sortedCorrectAnswer = correctAnswers.sort()
-            isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)
-          }
-        } else {
-          if (Array.isArray(userAnswer)) {
-            // 如果用户答案是数组，取第一个元素
-            isCorrect = userAnswer[0] === correctAnswer
-          } else {
-            isCorrect = userAnswer === correctAnswer
-          }
-        }
+        const isCorrect = isAnswerCorrect(question, userAnswer)
         
         // 处理答案格式
         const formattedUserAnswer = question.type === 'multiple' && Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
@@ -256,15 +274,20 @@ const submitAnswers = async () => {
         // 保存随机排序的选项
         const shuffledOptions = question.shuffledOptions ? JSON.stringify(question.shuffledOptions) : null
         
-        await fetch(`${getApiBaseUrl()}/answer-records/question-attempts`, {
+        console.log('保存题目尝试记录:', {
+          questionId: question.id,
+          isCorrect: isCorrect
+        })
+        
+        const questionAttemptPromise = fetch(`${getApiBaseUrl()}/answer-records/question-attempts`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
           },
           body: JSON.stringify({
             userId: localStorage.getItem('studentId'),
-            grade: localStorage.getItem('userGrade'),
-            class: localStorage.getItem('userClass'),
+            grade: parseInt(localStorage.getItem('userGrade')),
+            class: parseInt(localStorage.getItem('userClass')),
             questionId: question.id,
             subjectId: subjectId.value,
             subcategoryId: subcategoryId.value,
@@ -274,11 +297,22 @@ const submitAnswers = async () => {
             answerRecordId: successData.recordId,
             shuffledOptions: shuffledOptions
           })
+        }).then(response => {
+          console.log('保存题目尝试记录的响应状态:', response.status)
+          return response
         })
+        
+        questionAttemptPromises.push(questionAttemptPromise)
       }
+      
+      // 等待所有题目尝试记录保存完成，添加错误处理
+      await Promise.all(questionAttemptPromises.map(p => p.catch(e => { console.error('保存题目尝试记录失败:', e); return null; })))
+    } else {
+      const errorData = await answerRecordResponse.json().catch(() => ({}))
+      console.error('保存整体答题记录失败:', errorData)
     }
   } catch (error) {
-
+    console.error('保存答题记录时发生错误:', error)
     ElMessage.error('保存答题记录失败，请检查网络连接')
   }
   
