@@ -825,20 +825,53 @@ const applyFilters = async () => {
     const userStatsParams = new URLSearchParams()
     const recentRecordsParams = new URLSearchParams()
     
+    // 处理学号筛选
     if (filterStudentId.value) {
       userStatsParams.append('id', filterStudentId.value)
       recentRecordsParams.append('userId', filterStudentId.value)
     }
+    
+    // 处理年级筛选
     if (filterGrade.value) {
       userStatsParams.append('grade', filterGrade.value)
       recentRecordsParams.append('grade', filterGrade.value)
     }
+    
+    // 处理班级筛选
     if (filterClass.value) {
       userStatsParams.append('class', filterClass.value)
       recentRecordsParams.append('class', filterClass.value)
     }
+    
+    // 处理学科筛选
     if (filterSubject.value) {
       recentRecordsParams.append('subjectId', filterSubject.value)
+    }
+    
+    // 处理时间范围筛选
+    if (filterTimeRange.value) {
+      const now = new Date()
+      let startDate, endDate
+      
+      switch (filterTimeRange.value) {
+        case 'today':
+          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+          break
+        case 'week':
+          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+          endDate = new Date()
+          break
+        case 'month':
+          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+          endDate = new Date()
+          break
+      }
+      
+      if (startDate && endDate) {
+        recentRecordsParams.append('startDate', startDate.toISOString())
+        recentRecordsParams.append('endDate', endDate.toISOString())
+      }
     }
     
     // 加载筛选后的数据
