@@ -1,7 +1,8 @@
 <template>
-  <div class="filter-section">
-    <div class="section-header">
-      <div class="section-title">
+  <div class="filter-container">
+    <!-- 筛选头部 -->
+    <div class="filter-header">
+      <div class="filter-title">
         <el-icon class="filter-icon"><Filter /></el-icon>
         <h3>数据筛选</h3>
         <span class="result-count" v-if="resultCount > 0">
@@ -39,126 +40,137 @@
       </div>
     </div>
     
-    <!-- 基本筛选 -->
-    <el-form :model="filterForm" class="filter-form" inline>
-      <el-form-item label="学号" class="form-item">
-        <el-input 
-          v-model="filterForm.studentId" 
-          placeholder="输入学号"
-          style="width: 180px"
-          clearable
-          prefix-icon="User"
-          @input="filterForm.studentId = filterForm.studentId.replace(/[^0-9]/g, '')"
-        ></el-input>
-      </el-form-item>
-      <el-form-item label="年级" class="form-item">
-        <el-select v-model="filterForm.grade" placeholder="选择年级" style="width: 120px" clearable>
-          <el-option label="全部" value=""></el-option>
-          <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="班级" class="form-item">
-        <el-select v-model="filterForm.class" placeholder="选择班级" style="width: 120px" clearable>
-          <el-option label="全部" value=""></el-option>
-          <el-option v-for="classItem in classes" :key="classItem.id || classItem" :label="classItem.name || classItem" :value="classItem.name || classItem"></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="学科" class="form-item">
-        <el-select v-model="filterForm.subjectId" placeholder="选择学科" style="width: 120px" clearable @change="handleSubjectChange">
-          <el-option label="全部" value=""></el-option>
-          <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="学科题库" class="form-item">
-        <el-select v-model="filterForm.subcategoryIds" multiple placeholder="选择学科题库" style="width: 180px" clearable>
-          <el-option v-for="subcategory in subcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
-        </el-select>
-      </el-form-item>
-      <el-form-item label="时间范围" class="form-item">
-        <el-date-picker
-          v-model="filterForm.dateRange"
-          type="daterange"
-          range-separator="至"
-          start-placeholder="开始日期"
-          end-placeholder="结束日期"
-          style="width: 240px"
-          clearable
-          :shortcuts="[
-            {
-              text: '最近7天',
-              value: () => {
-                const end = new Date();
-                const start = new Date();
-                start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
-                return [start, end];
+    <!-- 基本筛选区域 -->
+    <div class="basic-filter">
+      <div class="filter-row">
+        <div class="filter-item">
+          <label class="filter-label">学号</label>
+          <el-input 
+            v-model="filterForm.studentId" 
+            placeholder="输入学号"
+            clearable
+            prefix-icon="User"
+            @input="filterForm.studentId = filterForm.studentId ? filterForm.studentId.replace(/[^0-9]/g, '') : ''"
+          ></el-input>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">年级</label>
+          <el-select v-model="filterForm.grade" placeholder="选择年级" clearable>
+            <el-option label="全部" value=""></el-option>
+            <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
+          </el-select>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">班级</label>
+          <el-select v-model="filterForm.class" placeholder="选择班级" clearable>
+            <el-option label="全部" value=""></el-option>
+            <el-option v-for="classItem in classes" :key="classItem.id || classItem" :label="classItem.name || classItem" :value="classItem.name || classItem"></el-option>
+          </el-select>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">学科</label>
+          <el-select v-model="filterForm.subjectId" placeholder="选择学科" clearable @change="handleSubjectChange">
+            <el-option label="全部" value=""></el-option>
+            <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+          </el-select>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">学科题库</label>
+          <el-select v-model="filterForm.subcategoryIds" multiple placeholder="选择学科题库" clearable>
+            <el-option v-for="subcategory in subcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
+          </el-select>
+        </div>
+        <div class="filter-item">
+          <label class="filter-label">时间范围</label>
+          <el-date-picker
+            v-model="filterForm.dateRange"
+            type="daterange"
+            range-separator="至"
+            start-placeholder="开始日期"
+            end-placeholder="结束日期"
+            clearable
+            :shortcuts="[
+              {
+                text: '最近7天',
+                value: () => {
+                  const end = new Date();
+                  const start = new Date();
+                  start.setTime(start.getTime() - 3600 * 1000 * 24 * 7);
+                  return [start, end];
+                }
+              },
+              {
+                text: '最近30天',
+                value: () => {
+                  const end = new Date();
+                  const start = new Date();
+                  start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
+                  return [start, end];
+                }
+              },
+              {
+                text: '今年',
+                value: () => {
+                  const end = new Date();
+                  const start = new Date(new Date().getFullYear(), 0, 1);
+                  return [start, end];
+                }
+              },
+              {
+                text: '全部时间',
+                value: () => {
+                  return [null, null];
+                }
               }
-            },
-            {
-              text: '最近30天',
-              value: () => {
-                const end = new Date();
-                const start = new Date();
-                start.setTime(start.getTime() - 3600 * 1000 * 24 * 30);
-                return [start, end];
-              }
-            },
-            {
-              text: '今年',
-              value: () => {
-                const end = new Date();
-                const start = new Date(new Date().getFullYear(), 0, 1);
-                return [start, end];
-              }
-            },
-            {
-              text: '全部时间',
-              value: () => {
-                return [null, null];
-              }
-            }
-          ]"
-        ></el-date-picker>
-      </el-form-item>
-      <el-form-item class="form-item action-buttons">
-        <el-button type="primary" @click="applyFilters" class="btn-primary">
-          <el-icon><Check /></el-icon> 应用筛选
-        </el-button>
-        <el-button @click="resetFilters" class="btn-secondary">
-          <el-icon><Refresh /></el-icon> 重置
-        </el-button>
-      </el-form-item>
-    </el-form>
+            ]"
+          ></el-date-picker>
+        </div>
+        <div class="filter-item action-buttons">
+          <el-button type="primary" @click="applyFilters" class="btn-primary">
+            <el-icon><Check /></el-icon> 应用筛选
+          </el-button>
+          <el-button @click="resetFilters" class="btn-secondary">
+            <el-icon><Refresh /></el-icon> 重置
+          </el-button>
+        </div>
+      </div>
+    </div>
     
     <!-- 高级筛选 -->
-    <el-collapse v-model="activeNames" style="margin-top: 16px;">
-      <el-collapse-item title="高级筛选" name="1" class="advanced-collapse">
-        <div class="advanced-filter">
-          <el-form :model="advancedFilter" class="advanced-form" inline>
-            <el-form-item label="筛选逻辑" class="form-item">
-              <el-select v-model="advancedFilter.logic" style="width: 120px">
-                <el-option label="包含" value="include"></el-option>
-                <el-option label="不包含" value="exclude"></el-option>
-                <el-option label="等于" value="equal"></el-option>
-                <el-option label="不等于" value="not_equal"></el-option>
-              </el-select>
-            </el-form-item>
-            <el-form-item label="结果排序" class="form-item">
-              <el-select v-model="advancedFilter.sortBy" style="width: 120px">
-                <el-option label="正确率" value="accuracy"></el-option>
-                <el-option label="答题数" value="questions"></el-option>
-                <el-option label="时间" value="time"></el-option>
-              </el-select>
-            </el-form-item>
-            <el-form-item label="排序方式" class="form-item">
-              <el-select v-model="advancedFilter.sortOrder" style="width: 100px">
-                <el-option label="升序" value="asc"></el-option>
-                <el-option label="降序" value="desc"></el-option>
-              </el-select>
-            </el-form-item>
-          </el-form>
-        </div>
-      </el-collapse-item>
-    </el-collapse>
+    <div class="advanced-filter-section">
+      <el-collapse v-model="activeNames">
+        <el-collapse-item title="高级筛选" name="1">
+          <div class="advanced-filter-content">
+            <div class="filter-row">
+              <div class="filter-item">
+                <label class="filter-label">筛选逻辑</label>
+                <el-select v-model="advancedFilter.logic">
+                  <el-option label="包含" value="include"></el-option>
+                  <el-option label="不包含" value="exclude"></el-option>
+                  <el-option label="等于" value="equal"></el-option>
+                  <el-option label="不等于" value="not_equal"></el-option>
+                </el-select>
+              </div>
+              <div class="filter-item">
+                <label class="filter-label">结果排序</label>
+                <el-select v-model="advancedFilter.sortBy">
+                  <el-option label="正确率" value="accuracy"></el-option>
+                  <el-option label="答题数" value="questions"></el-option>
+                  <el-option label="时间" value="time"></el-option>
+                </el-select>
+              </div>
+              <div class="filter-item">
+                <label class="filter-label">排序方式</label>
+                <el-select v-model="advancedFilter.sortOrder">
+                  <el-option label="升序" value="asc"></el-option>
+                  <el-option label="降序" value="desc"></el-option>
+                </el-select>
+              </div>
+            </div>
+          </div>
+        </el-collapse-item>
+      </el-collapse>
+    </div>
   </div>
 </template>
 
@@ -293,20 +305,11 @@ const saveFilterTemplate = () => {
 </script>
 
 <style scoped>
-.filter-section {
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-  margin-bottom: 24px;
-  transition: all 0.3s ease;
+.filter-container {
+  animation: fadeIn 0.5s ease-out;
 }
 
-.filter-section:hover {
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.12);
-}
-
-.section-header {
+.filter-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -315,7 +318,7 @@ const saveFilterTemplate = () => {
   gap: 16px;
 }
 
-.section-title {
+.filter-title {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -330,7 +333,7 @@ const saveFilterTemplate = () => {
   transition: color 0.3s ease;
 }
 
-.section-title:hover .filter-icon {
+.filter-title:hover .filter-icon {
   color: #66b1ff;
 }
 
@@ -371,59 +374,47 @@ const saveFilterTemplate = () => {
   transform: translateY(-1px);
 }
 
-.filter-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: end;
-  width: 100%;
+.basic-filter {
   margin-bottom: 20px;
   padding-bottom: 20px;
   border-bottom: 1px solid #f0f0f0;
 }
 
-.form-item {
-  margin-bottom: 0;
+.filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  align-items: end;
+  width: 100%;
+}
+
+.filter-item {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  min-width: 150px;
+  flex: 1;
 }
 
-.form-item .el-form-item__label {
+.filter-label {
   font-size: 13px;
   font-weight: 500;
   color: #606266;
   white-space: nowrap;
 }
 
+.filter-item .el-input,
+.filter-item .el-select,
+.filter-item .el-date-picker {
+  width: 100%;
+  min-width: 120px;
+}
+
 .action-buttons {
   display: flex;
   gap: 12px;
   align-items: center;
-}
-
-.advanced-collapse {
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.advanced-filter {
-  padding: 20px;
-  background-color: #f5f7fa;
-  border-radius: 8px;
-  margin-top: 8px;
-  transition: all 0.3s ease;
-}
-
-.advanced-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  align-items: end;
-}
-
-.advanced-form .form-item {
-  margin-bottom: 0;
+  min-width: 200px;
 }
 
 .btn-primary {
@@ -449,6 +440,18 @@ const saveFilterTemplate = () => {
 .btn-secondary:hover {
   transform: translateY(-1px) !important;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+}
+
+.advanced-filter-section {
+  margin-top: 16px;
+}
+
+.advanced-filter-content {
+  padding: 20px;
+  background-color: #f5f7fa;
+  border-radius: 8px;
+  margin-top: 8px;
+  transition: all 0.3s ease;
 }
 
 /* 历史记录样式 */
@@ -480,11 +483,7 @@ const saveFilterTemplate = () => {
 
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .filter-section {
-    padding: 16px;
-  }
-  
-  .section-header {
+  .filter-header {
     flex-direction: column;
     align-items: stretch;
     gap: 12px;
@@ -494,44 +493,25 @@ const saveFilterTemplate = () => {
     justify-content: flex-end;
   }
   
-  .filter-form {
+  .filter-row {
     flex-direction: column;
     align-items: stretch;
     gap: 16px;
   }
   
-  .form-item {
+  .filter-item {
     width: 100%;
-  }
-  
-  .form-item .el-input,
-  .form-item .el-select,
-  .form-item .el-date-picker {
-    width: 100% !important;
   }
   
   .action-buttons {
     flex-direction: column;
     align-items: stretch;
     gap: 8px;
+    min-width: auto;
   }
   
   .action-buttons .el-button {
     width: 100%;
-  }
-  
-  .advanced-form {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 16px;
-  }
-  
-  .advanced-form .form-item {
-    width: 100%;
-  }
-  
-  .advanced-form .form-item .el-select {
-    width: 100% !important;
   }
 }
 
@@ -545,10 +525,6 @@ const saveFilterTemplate = () => {
     opacity: 1;
     transform: translateY(0);
   }
-}
-
-.filter-section {
-  animation: fadeIn 0.5s ease-out;
 }
 
 /* 滚动条样式 */

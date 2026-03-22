@@ -1,6 +1,5 @@
 <template>
   <div class="recent-records">
-    <h3 style="margin-top: 30px;">最近答题记录</h3>
     <el-table :data="paginatedRecentRecords" stripe style="width: 100%">
       <el-table-column prop="id" label="ID" width="60" align="center"></el-table-column>
       <el-table-column label="学号" width="80" align="center">

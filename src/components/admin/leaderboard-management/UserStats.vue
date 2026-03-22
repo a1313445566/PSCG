@@ -1,6 +1,5 @@
 <template>
   <div class="user-stats">
-    <h3>用户答题统计</h3>
     <el-table :data="paginatedUserStats" stripe style="width: 100%">
       <el-table-column label="学号" width="80" align="center">
         <template #default="{ row }">
