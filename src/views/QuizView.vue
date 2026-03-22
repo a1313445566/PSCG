@@ -53,8 +53,11 @@
       </div>
       
       <div class="action-buttons">
-        <button class="submit-btn" @click="submitAnswers" :disabled="!hasAnsweredAll || !canSubmit">
-          <template v-if="!canSubmit">
+        <button class="submit-btn" @click="submitAnswers" :disabled="!hasAnsweredAll || !canSubmit || isSubmitting">
+          <template v-if="isSubmitting">
+            ⏳ 提交中...
+          </template>
+          <template v-else-if="!canSubmit">
             🔒 {{ countdown }}秒后可提交
           </template>
           <template v-else>
@@ -141,6 +144,8 @@ const SUBMIT_COOLDOWN = 10
 const countdown = ref(SUBMIT_COOLDOWN)
 let countdownInterval = null
 const canSubmit = ref(false)
+// 提交状态
+const isSubmitting = ref(false)
 
 // 格式化时间
 const formatTime = (seconds) => {
@@ -178,15 +183,17 @@ const isAnswerCorrect = (question, userAnswer) => {
 
 // 提交答案
 const submitAnswers = async () => {
-
+  // 防止重复提交
+  if (isSubmitting.value) return
   
   if (!hasAnsweredAll.value) {
     ElMessage.warning('请回答所有题目后再提交！')
-
     return
   }
   
-
+  // 设置提交状态
+  isSubmitting.value = true
+  
   // 计算分数
   quizStore.calculateScore()
   
@@ -314,6 +321,9 @@ const submitAnswers = async () => {
   } catch (error) {
     console.error('保存答题记录时发生错误:', error)
     ElMessage.error('保存答题记录失败，请检查网络连接')
+  } finally {
+    // 重置提交状态
+    isSubmitting.value = false
   }
   
   // 存储答题数据到localStorage
@@ -340,17 +350,18 @@ const startTimer = () => {
 
 // 启动提交倒计时
 const startCountdown = () => {
+  // 重置倒计时和canSubmit状态
+  countdown.value = SUBMIT_COOLDOWN
+  canSubmit.value = false
+  
   countdownInterval = setInterval(() => {
     countdown.value--
 
     if (countdown.value <= 0) {
       clearInterval(countdownInterval)
       countdownInterval = null
-      // 使用 nextTick 确保响应式更新
-      nextTick(() => {
-        canSubmit.value = true
-
-      })
+      // 直接设置canSubmit为true，不需要nextTick
+      canSubmit.value = true
       countdown.value = 0
     }
   }, 1000)
