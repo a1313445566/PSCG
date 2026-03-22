@@ -279,6 +279,27 @@ router.post('/', async (req, res) => {
     // 处理错题巩固题库的情况，subcategoryId为字符串
     const actualSubcategoryId = subcategoryId === 'error-collection' ? null : subcategoryId;
     
+    // 检查是否存在重复提交（5秒内相同用户、相同学科、相同题库的提交）
+    let recentRecord;
+    const cooldownSeconds = 5;
+    if (actualSubcategoryId === null) {
+      // 错题巩固题库，使用 IS NULL 条件
+      recentRecord = await db.get(
+        'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
+        [actualUserId, subjectId, cooldownSeconds]
+      );
+    } else {
+      // 普通题库，使用 = 条件
+      recentRecord = await db.get(
+        'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
+        [actualUserId, subjectId, actualSubcategoryId, cooldownSeconds]
+      );
+    }
+    
+    if (recentRecord) {
+      return res.status(400).json({ error: '提交过于频繁，请稍后再试' });
+    }
+    
     // 计算积分
     let points = 0;
     if (subcategoryId === 'error-collection') {

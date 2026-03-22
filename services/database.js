@@ -23,7 +23,8 @@ class DatabaseService {
         queueLimit: 0,
         connectTimeout: 10000,
         acquireTimeout: 10000,
-        timeout: 30000
+        timeout: 30000,
+        timezone: '+08:00'
       });
       
       // 测试连接

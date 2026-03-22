@@ -22,7 +22,7 @@
       <el-tab-pane v-if="dialogSource === 'userStats'" label="答题记录" name="records">
         <div class="user-answer-records" v-if="selectedUserRecords.length > 0">
           <div style="overflow-x: auto;">
-            <el-table :data="selectedUserRecords" stripe style="width: 100%">
+            <el-table :data="paginatedUserRecords" stripe style="width: 100%">
               <el-table-column prop="subject_name" label="学科" width="120" align="center"></el-table-column>
               <el-table-column prop="subcategory_name" label="学科题库" width="150" align="center">
                 <template #default="{ row }">
@@ -51,6 +51,19 @@
               </el-table-column>
             </el-table>
           </div>
+          
+          <!-- 分页组件 -->
+          <div class="pagination" style="margin-top: 20px; text-align: right;">
+            <el-pagination
+              v-model:current-page="currentRecordsPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="selectedUserRecords.length"
+              @size-change="handleRecordsSizeChange"
+              @current-change="handleRecordsCurrentChange"
+            />
+          </div>
         </div>
         <div v-else class="leaderboard-empty" style="text-align: center; padding: 40px;">
           <p>暂无答题记录</p>
@@ -61,7 +74,7 @@
       <el-tab-pane v-if="dialogSource === 'recentRecords'" label="做题记录" name="attempts">
         <div class="user-question-attempts" v-if="selectedUserQuestionAttempts.length > 0">
           <div style="overflow-x: auto;">
-            <el-table :data="selectedUserQuestionAttempts" stripe style="width: 100%">
+            <el-table :data="paginatedUserQuestionAttempts" stripe style="width: 100%">
               <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
               <el-table-column prop="subject_name" label="学科" width="120" align="center"></el-table-column>
               <el-table-column prop="subcategory_name" label="学科题库" width="150" align="center">
@@ -109,6 +122,19 @@
             </el-table-column>
             </el-table>
           </div>
+          
+          <!-- 分页组件 -->
+          <div class="pagination" style="margin-top: 20px; text-align: right;">
+            <el-pagination
+              v-model:current-page="currentAttemptsPage"
+              v-model:page-size="pageSize"
+              :page-sizes="[10, 20, 50]"
+              layout="total, sizes, prev, pager, next, jumper"
+              :total="selectedUserQuestionAttempts.length"
+              @size-change="handleAttemptsSizeChange"
+              @current-change="handleAttemptsCurrentChange"
+            />
+          </div>
         </div>
         <div v-else class="leaderboard-empty" style="text-align: center; padding: 40px;">
           <p>暂无做题记录</p>
@@ -119,7 +145,7 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
+import { ref, computed, watch } from 'vue';
 
 // 定义属性和事件
 const props = defineProps({
@@ -154,12 +180,54 @@ const emit = defineEmits(['update:dialogVisible', 'show-question-detail']);
 // 激活的标签
 const activeUserDetailTab = ref('records');
 
+// 分页相关状态
+const currentRecordsPage = ref(1);
+const currentAttemptsPage = ref(1);
+const pageSize = ref(10);
+
+// 分页后的答题记录
+const paginatedUserRecords = computed(() => {
+  const start = (currentRecordsPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return props.selectedUserRecords.slice(start, end);
+});
+
+// 分页后的做题记录
+const paginatedUserQuestionAttempts = computed(() => {
+  const start = (currentAttemptsPage.value - 1) * pageSize.value;
+  const end = start + pageSize.value;
+  return props.selectedUserQuestionAttempts.slice(start, end);
+});
+
 // 监听对话框可见性变化
 watch(() => props.dialogVisible, (newValue) => {
   if (newValue) {
     activeUserDetailTab.value = props.dialogSource === 'userStats' ? 'records' : 'attempts';
+    // 重置分页
+    currentRecordsPage.value = 1;
+    currentAttemptsPage.value = 1;
   }
 });
+
+// 答题记录分页处理
+const handleRecordsSizeChange = (size) => {
+  pageSize.value = size;
+  currentRecordsPage.value = 1;
+};
+
+const handleRecordsCurrentChange = (current) => {
+  currentRecordsPage.value = current;
+};
+
+// 做题记录分页处理
+const handleAttemptsSizeChange = (size) => {
+  pageSize.value = size;
+  currentAttemptsPage.value = 1;
+};
+
+const handleAttemptsCurrentChange = (current) => {
+  currentAttemptsPage.value = current;
+};
 
 // 格式化日期
 const formatDate = (dateString) => {

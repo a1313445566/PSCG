@@ -194,66 +194,66 @@ const submitAnswers = async () => {
   // 设置提交状态
   isSubmitting.value = true
   
-  // 计算分数
-  quizStore.calculateScore()
-  
-  // 处理错题巩固题库的逻辑（并行处理）
-  const errorCollectionPromises = currentQuestions.value.map(async (question) => {
-    try {
-      const userAnswer = userAnswers.value[question.id]
-      const isCorrect = isAnswerCorrect(question, userAnswer)
-      
-      // 处理错题
-      if (isErrorCollection.value) {
-        // 在错题巩固题库中答题
-        if (isCorrect) {
-          const result = await questionStore.updateErrorQuestionCorrectCount(question.id)
-          return { questionId: question.id, result }
-        } else {
-          // 做错时重置正确次数
-          const result = await questionStore.resetErrorQuestionCorrectCount(question.id)
-          return { questionId: question.id, result }
-        }
-      } else {
-        // 在普通题库中答题，错题需要添加到错题巩固题库
-        if (!isCorrect) {
-          // 对于普通题库的错题，添加到错题巩固题库
-          const result = await questionStore.addToErrorCollection(question.id)
-          return { questionId: question.id, result }
-        }
-        return { questionId: question.id, result: null } // 正确答案不需要处理
-      }
-    } catch (error) {
-      // 包装错误对象，添加questionId信息
-      const wrappedError = new Error(`处理题目 ${question.id} 失败: ${error.message}`);
-      wrappedError.questionId = question.id;
-      wrappedError.originalError = error;
-      throw wrappedError;
-    }
-  })
-  
-  // 等待所有错题处理完成
-  const results = await Promise.allSettled(errorCollectionPromises);
-  
-  // 处理结果
-  const failedItems = results
-    .filter(result => result.status === 'rejected')
-    .map(result => ({
-      questionId: result.reason?.questionId || 'unknown',
-      error: result.reason
-    }));
-  
-  if (failedItems.length > 0) {
-    const failedQuestionIds = failedItems.map(item => item.questionId).join(', ');
-    console.warn(`${failedItems.length} 个错题处理失败: 题目ID [${failedQuestionIds}]，但继续执行后续操作`);
-    // 添加用户友好的提示信息
-    ElMessage.warning('部分错题处理失败，但不影响答题结果');
-  }
-  
-  // 保存答题记录
-  const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
-  
   try {
+    // 计算分数
+    quizStore.calculateScore()
+    
+    // 处理错题巩固题库的逻辑（并行处理）
+    const errorCollectionPromises = currentQuestions.value.map(async (question) => {
+      try {
+        const userAnswer = userAnswers.value[question.id]
+        const isCorrect = isAnswerCorrect(question, userAnswer)
+        
+        // 处理错题
+        if (isErrorCollection.value) {
+          // 在错题巩固题库中答题
+          if (isCorrect) {
+            const result = await questionStore.updateErrorQuestionCorrectCount(question.id)
+            return { questionId: question.id, result }
+          } else {
+            // 做错时重置正确次数
+            const result = await questionStore.resetErrorQuestionCorrectCount(question.id)
+            return { questionId: question.id, result }
+          }
+        } else {
+          // 在普通题库中答题，错题需要添加到错题巩固题库
+          if (!isCorrect) {
+            // 对于普通题库的错题，添加到错题巩固题库
+            const result = await questionStore.addToErrorCollection(question.id)
+            return { questionId: question.id, result }
+          }
+          return { questionId: question.id, result: null } // 正确答案不需要处理
+        }
+      } catch (error) {
+        // 包装错误对象，添加questionId信息
+        const wrappedError = new Error(`处理题目 ${question.id} 失败: ${error.message}`);
+        wrappedError.questionId = question.id;
+        wrappedError.originalError = error;
+        throw wrappedError;
+      }
+    })
+    
+    // 等待所有错题处理完成
+    const results = await Promise.allSettled(errorCollectionPromises);
+    
+    // 处理结果
+    const failedItems = results
+      .filter(result => result.status === 'rejected')
+      .map(result => ({
+        questionId: result.reason?.questionId || 'unknown',
+        error: result.reason
+      }));
+    
+    if (failedItems.length > 0) {
+      const failedQuestionIds = failedItems.map(item => item.questionId).join(', ');
+      console.warn(`${failedItems.length} 个错题处理失败: 题目ID [${failedQuestionIds}]，但继续执行后续操作`);
+      // 添加用户友好的提示信息
+      ElMessage.warning('部分错题处理失败，但不影响答题结果');
+    }
+    
+    // 保存答题记录
+    const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
+    
     // 保存整体答题记录
     const apiUrl = `${getApiBaseUrl()}/answer-records`
     
@@ -321,26 +321,26 @@ const submitAnswers = async () => {
     } else {
       await answerRecordResponse.json().catch(() => ({}))
     }
+    
+    // 存储答题数据到localStorage
+    localStorage.setItem('quizData', JSON.stringify({
+      currentQuestions: currentQuestions.value,
+      userAnswers: userAnswers.value,
+      score: score.value
+    }))
+    
+    // 存储用时数据到localStorage
+    localStorage.setItem('timeSpent', timeSpentSeconds.toString())
+    
+    // 跳转到结果页面
+    // 错题巩固题库也跳转到结果页面，与普通题库保持一致
+    router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
   } catch (error) {
     ElMessage.error('保存答题记录失败，请检查网络连接')
   } finally {
     // 重置提交状态
     isSubmitting.value = false
   }
-  
-  // 存储答题数据到localStorage
-  localStorage.setItem('quizData', JSON.stringify({
-    currentQuestions: currentQuestions.value,
-    userAnswers: userAnswers.value,
-    score: score.value
-  }))
-  
-  // 存储用时数据到localStorage
-  localStorage.setItem('timeSpent', timeSpentSeconds.toString())
-  
-  // 跳转到结果页面
-  // 错题巩固题库也跳转到结果页面，与普通题库保持一致
-  router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
 }
 
 // 开始计时

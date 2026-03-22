@@ -1078,25 +1078,9 @@ const handleBatchAddQuestions = async (questions) => {
 // 加载所有用户数据
 const loadAllUsers = async () => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/users?limit=0`)
+    const response = await fetch(`${getApiBaseUrl()}/users?limit=0&withStats=true`)
     if (response.ok) {
       const users = await response.json()
-      
-      // 为每个用户加载统计数据
-      for (const user of users) {
-        try {
-          const statsResponse = await fetch(`${getApiBaseUrl()}/users/stats/${user.id}`)
-          if (statsResponse.ok) {
-            const stats = await statsResponse.json()
-            user.total_sessions = stats.totalSessions || 0
-            user.avg_accuracy = stats.avgAccuracy || 0
-          }
-        } catch (error) {
-          console.error(`加载用户 ${user.id} 统计数据失败:`, error)
-          user.total_sessions = 0
-          user.avg_accuracy = 0
-        }
-      }
       
       // 按学号数字排序
       users.sort((a, b) => {

@@ -10,17 +10,19 @@ const JWT_EXPIRES_IN = '24h'; // 24小时过期
 // 获取用户列表
 router.get('/', async (req, res) => {
   try {
-    const { grade, class: className, page = 1, limit } = req.query;
+    const { grade, class: className, page = 1, limit, withStats = false } = req.query;
     
     let query = 'SELECT * FROM users WHERE 1=1';
     const params = [];
     
     if (grade) {
-      query += ' AND grade = ' + Number(grade);
+      query += ' AND grade = ?';
+      params.push(grade);
     }
     
     if (className) {
-      query += ' AND class = ' + Number(className);
+      query += ' AND class = ?';
+      params.push(className);
     }
     
     const pageNum = parseInt(page) || 1;
@@ -34,7 +36,58 @@ router.get('/', async (req, res) => {
       query += ` ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`;
     }
     
-    const users = await db.all(query, params);
+    let users = await db.all(query, params);
+    
+    // 如果需要统计数据，批量获取所有用户的统计信息
+    if (withStats === 'true' && users.length > 0) {
+      try {
+        // 提取所有用户ID
+        const userIds = users.map(user => user.id);
+        
+        // 批量获取所有用户的统计数据
+        const batchStatsQuery = `
+          SELECT 
+            ar.user_id,
+            COUNT(DISTINCT ar.id) as totalSessions,
+            SUM(ar.total_questions) as totalQuestions,
+            SUM(ar.correct_count) as totalCorrect,
+            CASE WHEN SUM(ar.total_questions) > 0 THEN
+              (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+            ELSE 0 END as avgAccuracy
+          FROM answer_records ar
+          WHERE ar.user_id IN (${userIds.map(() => '?').join(',')})
+          GROUP BY ar.user_id
+        `;
+        
+        const statsResults = await db.all(batchStatsQuery, userIds);
+        
+        // 将统计数据映射到用户对象
+        const statsMap = {};
+        statsResults.forEach(stat => {
+          statsMap[stat.user_id] = stat;
+        });
+        
+        // 为每个用户设置统计数据
+        for (const user of users) {
+          const stats = statsMap[user.id] || {
+            totalSessions: 0,
+            totalQuestions: 0,
+            totalCorrect: 0,
+            avgAccuracy: 0
+          };
+          user.total_sessions = stats.totalSessions || 0;
+          user.avg_accuracy = stats.avgAccuracy || 0;
+        }
+      } catch (error) {
+        // console.error('批量获取用户统计数据失败:', error);
+        // 失败时为所有用户设置默认值
+        for (const user of users) {
+          user.total_sessions = 0;
+          user.avg_accuracy = 0;
+        }
+      }
+    }
+    
     res.json(users);
   } catch (error) {
     // console.error('获取用户失败:', error);
