@@ -67,7 +67,7 @@
       </div>
       
       <!-- 答案解析 -->
-      <div v-if="showResult && (question.explanation || question.explanation === '')" class="explanation">
+      <div v-if="(showResult || isErrorCollection)" class="explanation">
         <h4 class="explanation-title">📝 答案解析</h4>
         <p class="explanation-content">{{ question.explanation || '暂无解析' }}</p>
       </div>

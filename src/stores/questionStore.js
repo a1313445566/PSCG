@@ -691,7 +691,22 @@ export const useQuestionStore = defineStore('question', {
         const response = await fetch(`${getApiBaseUrl()}/error-collection/${subjectId}?studentId=${studentId}&grade=${userGrade}&class=${userClass}`)
         if (response.ok) {
           const data = await response.json()
-          this.errorCollections[subjectId] = data.questions || []
+          // 处理题目数据，确保options和explanation字段正确
+          this.errorCollections[subjectId] = (data.questions || []).map(question => {
+            // 解析options字段
+            if (typeof question.options === 'string') {
+              try {
+                question.options = JSON.parse(question.options)
+              } catch (e) {
+                question.options = []
+              }
+            }
+            // 确保explanation字段存在
+            if (question.explanation === undefined) {
+              question.explanation = ''
+            }
+            return question
+          })
           // 加载错题统计
           if (data.stats) {
             this.errorCollectionStats = { ...this.errorCollectionStats, ...data.stats }

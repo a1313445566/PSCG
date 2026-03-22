@@ -22,7 +22,7 @@ router.get('/:subjectId', async (req, res) => {
     
     // 获取该用户在该学科下的错题记录，且累计正确次数小于3
     const query = `
-      SELECT q.id, q.subject_id, q.subcategory_id, q.content, q.type, q.options, q.correct_answer,
+      SELECT q.id, q.subject_id, q.subcategory_id, q.content, q.type, q.options, q.correct_answer, q.explanation,
              COALESCE(ec.correct_count, 0) as correct_count, sc.name as subcategory_name
       FROM questions q
       LEFT JOIN (
