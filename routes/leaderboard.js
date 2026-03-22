@@ -132,6 +132,47 @@ router.get('/subject/:subjectId', async (req, res) => {
   }
 });
 
+// TOP10排行榜API（每周统计）
+router.get('/top10', async (req, res) => {
+  try {
+    const { subjectId } = req.query;
+    
+    let query = `
+      SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
+             COUNT(DISTINCT ar.id) as total_sessions,
+             SUM(ar.total_questions) as total_questions,
+             SUM(ar.correct_count) as correct_count,
+             CASE WHEN SUM(ar.total_questions) > 0 THEN
+               (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+             ELSE 0 END as avg_accuracy
+      FROM users u
+      JOIN answer_records ar ON u.id = ar.user_id
+      WHERE 1=1
+      AND ar.created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), '%Y-%m-%d 00:00:00')
+      AND ar.created_at <= DATE_FORMAT(DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY), '%Y-%m-%d 23:59:59')
+    `;
+    
+    const params = [];
+    
+    // 学科筛选
+    if (subjectId) {
+      if (!validateSubjectId(subjectId)) {
+        return res.status(400).json({ error: '学科ID格式错误' });
+      }
+      query += ' AND ar.subject_id = ?';
+      params.push(parseInt(subjectId));
+    }
+    
+    query += ' GROUP BY u.id HAVING SUM(ar.total_questions) >= 20 ORDER BY points DESC, avg_accuracy DESC, total_questions DESC LIMIT 10';
+    
+    const users = await db.all(query, params);
+    res.json(users);
+  } catch (error) {
+    // console.error('获取TOP10排行榜数据失败:', error);
+    res.status(500).json({ error: '获取TOP10排行榜数据失败' });
+  }
+});
+
 // 清空排行榜数据
 router.post('/clear', async (req, res) => {
   try {

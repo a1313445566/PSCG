@@ -56,7 +56,13 @@
       </div>
       
       <div class="leaderboard-preview">
-        <h3 class="leaderboard-title">🏆 排行榜 Top 10</h3>
+        <div class="leaderboard-header-section">
+          <h3 class="leaderboard-title">🏆 排行榜 Top 10</h3>
+          <div class="reset-countdown" v-if="countdown">
+            <span class="countdown-label">重置倒计时：</span>
+            <span class="countdown-time">{{ countdown }}</span>
+          </div>
+        </div>
         <div class="leaderboard-header">
           <!-- 左侧分栏：第一名卡片和排行榜规则 -->
           <div class="left-column">
@@ -107,9 +113,15 @@
               <div class="leaderboard-rules">
                 <h4 class="rules-title">📝 排行榜规则</h4>
                 <ul class="rules-list">
-                  <li>排名根据用户的答题正确率、答题数和积分综合计算</li>
+                  <li>排序规则：</li>
+                  <li>1. 第一优先级：积分（降序）</li>
+                  <li>2. 第二优先级：正确率（降序）</li>
+                  <li>3. 第三优先级：答题数（降序）</li>
+                  <li>进入条件：每周答题数≥20题</li>
                   <li>TOP 3 玩家将获得特殊标识和动画效果</li>
                   <li>积分规则：答对一题得1分，答错一题扣1分，全对积分翻倍</li>
+                  <li>统计周期：每周一 00:00 至周日 23:59</li>
+                  <li>排行榜每周一 00:00 自动重置</li>
                 </ul>
               </div>
               <router-link to="/leaderboard" class="view-full-link">查看完整排行榜</router-link>
@@ -129,7 +141,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import SubjectCard from '../components/subject/SubjectCard.vue'
@@ -158,6 +170,9 @@ const currentUserClass = computed(() => localStorage.getItem('userClass'))
 const leaderboardData = ref([])
 // 用户统计数据
 const userStats = ref(null)
+// 倒计时
+const countdown = ref('')
+let countdownInterval = null
 
 // 调试：监控 subjects 数据变化
 watch(() => questionStore.subjects, (newSubjects) => {
@@ -172,13 +187,62 @@ watch(() => questionStore.questions, (newQuestions) => {
 // 获取排行榜数据
 const fetchLeaderboardData = async () => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=10`)
+    const response = await fetch(`${getApiBaseUrl()}/leaderboard/top10`)
     if (response.ok) {
       const data = await response.json()
       leaderboardData.value = data
     }
   } catch (error) {
 
+  }
+}
+
+// 计算到下周一00:00的时间差
+const calculateTimeLeft = () => {
+  const now = new Date()
+  const dayOfWeek = now.getDay()
+  // 计算到下周一的天数：周日(0)→1天，周一(1)→0天，周二(2)→6天，以此类推
+  const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7
+  const nextMonday = new Date(now)
+  nextMonday.setDate(now.getDate() + daysUntilMonday)
+  nextMonday.setHours(0, 0, 0, 0)
+  return Math.floor((nextMonday - now) / 1000)
+}
+
+// 格式化倒计时
+const formatTimeLeft = (seconds) => {
+  const days = Math.floor(seconds / 86400)
+  const hours = Math.floor((seconds % 86400) / 3600)
+  const minutes = Math.floor((seconds % 3600) / 60)
+  const secs = seconds % 60
+  return `${days.toString().padStart(2, '0')}天 ${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
+
+// 启动倒计时
+const startCountdown = () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+  }
+  
+  const updateCountdown = () => {
+    const timeLeft = calculateTimeLeft()
+    countdown.value = formatTimeLeft(timeLeft)
+    
+    // 如果倒计时结束，重新加载排行榜
+    if (timeLeft <= 0) {
+      fetchLeaderboardData()
+    }
+  }
+  
+  updateCountdown()
+  countdownInterval = setInterval(updateCountdown, 1000)
+}
+
+// 停止倒计时
+const stopCountdown = () => {
+  if (countdownInterval) {
+    clearInterval(countdownInterval)
+    countdownInterval = null
   }
 }
 
@@ -223,6 +287,8 @@ onMounted(async () => {
   // 2. 延迟加载排行榜数据
   setTimeout(async () => {
     await fetchLeaderboardData()
+    // 启动倒计时
+    startCountdown()
   }, 800)
   
   // 3. 延迟加载用户统计数据
@@ -234,6 +300,11 @@ onMounted(async () => {
   if (!currentStudentId.value) {
     router.push('/login')
   }
+})
+
+onUnmounted(() => {
+  // 停止倒计时，防止内存泄漏
+  stopCountdown()
 })
 </script>
 
@@ -545,6 +616,51 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+}
+
+.leaderboard-header-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  width: 100%;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.reset-countdown {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.8rem 1.5rem;
+  background: linear-gradient(135deg, #FFD166 0%, #FF6B6B 100%);
+  border-radius: 25px;
+  box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
+  border: 2px solid var(--border-color);
+  animation: pulse 2s infinite;
+}
+
+.countdown-label {
+  font-family: var(--game-font);
+  font-size: 1rem;
+  font-weight: 900;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  letter-spacing: 1px;
+}
+
+.countdown-time {
+  font-family: var(--game-font);
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: white;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  background: rgba(0, 0, 0, 0.2);
+  padding: 0.4rem 0.8rem;
+  border-radius: 12px;
+  min-width: 180px;
+  text-align: center;
+  border: 1px solid rgba(255, 255, 255, 0.3);
 }
 
 
@@ -874,6 +990,23 @@ onMounted(async () => {
   }
 }
 
+@media (max-width: 768px) {
+  .leaderboard-header-section {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .reset-countdown {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .countdown-time {
+    font-size: 1rem;
+    min-width: 150px;
+  }
+}
+
 @media (max-width: 480px) {
   .welcome-section,
   .subject-section,
@@ -904,6 +1037,19 @@ onMounted(async () => {
   .view-full-link {
     padding: 0.6rem 1.2rem;
     font-size: 0.9rem;
+  }
+  
+  .reset-countdown {
+    padding: 0.6rem 1.2rem;
+  }
+  
+  .countdown-label {
+    font-size: 0.9rem;
+  }
+  
+  .countdown-time {
+    font-size: 0.9rem;
+    min-width: 130px;
   }
 }
 </style>
