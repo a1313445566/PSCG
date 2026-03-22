@@ -25,15 +25,31 @@ router.get('/backup', async (req, res) => {
   try {
     const { type = 'full', format = 'db', dataTypes } = req.query;
     
+    // 验证format参数
+    const validFormats = ['db', 'json'];
+    if (!validFormats.includes(format)) {
+      return res.status(400).json({ error: '无效的格式参数，支持db和json格式' });
+    }
+    
+    // 解析并验证dataTypes参数（仅在format为json时需要）
+    let requestedTypes = [];
+    if (format === 'json') {
+      requestedTypes = dataTypes ? dataTypes.split(',') : [];
+      
+      // 验证dataTypes参数
+      const validDataTypes = ['questions', 'users', 'answers', 'settings', 'subjects', 'subcategories', 'grades', 'classes', 'leaderboard', 'analysis'];
+      const invalidTypes = requestedTypes.filter(dataType => !validDataTypes.includes(dataType));
+      if (invalidTypes.length > 0) {
+        return res.status(400).json({ error: `无效的数据类型: ${invalidTypes.join(', ')}` });
+      }
+    }
+    
     // 如果请求JSON格式
     if (format === 'json') {
       const backupData = {
         timestamp: new Date().toISOString(),
         data: {}
       };
-      
-      // 解析dataTypes参数
-      const requestedTypes = dataTypes ? dataTypes.split(',') : [];
       
       // 根据请求的数据类型获取数据
       try {
