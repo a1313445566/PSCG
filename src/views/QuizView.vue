@@ -197,27 +197,57 @@ const submitAnswers = async () => {
   // 计算分数
   quizStore.calculateScore()
   
-  // 处理错题巩固题库的逻辑
-  for (const question of currentQuestions.value) {
-    const userAnswer = userAnswers.value[question.id]
-    const isCorrect = isAnswerCorrect(question, userAnswer)
-    
-    // 处理错题
-    if (isErrorCollection.value) {
-      // 在错题巩固题库中答题
-      if (isCorrect) {
-        await questionStore.updateErrorQuestionCorrectCount(question.id)
+  // 处理错题巩固题库的逻辑（并行处理）
+  const errorCollectionPromises = currentQuestions.value.map(async (question) => {
+    try {
+      const userAnswer = userAnswers.value[question.id]
+      const isCorrect = isAnswerCorrect(question, userAnswer)
+      
+      // 处理错题
+      if (isErrorCollection.value) {
+        // 在错题巩固题库中答题
+        if (isCorrect) {
+          const result = await questionStore.updateErrorQuestionCorrectCount(question.id)
+          return { questionId: question.id, result }
+        } else {
+          // 做错时重置正确次数
+          const result = await questionStore.resetErrorQuestionCorrectCount(question.id)
+          return { questionId: question.id, result }
+        }
       } else {
-        // 做错时重置正确次数
-        await questionStore.resetErrorQuestionCorrectCount(question.id)
+        // 在普通题库中答题，错题需要添加到错题巩固题库
+        if (!isCorrect) {
+          // 对于普通题库的错题，添加到错题巩固题库
+          const result = await questionStore.addToErrorCollection(question.id)
+          return { questionId: question.id, result }
+        }
+        return { questionId: question.id, result: null } // 正确答案不需要处理
       }
-    } else {
-      // 在普通题库中答题，错题需要添加到错题巩固题库
-      if (!isCorrect) {
-        // 对于普通题库的错题，添加到错题巩固题库
-        await questionStore.addToErrorCollection(question.id)
-      }
+    } catch (error) {
+      // 包装错误对象，添加questionId信息
+      const wrappedError = new Error(`处理题目 ${question.id} 失败: ${error.message}`);
+      wrappedError.questionId = question.id;
+      wrappedError.originalError = error;
+      throw wrappedError;
     }
+  })
+  
+  // 等待所有错题处理完成
+  const results = await Promise.allSettled(errorCollectionPromises);
+  
+  // 处理结果
+  const failedItems = results
+    .filter(result => result.status === 'rejected')
+    .map(result => ({
+      questionId: result.reason?.questionId || 'unknown',
+      error: result.reason
+    }));
+  
+  if (failedItems.length > 0) {
+    const failedQuestionIds = failedItems.map(item => item.questionId).join(', ');
+    console.warn(`${failedItems.length} 个错题处理失败: 题目ID [${failedQuestionIds}]，但继续执行后续操作`);
+    // 添加用户友好的提示信息
+    ElMessage.warning('部分错题处理失败，但不影响答题结果');
   }
   
   // 保存答题记录
