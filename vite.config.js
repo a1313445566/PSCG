@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [vue()],
   base: './',
   optimizeDeps: {
-    include: ['element-plus', '@vueup/vue-quill', 'echarts'],
+    include: ['element-plus', 'quill', 'echarts'],
     exclude: []
   },
   build: {
@@ -17,7 +17,7 @@ export default defineConfig({
         manualChunks: {
           'element-plus': ['element-plus'],
           'echarts': ['echarts'],
-          'quill': ['@vueup/vue-quill'],
+          'quill': ['quill'],
           'vue': ['vue', 'vue-router', 'pinia']
         },
         chunkFileNames: 'assets/[name]-[hash].js',

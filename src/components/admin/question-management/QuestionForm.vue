@@ -63,8 +63,7 @@
         <div class="content-editor modern-card">
           <QuillEditor
                 :key="editorKey"
-                :content="form.content"
-                @update:content="(value) => { form.content = value }"
+                v-model="form.content"
                 @ready="onQuillReady"
                 :options="{
                   theme: 'snow',
@@ -198,8 +197,7 @@
 
 <script setup>
 import { ref, computed, watch, onMounted } from 'vue';
-import { QuillEditor } from '@vueup/vue-quill';
-import '@vueup/vue-quill/dist/vue-quill.snow.css';
+import QuillEditor from '../../../components/common/QuillEditor.vue';
 import { ElMessage } from 'element-plus';
 import { Plus, Upload, Delete } from '@element-plus/icons-vue';
 import EditableContent from '../../common/EditableContent.vue';
@@ -228,7 +226,7 @@ const form = ref({
   subjectId: '',
   subcategoryId: '',
   type: 'single',
-  content: '<p>请输入题目内容</p>',
+  content: '',
   options: ['', '', '', ''],
   selectedAnswers: [],
   answer: '',
@@ -258,6 +256,17 @@ watch(() => props.visible, (newValue) => {
     } else {
       resetForm();
     }
+    
+    // 延迟重置滚动位置，确保DOM已经渲染完成
+    setTimeout(() => {
+      const formContainer = document.querySelector('.question-form-container');
+      if (formContainer) {
+        formContainer.scrollTop = 0;
+      }
+    }, 100);
+  } else {
+    // 当对话框关闭时，重置编辑器key，确保下次打开时重新创建编辑器实例
+    editorKey.value++;
   }
 });
 
@@ -349,7 +358,7 @@ const resetForm = () => {
     subjectId: props.subjects.length > 0 ? props.subjects[0].id : '',
     subcategoryId: '',
     type: 'single',
-    content: '<p>请输入题目内容</p>',
+    content: '',
     options: ['', '', '', ''],
     answer: '',
     selectedAnswers: [],

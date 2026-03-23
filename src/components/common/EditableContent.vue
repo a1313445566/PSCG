@@ -1,8 +1,7 @@
 <template>
   <div class="editable-content">
     <QuillEditor 
-      v-model:content="localValue"
-      contentType="html"
+      v-model="localValue"
       :options="editorOptions"
       class="quill-editor"
     />
@@ -11,8 +10,7 @@
 
 <script setup>
 import { ref, watch } from 'vue'
-import { QuillEditor } from '@vueup/vue-quill'
-import '@vueup/vue-quill/dist/vue-quill.snow.css'
+import QuillEditor from './QuillEditor.vue'
 
 const props = defineProps({
   modelValue: {

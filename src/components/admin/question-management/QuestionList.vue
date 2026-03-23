@@ -228,6 +228,7 @@ import { ref, computed, watch } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Refresh } from '@element-plus/icons-vue';
 import { useQuestionStore } from '../../../stores/questionStore';
+import { formatDate } from '../../../utils/dateUtils';
 
 // 定义属性和事件
 const props = defineProps({
@@ -343,6 +344,7 @@ const filteredQuestions = computed(() => {
     
     // 处理创建时间
     const createdAt = question.createdAt || question.created_at || '未知';
+    const formattedCreatedAt = typeof createdAt === 'string' && createdAt !== '未知' ? formatDate(createdAt) : createdAt;
     
     // 处理内容，确保是字符串
     let content = question.content;
@@ -367,7 +369,7 @@ const filteredQuestions = computed(() => {
       subjectName,
       subcategoryName,
       typeName,
-      createdAt
+      createdAt: formattedCreatedAt
     };
   });
 });
@@ -415,6 +417,7 @@ const categoryQuestions = computed(() => {
     
     // 处理创建时间
     const createdAt = question.createdAt || question.created_at || '未知';
+    const formattedCreatedAt = typeof createdAt === 'string' && createdAt !== '未知' ? formatDate(createdAt) : createdAt;
     
     // 处理内容，确保是字符串
     let content = question.content;
@@ -439,7 +442,7 @@ const categoryQuestions = computed(() => {
       subjectName,
       subcategoryName,
       typeName,
-      createdAt
+      createdAt: formattedCreatedAt
     };
   });
 });

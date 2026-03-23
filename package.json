@@ -9,7 +9,6 @@
     "server": "node server.cjs"
   },
   "dependencies": {
-    "@vueup/vue-quill": "^1.2.0",
     "axios": "^1.13.6",
     "compression": "^1.8.1",
     "cors": "^2.8.5",
@@ -22,6 +21,7 @@
     "mysql2": "^3.20.0",
     "node-fetch": "^3.3.2",
     "pinia": "^3.0.4",
+    "quill": "^2.0.3",
     "vue": "^3.5.25",
     "vue-router": "^4.6.4",
     "xlsx": "^0.18.5"
