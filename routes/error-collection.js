@@ -22,7 +22,7 @@ router.get('/:subjectId', async (req, res) => {
     
     // 获取该用户在该学科下的错题记录，且累计正确次数小于3
     const query = `
-      SELECT q.id, q.subject_id, q.subcategory_id, q.content, q.type, q.options, q.correct_answer, q.explanation,
+      SELECT q.id, q.subject_id, q.subcategory_id, q.content, q.type, q.options, q.correct_answer as answer, q.explanation,
              COALESCE(ec.correct_count, 0) as correct_count, sc.name as subcategory_name
       FROM questions q
       LEFT JOIN (
@@ -35,20 +35,20 @@ router.get('/:subjectId', async (req, res) => {
       WHERE q.subject_id = ?
       AND q.id IN (
         SELECT DISTINCT question_id
-        FROM question_attempts
+        FROM error_collection
         WHERE user_id = ?
-        AND subject_id = ?
-        AND is_correct = 0
       )
       AND COALESCE(ec.correct_count, 0) < 3
     `;
     
-    const questions = await db.all(query, [userId, subjectId, userId, subjectId]);
+    const questions = await db.all(query, [userId, subjectId, userId]);
     
     // 处理选项和答案格式
     const processedQuestions = questions.map(question => {
       try {
-        question.options = JSON.parse(question.options);
+        if (typeof question.options === 'string') {
+          question.options = JSON.parse(question.options);
+        }
       } catch (e) {
         question.options = [];
       }
@@ -76,8 +76,9 @@ router.get('/:subjectId', async (req, res) => {
     
     res.json({ questions: processedQuestions, stats: statsObj });
   } catch (error) {
-    console.error('获取错题巩固题库失败:', error);
-    res.status(500).json({ error: '获取错题巩固题库失败' });
+    console.error('获取错题巩固题库失败:', error.message);
+    console.error('错误堆栈:', error.stack);
+    res.status(500).json({ error: '获取错题巩固题库失败', message: error.message });
   }
 });
 

@@ -299,88 +299,14 @@ const submitAnswers = async () => {
   lastSubmitTime.value = currentTime
   
   try {
-    // 计算分数
-    quizStore.calculateScore()
-    
-    // 处理错题巩固题库的逻辑（并行处理）
-    const errorCollectionPromises = currentQuestions.value.map(async (question) => {
-      try {
-        const userAnswer = userAnswers.value[question.id]
-        const isCorrect = isAnswerCorrect(question, userAnswer)
-        
-        // 处理错题
-        if (isErrorCollection.value) {
-          // 在错题巩固题库中答题
-          if (isCorrect) {
-            const result = await questionStore.updateErrorQuestionCorrectCount(question.id)
-            return { questionId: question.id, result }
-          } else {
-            // 做错时重置正确次数
-            const result = await questionStore.resetErrorQuestionCorrectCount(question.id)
-            return { questionId: question.id, result }
-          }
-        } else {
-          // 在普通题库中答题，错题需要添加到错题巩固题库
-          if (!isCorrect) {
-            // 对于普通题库的错题，添加到错题巩固题库
-            const result = await questionStore.addToErrorCollection(question.id)
-            return { questionId: question.id, result }
-          }
-          return { questionId: question.id, result: null } // 正确答案不需要处理
-        }
-      } catch (error) {
-        // 包装错误对象，添加questionId信息
-        const wrappedError = new Error(`处理题目 ${question.id} 失败: ${error.message}`);
-        wrappedError.questionId = question.id;
-        wrappedError.originalError = error;
-        throw wrappedError;
-      }
-    })
-    
-    // 等待所有错题处理完成
-    const results = await Promise.allSettled(errorCollectionPromises);
-    
-    // 处理结果
-    const failedItems = results
-      .filter(result => result.status === 'rejected')
-      .map(result => ({
-        questionId: result.reason?.questionId || 'unknown',
-        error: result.reason
-      }));
-    
-    if (failedItems.length > 0) {
-      // 添加用户友好的提示信息
-      ElMessage.warning('部分错题处理失败，但不影响答题结果');
-    }
-    
-    // 保存答题记录
-    const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
-    
-    // 准备提交数据
+    // 调用后端API提交答案
     const submitData = {
-      userId: localStorage.getItem('studentId'),
-      grade: parseInt(localStorage.getItem('userGrade')),
-      class: parseInt(localStorage.getItem('userClass')),
-      subjectId: subjectId.value,
-      subcategoryId: subcategoryId.value,
-      totalQuestions: totalQuestions.value,
-      correctCount: score.value,
-      timeSpent: timeSpentSeconds,
-      timestamp: currentTime
+      quizId: quizStore.quizId,
+      answers: userAnswers.value
     }
     
-    const userId = localStorage.getItem('studentId');
-    // 生成签名（不包含signature字段）
-    const signatureData = { ...submitData }
-    const signature = await generateSignature(signatureData, currentTime, userId)
-    // 添加签名到提交数据
-    submitData.signature = signature
-    
-    // 保存整体答题记录
-    const apiUrl = `${getApiBaseUrl()}/answer-records`
-    console.log('API请求地址:', apiUrl);
-    
-    const answerRecordResponse = await fetch(apiUrl, {
+    const apiUrl = `${getApiBaseUrl()}/quiz/submit`
+    const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
@@ -388,83 +314,72 @@ const submitAnswers = async () => {
       body: JSON.stringify(submitData)
     })
     
-    if (answerRecordResponse.ok) {
-      const successData = await answerRecordResponse.json()
-      
-      // 保存每道题的答题记录
-      const questionAttemptPromises = []
-      for (const question of currentQuestions.value) {
-        const userAnswer = userAnswers.value[question.id]
-        const correctAnswer = question.correct_answer || question.answer
-        
-        // 计算是否正确
-        const isCorrect = isAnswerCorrect(question, userAnswer)
-        
-        // 处理答案格式
-        const formattedUserAnswer = question.type === 'multiple' && Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
-        const formattedCorrectAnswer = question.type === 'multiple' && Array.isArray(correctAnswer) ? correctAnswer.join('') : correctAnswer
-        
-        // 保存随机排序的选项
-        const shuffledOptions = question.shuffledOptions ? JSON.stringify(question.shuffledOptions) : null
-        
-        // 生成题目尝试记录的签名
-        const attemptData = {
-          userId: localStorage.getItem('studentId'),
-          questionId: question.id,
-          answerRecordId: successData.recordId,
-          timestamp: currentTime
-        }
-        const attemptSignature = await generateSignature(attemptData, currentTime, userId)
-        
-        const questionAttemptPromise = fetch(`${getApiBaseUrl()}/answer-records/question-attempts`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            userId: localStorage.getItem('studentId'),
-            grade: parseInt(localStorage.getItem('userGrade')),
-            class: parseInt(localStorage.getItem('userClass')),
-            questionId: question.id,
-            subjectId: subjectId.value,
-            subcategoryId: subcategoryId.value,
-            userAnswer: formattedUserAnswer,
-            correctAnswer: formattedCorrectAnswer,
-            isCorrect: isCorrect,
-            answerRecordId: successData.recordId,
-            shuffledOptions: shuffledOptions,
-            timestamp: currentTime,
-            signature: attemptSignature
-          })
-        })
-        
-        questionAttemptPromises.push(questionAttemptPromise)
-      }
-      
-      // 等待所有题目尝试记录保存完成，添加错误处理
-      await Promise.all(questionAttemptPromises.map(p => p.catch(() => null)))
-    } else {
-      const errorData = await answerRecordResponse.json().catch(() => ({}))
-      if (errorData.error) {
-        ElMessage.error(errorData.error)
-      }
+    if (!response.ok) {
+      const errorData = await response.json()
+      ElMessage.error(errorData.error || '提交答案失败')
+      return
     }
     
-    // 存储答题数据到localStorage
-    localStorage.setItem('quizData', JSON.stringify({
-      currentQuestions: currentQuestions.value,
-      userAnswers: userAnswers.value,
-      score: score.value
+    const result = await response.json()
+    
+    // 验证积分数据
+    let validatedPoints = result.points || 0
+    
+    // 计算预期积分范围
+    const totalQuestions = result.totalQuestions || 0
+    const correctCount = result.correctCount || 0
+    const wrongCount = totalQuestions - correctCount
+    
+    // 普通题库积分规则：答对1分，答错扣1分，全对积分翻倍
+    let expectedMinPoints = -wrongCount // 全错的情况
+    let expectedMaxPoints = correctCount // 普通情况
+    
+    if (correctCount === totalQuestions && totalQuestions > 0) {
+      expectedMaxPoints = correctCount * 2 // 全对翻倍
+    }
+    
+    // 错题巩固题库积分规则：每道题累计正确3次+1分
+    if (isErrorCollection.value) {
+      // 错题巩固题库每道题最多+1分
+      expectedMaxPoints = totalQuestions
+      expectedMinPoints = 0
+    }
+    
+    // 验证积分是否在合理范围内
+    if (result.points < expectedMinPoints || result.points > expectedMaxPoints) {
+      console.warn('积分数据异常，使用计算值:', { 
+        received: result.points, 
+        expectedMin: expectedMinPoints, 
+        expectedMax: expectedMaxPoints 
+      })
+      
+      // 使用计算的最大可能积分作为替代
+      validatedPoints = Math.min(Math.max(result.points || 0, expectedMinPoints), expectedMaxPoints)
+    }
+    
+    // 保存答题结果到localStorage
+    localStorage.setItem('quizResult', JSON.stringify({
+      score: result.score,
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      results: result.results,
+      points: validatedPoints
     }))
     
+    // 如果是错题巩固题库，更新统计数据
+    if (isErrorCollection.value && result.stats) {
+      questionStore.errorCollectionStats = { ...questionStore.errorCollectionStats, ...result.stats }
+    }
+    
     // 存储用时数据到localStorage
+    const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
     localStorage.setItem('timeSpent', timeSpentSeconds.toString())
     
     // 跳转到结果页面
-    // 错题巩固题库也跳转到结果页面，与普通题库保持一致
     router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
   } catch (error) {
-    ElMessage.error('保存答题记录失败，请检查网络连接')
+    console.error('提交答案失败:', error)
+    ElMessage.error('提交答案失败，请检查网络连接')
   } finally {
     // 重置提交状态
     isSubmitting.value = false
@@ -523,45 +438,79 @@ onMounted(async () => {
     return
   }
   
-  // 生成题目
-  const { randomizeAnswers, fixedQuestionCount, minQuestionCount, maxQuestionCount, fixedQuestionCountValue } = settingsStore.settings
-  
-  let questionCount
-  if (fixedQuestionCount) {
-    questionCount = fixedQuestionCountValue
-  } else {
-    questionCount = Math.floor(Math.random() * (maxQuestionCount - minQuestionCount + 1)) + minQuestionCount
-  }
-  
-  // 生成题目
-  if (isErrorCollection.value) {
-    // 加载错题巩固题库
-    await questionStore.loadErrorCollection(subjectId.value)
-    const errorQuestions = questionStore.getErrorCollection(subjectId.value)
-    // 固定答案顺序，加载全部待巩固题目
-    quizStore.currentQuestions = errorQuestions.map(question => ({
-      ...question,
-      shuffledOptions: question.options || question.shuffledOptions,
-      type: question.type || 'single'
-    }))
-    quizStore.userAnswers = {}
-    quizStore.score = null
-    quizStore.startTime = Date.now()
-  } else {
-    // 按需加载该题库的题目（不再预加载整个学科）
-    const loadedQuestions = await questionStore.loadQuestionsBySubcategory(subjectId.value, parseInt(subcategoryId.value))
+  // 调用后端API开始答题
+  try {
+    const { randomizeAnswers, fixedQuestionCount, minQuestionCount, maxQuestionCount, fixedQuestionCountValue } = settingsStore.settings
     
-    if (loadedQuestions.length === 0) {
-      ElMessage.warning('该题库暂无题目')
+    let questionCount
+    if (fixedQuestionCount) {
+      questionCount = fixedQuestionCountValue
+    } else {
+      questionCount = Math.floor(Math.random() * (maxQuestionCount - minQuestionCount + 1)) + minQuestionCount
+    }
+    
+    const startData = {
+      subjectId: subjectId.value,
+      subcategoryId: subcategoryId.value,
+      questionCount: questionCount,
+      studentId: localStorage.getItem('studentId'),
+      grade: parseInt(localStorage.getItem('userGrade')),
+      class: parseInt(localStorage.getItem('userClass'))
+    }
+    
+    const apiUrl = `${getApiBaseUrl()}/quiz/start`
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(startData)
+    })
+    
+    if (!response.ok) {
+      // 特殊处理错题巩固题库为空的情况
+      if (isErrorCollection.value && response.status === 404) {
+        ElMessage.success('恭喜！您的错题巩固题库为空，所有错题都已巩固完成！')
+        router.push(`/subcategory/${subjectId.value}`)
+        return
+      }
+      
+      try {
+        const errorData = await response.json()
+        ElMessage.error(errorData.error || '开始答题失败')
+      } catch (e) {
+        ElMessage.error('开始答题失败')
+      }
       router.push(`/subcategory/${subjectId.value}`)
       return
     }
     
-    // 获取用户在该题库的统计数据（用于智能选题）
-    await questionStore.loadUserSubcategoryStats(parseInt(subcategoryId.value))
+    const data = await response.json()
     
-    // 生成普通题库题目（根据用户水平智能选题）
-    quizStore.generateQuestionsBySubcategory(parseInt(subjectId.value), parseInt(subcategoryId.value), questionCount, randomizeAnswers)
+    // 保存quizId用于后续提交
+    quizStore.quizId = data.quizId
+    quizStore.expiresAt = data.expiresAt
+    
+    // 设置题目数据（后端已返回不含正确答案的题目）
+    quizStore.currentQuestions = data.questions.map(q => ({
+      ...q,
+      shuffledOptions: q.options,
+      type: q.type || 'single'
+    }))
+    quizStore.userAnswers = {}
+    quizStore.score = null
+    quizStore.startTime = Date.now()
+    
+    // 如果是错题巩固题库，保存统计数据
+    if (isErrorCollection.value && data.stats) {
+      questionStore.errorCollectionStats = { ...questionStore.errorCollectionStats, ...data.stats }
+    }
+    
+  } catch (error) {
+    console.error('开始答题失败:', error)
+    ElMessage.error('开始答题失败，请检查网络连接')
+    router.push(`/subcategory/${subjectId.value}`)
+    return
   }
   
   // 开始计时

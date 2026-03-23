@@ -159,14 +159,14 @@ export const useQuestionStore = defineStore('question', {
     },
     
     // 加载题目数据（按需加载）
-    async loadQuestions(subjectId = null, subcategoryId = null) {
+    async loadQuestions(subjectId = null, subcategoryId = null, excludeContent = false) {
       try {
         this.isLoading = true
         this.error = null
-        
+
         let url = `${getApiBaseUrl()}/questions`
         const params = []
-        
+
         if (subjectId) {
           params.push(`subjectId=${subjectId}`)
         }
@@ -175,11 +175,15 @@ export const useQuestionStore = defineStore('question', {
         }
         // 添加较大的limit参数，确保获取所有题目
         params.push('limit=1000')
-        
+        // 排除内容字段以提升性能
+        if (excludeContent) {
+          params.push('excludeContent=true')
+        }
+
         if (params.length > 0) {
           url += `?${params.join('&')}`
         }
-        
+
         const response = await fetch(url)
         if (response.ok) {
           const data = await response.json()
@@ -873,6 +877,8 @@ export const useQuestionStore = defineStore('question', {
 // 答题相关 store
 export const useQuizStore = defineStore('quiz', {
   state: () => ({
+    quizId: null, // 答题会话ID
+    expiresAt: null, // 会话过期时间
     selectedSubjectId: null,
     selectedSubcategoryId: null,
     currentQuestions: [],
@@ -889,7 +895,7 @@ export const useQuizStore = defineStore('quiz', {
       {
         key: 'quiz-store',
         storage: localStorage,
-        paths: ['currentQuestions', 'userAnswers', 'score', 'correctQuestions']
+        paths: [] // 不持久化任何数据，因为答题会话由后端管理
       }
     ]
   },
@@ -923,243 +929,21 @@ export const useQuizStore = defineStore('quiz', {
       this.userAnswers = {}
       this.score = null
       this.startTime = null
+      this.quizId = null
+      this.expiresAt = null
     },
     
-    generateQuestions(subjectId, count = 3, randomizeAnswers = true) {
-      const questionStore = useQuestionStore()
-      const subjectQuestions = questionStore.getQuestionsBySubject(subjectId)
-      const shuffled = subjectQuestions.sort(() => 0.5 - Math.random())
-      
-      // 对每个题目的选项进行随机排序
-      this.currentQuestions = shuffled.slice(0, count).map(question => {
-        // 提取选项内容（去掉A、B、C、D标签）
-        const optionContents = question.options.map(option => {
-          if (/^[A-Z]\.\s/.test(option)) {
-            return option.substring(2)
-          }
-          return option
-        })
-        
-        // 根据设置决定是否随机排序选项内容
-        let shuffledContents = optionContents
-        if (randomizeAnswers) {
-          shuffledContents = [...optionContents].sort(() => 0.5 - Math.random())
-        }
-        
-        // 不添加标签，标签由组件负责显示
-        const shuffledOptions = shuffledContents
-        
-        const newQuestion = {
-          ...question,
-          shuffledOptions,
-          type: question.type || 'single' // 确保type字段存在，默认为single
-        }
-        
-        // 获取正确答案
-        const answer = question.answer || question.correct_answer || ''
-        
-        // 只有在随机排序时才更新答案标签
-        if (randomizeAnswers && answer) {
-          if (question.type === 'multiple') {
-            // 处理多选题答案
-            const originalAnswerChars = Array.isArray(answer) ? answer : answer.split('')
-            const newAnswerChars = originalAnswerChars.map(originalAnswerChar => {
-              const originalAnswerIndex = originalAnswerChar.charCodeAt(0) - 65
-              if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
-                const originalAnswerContent = optionContents[originalAnswerIndex]
-                const newIndex = shuffledContents.indexOf(originalAnswerContent)
-                if (newIndex !== -1) {
-                  return String.fromCharCode(65 + newIndex)
-                }
-              }
-              return originalAnswerChar
-            }).filter(char => char !== undefined)
-            newQuestion.answer = newAnswerChars
-          } else {
-            // 处理单选题答案
-            const originalAnswerIndex = answer.charCodeAt(0) - 65
-            if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
-              const originalAnswerContent = optionContents[originalAnswerIndex]
-              const newIndex = shuffledContents.indexOf(originalAnswerContent)
-              if (newIndex !== -1) {
-                newQuestion.answer = String.fromCharCode(65 + newIndex)
-              }
-            }
-          }
-        }
-        
-        return newQuestion
-      })
-      
+    // 设置答题会话数据（由后端返回）
+    setQuizSession(quizId, expiresAt, questions) {
+      this.quizId = quizId
+      this.expiresAt = expiresAt
+      this.currentQuestions = questions
       this.userAnswers = {}
       this.score = null
       this.startTime = Date.now()
     },
     
-    generateQuestionsBySubcategory(subjectId, subcategoryId, count = 3, randomizeAnswers = true) {
-      const questionStore = useQuestionStore()
-      
-      // 过滤出该子分类的题目
-      const allSubjectQuestions = questionStore.questions.filter(q => {
-        const qSubjectId = q.subjectId || q.subject_id
-        const qSubcategoryId = q.subcategoryId || q.subcategory_id
-        return qSubjectId === subjectId && qSubcategoryId === subcategoryId
-      })
-      
-      // 过滤出未做对的题目
-      const subjectQuestions = allSubjectQuestions.filter(q => !this.correctQuestions.includes(q.id))
-      
-      // 确定使用哪些题目
-      let availableQuestions = subjectQuestions.length > 0 ? subjectQuestions : allSubjectQuestions
-      
-      // 确保至少有一个题目
-      if (availableQuestions.length === 0) {
-        this.resetQuizState()
-        return 0
-      }
-      
-      // 智能难度选题：根据题目难度分组，根据用户水平动态调整比例
-      const easyQuestions = availableQuestions.filter(q => (q.difficulty || 1) <= 2)
-      const mediumQuestions = availableQuestions.filter(q => (q.difficulty || 1) === 3)
-      const hardQuestions = availableQuestions.filter(q => (q.difficulty || 1) >= 4)
-      
-      // 打乱各组题目顺序
-      const shuffleArray = (arr) => [...arr].sort(() => 0.5 - Math.random())
-      
-      const shuffledEasy = shuffleArray(easyQuestions)
-      const shuffledMedium = shuffleArray(mediumQuestions)
-      const shuffledHard = shuffleArray(hardQuestions)
-      
-      // 根据用户在该题库的正确率调整难度比例
-      const userStats = questionStore.userSubcategoryStats[subcategoryId]
-      let easyRatio = 0.3, mediumRatio = 0.5, hardRatio = 0.2
-      
-      if (userStats && userStats.totalAttempts >= 5) {
-        // 有足够历史数据时，根据正确率调整
-        const accuracy = userStats.recentAccuracy || userStats.accuracy || 50
-        
-        if (accuracy >= 80) {
-          // 用户表现优秀，增加困难题目
-          easyRatio = 0.15
-          mediumRatio = 0.35
-          hardRatio = 0.5
-        } else if (accuracy >= 60) {
-          // 用户表现良好，略微增加困难
-          easyRatio = 0.2
-          mediumRatio = 0.5
-          hardRatio = 0.3
-        } else if (accuracy >= 40) {
-          // 用户表现一般，保持默认比例
-          easyRatio = 0.3
-          mediumRatio = 0.5
-          hardRatio = 0.2
-        } else {
-          // 用户表现较弱，增加简单题目
-          easyRatio = 0.5
-          mediumRatio = 0.4
-          hardRatio = 0.1
-        }
-      }
-      
-      // 计算各难度题目数量
-      let selectedQuestions = []
-      const easyCount = Math.ceil(count * easyRatio)
-      const mediumCount = Math.ceil(count * mediumRatio)
-      const hardCount = count - easyCount - mediumCount
-      
-      // 先从中等难度选择
-      selectedQuestions = selectedQuestions.concat(shuffledMedium.slice(0, mediumCount))
-      
-      // 如果中等难度不够，用其他难度补充
-      const remainingAfterMedium = mediumCount - selectedQuestions.length
-      
-      // 添加简单题目
-      const easyToAdd = remainingAfterMedium > 0 ? easyCount + remainingAfterMedium : easyCount
-      selectedQuestions = selectedQuestions.concat(shuffledEasy.slice(0, easyToAdd))
-      
-      // 添加困难题目
-      selectedQuestions = selectedQuestions.concat(shuffledHard.slice(0, hardCount))
-      
-      // 如果题目还不够，从所有可用题目中随机补充
-      if (selectedQuestions.length < count) {
-        const selectedIds = new Set(selectedQuestions.map(q => q.id))
-        const remaining = shuffleArray(availableQuestions.filter(q => !selectedIds.has(q.id)))
-        selectedQuestions = selectedQuestions.concat(remaining.slice(0, count - selectedQuestions.length))
-      }
-      
-      // 打乱最终选题顺序
-      const shuffled = shuffleArray(selectedQuestions)
-      const actualCount = Math.max(1, Math.min(count, shuffled.length))
-      
-      // 对每个题目的选项进行排序
-      this.currentQuestions = shuffled.slice(0, actualCount).map(question => {
-        // 提取选项内容
-        const optionContents = question.options.map(option => {
-          if (/^[A-Z]\.\s/.test(option)) {
-            return option.substring(2)
-          }
-          return option
-        })
-        
-        // 根据设置决定是否随机排序选项内容
-        let shuffledContents = optionContents
-        if (randomizeAnswers) {
-          shuffledContents = [...optionContents].sort(() => 0.5 - Math.random())
-        }
-        
-        // 不添加标签，标签由组件负责显示
-        const shuffledOptions = shuffledContents
-        
-        const newQuestion = {
-          ...question,
-          shuffledOptions,
-          type: question.type || 'single' // 确保type字段存在，默认为single
-        }
-        
-        // 获取正确答案
-        const answer = question.answer || question.correct_answer || ''
-        
-        // 只有在随机排序时才更新答案标签
-        if (randomizeAnswers && answer) {
-          if (question.type === 'multiple') {
-            // 处理多选题答案
-            const originalAnswerChars = Array.isArray(answer) ? answer : answer.split('')
-            const newAnswerChars = originalAnswerChars.map(originalAnswerChar => {
-              const originalAnswerIndex = originalAnswerChar.charCodeAt(0) - 65
-              if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
-                const originalAnswerContent = optionContents[originalAnswerIndex]
-                const newIndex = shuffledContents.indexOf(originalAnswerContent)
-                if (newIndex !== -1) {
-                  return String.fromCharCode(65 + newIndex)
-                }
-              }
-              return originalAnswerChar
-            }).filter(char => char !== undefined)
-            newQuestion.answer = newAnswerChars
-          } else {
-            // 处理单选题答案
-            const originalAnswerIndex = answer.charCodeAt(0) - 65
-            if (originalAnswerIndex >= 0 && originalAnswerIndex < optionContents.length) {
-              const originalAnswerContent = optionContents[originalAnswerIndex]
-              const newIndex = shuffledContents.indexOf(originalAnswerContent)
-              if (newIndex !== -1) {
-                newQuestion.answer = String.fromCharCode(65 + newIndex)
-              }
-            }
-          }
-        }
-        
-        return newQuestion
-      })
-      
-      this.userAnswers = {}
-      this.score = null
-      this.startTime = Date.now()
-      
-      // 返回实际生成的题目数量
-      return actualCount
-    },
-    
+    // 提交答案（只存储，不验证）
     submitAnswer(questionId, answer, questionType = 'single') {
       if (questionType === 'multiple') {
         // 对于多选题，使用数组存储多个答案
@@ -1179,52 +963,6 @@ export const useQuizStore = defineStore('quiz', {
         // 对于单选题，直接存储单个答案
         this.userAnswers[questionId] = answer
       }
-    },
-    
-    calculateScore() {
-      let correctCount = 0
-      
-      this.currentQuestions.forEach(question => {
-        const userAnswer = this.userAnswers[question.id]
-        const correctAnswer = question.correct_answer || question.answer
-        
-        let isCorrect = false
-        
-        if (question.type === 'multiple') {
-          // 对于多选题，比较答案数组
-          if (Array.isArray(userAnswer) && Array.isArray(correctAnswer)) {
-            // 排序后比较是否完全一致
-            const sortedUserAnswer = userAnswer.sort()
-            const sortedCorrectAnswer = correctAnswer.sort()
-            isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer)
-          } else if (typeof correctAnswer === 'string') {
-            // 处理正确答案为字符串的情况（如 "AB"）
-            if (Array.isArray(userAnswer)) {
-              const sortedUserAnswer = userAnswer.sort().join('')
-              isCorrect = sortedUserAnswer === correctAnswer
-            }
-          }
-        } else {
-          // 对于单选题，直接比较
-          if (Array.isArray(userAnswer)) {
-            // 如果用户答案是数组，取第一个元素
-            isCorrect = userAnswer[0] === correctAnswer
-          } else {
-            isCorrect = userAnswer === correctAnswer
-          }
-        }
-        
-        if (isCorrect) {
-          correctCount++
-          // 将做对的题目ID添加到correctQuestions数组中
-          if (!this.correctQuestions.includes(question.id)) {
-            this.correctQuestions.push(question.id)
-          }
-        }
-      })
-      
-      this.score = correctCount
-      return correctCount
     }
   }
 })

@@ -661,7 +661,7 @@ const handlePasswordVerify = async (isVerified) => {
     await loadSettings()
     // 加载题目和学科数据
     await questionStore.loadData()
-    // 加载所有题目数据
+    // 加载所有题目数据（排除内容以提升性能）
     await questionStore.loadQuestions(null, null, true)
   }
 }
@@ -1387,7 +1387,7 @@ onMounted(async () => {
     // 加载题目和学科数据
     await questionStore.loadData()
     // 加载所有题目数据
-    await questionStore.loadQuestions(null, null, true)
+    await questionStore.loadQuestions()
     // 加载排行榜数据
     await questionStore.loadUserStats()
     await questionStore.loadRecentRecords()
@@ -1398,7 +1398,7 @@ onMounted(async () => {
     passwordDialogVisible.value = true
     isAuthenticated.value = false
   }
-  
+
 
 })
 </script>

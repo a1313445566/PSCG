@@ -45,48 +45,65 @@ router.get('/subcategories/stats', async (req, res) => {
 // 获取题目列表（支持分页和筛选）
 router.get('/', async (req, res) => {
   try {
-    const { subjectId, subcategoryId, type, page = 1, limit = 20 } = req.query;
-    
-    let query = 'SELECT * FROM questions WHERE 1=1';
+    const { subjectId, subcategoryId, type, page = 1, limit = 20, excludeContent = 'false' } = req.query;
+
+    // 根据是否排除内容字段，选择不同的查询字段
+    const selectFields = excludeContent === 'true'
+      ? 'id, subject_id as subjectId, subcategory_id as subcategoryId, type, correct_answer as answer, difficulty, created_at as createdAt, SUBSTRING(content, 1, 200) as content'
+      : '*';
+
+    let query = `SELECT ${selectFields} FROM questions WHERE 1=1`;
     const params = [];
-    
+
     if (subjectId) {
       query += ' AND subject_id = ?';
       params.push(Number(subjectId));
     }
-    
+
     if (subcategoryId) {
       query += ' AND subcategory_id = ?';
       params.push(Number(subcategoryId));
     }
-    
+
     if (type) {
       query += ' AND type = ?';
       params.push(type);
     }
-    
+
     const pageNum = parseInt(page) || 1;
     const limitNum = parseInt(limit) || 20;
     const offset = (pageNum - 1) * limitNum;
-    
+
     query += ` ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
-    
+
     const questions = await db.all(query, params);
-    
-    // 转换字段名为camelCase格式
+
+    // 转换字段名为camelCase格式（仅在需要时处理）
     const formattedQuestions = questions.map(question => {
+      if (excludeContent === 'true') {
+        // 不包含完整内容时，只返回基本信息和内容摘要
+        return {
+          id: question.id,
+          subjectId: question.subjectId || question.subject_id,
+          subcategoryId: question.subcategoryId || question.subcategory_id,
+          content: question.content || '', // 只包含前200个字符
+          type: question.type,
+          answer: question.answer,
+          difficulty: question.difficulty,
+          createdAt: question.createdAt || question.created_at
+        };
+      }
+
       let options = [];
       let answer = question.correct_answer;
-      
+
       try {
         options = JSON.parse(question.options);
       } catch (error) {
-
         options = [];
       }
-      
+
       try {
-        // 尝试解析answer字段，处理JSON字符串格式的答案
         const parsedAnswer = JSON.parse(question.correct_answer);
         if (typeof parsedAnswer === 'string') {
           answer = parsedAnswer;
@@ -94,7 +111,7 @@ router.get('/', async (req, res) => {
       } catch (error) {
         // 如果解析失败，使用原始值
       }
-      
+
       return {
         id: question.id,
         subjectId: question.subject_id,
@@ -109,7 +126,7 @@ router.get('/', async (req, res) => {
         createdAt: question.created_at
       };
     });
-    
+
     res.json(formattedQuestions);
   } catch (error) {
     // console.error('获取题目失败:', error);

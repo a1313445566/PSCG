@@ -45,7 +45,7 @@
         stripe
         border
         :default-sort="{prop: 'createdAt', order: 'descending'}"
-        :row-class-name="row => (hasValidImage(row.content) || row.audio) ? 'has-media' : ''"
+        :row-class-name="row => hasValidImage(row.content) || row.audio ? 'has-media' : ''"
         v-loading="loading"
         element-loading-text="加载中..."
         height="500px"
@@ -138,7 +138,7 @@
           stripe
           border
           :default-sort="{prop: 'createdAt', order: 'descending'}"
-          :row-class-name="row => (hasValidImage(row.content) || row.audio) ? 'has-media' : ''"
+          :row-class-name="row => hasValidImage(row.content) || row.audio ? 'has-media' : ''"
           v-loading="loading"
           element-loading-text="加载中..."
           height="500px"
@@ -279,7 +279,7 @@ const categorySubcategories = computed(() => {
 
 // 计算筛选后的题目
 const filteredQuestions = computed(() => {
-  let result = [...(props.questions || [])];
+  let result = [...props.questions];
   
   // 搜索关键词
   if (searchKeyword.value) {
@@ -383,7 +383,7 @@ const categoryQuestions = computed(() => {
     return [];
   }
   
-  const filteredQuestions = (props.questions || []).filter(q => {
+  const filteredQuestions = props.questions.filter(q => {
     const questionSubjectId = q.subjectId || q.subject_id;
     const questionSubcategoryId = q.subcategoryId || q.subcategory_id;
     return String(questionSubjectId) === String(selectedCategorySubjectId.value) && 
@@ -542,31 +542,15 @@ const refreshQuestions = async () => {
 
 // 辅助方法
 const hasValidImage = (content) => {
-  return typeof content === 'string' && content.includes('<img');
+  return content && content.includes('<img');
 };
 
 const extractImageUrl = (content) => {
-  if (typeof content !== 'string') {
-    return '';
-  }
-  // 从content字段中提取图片
   const match = content.match(/<img[^>]+src="([^"]+)"/);
-  if (match) {
-    const url = match[1];
-    // 检查是否是完整的data URL或http URL
-    if (url.startsWith('data:') || url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    // 如果是相对路径，可能需要处理
-    return url;
-  }
-  return '';
+  return match ? match[1] : '';
 };
 
 const stripImages = (content) => {
-  if (typeof content !== 'string') {
-    return '';
-  }
   return content.replace(/<img[^>]+>/g, '');
 };
 
@@ -579,7 +563,7 @@ const getTypeName = (type) => {
     'reading': '阅读题',
     'image': '看图题'
   };
-  return typeMap[type] || (typeof type === 'string' ? type : '未知');
+  return typeMap[type] || type;
 };
 
 // 监听题目变化

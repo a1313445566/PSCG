@@ -133,23 +133,8 @@ const timeSpent = computed(() => {
 
 // 计算获得的积分
 const calculatePoints = computed(() => {
-  if (isErrorCollection.value) {
-    // 错题巩固题库：积分在后端处理
-    return 0
-  }
-  
-  const correctCount = score.value
-  const wrongCount = totalQuestions.value - correctCount
-  
-  // 基础积分：答对一题得1分，答错一题扣1分
-  let points = correctCount - wrongCount
-  
-  // 全对积分翻倍
-  if (correctCount === totalQuestions.value && totalQuestions.value > 0) {
-    points *= 2
-  }
-  
-  return points
+  // 使用后端返回的积分
+  return quizData.value?.points || 0
 })
 
 // 错题巩固进度
@@ -252,14 +237,39 @@ onMounted(async () => {
   // 初始化数据
   await questionStore.initialize()
   
-  // 从localStorage中读取答题数据
-  const storedData = localStorage.getItem('quizData')
-  if (storedData) {
+  // 从localStorage中读取答题结果
+  const storedResult = localStorage.getItem('quizResult')
+  if (storedResult) {
     try {
-      quizData.value = JSON.parse(storedData)
+      const result = JSON.parse(storedResult)
+      
+      // 构造兼容的数据结构
+      quizData.value = {
+        score: result.correctCount,
+        currentQuestions: result.results.map(r => ({
+          id: r.questionId,
+          content: r.content,
+          options: r.options,
+          type: r.type || 'single',
+          correct_answer: r.correctAnswer,
+          answer: r.userAnswer,
+          explanation: r.explanation,
+          isCorrect: r.isCorrect,
+          audio_url: r.audio_url,
+          image_url: r.image_url
+        })),
+        userAnswers: {}
+      }
+      
+      // 构造userAnswers对象
+      result.results.forEach(r => {
+        quizData.value.userAnswers[r.questionId] = r.userAnswer
+      })
+      
+      // 保存points到quizData
+      quizData.value.points = result.points
     } catch (error) {
-
-      // 如果解析失败，重定向到题库选择页面
+      console.error('解析答题结果失败:', error)
       router.push(`/subcategory/${subjectId.value}`)
     }
   } else {
