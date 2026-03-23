@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
 
     // 根据是否排除内容字段，选择不同的查询字段
     const selectFields = excludeContent === 'true'
-      ? 'id, subject_id as subjectId, subcategory_id as subcategoryId, type, correct_answer as answer, difficulty, created_at as createdAt, SUBSTRING(content, 1, 200) as content'
+      ? 'id, subject_id as subjectId, subcategory_id as subcategoryId, type, correct_answer as answer, difficulty, created_at as createdAt, SUBSTRING(content, 1, 200) as content, image_url as image, audio_url as audio'
       : '*';
 
     let query = `SELECT ${selectFields} FROM questions WHERE 1=1`;
@@ -90,6 +90,8 @@ router.get('/', async (req, res) => {
           type: question.type,
           answer: question.answer,
           difficulty: question.difficulty,
+          image: question.image,
+          audio: question.audio,
           createdAt: question.createdAt || question.created_at
         };
       }

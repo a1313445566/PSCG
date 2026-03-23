@@ -30,8 +30,8 @@ router.get('/global', async (req, res) => {
     }
     
     // 计算偏移量
-    const limitNum = Math.max(1, Math.min(parseInt(limit) || 20, 100));
-    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = limit === '0' ? 0 : (Number(limit) || 20);
+    const pageNum = Math.max(1, Number(page) || 1);
     const offset = (pageNum - 1) * limitNum;
     
     // 先查询总数
@@ -156,8 +156,9 @@ router.get('/global', async (req, res) => {
     dataQuery += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';
     
     // 添加LIMIT和OFFSET子句
-    dataQuery += ' LIMIT ? OFFSET ?';
-    dataParams.push(limitNum, offset);
+    if (limitNum > 0) {
+      dataQuery += ` LIMIT ${limitNum} OFFSET ${offset}`;
+    }
     
     const users = await db.all(dataQuery, dataParams);
     
@@ -174,8 +175,8 @@ router.get('/global', async (req, res) => {
     
     res.json(responseData);
   } catch (error) {
-    // console.error('获取排行榜数据失败:', error);
-    res.status(500).json({ error: '获取排行榜数据失败' });
+    console.error('获取排行榜数据失败:', error);
+    res.status(500).json({ error: '获取排行榜数据失败', message: error.message });
   }
 });
 
@@ -205,8 +206,8 @@ router.get('/subject/:subjectId', async (req, res) => {
     }
     
     // 计算偏移量
-    const limitNum = Math.max(1, Math.min(parseInt(limit) || 20, 100));
-    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = limit === '0' ? 0 : (Number(limit) || 20);
+    const pageNum = Math.max(1, Number(page) || 1);
     const offset = (pageNum - 1) * limitNum;
     
     // 先查询总数
@@ -271,8 +272,9 @@ router.get('/subject/:subjectId', async (req, res) => {
     dataQuery += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';
     
     // 添加LIMIT和OFFSET子句
-    dataQuery += ' LIMIT ? OFFSET ?';
-    dataParams.push(limitNum, offset);
+    if (limitNum > 0) {
+      dataQuery += ` LIMIT ${limitNum} OFFSET ${offset}`;
+    }
     
     const users = await db.all(dataQuery, dataParams);
     

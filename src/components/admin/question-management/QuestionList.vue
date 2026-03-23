@@ -45,7 +45,7 @@
         stripe
         border
         :default-sort="{prop: 'createdAt', order: 'descending'}"
-        :row-class-name="row => (hasValidImage(row.content) || row.audio) ? 'has-media' : ''"
+        :row-class-name="row => (hasValidImage(row) || row.audio) ? 'has-media' : ''"
         v-loading="loading"
         element-loading-text="加载中..."
         height="500px"
@@ -81,12 +81,12 @@
           <template #default="{ row }">
             <div class="question-content-wrapper">
               <div class="question-content-preview">
-                <div v-if="hasValidImage(row.content)" class="content-with-image">
-                  <div class="image-preview">
-                    <img :src="extractImageUrl(row.content)" alt="题目图片" class="question-image" />
+                <div v-if="hasValidImage(row)" class="content-with-image">
+                    <div class="image-preview">
+                      <img :src="extractImageUrl(row)" alt="题目图片" class="question-image" />
+                    </div>
+                    <div class="content-text" v-html="stripImages(row.content)"></div>
                   </div>
-                  <div class="content-text" v-html="stripImages(row.content)"></div>
-                </div>
                 <div v-else-if="row.audio" class="content-with-audio">
                   <el-icon class="audio-icon"><i class="el-icon-microphone"></i></el-icon>
                   <div class="content-text" v-html="row.content"></div>
@@ -138,7 +138,7 @@
           stripe
           border
           :default-sort="{prop: 'createdAt', order: 'descending'}"
-          :row-class-name="row => (hasValidImage(row.content) || row.audio) ? 'has-media' : ''"
+          :row-class-name="row => (hasValidImage(row) || row.audio) ? 'has-media' : ''"
           v-loading="loading"
           element-loading-text="加载中..."
           height="500px"
@@ -174,9 +174,9 @@
             <template #default="{ row }">
               <div class="question-content-wrapper">
                 <div class="question-content-preview">
-                  <div v-if="hasValidImage(row.content)" class="content-with-image">
+                  <div v-if="hasValidImage(row)" class="content-with-image">
                     <div class="image-preview">
-                      <img :src="extractImageUrl(row.content)" alt="题目图片" class="question-image" />
+                      <img :src="extractImageUrl(row)" alt="题目图片" class="question-image" />
                     </div>
                     <div class="content-text" v-html="stripImages(row.content)"></div>
                   </div>
@@ -541,16 +541,25 @@ const refreshQuestions = async () => {
 };
 
 // 辅助方法
-const hasValidImage = (content) => {
-  return typeof content === 'string' && content.includes('<img');
+const hasValidImage = (row) => {
+  // 优先检查image字段
+  if (row.image) {
+    return true;
+  }
+  //  fallback到从content中检查
+  return typeof row.content === 'string' && row.content.includes('<img');
 };
 
-const extractImageUrl = (content) => {
-  if (typeof content !== 'string') {
+const extractImageUrl = (row) => {
+  // 优先使用image字段
+  if (row.image) {
+    return row.image;
+  }
+  //  fallback到从content中提取
+  if (typeof row.content !== 'string') {
     return '';
   }
-  // 从content字段中提取图片
-  const match = content.match(/<img[^>]+src="([^"]+)"/);
+  const match = row.content.match(/<img[^>]+src="([^"]+)"/);
   if (match) {
     const url = match[1];
     // 检查是否是完整的data URL或http URL

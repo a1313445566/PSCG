@@ -192,7 +192,7 @@ router.get('/all', async (req, res) => {
     } else if (userId) {
       // 当使用userId查询时，根据用户ID筛选
       query += ' AND ar.user_id = ?';
-      params.push(userId);
+      params.push(parseInt(userId));
       // 同时可以使用grade和class进行过滤
       if (grade) {
         query += ' AND u.grade = ?';
@@ -237,8 +237,7 @@ router.get('/all', async (req, res) => {
     // 如果limit不为0，添加LIMIT子句
     const limitNum = Number(limit);
     if (limitNum > 0) {
-      query += ' LIMIT ?';
-      params.push(limitNum);
+      query += ` LIMIT ${limitNum}`;
     }
     
     const records = await db.all(query, params);

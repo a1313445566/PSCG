@@ -711,8 +711,7 @@ const loadAnswerQuestions = async (recordId) => {
     
     if (response.ok) {
       const data = await response.json()
-      // 调试：查看后端返回的数据
-      console.log('Backend data:', data)
+
       // 解析题目数据
       const parsedData = data.map(item => {
         // 解析题目内容
@@ -791,11 +790,7 @@ const loadAnswerQuestions = async (recordId) => {
           explanation = String(explanation)
         }
         
-        // 调试：查看解析数据
-        console.log('Explanation data:', {
-          original: item.explanation,
-          parsed: explanation
-        })
+
         
         return {
           ...item,
