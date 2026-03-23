@@ -190,6 +190,7 @@
 import { ref, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useQuestionStore } from '../../../stores/questionStore';
+import { getApiBaseUrl } from '../../../utils/database';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 
 // 组件挂载时初始化数据
@@ -534,7 +535,7 @@ const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
     // 保存学科顺序到数据库
       const subjectOrder = subjectsCopy.map(subject => subject.id);
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/subjects/sort`, {
+        const response = await fetch(`${getApiBaseUrl()}/subjects/sort`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'
@@ -571,7 +572,7 @@ const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
       // 保存题库顺序到数据库
       const subcategoryOrder = subcategoriesCopy.map(subcategory => subcategory.id);
       try {
-        const response = await fetch(`${import.meta.env.VITE_API_URL || '/api'}/subjects/${draggingData.subjectId}/subcategories/sort`, {
+        const response = await fetch(`${getApiBaseUrl()}/subjects/${draggingData.subjectId}/subcategories/sort`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json'

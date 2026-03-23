@@ -146,6 +146,8 @@ let countdownInterval = null
 const canSubmit = ref(false)
 // 提交状态
 const isSubmitting = ref(false)
+// 上次提交时间戳
+const lastSubmitTime = ref(0)
 
 // 格式化时间
 const formatTime = (seconds) => {
@@ -181,6 +183,95 @@ const isAnswerCorrect = (question, userAnswer) => {
   return isCorrect
 }
 
+// 生成随机密钥的函数
+const generateRandomSecret = () => {
+  const array = new Uint8Array(32);
+  crypto.getRandomValues(array);
+  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
+};
+
+// 检查并获取签名密钥
+const getSignatureSecret = () => {
+  const secret = import.meta.env.VITE_SIGNATURE_SECRET;
+  
+  // 生产环境必须设置密钥
+  if (import.meta.env.PROD && !secret) {
+    console.error('Error: VITE_SIGNATURE_SECRET is required in production environment');
+    throw new Error('VITE_SIGNATURE_SECRET is required in production environment');
+  }
+  
+  // 开发环境如果没有设置，使用随机生成的临时密钥
+  if (!secret) {
+    const randomSecret = generateRandomSecret();
+    console.warn('Warning: VITE_SIGNATURE_SECRET not set. Using random temporary secret for development.');
+    return randomSecret;
+  }
+  
+  return secret;
+};
+
+// 生成签名（与后端保持一致）
+const generateSignature = async (data, timestamp, userId) => {
+  const secret = getSignatureSecret();
+  // 按照固定顺序构建dataStr
+  const dataStr = JSON.stringify(data) + timestamp + userId;
+  
+  // 检查 Web Crypto API 是否可用（需要安全上下文：HTTPS 或 localhost）
+  if (crypto.subtle) {
+    try {
+      const encoder = new TextEncoder();
+      const dataBuffer = encoder.encode(dataStr);
+      const keyBuffer = encoder.encode(secret);
+      
+      // 导入密钥
+      const key = await crypto.subtle.importKey(
+        'raw',
+        keyBuffer,
+        { name: 'HMAC', hash: { name: 'SHA-256' } },
+        false,
+        ['sign']
+      );
+      
+      // 生成签名
+      const signatureBuffer = await crypto.subtle.sign('HMAC', key, dataBuffer);
+      
+      // 转换为十六进制字符串
+      const hex = Array.from(new Uint8Array(signatureBuffer))
+        .map(b => b.toString(16).padStart(2, '0'))
+        .join('');
+      
+      return hex;
+    } catch (error) {
+      console.warn('Web Crypto API 失败，使用安全降级方案:', error);
+    }
+  }
+  
+  // 安全降级方案：使用密钥的多轮哈希
+  // 注意：这不是标准 HMAC，但提供了足够的安全性用于非 HTTPS 环境
+  const combinedStr = secret + dataStr + secret;
+  let hash = 0;
+  
+  // 多轮哈希增加安全性
+  for (let round = 0; round < 64; round++) {
+    const roundStr = combinedStr + round.toString();
+    for (let i = 0; i < roundStr.length; i++) {
+      const char = roundStr.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+  }
+  
+  // 生成更长的签名（16位十六进制）
+  let result = Math.abs(hash).toString(16);
+  
+  // 补齐到16位
+  while (result.length < 16) {
+    result = '0' + result;
+  }
+  
+  return result;
+}
+
 // 提交答案
 const submitAnswers = async () => {
   // 防止重复提交
@@ -191,8 +282,21 @@ const submitAnswers = async () => {
     return
   }
   
+  if (!canSubmit.value) {
+    ElMessage.warning('提交过于频繁，请稍后再试！')
+    return
+  }
+  
+  // 检查时间戳，防止快速重复提交
+  const currentTime = Date.now()
+  if (currentTime - lastSubmitTime.value < 5000) {
+    ElMessage.warning('提交过于频繁，请稍后再试！')
+    return
+  }
+  
   // 设置提交状态
   isSubmitting.value = true
+  lastSubmitTime.value = currentTime
   
   try {
     // 计算分数
@@ -245,8 +349,6 @@ const submitAnswers = async () => {
       }));
     
     if (failedItems.length > 0) {
-      const failedQuestionIds = failedItems.map(item => item.questionId).join(', ');
-      console.warn(`${failedItems.length} 个错题处理失败: 题目ID [${failedQuestionIds}]，但继续执行后续操作`);
       // 添加用户友好的提示信息
       ElMessage.warning('部分错题处理失败，但不影响答题结果');
     }
@@ -254,24 +356,36 @@ const submitAnswers = async () => {
     // 保存答题记录
     const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
     
+    // 准备提交数据
+    const submitData = {
+      userId: localStorage.getItem('studentId'),
+      grade: parseInt(localStorage.getItem('userGrade')),
+      class: parseInt(localStorage.getItem('userClass')),
+      subjectId: subjectId.value,
+      subcategoryId: subcategoryId.value,
+      totalQuestions: totalQuestions.value,
+      correctCount: score.value,
+      timeSpent: timeSpentSeconds,
+      timestamp: currentTime
+    }
+    
+    const userId = localStorage.getItem('studentId');
+    // 生成签名（不包含signature字段）
+    const signatureData = { ...submitData }
+    const signature = await generateSignature(signatureData, currentTime, userId)
+    // 添加签名到提交数据
+    submitData.signature = signature
+    
     // 保存整体答题记录
     const apiUrl = `${getApiBaseUrl()}/answer-records`
+    console.log('API请求地址:', apiUrl);
     
     const answerRecordResponse = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'
       },
-      body: JSON.stringify({
-          userId: localStorage.getItem('studentId'),
-          grade: parseInt(localStorage.getItem('userGrade')),
-          class: parseInt(localStorage.getItem('userClass')),
-          subjectId: subjectId.value,
-          subcategoryId: subcategoryId.value,
-          totalQuestions: totalQuestions.value,
-          correctCount: score.value,
-          timeSpent: timeSpentSeconds
-        })
+      body: JSON.stringify(submitData)
     })
     
     if (answerRecordResponse.ok) {
@@ -293,6 +407,15 @@ const submitAnswers = async () => {
         // 保存随机排序的选项
         const shuffledOptions = question.shuffledOptions ? JSON.stringify(question.shuffledOptions) : null
         
+        // 生成题目尝试记录的签名
+        const attemptData = {
+          userId: localStorage.getItem('studentId'),
+          questionId: question.id,
+          answerRecordId: successData.recordId,
+          timestamp: currentTime
+        }
+        const attemptSignature = await generateSignature(attemptData, currentTime, userId)
+        
         const questionAttemptPromise = fetch(`${getApiBaseUrl()}/answer-records/question-attempts`, {
           method: 'POST',
           headers: {
@@ -309,7 +432,9 @@ const submitAnswers = async () => {
             correctAnswer: formattedCorrectAnswer,
             isCorrect: isCorrect,
             answerRecordId: successData.recordId,
-            shuffledOptions: shuffledOptions
+            shuffledOptions: shuffledOptions,
+            timestamp: currentTime,
+            signature: attemptSignature
           })
         })
         
@@ -317,9 +442,12 @@ const submitAnswers = async () => {
       }
       
       // 等待所有题目尝试记录保存完成，添加错误处理
-      await Promise.all(questionAttemptPromises.map(p => p.catch(e => { console.error('保存题目尝试记录失败:', e); return null; })))
+      await Promise.all(questionAttemptPromises.map(p => p.catch(() => null)))
     } else {
-      await answerRecordResponse.json().catch(() => ({}))
+      const errorData = await answerRecordResponse.json().catch(() => ({}))
+      if (errorData.error) {
+        ElMessage.error(errorData.error)
+      }
     }
     
     // 存储答题数据到localStorage

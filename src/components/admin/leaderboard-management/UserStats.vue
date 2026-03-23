@@ -89,13 +89,13 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 
 // 计算总数
-const total = computed(() => props.userStats.length);
+const total = computed(() => Array.isArray(props.userStats) ? props.userStats.length : 0);
 
 // 计算分页后的用户统计
 const paginatedUserStats = computed(() => {
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
-  return props.userStats.slice(start, end);
+  return Array.isArray(props.userStats) ? props.userStats.slice(start, end) : [];
 });
 
 // 打开用户详情对话框

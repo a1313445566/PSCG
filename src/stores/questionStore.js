@@ -100,28 +100,16 @@ export const useQuestionStore = defineStore('question', {
         const [subjectsData, gradesData, classesData, subjectStatsData] = await Promise.all([
           fetch(`${getApiBaseUrl()}/subjects`)
             .then(res => res.json())
-            .catch(error => {
-              console.error('获取学科数据失败:', error);
-              return [];
-            }),
+            .catch(() => []),
           fetch(`${getApiBaseUrl()}/grades`)
             .then(res => res.json())
-            .catch(error => {
-              console.error('获取年级数据失败:', error);
-              return [];
-            }),
+            .catch(() => []),
           fetch(`${getApiBaseUrl()}/classes`)
             .then(res => res.json())
-            .catch(error => {
-              console.error('获取班级数据失败:', error);
-              return [];
-            }),
+            .catch(() => []),
           fetch(`${getApiBaseUrl()}/subjects/stats`)
             .then(res => res.json())
-            .catch(error => {
-              console.error('获取学科统计数据失败:', error);
-              return [];
-            })
+            .catch(() => [])
         ])
         
         // 合并题目数量统计
@@ -146,7 +134,6 @@ export const useQuestionStore = defineStore('question', {
         
       } catch (error) {
         this.error = error.message
-        console.error('加载核心数据失败:', error)
 
       } finally {
         this.isLoading = false
@@ -182,7 +169,6 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('加载题目数据失败:', error)
 
       } finally {
         this.isLoading = false
@@ -196,30 +182,12 @@ export const useQuestionStore = defineStore('question', {
         this.error = null
         
         // 并行加载所有数据，提高性能，但每个请求独立处理，一个失败不影响其他
-        const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(error => {
-          console.error('获取学科数据失败:', error);
-          return [];
-        });
-        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=10000`).then(res => res.json()).catch(error => {
-          console.error('获取题目数据失败:', error);
-          return [];
-        });
-        const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(error => {
-          console.error('获取年级数据失败:', error);
-          return [];
-        });
-        const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(error => {
-          console.error('获取班级数据失败:', error);
-          return [];
-        });
-        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json()).catch(error => {
-          console.error('获取用户统计数据失败:', error);
-          return [];
-        });
-        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`).then(res => res.json()).catch(error => {
-          console.error('获取最近答题记录失败:', error);
-          return [];
-        });
+        const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []);
+        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=10000`).then(res => res.json()).catch(() => []);
+        const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []);
+        const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => []);
+        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json()).catch(() => []);
+        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`).then(res => res.json()).catch(() => []);
         
         const [subjectsData, questionsData, gradesData, classesData, userStatsData, recentRecordsData] = await Promise.all([
           subjectsPromise,
@@ -234,11 +202,10 @@ export const useQuestionStore = defineStore('question', {
         this.questions = questionsData
         this.grades = gradesData
         this.classes = classesData
-        this.userStats = userStatsData
-        this.recentRecords = recentRecordsData
+        this.userStats = Array.isArray(userStatsData) ? userStatsData : []
+        this.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
       } catch (error) {
         this.error = error.message
-        console.error('加载数据失败:', error)
 
       } finally {
         this.isLoading = false
@@ -251,10 +218,10 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json())
-        this.userStats = userStatsData
+        this.userStats = Array.isArray(userStatsData) ? userStatsData : []
       } catch (error) {
         this.error = error.message
-        console.error('加载用户统计数据失败:', error)
+        this.userStats = []
 
       } finally {
         this.isLoading = false
@@ -279,7 +246,6 @@ export const useQuestionStore = defineStore('question', {
       } catch (error) {
         this.error = error.message
         this.recentRecords = []
-        console.error('加载最近答题记录失败:', error)
 
       } finally {
         this.isLoading = false
@@ -717,7 +683,6 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('加载错题巩固题库失败:', error)
         // 发生错误时显示空数据
         if (subjectId) {
           this.errorCollections[subjectId] = []
@@ -761,7 +726,6 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-        console.error('更新错题正确次数失败:', error)
       } finally {
         this.isLoading = false
       }
@@ -792,7 +756,6 @@ export const useQuestionStore = defineStore('question', {
         })
       } catch (error) {
         this.error = error.message
-        console.error('添加错题到错题巩固题库失败:', error)
         // 移除已设置的统计数据，避免数据不一致
         delete this.errorCollectionStats[questionId]
       } finally {
@@ -825,7 +788,6 @@ export const useQuestionStore = defineStore('question', {
         })
       } catch (error) {
         this.error = error.message
-        console.error('重置错题正确次数失败:', error)
       } finally {
         this.isLoading = false
       }

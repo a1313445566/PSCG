@@ -7,7 +7,7 @@ const { validateSubjectId } = require('../services/validationService');
 // 全局排行榜API
 router.get('/global', async (req, res) => {
   try {
-    const { limit = 100, grade, class: className, id, student_id, subjectId } = req.query;
+    const { limit = 20, page = 1, grade, class: className, id, student_id, subjectId } = req.query;
     
     // 生成缓存键
     const cacheKey = cacheService.generateLeaderboardKey({ 
@@ -15,6 +15,7 @@ router.get('/global', async (req, res) => {
       grade, 
       className, 
       limit,
+      page,
       id,
       student_id
     });
@@ -28,7 +29,71 @@ router.get('/global', async (req, res) => {
       return;
     }
     
-    let query = `
+    // 计算偏移量
+    const limitNum = Math.max(1, Math.min(parseInt(limit) || 20, 100));
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const offset = (pageNum - 1) * limitNum;
+    
+    // 先查询总数
+    let countQuery = `
+      SELECT COUNT(DISTINCT u.id) as total
+      FROM users u
+      JOIN answer_records ar ON u.id = ar.user_id
+      WHERE 1=1
+    `;
+    
+    const countParams = [];
+    
+    if (id) {
+      countQuery += ' AND u.id = ?';
+      countParams.push(id);
+      // 当使用id查询时，也可以使用grade和class进行过滤
+      if (grade) {
+        countQuery += ' AND u.grade = ?';
+        countParams.push(grade);
+      }
+      if (className) {
+        countQuery += ' AND u.class = ?';
+        countParams.push(className);
+      }
+    } else if (student_id) {
+      countQuery += ' AND u.student_id = ?';
+      countParams.push(student_id);
+      // 当使用student_id查询时，确保同时使用grade和class进行过滤
+      if (grade) {
+        countQuery += ' AND u.grade = ?';
+        countParams.push(grade);
+      }
+      if (className) {
+        countQuery += ' AND u.class = ?';
+        countParams.push(className);
+      }
+    } else {
+      // 当不使用student_id和id查询时，可以单独使用grade或class进行过滤
+      if (grade) {
+        countQuery += ' AND u.grade = ?';
+        countParams.push(grade);
+      }
+      if (className) {
+        countQuery += ' AND u.class = ?';
+        countParams.push(className);
+      }
+    }
+    
+    // 学科筛选
+    if (subjectId) {
+      if (!validateSubjectId(subjectId)) {
+        return res.status(400).json({ error: '学科ID格式错误' });
+      }
+      countQuery += ' AND ar.subject_id = ?';
+      countParams.push(parseInt(subjectId));
+    }
+    
+    const countResult = await db.get(countQuery, countParams);
+    const total = countResult ? countResult.total : 0;
+    
+    // 查询数据
+    let dataQuery = `
       SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
              COUNT(DISTINCT ar.id) as total_sessions,
              SUM(ar.total_questions) as total_questions,
@@ -41,41 +106,41 @@ router.get('/global', async (req, res) => {
       WHERE 1=1
     `;
     
-    const params = [];
+    const dataParams = [];
     
     if (id) {
-      query += ' AND u.id = ?';
-      params.push(id);
+      dataQuery += ' AND u.id = ?';
+      dataParams.push(id);
       // 当使用id查询时，也可以使用grade和class进行过滤
       if (grade) {
-        query += ' AND u.grade = ?';
-        params.push(grade);
+        dataQuery += ' AND u.grade = ?';
+        dataParams.push(grade);
       }
       if (className) {
-        query += ' AND u.class = ?';
-        params.push(className);
+        dataQuery += ' AND u.class = ?';
+        dataParams.push(className);
       }
     } else if (student_id) {
-      query += ' AND u.student_id = ?';
-      params.push(student_id);
+      dataQuery += ' AND u.student_id = ?';
+      dataParams.push(student_id);
       // 当使用student_id查询时，确保同时使用grade和class进行过滤
       if (grade) {
-        query += ' AND u.grade = ?';
-        params.push(grade);
+        dataQuery += ' AND u.grade = ?';
+        dataParams.push(grade);
       }
       if (className) {
-        query += ' AND u.class = ?';
-        params.push(className);
+        dataQuery += ' AND u.class = ?';
+        dataParams.push(className);
       }
     } else {
       // 当不使用student_id和id查询时，可以单独使用grade或class进行过滤
       if (grade) {
-        query += ' AND u.grade = ?';
-        params.push(grade);
+        dataQuery += ' AND u.grade = ?';
+        dataParams.push(grade);
       }
       if (className) {
-        query += ' AND u.class = ?';
-        params.push(className);
+        dataQuery += ' AND u.class = ?';
+        dataParams.push(className);
       }
     }
     
@@ -84,25 +149,30 @@ router.get('/global', async (req, res) => {
       if (!validateSubjectId(subjectId)) {
         return res.status(400).json({ error: '学科ID格式错误' });
       }
-      query += ' AND ar.subject_id = ?';
-      params.push(parseInt(subjectId));
+      dataQuery += ' AND ar.subject_id = ?';
+      dataParams.push(parseInt(subjectId));
     }
     
-    query += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';
+    dataQuery += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';
     
-    // 如果limit不为0，添加LIMIT子句
-    const limitNum = parseInt(limit);
-    if (limitNum > 0) {
-      query += ' LIMIT ?';
-      params.push(limitNum);
-    }
+    // 添加LIMIT和OFFSET子句
+    dataQuery += ' LIMIT ? OFFSET ?';
+    dataParams.push(limitNum, offset);
     
-    const users = await db.all(query, params);
+    const users = await db.all(dataQuery, dataParams);
+    
+    // 构建响应数据
+    const responseData = {
+      total,
+      page: pageNum,
+      pageSize: limitNum,
+      data: users
+    };
     
     // 缓存结果
-    cacheService.set(cacheKey, users, cacheService.CACHE_DURATIONS.LEADERBOARD);
+    cacheService.set(cacheKey, responseData, cacheService.CACHE_DURATIONS.LEADERBOARD);
     
-    res.json(users);
+    res.json(responseData);
   } catch (error) {
     // console.error('获取排行榜数据失败:', error);
     res.status(500).json({ error: '获取排行榜数据失败' });
@@ -113,9 +183,62 @@ router.get('/global', async (req, res) => {
 router.get('/subject/:subjectId', async (req, res) => {
   try {
     const { subjectId } = req.params;
-    const { grade, class: className, subcategoryId } = req.query;
+    const { grade, class: className, subcategoryId, limit = 20, page = 1 } = req.query;
     
-    let query = `
+    // 生成缓存键
+    const cacheKey = cacheService.generateLeaderboardKey({ 
+      subjectId, 
+      grade, 
+      className, 
+      subcategoryId,
+      limit,
+      page
+    });
+    
+    // 尝试从缓存获取
+    const cachedData = cacheService.get(cacheKey);
+    if (cachedData) {
+      // 更新缓存时间戳（滑动过期）
+      cacheService.touch(cacheKey, cacheService.CACHE_DURATIONS.LEADERBOARD);
+      res.json(cachedData);
+      return;
+    }
+    
+    // 计算偏移量
+    const limitNum = Math.max(1, Math.min(parseInt(limit) || 20, 100));
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const offset = (pageNum - 1) * limitNum;
+    
+    // 先查询总数
+    let countQuery = `
+      SELECT COUNT(DISTINCT u.id) as total
+      FROM users u
+      JOIN answer_records ar ON u.id = ar.user_id
+      WHERE ar.subject_id = ?
+    `;
+    
+    const countParams = [subjectId];
+    
+    if (subcategoryId) {
+      countQuery += ' AND ar.subcategory_id = ?';
+      countParams.push(subcategoryId);
+    }
+    
+    if (grade) {
+      countQuery += ' AND u.grade = ?';
+      countParams.push(grade);
+    }
+    
+    if (className) {
+      countQuery += ' AND u.class = ?';
+      countParams.push(className);
+    }
+    
+    const countResult = await db.get(countQuery, countParams);
+    const total = countResult ? countResult.total : 0;
+    
+    // 查询数据
+    let dataQuery = `
       SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
              COUNT(DISTINCT ar.id) as total_sessions,
              SUM(ar.total_questions) as total_questions,
@@ -128,27 +251,43 @@ router.get('/subject/:subjectId', async (req, res) => {
       WHERE ar.subject_id = ?
     `;
     
-    const params = [subjectId];
+    const dataParams = [subjectId];
     
     if (subcategoryId) {
-      query += ' AND ar.subcategory_id = ?';
-      params.push(subcategoryId);
+      dataQuery += ' AND ar.subcategory_id = ?';
+      dataParams.push(subcategoryId);
     }
     
     if (grade) {
-      query += ' AND u.grade = ?';
-      params.push(grade);
+      dataQuery += ' AND u.grade = ?';
+      dataParams.push(grade);
     }
     
     if (className) {
-      query += ' AND u.class = ?';
-      params.push(className);
+      dataQuery += ' AND u.class = ?';
+      dataParams.push(className);
     }
     
-    query += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';
+    dataQuery += ' GROUP BY u.id ORDER BY avg_accuracy DESC, total_questions DESC';
     
-    const users = await db.all(query, params);
-    res.json(users);
+    // 添加LIMIT和OFFSET子句
+    dataQuery += ' LIMIT ? OFFSET ?';
+    dataParams.push(limitNum, offset);
+    
+    const users = await db.all(dataQuery, dataParams);
+    
+    // 构建响应数据
+    const responseData = {
+      total,
+      page: pageNum,
+      pageSize: limitNum,
+      data: users
+    };
+    
+    // 缓存结果
+    cacheService.set(cacheKey, responseData, cacheService.CACHE_DURATIONS.LEADERBOARD);
+    
+    res.json(responseData);
   } catch (error) {
     // console.error('获取学科排行榜数据失败:', error);
     res.status(500).json({ error: '获取学科排行榜数据失败' });

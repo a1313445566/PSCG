@@ -58,6 +58,20 @@
               <p>暂无排行数据</p>
               <p>全局排行榜数据长度: {{ globalLeaderboard.length }}</p>
             </div>
+            
+            <!-- 全局排行榜分页 -->
+            <div class="pagination" style="margin-top: 20px; text-align: right;">
+              <el-pagination
+                v-model:current-page="globalCurrentPage"
+                v-model:page-size="globalPageSize"
+                :page-sizes="[10, 20, 50]"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="globalTotal"
+                @size-change="handleGlobalSizeChange"
+                @current-change="handleGlobalPageChange"
+              />
+            </div>
+            
             <div class="leaderboard-content-row">
               <div class="leaderboard-rules">
                 <h3 class="rules-title">🏆 排行榜规则</h3>
@@ -135,6 +149,20 @@
               <p>{{ selectedSubjectId ? '暂无排行数据' : '请选择一个学科查看排行榜' }}</p>
               <p v-if="selectedSubjectId">学科排行榜数据长度: {{ subjectLeaderboard.length }}</p>
             </div>
+            
+            <!-- 学科排行榜分页 -->
+            <div class="pagination" style="margin-top: 20px; text-align: right;">
+              <el-pagination
+                v-model:current-page="subjectCurrentPage"
+                v-model:page-size="subjectPageSize"
+                :page-sizes="[10, 20, 50]"
+                layout="total, sizes, prev, pager, next, jumper"
+                :total="subjectTotal"
+                @size-change="handleSubjectSizeChange"
+                @current-change="handleSubjectPageChange"
+              />
+            </div>
+            
             <div class="leaderboard-content-row">
               <div class="leaderboard-rules">
                 <h3 class="rules-title">🏆 排行榜规则</h3>
@@ -202,7 +230,7 @@
                     <div class="accuracy-col">正确率</div>
                     <div class="time-col">时间</div>
                   </div>
-                  <div v-for="(item, index) in recentRecords" :key="item.id" class="leaderboard-row">
+                  <div v-for="(item, index) in recentRecords" :key="item.id" class="leaderboard-row" @click="openAnswerDetailDialog(item)" style="cursor: pointer;">
                     <div class="grade-col">{{ item.grade || '-' }}</div>
                     <div class="class-col">{{ item.class || '-' }}</div>
                     <div class="subject-col">{{ item.subject_name || '未知' }}</div>
@@ -267,6 +295,68 @@
       <p>暂无答题记录</p>
     </div>
   </el-dialog>
+  
+  <!-- 答题详情对话框 -->
+  <el-dialog
+    v-model="answerDetailDialogVisible"
+    :title="`${selectedAnswerRecord?.subject_name || '未知'} - ${selectedAnswerRecord?.subcategory_name || '全部'} 的答题详情`"
+    width="800px"
+  >
+    <div v-if="selectedAnswerRecord" class="answer-detail-info" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px;">
+      <div style="display: flex; gap: 20px; flex-wrap: wrap;">
+        <div><strong>年级:</strong> {{ selectedAnswerRecord.grade || '-' }}</div>
+        <div><strong>班级:</strong> {{ selectedAnswerRecord.class || '-' }}</div>
+        <div><strong>学科:</strong> {{ selectedAnswerRecord.subject_name || '未知' }}</div>
+        <div><strong>题库:</strong> {{ selectedAnswerRecord.subcategory_name || '全部' }}</div>
+        <div><strong>成绩:</strong> {{ selectedAnswerRecord.correct_count }} / {{ selectedAnswerRecord.total_questions }}</div>
+        <div><strong>正确率:</strong> {{ Math.round((selectedAnswerRecord.correct_count / selectedAnswerRecord.total_questions) * 100) }}%</div>
+        <div><strong>时间:</strong> {{ formatDate(selectedAnswerRecord.created_at, '未知时间') }}</div>
+      </div>
+    </div>
+    
+    <div class="answer-questions" v-if="selectedAnswerQuestions.length > 0">
+      <h3 style="margin-bottom: 15px; color: #6a11cb;">答题情况</h3>
+      <div class="question-cards">
+        <div v-for="(item, index) in selectedAnswerQuestions" :key="item.id" class="question-card">
+          <div class="question-card-header">
+            <div class="question-number">第 {{ index + 1 }} 题</div>
+            <div class="question-result" :class="{ 'correct': item.is_correct, 'incorrect': !item.is_correct }">
+              <span v-if="item.is_correct" style="color: green; font-weight: bold;">✓ 正确</span>
+              <span v-else style="color: red; font-weight: bold;">✗ 错误</span>
+            </div>
+          </div>
+          <div class="question-content" v-html="item.content"></div>
+          <div class="question-options" v-if="item.options && item.options.length > 0">
+            <div v-for="(option, optIndex) in item.options" :key="optIndex" class="option-item">
+              <span class="option-letter">{{ String.fromCharCode(65 + optIndex) }}.</span>
+              <span class="option-text" v-html="option"></span>
+            </div>
+          </div>
+          <div class="question-answers">
+            <div class="answer-item">
+              <span class="answer-label">用户答案:</span>
+              <span class="answer-value">{{ item.user_answer }}</span>
+            </div>
+            <div class="answer-item">
+              <span class="answer-label">正确答案:</span>
+              <span class="answer-value">{{ item.correct_answer }}</span>
+            </div>
+          </div>
+          <div class="question-explanation" v-if="item.explanation">
+            <div class="explanation-label">解析:</div>
+            <div class="explanation-content" v-html="item.explanation"></div>
+          </div>
+          <div class="question-explanation" v-else>
+            <div class="explanation-label">解析:</div>
+            <div class="explanation-content">暂无解析</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div v-else class="leaderboard-empty" style="text-align: center; padding: 40px;">
+      <p>暂无答题详情</p>
+    </div>
+  </el-dialog>
 </template>
 
 <script setup>
@@ -298,6 +388,11 @@ const selectedClass = ref(null)
 const userDetailDialogVisible = ref(false)
 const selectedUser = ref(null)
 const selectedUserRecords = ref([])
+
+// 答题详情对话框
+const answerDetailDialogVisible = ref(false)
+const selectedAnswerRecord = ref(null)
+const selectedAnswerQuestions = ref([])
 
 const loadGradesAndClasses = async () => {
   try {
@@ -418,6 +513,11 @@ const loadSubcategories = async (subjectId) => {
   }
 }
 
+// 分页参数
+const globalCurrentPage = ref(1)
+const globalPageSize = ref(20)
+const globalTotal = ref(0)
+
 const loadGlobalLeaderboard = async () => {
   try {
     let url = `${getApiBaseUrl()}/leaderboard/global`
@@ -431,6 +531,10 @@ const loadGlobalLeaderboard = async () => {
       params.append('class', selectedClass.value)
     }
     
+    // 添加分页参数
+    params.append('limit', globalPageSize.value)
+    params.append('page', globalCurrentPage.value)
+    
     if (params.toString()) {
       url += '?' + params.toString()
     }
@@ -438,12 +542,31 @@ const loadGlobalLeaderboard = async () => {
     const response = await fetch(url)
     if (response.ok) {
       const data = await response.json()
-      globalLeaderboard.value = data
+      globalLeaderboard.value = data.data || data
+      // 假设后端返回total字段，否则根据实际情况调整
+      globalTotal.value = data.total || data.length
     }
   } catch (error) {
     // console.error('加载全局排行榜失败:', error)
   }
 }
+
+// 处理全局排行榜分页
+const handleGlobalPageChange = (current) => {
+  globalCurrentPage.value = current
+  loadGlobalLeaderboard()
+}
+
+const handleGlobalSizeChange = (size) => {
+  globalPageSize.value = size
+  globalCurrentPage.value = 1
+  loadGlobalLeaderboard()
+}
+
+// 学科排行榜分页参数
+const subjectCurrentPage = ref(1)
+const subjectPageSize = ref(20)
+const subjectTotal = ref(0)
 
 const loadSubjectLeaderboard = async () => {
   if (!selectedSubjectId.value) {
@@ -467,6 +590,10 @@ const loadSubjectLeaderboard = async () => {
       params.append('class', selectedClass.value)
     }
     
+    // 添加分页参数
+    params.append('limit', subjectPageSize.value)
+    params.append('page', subjectCurrentPage.value)
+    
     if (params.toString()) {
       url += '?' + params.toString()
     }
@@ -474,11 +601,25 @@ const loadSubjectLeaderboard = async () => {
     const response = await fetch(url)
     if (response.ok) {
       const data = await response.json()
-      subjectLeaderboard.value = data
+      subjectLeaderboard.value = data.data || data
+      // 假设后端返回total字段，否则根据实际情况调整
+      subjectTotal.value = data.total || data.length
     }
   } catch (error) {
     // console.error('加载学科排行榜失败:', error)
   }
+}
+
+// 处理学科排行榜分页
+const handleSubjectPageChange = (current) => {
+  subjectCurrentPage.value = current
+  loadSubjectLeaderboard()
+}
+
+const handleSubjectSizeChange = (size) => {
+  subjectPageSize.value = size
+  subjectCurrentPage.value = 1
+  loadSubjectLeaderboard()
 }
 
 const loadUserStats = async () => {
@@ -560,6 +701,127 @@ const openUserDetailDialog = async (user) => {
   const userId = user.id || user.user_id
   await loadUserRecords(userId)
   userDetailDialogVisible.value = true
+}
+
+// 加载答题详情
+const loadAnswerQuestions = async (recordId) => {
+  try {
+    const url = `${getApiBaseUrl()}/answer-records/question-attempts/${currentUserId.value}?answerRecordId=${recordId}`
+    const response = await fetch(url)
+    
+    if (response.ok) {
+      const data = await response.json()
+      // 调试：查看后端返回的数据
+      console.log('Backend data:', data)
+      // 解析题目数据
+      const parsedData = data.map(item => {
+        // 解析题目内容
+        let content = item.content
+        try {
+          const parsedContent = JSON.parse(item.content)
+          if (typeof parsedContent === 'string') {
+            content = parsedContent
+          }
+        } catch (e) {
+          // 解析失败，使用原始值
+        }
+        
+        // 解析用户答案
+        let userAnswer = item.user_answer
+        try {
+          const parsedAnswer = JSON.parse(item.user_answer)
+          if (Array.isArray(parsedAnswer)) {
+            userAnswer = parsedAnswer.join(', ')
+          } else if (typeof parsedAnswer === 'string') {
+            userAnswer = parsedAnswer
+          }
+        } catch (e) {
+          // 解析失败，使用原始值
+        }
+        
+        // 解析正确答案
+        let correctAnswer = item.correct_answer
+        try {
+          const parsedAnswer = JSON.parse(item.correct_answer)
+          if (Array.isArray(parsedAnswer)) {
+            correctAnswer = parsedAnswer.join(', ')
+          } else if (typeof parsedAnswer === 'string') {
+            correctAnswer = parsedAnswer
+          }
+        } catch (e) {
+          // 解析失败，使用原始值
+        }
+        
+        // 解析选项
+        let options = []
+        try {
+          if (item.shuffled_options) {
+            const parsedOptions = JSON.parse(item.shuffled_options)
+            if (Array.isArray(parsedOptions)) {
+              options = parsedOptions
+            }
+          } else if (item.options) {
+            const parsedOptions = JSON.parse(item.options)
+            if (Array.isArray(parsedOptions)) {
+              options = parsedOptions
+            }
+          }
+        } catch (e) {
+          // 解析失败，使用空数组
+        }
+        
+        // 解析题目解析
+        let explanation = item.explanation
+        try {
+          if (item.explanation) {
+            // 直接使用原始值，因为后端已经返回了正确的解析字符串
+            explanation = String(item.explanation)
+          } else {
+            explanation = ''
+          }
+        } catch (e) {
+          // 解析失败，使用空字符串
+          explanation = ''
+        }
+        
+        // 确保explanation是字符串类型
+        if (explanation === null || explanation === undefined) {
+          explanation = ''
+        } else if (typeof explanation !== 'string') {
+          explanation = String(explanation)
+        }
+        
+        // 调试：查看解析数据
+        console.log('Explanation data:', {
+          original: item.explanation,
+          parsed: explanation
+        })
+        
+        return {
+          ...item,
+          content,
+          user_answer: userAnswer,
+          correct_answer: correctAnswer,
+          options,
+          explanation
+        }
+      })
+      selectedAnswerQuestions.value = parsedData
+    } else {
+      // console.error('加载答题详情失败，响应状态:', response.status)
+      selectedAnswerQuestions.value = []
+    }
+  } catch (error) {
+    // console.error('加载答题详情失败:', error)
+    selectedAnswerQuestions.value = []
+  }
+}
+
+// 打开答题详情对话框
+const openAnswerDetailDialog = async (record) => {
+  selectedAnswerRecord.value = record
+  await loadAnswerQuestions(record.id)
+  answerDetailDialogVisible.value = true
 }
 
 onMounted(async () => {
@@ -1244,6 +1506,161 @@ watch(activeTab, (newTab) => {
   color: white;
 }
 
+.answer-detail-info {
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: var(--header-gradient);
+  border-radius: 12px;
+  border: 2px solid var(--border-color);
+  font-family: var(--game-font);
+}
+
+.answer-detail-info div {
+  font-size: 1rem;
+  font-weight: bold;
+  color: white;
+}
+
+.question-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.question-card {
+  background: white;
+  border-radius: 12px;
+  padding: 20px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.question-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.question-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.question-number {
+  font-weight: bold;
+  font-size: 1.1rem;
+  color: var(--primary-color);
+  font-family: var(--game-font);
+}
+
+.question-result {
+  font-weight: bold;
+  padding: 4px 12px;
+  border-radius: 16px;
+}
+
+.question-result.correct {
+  background: rgba(0, 255, 0, 0.1);
+}
+
+.question-result.incorrect {
+  background: rgba(255, 0, 0, 0.1);
+}
+
+.question-content {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+  line-height: 1.5;
+  font-size: 1rem;
+}
+
+.question-options {
+  margin-bottom: 15px;
+}
+
+.option-item {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 8px;
+  padding: 8px;
+  border-radius: 6px;
+  transition: background-color 0.2s ease;
+}
+
+.option-item:hover {
+  background: #f0f0f0;
+}
+
+.option-letter {
+  font-weight: bold;
+  margin-right: 10px;
+  min-width: 20px;
+  color: var(--primary-color);
+}
+
+.option-text {
+  flex: 1;
+  line-height: 1.4;
+  font-size: 0.95rem;
+}
+
+.question-answers {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 8px;
+}
+
+.answer-item {
+  display: flex;
+  align-items: center;
+}
+
+.answer-label {
+  font-weight: bold;
+  margin-right: 8px;
+  color: var(--text-secondary);
+}
+
+.answer-value {
+  font-weight: bold;
+  color: var(--primary-color);
+}
+
+.question-explanation {
+  padding: 12px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #e6efff 100%);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary-color);
+}
+
+.explanation-label {
+  font-weight: bold;
+  margin-bottom: 8px;
+  color: var(--primary-color);
+  font-size: 0.9rem;
+}
+
+.explanation-content {
+  line-height: 1.5;
+  font-size: 0.95rem;
+  color: var(--text-primary);
+}
+
+.user-answer-col,
+.correct-answer-col,
+.result-col {
+  text-align: center;
+}
+
 @keyframes fadeIn {
   from {
     opacity: 0;
@@ -1277,6 +1694,162 @@ watch(activeTab, (newTab) => {
   60% {
     transform: translateY(-7px);
   }
+}
+
+/* 分页组件样式 */
+.pagination {
+  margin-top: 20px;
+  margin-bottom: 20px;
+  text-align: right;
+  padding: 1rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color);
+  animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.pagination .el-pagination {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 0.5rem;
+  font-family: var(--game-font);
+}
+
+.pagination .el-pagination__total {
+  color: var(--text-primary);
+  font-weight: 600;
+  margin-right: 1rem;
+}
+
+.pagination .el-pagination__sizes {
+  margin-right: 1rem;
+}
+
+.pagination .el-select {
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color);
+  background: white;
+  transition: all 0.3s ease;
+}
+
+.pagination .el-select:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+}
+
+.pagination .el-select .el-input__inner {
+  border-radius: 10px;
+  font-family: var(--game-font);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  padding: 0.5rem 1rem;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.pagination .el-select .el-input__inner:focus {
+  border-color: var(--primary-color);
+  box-shadow: none;
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+.pagination .el-pagination__jump {
+  color: var(--text-primary);
+  font-weight: 600;
+}
+
+.pagination .el-pagination__editor {
+  margin: 0 0.5rem;
+}
+
+.pagination .el-pagination__editor .el-input {
+  width: 60px;
+  border-radius: 12px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  border: 2px solid var(--border-color);
+  transition: all 0.3s ease;
+}
+
+.pagination .el-pagination__editor .el-input:hover {
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  border-color: var(--primary-color);
+}
+
+.pagination .el-pagination__editor .el-input__inner {
+  border-radius: 10px;
+  font-family: var(--game-font);
+  font-size: 0.9rem;
+  color: var(--text-primary);
+  padding: 0.5rem;
+  text-align: center;
+  border: none;
+  transition: all 0.3s ease;
+}
+
+.pagination .el-pagination__editor .el-input__inner:focus {
+  border-color: var(--primary-color);
+  box-shadow: none;
+  color: var(--primary-color);
+  font-weight: bold;
+}
+
+.pagination .el-pagination__button {
+  border-radius: 12px;
+  padding: 0.5rem 1rem;
+  background: white;
+  border: 2px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: var(--game-font);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.pagination .el-pagination__button:hover:not(:disabled) {
+  background: var(--header-gradient);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.pagination .el-pagination__button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.pagination .el-pagination__number {
+  border-radius: 12px;
+  padding: 0.5rem 0.8rem;
+  background: white;
+  border: 2px solid var(--border-color);
+  color: var(--text-primary);
+  font-family: var(--game-font);
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 0 0.25rem;
+}
+
+.pagination .el-pagination__number:hover:not(.is-active) {
+  background: var(--header-gradient);
+  color: white;
+  border-color: var(--primary-color);
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+}
+
+.pagination .el-pagination__number.is-active {
+  background: var(--header-gradient);
+  color: white;
+  border-color: var(--primary-color);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  transform: translateY(-1px);
 }
 
 /* 响应式设计 */

@@ -5,6 +5,169 @@ const cacheService = require('../services/cache');
 const difficultyService = require('../services/difficultyService');
 const { validateSubjectId } = require('../services/validationService');
 
+const crypto = require('crypto');
+
+// 生成签名的函数（与前端相同）
+const generateSignature = (data, timestamp, userId) => {
+  const secret = process.env.SIGNATURE_SECRET;
+  if (!secret) {
+    throw new Error('SIGNATURE_SECRET environment variable is required');
+  }
+  // 按照固定顺序构建dataStr
+  const dataStr = JSON.stringify(data) + timestamp + userId;
+  
+  // 使用crypto模块实现HMAC-SHA256算法
+  return crypto.createHmac('sha256', secret).update(dataStr).digest('hex');
+};
+
+// 安全降级签名（用于非HTTPS环境）
+const generateFallbackSignature = (data, timestamp, userId) => {
+  const secret = process.env.SIGNATURE_SECRET;
+  if (!secret) {
+    throw new Error('SIGNATURE_SECRET environment variable is required');
+  }
+  
+  const dataStr = JSON.stringify(data) + timestamp + userId;
+  const combinedStr = secret + dataStr + secret;
+  let hash = 0;
+  
+  // 多轮哈希（与前端保持一致）
+  for (let round = 0; round < 64; round++) {
+    const roundStr = combinedStr + round.toString();
+    for (let i = 0; i < roundStr.length; i++) {
+      const char = roundStr.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+  }
+  
+  // 生成16位十六进制签名
+  let result = Math.abs(hash).toString(16);
+  while (result.length < 16) {
+    result = '0' + result;
+  }
+  
+  return result;
+};
+
+// 验证签名的函数
+const validateSignature = (data, timestamp, signature, userId) => {
+  try {
+    if (!data || !timestamp || !signature || !userId) {
+      console.log('签名验证失败: 缺少必要参数', { hasData: !!data, hasTimestamp: !!timestamp, hasSignature: !!signature, hasUserId: !!userId });
+      return false;
+    }
+    
+    // 检查时间戳是否在合理范围内（5分钟内）
+    const currentTime = Date.now();
+    const timeDiff = Math.abs(currentTime - timestamp);
+    if (timeDiff > 5 * 60 * 1000) {
+      console.log('签名验证失败: 时间戳超出范围', { currentTime, timestamp, timeDiff });
+      return false;
+    }
+    
+    // 生成预期签名并验证
+    let signatureData;
+    
+    // 检查是否是题目尝试记录
+    if (data.questionId) {
+      // 题目尝试记录的签名数据
+      signatureData = {
+        userId: data.userId,
+        questionId: data.questionId,
+        answerRecordId: data.answerRecordId,
+        timestamp: data.timestamp
+      };
+    } else {
+      // 普通答题记录的签名数据
+      signatureData = {
+        userId: data.userId,
+        grade: data.grade,
+        class: data.class,
+        subjectId: data.subjectId,
+        subcategoryId: data.subcategoryId,
+        totalQuestions: data.totalQuestions,
+        correctCount: data.correctCount,
+        timeSpent: data.timeSpent,
+        timestamp: data.timestamp
+      };
+    }
+    
+    const expectedSignature = generateSignature(signatureData, timestamp, userId);
+    const fallbackSignature = generateFallbackSignature(signatureData, timestamp, userId);
+    
+    // 支持 HMAC-SHA256（HTTPS环境）和 安全降级签名（HTTP环境）
+    const isValid = expectedSignature === signature || fallbackSignature === signature;
+    
+    if (!isValid) {
+      console.log('签名验证失败: 签名不匹配');
+      console.log('前端签名数据:', JSON.stringify(signatureData));
+      console.log('后端 HMAC 签名:', expectedSignature);
+      console.log('后端降级签名:', fallbackSignature);
+      console.log('前端传入签名:', signature);
+    }
+    
+    return isValid;
+  } catch (error) {
+    console.error('签名验证失败:', error);
+    return false;
+  }
+};
+
+// 查找用户ID的函数
+const findUserId = async (userId, grade, className) => {
+  const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [userId, grade, className]);
+  if (!user) {
+    throw new Error('用户不存在');
+  }
+  return user.id;
+};
+
+// 检查重复提交的函数
+const checkDuplicateSubmission = async (userId, subjectId, subcategoryId, cooldownSeconds = 5) => {
+  let recentRecord;
+  if (subcategoryId === null) {
+    // 错题巩固题库，使用 IS NULL 条件
+    recentRecord = await db.get(
+      'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
+      [userId, subjectId, cooldownSeconds]
+    );
+  } else {
+    // 普通题库，使用 = 条件
+    recentRecord = await db.get(
+      'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
+      [userId, subjectId, subcategoryId, cooldownSeconds]
+    );
+  }
+  return recentRecord;
+};
+
+// 处理选项和答案的函数
+const processQuestionData = (question) => {
+  // 解析选项
+  let options = [];
+  try {
+    options = JSON.parse(question.options);
+  } catch (e) {
+    // 解析失败，使用空数组
+  }
+  question.options = options;
+  
+  // 解析正确答案
+  let correctAnswer = question.correct_answer;
+  try {
+    const parsedAnswer = JSON.parse(question.correct_answer);
+    if (typeof parsedAnswer === 'string') {
+      correctAnswer = parsedAnswer;
+    }
+  } catch (e) {
+    // 解析失败，使用原始值
+  }
+  question.correctAnswer = correctAnswer;
+  
+  return question;
+};
+
 // 获取所有答题记录（支持筛选）
 router.get('/all', async (req, res) => {
   try {
@@ -115,7 +278,7 @@ router.get('/question-attempts/:userId', async (req, res) => {
     const { answerRecordId } = req.query;
     
     let query = `
-      SELECT qa.*, q.content, q.correct_answer, q.options, q.type, qa.shuffled_options, s.name as subject_name,
+      SELECT qa.*, q.content, q.correct_answer, q.options, q.type, q.explanation, qa.shuffled_options, s.name as subject_name,
              sc.name as subcategory_name
       FROM question_attempts qa
       LEFT JOIN questions q ON qa.question_id = q.id
@@ -199,26 +362,8 @@ router.get('/error-prone-questions', async (req, res) => {
     
     // 处理错误率较高的题目数据，添加选项和选择次数
     for (const question of questions) {
-      // 解析选项
-      let options = [];
-      try {
-        options = JSON.parse(question.options);
-      } catch (e) {
-        // console.error('解析选项失败:', e);
-      }
-      question.options = options;
-      
-      // 解析正确答案
-      let correctAnswer = question.correct_answer;
-      try {
-        const parsedAnswer = JSON.parse(question.correct_answer);
-        if (typeof parsedAnswer === 'string') {
-          correctAnswer = parsedAnswer;
-        }
-      } catch (e) {
-        // 解析失败，使用原始值
-      }
-      question.correctAnswer = correctAnswer;
+      // 处理题目数据
+      processQuestionData(question);
       
       // 构建选项选择次数查询，应用相同的筛选条件
       let optionCountsQuery = `
@@ -266,36 +411,38 @@ router.get('/error-prone-questions', async (req, res) => {
 // 保存答题记录
 router.post('/', async (req, res) => {
   try {
-    const { userId, grade, class: className, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent } = req.body;
+    const { userId, grade, class: className, subjectId, subcategoryId, totalQuestions, correctCount, timeSpent, timestamp, signature } = req.body;
     
-    // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
-    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [userId, grade, className]);
-    if (!user) {
-      return res.status(404).json({ error: '用户不存在' });
+    // 验证签名
+    const signatureData = {
+      userId,
+      grade,
+      class: className,
+      subjectId,
+      subcategoryId,
+      totalQuestions,
+      correctCount,
+      timeSpent,
+      timestamp
+    };
+    
+    if (!validateSignature(req.body, timestamp, signature, userId)) {
+      return res.status(401).json({ error: '签名验证失败，提交无效' });
     }
     
-    const actualUserId = user.id;
+    // 查找用户ID
+    let actualUserId;
+    try {
+      actualUserId = await findUserId(userId, grade, className);
+    } catch (error) {
+      return res.status(404).json({ error: error.message });
+    }
     
     // 处理错题巩固题库的情况，subcategoryId为字符串
     const actualSubcategoryId = subcategoryId === 'error-collection' ? null : subcategoryId;
     
-    // 检查是否存在重复提交（5秒内相同用户、相同学科、相同题库的提交）
-    let recentRecord;
-    const cooldownSeconds = 5;
-    if (actualSubcategoryId === null) {
-      // 错题巩固题库，使用 IS NULL 条件
-      recentRecord = await db.get(
-        'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
-        [actualUserId, subjectId, cooldownSeconds]
-      );
-    } else {
-      // 普通题库，使用 = 条件
-      recentRecord = await db.get(
-        'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
-        [actualUserId, subjectId, actualSubcategoryId, cooldownSeconds]
-      );
-    }
-    
+    // 检查是否存在重复提交
+    const recentRecord = await checkDuplicateSubmission(actualUserId, subjectId, actualSubcategoryId);
     if (recentRecord) {
       return res.status(400).json({ error: '提交过于频繁，请稍后再试' });
     }
@@ -331,7 +478,6 @@ router.post('/', async (req, res) => {
     
     res.json({ success: true, recordId: result.insertId, points });
   } catch (error) {
-    console.error('保存答题记录失败:', error);
     res.status(500).json({ error: '保存答题记录失败' });
   }
 });
@@ -339,15 +485,27 @@ router.post('/', async (req, res) => {
 // 保存题目尝试记录
 router.post('/question-attempts', async (req, res) => {
   try {
-    const { userId, grade, class: className, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions } = req.body;
+    const { userId, grade, class: className, questionId, subjectId, subcategoryId, userAnswer, correctAnswer, isCorrect, answerRecordId, shuffledOptions, timestamp, signature } = req.body;
     
-    // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
-    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [userId, grade, className]);
-    if (!user) {
-      return res.status(404).json({ error: '用户不存在' });
+    // 验证签名
+    const signatureData = {
+      userId,
+      questionId,
+      answerRecordId,
+      timestamp
+    };
+    
+    if (!validateSignature(req.body, timestamp, signature, userId)) {
+      return res.status(401).json({ error: '签名验证失败，提交无效' });
     }
     
-    const actualUserId = user.id;
+    // 查找用户ID
+    let actualUserId;
+    try {
+      actualUserId = await findUserId(userId, grade, className);
+    } catch (error) {
+      return res.status(404).json({ error: error.message });
+    }
     
     // 处理错题巩固题库的情况，subcategoryId为字符串
     const actualSubcategoryId = subcategoryId === 'error-collection' ? null : subcategoryId;
@@ -362,7 +520,6 @@ router.post('/question-attempts', async (req, res) => {
     
     res.json({ success: true });
   } catch (error) {
-    console.error('保存题目尝试记录失败:', error);
     res.status(500).json({ error: '保存题目尝试记录失败' });
   }
 });

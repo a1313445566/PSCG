@@ -1,9 +1,10 @@
 // 使用 API 与后端通信
-// 自动检测当前环境：开发环境使用相对路径（通过Vite代理），生产环境使用远程服务器
-const isDevelopment = import.meta.env.DEV || true;
-const API_BASE_URL = isDevelopment 
-  ? '/api'
-  : import.meta.env.VITE_API_URL || 'http://localhost:3001/api';
+// 自动检测当前环境：使用相对路径，这样会自动使用与页面相同的协议
+const isDevelopment = import.meta.env.DEV;
+// 明确设置API基础URL，避免被意外覆盖
+let API_BASE_URL;
+// 始终使用相对路径，避免混合内容错误
+API_BASE_URL = '/api';
 
 // 输出环境变量信息（仅在开发环境）
 if (isDevelopment) {
