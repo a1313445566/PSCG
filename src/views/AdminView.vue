@@ -524,7 +524,7 @@
 </style>
 
 <script setup>
-import { ref, computed, onMounted, defineAsyncComponent } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
@@ -1359,6 +1359,16 @@ const handleUserManagementTabClick = async () => {
   // 重新加载用户数据
   await loadAllUsers()
 }
+
+// 监听标签变化，确保用户管理标签切换时加载数据
+watch(
+  () => activeTab.value,
+  async (newTab) => {
+    if (newTab === 'user-management') {
+      await loadAllUsers()
+    }
+  }
+)
 
 // 初始化
 onMounted(async () => {

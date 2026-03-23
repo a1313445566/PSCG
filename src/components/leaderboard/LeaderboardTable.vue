@@ -125,24 +125,41 @@ onUnmounted(() => {
   width: 100%;
   overflow-x: auto;
   -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
 }
 
 .table-layout::-webkit-scrollbar {
-  height: 6px;
+  height: 8px;
+  width: 8px;
 }
 
 .table-layout::-webkit-scrollbar-track {
   background: #f1f1f1;
   border-radius: 10px;
+  margin: 0 10px;
 }
 
 .table-layout::-webkit-scrollbar-thumb {
   background: #4A90E2;
   border-radius: 10px;
+  transition: background 0.3s ease;
 }
 
 .table-layout::-webkit-scrollbar-thumb:hover {
   background: #357ABD;
+}
+
+/* 确保表格内容不会溢出容器 */
+.table-layout table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* 优化表格布局，确保内容对齐 */
+.leaderboard-header,
+.leaderboard-row {
+  min-width: 600px;
+  box-sizing: border-box;
 }
 
 .leaderboard-header {

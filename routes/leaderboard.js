@@ -138,13 +138,21 @@ router.get('/top10', async (req, res) => {
     const { subjectId } = req.query;
     
     let query = `
-      SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
+      SELECT u.id, u.student_id, u.name, u.grade, u.class,
              COUNT(DISTINCT ar.id) as total_sessions,
              SUM(ar.total_questions) as total_questions,
              SUM(ar.correct_count) as correct_count,
              CASE WHEN SUM(ar.total_questions) > 0 THEN
                (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
-             ELSE 0 END as avg_accuracy
+             ELSE 0 END as avg_accuracy,
+             SUM(
+               CASE 
+                 WHEN ar.total_questions = ar.correct_count AND ar.total_questions > 0 THEN
+                   (ar.correct_count - (ar.total_questions - ar.correct_count)) * 2
+                 ELSE
+                   ar.correct_count - (ar.total_questions - ar.correct_count)
+               END
+             ) as points
       FROM users u
       JOIN answer_records ar ON u.id = ar.user_id
       WHERE 1=1

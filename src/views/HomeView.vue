@@ -202,11 +202,13 @@ const calculateTimeLeft = () => {
   const now = new Date()
   const dayOfWeek = now.getDay()
   // 计算到下周一的天数：周日(0)→1天，周一(1)→0天，周二(2)→6天，以此类推
-  const daysUntilMonday = dayOfWeek === 0 ? 1 : (8 - dayOfWeek) % 7
+  const daysUntilMonday = dayOfWeek === 1 ? 7 : (8 - dayOfWeek) % 7
   const nextMonday = new Date(now)
   nextMonday.setDate(now.getDate() + daysUntilMonday)
   nextMonday.setHours(0, 0, 0, 0)
-  return Math.floor((nextMonday - now) / 1000)
+  const timeLeft = Math.floor((nextMonday - now) / 1000)
+  // 确保时间差不为负数
+  return Math.max(0, timeLeft)
 }
 
 // 格式化倒计时
