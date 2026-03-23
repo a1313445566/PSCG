@@ -38,7 +38,7 @@
     <!-- 列表视图 -->
     <div class="table-container" v-if="!isCategoryView">
       <el-table 
-        :data="paginatedQuestions" 
+        :data="filteredQuestions" 
         style="margin-top: 20px; width: 100%"
         @selection-change="handleSelectionChange"
         @row-click="editQuestion"
@@ -46,6 +46,11 @@
         border
         :default-sort="{prop: 'createdAt', order: 'descending'}"
         :row-class-name="row => hasValidImage(row.content) || row.audio ? 'has-media' : ''"
+        v-loading="loading"
+        element-loading-text="加载中..."
+        height="500px"
+        :virtual-scroll="true"
+        :virtual-item-height="80"
       >
         <el-table-column type="selection" width="40"></el-table-column>
         <el-table-column prop="id" label="ID" width="60" align="center"></el-table-column>
@@ -127,13 +132,18 @@
       
       <div v-if="selectedCategorySubjectId && selectedCategorySubcategoryId" class="category-questions-table">
         <el-table 
-          :data="paginatedCategoryQuestions" 
+          :data="categoryQuestions" 
           style="margin-top: 20px; width: 100%"
           @row-click="editQuestion"
           stripe
           border
           :default-sort="{prop: 'createdAt', order: 'descending'}"
           :row-class-name="row => hasValidImage(row.content) || row.audio ? 'has-media' : ''"
+          v-loading="loading"
+          element-loading-text="加载中..."
+          height="500px"
+          :virtual-scroll="true"
+          :virtual-item-height="80"
         >
           <el-table-column type="selection" width="40"></el-table-column>
           <el-table-column prop="id" label="ID" width="60" align="center"></el-table-column>
@@ -208,18 +218,7 @@
 
     </div>
     
-    <!-- 分页组件 -->
-    <div class="pagination" style="margin-top: 20px; text-align: right;">
-      <el-pagination
-        v-model:current-page="currentPage"
-        v-model:page-size="pageSize"
-        :page-sizes="[10, 20, 50]"
-        layout="total, sizes, prev, pager, next, jumper"
-        :total="isCategoryView ? categoryTotal : total"
-        @size-change="handleSizeChange"
-        @current-change="handleCurrentChange"
-      />
-    </div>
+
   </div>
 </template>
 
@@ -255,9 +254,8 @@ const isCategoryView = ref(false);
 const selectedCategorySubjectId = ref('');
 const selectedCategorySubcategoryId = ref('');
 
-// 分页
-const currentPage = ref(1);
-const pageSize = ref(10);
+// 加载状态
+const loading = ref(false);
 
 // 选中的题目
 const selectedQuestions = ref([]);
@@ -377,12 +375,7 @@ const filteredQuestions = computed(() => {
 // 计算总数
 const total = computed(() => filteredQuestions.value.length);
 
-// 计算分页后的题目
-const paginatedQuestions = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return filteredQuestions.value.slice(start, end);
-});
+
 
 // 计算分类视图的题目
 const categoryQuestions = computed(() => {
@@ -450,12 +443,7 @@ const categoryQuestions = computed(() => {
 // 计算分类视图总数
 const categoryTotal = computed(() => categoryQuestions.value.length);
 
-// 计算分页后的分类视图题目
-const paginatedCategoryQuestions = computed(() => {
-  const start = (currentPage.value - 1) * pageSize.value;
-  const end = start + pageSize.value;
-  return categoryQuestions.value.slice(start, end);
-});
+
 
 // 处理学科变化
 const handleSubjectChange = () => {
@@ -533,6 +521,7 @@ const showBatchAddQuestionDialog = () => {
 // 刷新题目数据
 const refreshQuestions = async () => {
   try {
+    loading.value = true;
     const questionStore = useQuestionStore();
     
     // 重新加载数据
@@ -540,6 +529,8 @@ const refreshQuestions = async () => {
     ElMessage.success('数据刷新成功');
   } catch (error) {
     ElMessage.error('刷新数据失败，请稍后重试');
+  } finally {
+    loading.value = false;
   }
 };
 
@@ -569,21 +560,12 @@ const getTypeName = (type) => {
   return typeMap[type] || type;
 };
 
-// 监听题目变化，重置分页状态
+// 监听题目变化
 watch(() => props.questions, () => {
-  // 当题目列表变化时，重置到第一页，确保新添加的题目能显示出来
-  currentPage.value = 1;
+  // 当题目列表变化时，不需要重置分页，因为使用虚拟滚动
 }, { deep: true });
 
-// 分页处理
-const handleSizeChange = (size) => {
-  pageSize.value = size;
-  currentPage.value = 1;
-};
 
-const handleCurrentChange = (current) => {
-  currentPage.value = current;
-};
 </script>
 
 <style scoped>
