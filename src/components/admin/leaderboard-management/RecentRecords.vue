@@ -72,6 +72,7 @@
 
 <script setup>
 import { ref, computed } from 'vue';
+import { formatDate } from '../../../utils/dateUtils';
 
 // 定义属性和事件
 const props = defineProps({
@@ -103,12 +104,7 @@ const openUserDetailDialog = (row) => {
 };
 
 // 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  // 使用北京时间（UTC+8）格式化日期
-  return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-};
+
 
 // 分页处理
 const handleSizeChange = (size) => {

@@ -716,15 +716,24 @@ const onQuillReady = (quill) => {
 
 /* 内容编辑器 */
 .content-editor {
-  height: 240px;
+  min-height: 240px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
-  overflow: hidden;
   transition: all 0.3s ease;
 }
 
 .content-editor:hover {
   border-color: #cbd5e1;
+}
+
+.content-editor :deep(.ql-container) {
+  min-height: 240px;
+}
+
+.content-editor :deep(.ql-editor) {
+  min-height: 220px;
+  line-height: 1.5;
+  padding: 10px 12px;
 }
 
 /* 现代按钮 */
@@ -875,11 +884,10 @@ const onQuillReady = (quill) => {
 }
 
 .answer-input {
-  height: 80px;
+  min-height: 80px;
   border: 2px solid #e2e8f0;
   border-radius: 8px;
   transition: all 0.3s ease;
-  overflow: hidden;
 }
 
 .answer-input:hover {
@@ -892,12 +900,10 @@ const onQuillReady = (quill) => {
 }
 
 .answer-input :deep(.ql-container) {
-  height: 80px;
   min-height: 80px;
 }
 
 .answer-input :deep(.ql-editor) {
-  height: 80px;
   min-height: 80px;
   line-height: 1.5;
   padding: 8px 12px;

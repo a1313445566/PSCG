@@ -146,6 +146,7 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue';
+import { formatDate } from '../../../utils/dateUtils';
 
 // 定义属性和事件
 const props = defineProps({
@@ -229,12 +230,7 @@ const handleAttemptsCurrentChange = (current) => {
   currentAttemptsPage.value = current;
 };
 
-// 格式化日期
-const formatDate = (dateString) => {
-  if (!dateString) return '';
-  const date = new Date(dateString);
-  return date.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-};
+
 
 // 显示题目详情
 const showQuestionDetail = (row) => {

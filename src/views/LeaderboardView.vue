@@ -209,7 +209,7 @@
                     <div class="subcategory-col">{{ item.subcategory_name || '全部' }}</div>
                     <div class="score-col">{{ item.correct_count }} / {{ item.total_questions }}</div>
                     <div class="accuracy-col">{{ Math.round((item.correct_count / item.total_questions) * 100) }}%</div>
-                    <div class="time-col">{{ formatDate(item.created_at) }}</div>
+                    <div class="time-col">{{ formatDate(item.created_at, '未知时间') }}</div>
                   </div>
                 </div>
               </div>
@@ -259,7 +259,7 @@
           <div class="subcategory-col">{{ item.subcategory_name || '全部' }}</div>
           <div class="score-col">{{ item.correct_count }} / {{ item.total_questions }}</div>
           <div class="accuracy-col">{{ Math.round((item.correct_count / item.total_questions) * 100) }}%</div>
-          <div class="time-col">{{ formatDate(item.created_at) }}</div>
+          <div class="time-col">{{ formatDate(item.created_at, '未知时间') }}</div>
         </div>
       </div>
     </div>
@@ -274,6 +274,7 @@ import { ref, onMounted, watch } from 'vue'
 import { ElButton, ElTabs, ElTabPane, ElSelect, ElOption, ElDialog } from 'element-plus'
 import 'element-plus/dist/index.css'
 import { getApiBaseUrl } from '../utils/database'
+import { formatDate } from '../utils/dateUtils'
 import AppHeader from '../components/common/AppHeader.vue'
 
 const activeTab = ref('global')
@@ -382,23 +383,7 @@ const handleGradeChange = async () => {
   }
 }
 
-const formatDate = (dateString) => {
-  if (!dateString) return '未知时间'
-  try {
-    const date = new Date(dateString)
-    return date.toLocaleString('zh-CN', {
-      year: 'numeric',
-      month: '2-digit',
-      day: '2-digit',
-      hour: '2-digit',
-      minute: '2-digit',
-      timeZone: 'Asia/Shanghai'
-    })
-  } catch (error) {
-    // console.error('日期格式化失败:', error)
-    return '未知时间'
-  }
-}
+
 
 const loadSubjects = async () => {
   try {
