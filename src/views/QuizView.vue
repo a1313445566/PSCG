@@ -510,6 +510,9 @@ const stopTimer = () => {
 }
 
 onMounted(async () => {
+  // 重置 quizStore 状态，避免显示之前的题目
+  quizStore.resetQuizState()
+  
   // 初始化数据
   await questionStore.initialize()
   await settingsStore.loadSettings()
