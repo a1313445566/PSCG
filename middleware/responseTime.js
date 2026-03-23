@@ -9,7 +9,7 @@ const responseTime = (req, res, next) => {
     
     // 记录响应时间和状态码
     const logData = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
       method: req.method,
       url: req.url,
       statusCode: res.statusCode,

@@ -60,7 +60,7 @@ class DBPerformanceMonitor {
     // 如果查询时间超过200ms，记录为慢查询
     if (duration > 200) {
       const queryInfo = {
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
         sql: this.truncateSql(sql),
         duration: `${duration}ms`,
         params: this.sanitizeParams(params),
@@ -119,7 +119,7 @@ class DBPerformanceMonitor {
       averageQueryTime: avgQueryTime,
       slowQueryCount: this.slowQueries.length,
       slowQueries: this.slowQueries.slice(-10), // 返回最近10个慢查询
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
     };
   }
 
@@ -133,7 +133,7 @@ class DBPerformanceMonitor {
     app.get('/api/performance/health', (req, res) => {
       const health = {
         status: 'ok',
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
         uptime: process.uptime(),
         memoryUsage: process.memoryUsage(),
         queryStats: {

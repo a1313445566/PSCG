@@ -47,7 +47,7 @@ router.get('/backup', async (req, res) => {
     // 如果请求JSON格式
     if (format === 'json') {
       const backupData = {
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
         data: {}
       };
       
@@ -198,7 +198,7 @@ router.get('/backup/history', async (req, res) => {
         filename: file,
         type: file.includes('full') ? 'full' : 'incremental',
         size: `${(stats.size / 1024).toFixed(2)} KB`,
-        createdAt: stats.mtime.toLocaleString()
+        createdAt: stats.mtime.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })
       };
     }).sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     
@@ -263,7 +263,7 @@ router.post('/backup/verify', upload.single('backup'), (req, res) => {
       res.json({
         valid: true,
         type: 'full', // 默认为全量备份
-        timestamp: new Date().toISOString(),
+        timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
         size: `${(req.file.size / 1024).toFixed(2)} KB`,
         dataTypes: ['questions', 'users', 'answers', 'settings']
       });
@@ -283,7 +283,7 @@ router.post('/backup/verify', upload.single('backup'), (req, res) => {
 router.get('/export', async (req, res) => {
   try {
     const exportData = {
-      timestamp: new Date().toISOString(),
+      timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
       data: {
         questions: await db.all('SELECT * FROM questions'),
         subjects: await db.all('SELECT * FROM subjects'),

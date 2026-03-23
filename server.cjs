@@ -1,3 +1,4 @@
+require('dotenv').config({ path: process.env.NODE_ENV === 'production' ? '.env.production' : (process.env.NODE_ENV === 'development' ? '.env.development' : '.env') });
 const express = require('express');
 const compression = require('compression');
 const cors = require('cors');
@@ -40,9 +41,9 @@ const cacheService = require('./services/cache');
 const dbPerformanceMonitor = require('./middleware/dbPerformance');
 
 const app = express();
-const port = 3001;
+const port = process.env.SERVER_PORT || 3001;
 
-app.use(cors());
+app.use(cors({ origin: '*', methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], allowedHeaders: ['Content-Type', 'Authorization'] }));
 app.use(compression());
 app.use(express.json({ encoding: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' }));

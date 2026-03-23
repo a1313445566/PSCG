@@ -11,11 +11,11 @@ class DatabaseService {
   async connect() {
     try {
       this.pool = mysql.createPool({
-        host: '127.0.0.1',
-        port: 3306,
-        user: 'PSCG',
-        password: 'xgsy@8188',
-        database: 'pscg',
+        host: process.env.DB_HOST || '127.0.0.1',
+        port: process.env.DB_PORT || 3306,
+        user: process.env.DB_USER || 'PSCG',
+        password: process.env.DB_PASSWORD,
+        database: process.env.DB_NAME || 'pscg',
         charset: 'utf8mb4',
         multipleStatements: true,
         waitForConnections: true,
@@ -251,10 +251,10 @@ class DatabaseService {
     try {
       await this.ensureConnection();
       const [rows] = await this.pool.query('SELECT 1 as health_check');
-      return { status: 'ok', timestamp: new Date().toISOString() };
+      return { status: 'ok', timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) };
     } catch (err) {
       console.error('数据库健康检查失败:', err);
-      return { status: 'error', message: err.message, timestamp: new Date().toISOString() };
+      return { status: 'error', message: err.message, timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }) };
     }
   }
 }
