@@ -5,20 +5,16 @@ import vue from '@vitejs/plugin-vue'
 export default defineConfig({
   plugins: [vue()],
   base: './',
-  optimizeDeps: {
-    include: ['element-plus', 'quill', 'echarts'],
-    exclude: []
-  },
   build: {
-    chunkSizeWarningLimit: 500,
+    chunkSizeWarningLimit: 1000,
     minify: 'esbuild',
     rollupOptions: {
       output: {
         manualChunks: {
+          'vue-vendor': ['vue', 'vue-router', 'pinia'],
           'element-plus': ['element-plus'],
           'echarts': ['echarts'],
-          'quill': ['quill'],
-          'vue': ['vue', 'vue-router', 'pinia']
+          'quill': ['quill']
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
@@ -32,6 +28,16 @@ export default defineConfig({
         target: 'http://localhost:3001',
         changeOrigin: true,
       }
+    }
+  },
+  // 禁用大型库的预加载
+  modulePreload: {
+    resolveDependencies: (url, deps) => {
+      // 只预加载核心库，不预加载 element-plus 和 echarts
+      return deps.filter(dep => 
+        !dep.includes('element-plus') && 
+        !dep.includes('echarts')
+      )
     }
   }
 })

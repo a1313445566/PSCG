@@ -530,12 +530,6 @@ onMounted(async () => {
     questionCount = Math.floor(Math.random() * (maxQuestionCount - minQuestionCount + 1)) + minQuestionCount
   }
   
-  // 确保数据已加载
-  if (questionStore.questions.length === 0) {
-    // 加载当前学科的题目数据
-    await questionStore.loadQuestions(subjectId.value, subcategoryId.value)
-  }
-  
   // 生成题目
   if (isErrorCollection.value) {
     // 加载错题巩固题库
@@ -551,7 +545,19 @@ onMounted(async () => {
     quizStore.score = null
     quizStore.startTime = Date.now()
   } else {
-    // 生成普通题库题目
+    // 按需加载该题库的题目（不再预加载整个学科）
+    const loadedQuestions = await questionStore.loadQuestionsBySubcategory(subjectId.value, parseInt(subcategoryId.value))
+    
+    if (loadedQuestions.length === 0) {
+      ElMessage.warning('该题库暂无题目')
+      router.push(`/subcategory/${subjectId.value}`)
+      return
+    }
+    
+    // 获取用户在该题库的统计数据（用于智能选题）
+    await questionStore.loadUserSubcategoryStats(parseInt(subcategoryId.value))
+    
+    // 生成普通题库题目（根据用户水平智能选题）
     quizStore.generateQuestionsBySubcategory(parseInt(subjectId.value), parseInt(subcategoryId.value), questionCount, randomizeAnswers)
   }
   

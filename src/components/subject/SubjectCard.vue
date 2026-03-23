@@ -31,6 +31,11 @@ import { subjectIcons } from '../../config/iconConfig';
 
 // 计算该学科的题目数量
 const getQuestionCount = (subjectId) => {
+  // 优先使用后端返回的 questionCount 字段（首页场景）
+  if (props.subject.questionCount !== undefined) {
+    return props.subject.questionCount
+  }
+  // 如果没有 questionCount，从 questions 数组计算（管理页面场景）
   return props.questions.filter(q => {
     const qSubjectId = q.subjectId || q.subject_id
     return qSubjectId === subjectId

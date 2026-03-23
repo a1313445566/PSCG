@@ -215,6 +215,7 @@ const wrongQuestions = computed(() => {
 const generateNewQuestions = () => {
   // 清除旧的答题数据
   localStorage.removeItem('quizData')
+  localStorage.removeItem('quiz-store')
   router.push(`/quiz/${subjectId.value}/${subcategoryId.value}`)
 }
 
@@ -243,6 +244,7 @@ const formatUserAnswer = (questionId, questionType) => {
 const backToSubcategory = () => {
   // 清除旧的答题数据
   localStorage.removeItem('quizData')
+  localStorage.removeItem('quiz-store')
   router.push('/home')
 }
 

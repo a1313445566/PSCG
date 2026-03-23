@@ -23,6 +23,7 @@
             :subcategory="subcategory"
             :subjectId="currentSubject.id"
             :questions="questions"
+            :subcategoryStats="subcategoryStats"
             @select="selectSubcategory"
           />
         </div>
@@ -91,8 +92,11 @@ const currentSubject = computed(() => {
   return questionStore.subjects.find(s => s.id === subjectId.value) || { name: '未知学科', subcategories: [] };
 })
 
-// 题目数据
+// 题目数据（用于兼容，但不再预加载所有题目）
 const questions = computed(() => questionStore.questions)
+
+// 子分类统计数据
+const subcategoryStats = computed(() => questionStore.subcategoryStats)
 
 // 选择题库
 const selectSubcategory = (subcategoryId) => {
@@ -113,9 +117,9 @@ onMounted(async () => {
   // 初始化数据
   await questionStore.initialize()
   
-  // 加载当前学科的题目数据
+  // 加载当前学科的子分类统计数据（不再加载所有题目）
   if (subjectId.value) {
-    await questionStore.loadQuestions(subjectId.value)
+    await questionStore.loadSubcategoryStats(subjectId.value)
   }
   
   // 检查是否已登录

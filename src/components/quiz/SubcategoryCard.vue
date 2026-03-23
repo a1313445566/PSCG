@@ -3,10 +3,10 @@
     <div class="subcategory-icon">{{ subjectIcons[subcategory.iconIndex || 0] }}</div>
     <div class="subcategory-name">{{ subcategory.name }}</div>
     <div class="subcategory-info">
-      <span class="question-count">{{ getQuestionCount(subcategory.id) }} 题</span>
+      <span class="question-count">{{ questionCount }} 题</span>
       <div class="difficulty-wrapper">
-        <span class="difficulty" :class="getDifficultyClass(subcategory.id)">
-          {{ getDifficultyLevel(subcategory.id) }}
+        <span class="difficulty" :class="difficultyClass">
+          {{ difficultyLevel }}
         </span>
         <div class="difficulty-tooltip">
           <div class="tooltip-title">难度说明</div>
@@ -22,6 +22,8 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+
 const props = defineProps({
   subcategory: {
     type: Object,
@@ -34,6 +36,10 @@ const props = defineProps({
   questions: {
     type: Array,
     default: () => []
+  },
+  subcategoryStats: {
+    type: Object,
+    default: () => ({})
   }
 })
 
@@ -42,44 +48,53 @@ const emit = defineEmits(['select'])
 // 导入共享图标配置
 import { subjectIcons } from '../../config/iconConfig';
 
-// 计算该题库的题目数量
-const getQuestionCount = (subcategoryId) => {
+// 获取题目数量（优先使用后端统计）
+const questionCount = computed(() => {
+  const stats = props.subcategoryStats[props.subcategory.id]
+  if (stats) {
+    return stats.questionCount
+  }
+  // 降级：从 questions 数组计算
   return props.questions.filter(q => {
     const qSubjectId = q.subjectId || q.subject_id
     const qSubcategoryId = q.subcategoryId || q.subcategory_id
-    return qSubjectId === props.subjectId && qSubcategoryId === subcategoryId
+    return qSubjectId === props.subjectId && qSubcategoryId === props.subcategory.id
   }).length
-}
+})
 
-// 获取难度等级
-const getDifficultyLevel = (subcategoryId) => {
+// 获取平均难度（优先使用后端统计）
+const avgDifficulty = computed(() => {
+  const stats = props.subcategoryStats[props.subcategory.id]
+  if (stats) {
+    return stats.avgDifficulty
+  }
+  // 降级：从 questions 数组计算
   const subcategoryQuestions = props.questions.filter(q => {
     const qSubcategoryId = q.subcategoryId || q.subcategory_id
-    return qSubcategoryId === subcategoryId
+    return qSubcategoryId === props.subcategory.id
   })
-  
-  if (subcategoryQuestions.length === 0) return '简单'
-  
-  // 简单的难度计算逻辑
-  const avgDifficulty = subcategoryQuestions.reduce((sum, q) => {
-    return sum + (q.difficulty || 1)
-  }, 0) / subcategoryQuestions.length
-  
-  if (avgDifficulty < 2) return '简单'
-  if (avgDifficulty < 3) return '中等'
+  if (subcategoryQuestions.length === 0) return 1
+  return subcategoryQuestions.reduce((sum, q) => sum + (q.difficulty || 1), 0) / subcategoryQuestions.length
+})
+
+// 获取难度等级
+const difficultyLevel = computed(() => {
+  const diff = avgDifficulty.value
+  if (diff < 2) return '简单'
+  if (diff < 3) return '中等'
   return '困难'
-}
+})
 
 // 获取难度样式类
-const getDifficultyClass = (subcategoryId) => {
-  const level = getDifficultyLevel(subcategoryId)
+const difficultyClass = computed(() => {
+  const level = difficultyLevel.value
   switch (level) {
     case '简单': return 'difficulty-easy'
     case '中等': return 'difficulty-medium'
     case '困难': return 'difficulty-hard'
     default: return 'difficulty-easy'
   }
-}
+})
 
 // 选择题库
 const selectSubcategory = () => {

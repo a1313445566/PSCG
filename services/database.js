@@ -19,14 +19,13 @@ class DatabaseService {
         charset: 'utf8mb4',
         multipleStatements: true,
         waitForConnections: true,
-        connectionLimit: 20, // 增加连接池大小，提高并发能力
-        queueLimit: 100, // 增加队列限制
-        connectTimeout: 5000, // 减少连接超时时间
-        acquireTimeout: 5000, // 减少获取连接超时时间
-        timeout: 10000, // 减少查询超时时间
+        connectionLimit: 10, // 优化连接池大小
+        queueLimit: 0, // 不限制队列长度
+        connectTimeout: 10000, // 首次连接超时时间延长
+        acquireTimeout: 10000, // 获取连接超时时间延长
         timezone: '+08:00',
         enableKeepAlive: true, // 启用连接保持
-        keepAliveInitialDelay: 10000 // 连接保持间隔
+        keepAliveInitialDelay: 30000 // 连接保持间隔延长到30秒
       });
       
       // 测试连接

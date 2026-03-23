@@ -282,26 +282,22 @@ const logout = () => {
   router.push('/login')
 }
 
-onMounted(async () => {
-  // 1. 加载核心数据
-  await questionStore.initialize()
-  
-  // 2. 延迟加载排行榜数据
-  setTimeout(async () => {
-    await fetchLeaderboardData()
-    // 启动倒计时
-    startCountdown()
-  }, 800)
-  
-  // 3. 延迟加载用户统计数据
-  setTimeout(async () => {
-    await fetchUserStats()
-  }, 1200)
-  
+onMounted(() => {
   // 检查是否已登录
   if (!currentStudentId.value) {
     router.push('/login')
+    return
   }
+  
+  // 后台加载数据，不阻塞渲染
+  questionStore.initialize().then(() => {
+    // 数据加载完成后再加载排行榜和用户统计
+    fetchLeaderboardData()
+    startCountdown()
+    fetchUserStats()
+  }).catch(error => {
+    console.error('加载数据失败:', error)
+  })
 })
 
 onUnmounted(() => {

@@ -1,0 +1,177 @@
+---
+description: 
+alwaysApply: false
+enabled: true
+updatedAt: 2026-03-23T15:56:30.715Z
+provider: 
+---
+
+# Vue 3 组件开发规范
+
+## 组件结构
+
+### 使用 `<script setup>` 语法
+```vue
+<template>
+  <!-- 模板内容 -->
+</template>
+
+<script setup>
+import { ref, computed, onMounted } from 'vue'
+import { useQuestionStore } from '@/stores/questionStore'
+
+// Props
+const props = defineProps({
+  title: {
+    type: String,
+    required: true
+  }
+})
+
+// Emits
+const emit = defineEmits(['update', 'delete'])
+
+// 响应式数据
+const loading = ref(false)
+const dataList = ref([])
+
+// 计算属性
+const filteredList = computed(() => {
+  return dataList.value.filter(item => item.active)
+})
+
+// 方法
+const handleClick = () => {
+  emit('update', props.title)
+}
+
+// 生命周期
+onMounted(async () => {
+  await loadData()
+})
+</script>
+
+<style scoped>
+/* 组件样式 */
+</style>
+```
+
+## Pinia Store 规范
+
+### 标准结构
+```javascript
+import { defineStore } from 'pinia'
+
+export const useXxxStore = defineStore('xxx', {
+  state: () => ({
+    items: [],
+    loading: false,
+    error: null
+  }),
+  
+  getters: {
+    getItemById: (state) => (id) => {
+      return state.items.find(item => item.id === id)
+    }
+  },
+  
+  actions: {
+    async fetchData() {
+      try {
+        this.loading = true
+        this.error = null
+        // API 调用
+      } catch (error) {
+        this.error = error.message
+      } finally {
+        this.loading = false
+      }
+    }
+  }
+})
+```
+
+## API 调用规范
+
+### 使用 fetch
+```javascript
+// GET 请求
+const response = await fetch(`${getApiBaseUrl()}/subjects`)
+if (response.ok) {
+  const data = await response.json()
+}
+
+// POST 请求
+const response = await fetch(`${getApiBaseUrl()}/questions`, {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify(questionData)
+})
+```
+
+### 错误处理
+```javascript
+try {
+  this.loading = true
+  this.error = null
+  // 操作
+} catch (error) {
+  this.error = error.message
+  throw error // 如果需要上层处理
+} finally {
+  this.loading = false
+}
+```
+
+## 命名约定
+
+| 类型 | 命名方式 | 示例 |
+|------|----------|------|
+| 组件文件 | PascalCase | `QuestionCard.vue` |
+| 组件名称 | PascalCase | `<QuestionCard />` |
+| Store 文件 | camelCase | `questionStore.js` |
+| Store 名称 | camelCase + use前缀 | `useQuestionStore` |
+| 路由文件 | camelCase | `index.js` |
+| 工具函数 | camelCase | `database.js` |
+| CSS 类名 | kebab-case | `.question-card` |
+
+## Element Plus 使用
+
+### 常用组件
+- 表单: `el-form`, `el-form-item`, `el-input`, `el-select`
+- 表格: `el-table`, `el-table-column`
+- 按钮: `el-button`
+- 对话框: `el-dialog`
+- 消息: `ElMessage.success()`, `ElMessage.error()`
+- 加载: `v-loading` 指令
+
+### 按需引入
+项目已配置 Element Plus 全局注册，可直接使用组件。
+
+## 性能优化
+
+1. **路由懒加载**
+```javascript
+const AdminView = () => import('@/views/AdminView.vue')
+```
+
+2. **组件按需加载**
+```javascript
+const HeavyComponent = defineAsyncComponent(() => 
+  import('@/components/HeavyComponent.vue')
+)
+```
+
+3. **列表渲染使用 key**
+```vue
+<div v-for="item in list" :key="item.id">
+```
+
+4. **computed 缓存计算结果**
+```javascript
+const expensiveValue = computed(() => {
+  // 复杂计算
+})
+```

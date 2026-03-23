@@ -36,6 +36,8 @@ export const useQuestionStore = defineStore('question', {
     recentRecords: [],
     errorCollections: {}, // 错题巩固题库，格式: { subjectId: [questions] }
     errorCollectionStats: {}, // 错题巩固统计，格式: { questionId: { correctCount: number } }
+    subcategoryStats: {}, // 子分类统计，格式: { subcategoryId: { questionCount, avgDifficulty } }
+    userSubcategoryStats: {}, // 用户题库统计，格式: { subcategoryId: { accuracy, totalAttempts, recentAccuracy } }
     isLoading: false,
     error: null
   }),
@@ -83,61 +85,77 @@ export const useQuestionStore = defineStore('question', {
       try {
         this.isLoading = true
         this.error = null
-        
-        // 检查缓存
+
+        // 检查缓存 - 优先使用缓存,立即返回
         const cachedData = localStorage.getItem('coreData')
         const cacheExpiry = localStorage.getItem('coreDataExpiry')
-        
+
         if (cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)) {
           const data = JSON.parse(cachedData)
           this.subjects = data.subjects
           this.grades = data.grades
           this.classes = data.classes
+          // 后台更新缓存
+          this.updateCacheInBackground()
           return
         }
-        
-        // 并行请求核心数据
-        const [subjectsData, gradesData, classesData, subjectStatsData] = await Promise.all([
-          fetch(`${getApiBaseUrl()}/subjects`)
-            .then(res => res.json())
-            .catch(() => []),
-          fetch(`${getApiBaseUrl()}/grades`)
-            .then(res => res.json())
-            .catch(() => []),
-          fetch(`${getApiBaseUrl()}/classes`)
-            .then(res => res.json())
-            .catch(() => []),
-          fetch(`${getApiBaseUrl()}/subjects/stats`)
-            .then(res => res.json())
-            .catch(() => [])
-        ])
-        
-        // 合并题目数量统计
-        this.subjects = subjectsData.map(subject => {
-          const stat = subjectStatsData.find(s => s.id === subject.id)
-          return {
-            ...subject,
-            questionCount: stat ? stat.questionCount : 0
-          }
-        })
-        this.grades = gradesData
-        this.classes = classesData
-        
-        // 缓存数据
-        const coreData = {
-          subjects: this.subjects,
-          grades: this.grades,
-          classes: this.classes
-        }
-        localStorage.setItem('coreData', JSON.stringify(coreData))
-        localStorage.setItem('coreDataExpiry', Date.now() + 24 * 60 * 60 * 1000) // 24小时过期
-        
+
+        // 无缓存或过期,加载数据
+        await this.fetchAndCacheCoreData()
       } catch (error) {
         this.error = error.message
 
       } finally {
         this.isLoading = false
       }
+    },
+
+    // 后台更新缓存
+    async updateCacheInBackground() {
+      try {
+        await this.fetchAndCacheCoreData()
+      } catch (error) {
+        // 静默失败,不影响用户
+      }
+    },
+
+    // 获取并缓存数据
+    async fetchAndCacheCoreData() {
+      // 并行请求核心数据
+      const [subjectsData, gradesData, classesData, subjectStatsData] = await Promise.all([
+        fetch(`${getApiBaseUrl()}/subjects`)
+          .then(res => res.json())
+          .catch(() => []),
+        fetch(`${getApiBaseUrl()}/grades`)
+          .then(res => res.json())
+          .catch(() => []),
+        fetch(`${getApiBaseUrl()}/classes`)
+          .then(res => res.json())
+          .catch(() => []),
+        fetch(`${getApiBaseUrl()}/subjects/stats`)
+          .then(res => res.json())
+          .catch(() => [])
+      ])
+
+      // 合并题目数量统计
+      this.subjects = subjectsData.map(subject => {
+        const stat = subjectStatsData.find(s => s.id === subject.id)
+        return {
+          ...subject,
+          questionCount: stat ? stat.questionCount : 0
+        }
+      })
+      this.grades = gradesData
+      this.classes = classesData
+
+      // 缓存数据
+      const coreData = {
+        subjects: this.subjects,
+        grades: this.grades,
+        classes: this.classes
+      }
+      localStorage.setItem('coreData', JSON.stringify(coreData))
+      localStorage.setItem('coreDataExpiry', Date.now() + 24 * 60 * 60 * 1000) // 24小时过期
     },
     
     // 加载题目数据（按需加载）
@@ -175,35 +193,92 @@ export const useQuestionStore = defineStore('question', {
       }
     },
     
-    // 加载数据（保留旧方法）
+    // 加载子分类统计数据
+    async loadSubcategoryStats(subjectId) {
+      try {
+        const response = await fetch(`${getApiBaseUrl()}/questions/subcategories/stats?subjectId=${subjectId}`)
+        if (response.ok) {
+          const stats = await response.json()
+          this.subcategoryStats = { ...this.subcategoryStats, ...stats }
+          return stats
+        }
+        return {}
+      } catch (error) {
+        this.error = error.message
+        return {}
+      }
+    },
+    
+    // 获取用户在某题库的统计数据（用于智能选题）
+    async loadUserSubcategoryStats(subcategoryId) {
+      try {
+        const userId = localStorage.getItem('studentId')
+        if (!userId) return null
+        
+        const response = await fetch(`${getApiBaseUrl()}/answer-records/user-subcategory-stats/${userId}/${subcategoryId}`)
+        if (response.ok) {
+          const stats = await response.json()
+          this.userSubcategoryStats = { 
+            ...this.userSubcategoryStats, 
+            [subcategoryId]: stats 
+          }
+          return stats
+        }
+        return null
+      } catch (error) {
+        this.error = error.message
+        return null
+      }
+    },
+    
+    // 按题库加载题目（答题时按需加载）
+    async loadQuestionsBySubcategory(subjectId, subcategoryId) {
+      try {
+        this.isLoading = true
+        this.error = null
+        
+        const url = `${getApiBaseUrl()}/questions?subjectId=${subjectId}&subcategoryId=${subcategoryId}&limit=1000`
+        
+        const response = await fetch(url)
+        if (response.ok) {
+          const data = await response.json()
+          const questions = data.questions || data
+          
+          // 合并到现有题目列表（去重）
+          const existingIds = new Set(this.questions.map(q => q.id))
+          const newQuestions = questions.filter(q => !existingIds.has(q.id))
+          this.questions = [...this.questions, ...newQuestions]
+          
+          return questions
+        }
+        return []
+      } catch (error) {
+        this.error = error.message
+        return []
+      } finally {
+        this.isLoading = false
+      }
+    },
+    
+    // 加载数据（仅在需要时调用，如从管理页面返回）
     async loadData() {
       try {
         this.isLoading = true
         this.error = null
         
-        // 并行加载所有数据，提高性能，但每个请求独立处理，一个失败不影响其他
-        const subjectsPromise = fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []);
-        const questionsPromise = fetch(`${getApiBaseUrl()}/questions?limit=10000`).then(res => res.json()).catch(() => []);
-        const gradesPromise = fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []);
-        const classesPromise = fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => []);
-        const userStatsPromise = fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json()).catch(() => []);
-        const recentRecordsPromise = fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`).then(res => res.json()).catch(() => []);
-        
-        const [subjectsData, questionsData, gradesData, classesData, userStatsData, recentRecordsData] = await Promise.all([
-          subjectsPromise,
-          questionsPromise,
-          gradesPromise,
-          classesPromise,
-          userStatsPromise,
-          recentRecordsPromise
+        // 只加载核心数据，不加载大量题目
+        const [subjectsData, gradesData, classesData] = await Promise.all([
+          fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []),
+          fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []),
+          fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => [])
         ]);
         
         this.subjects = subjectsData
-        this.questions = questionsData
         this.grades = gradesData
         this.classes = classesData
-        this.userStats = Array.isArray(userStatsData) ? userStatsData : []
-        this.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
+        
+        // 保留题目数据，避免影响正在使用的组件
+        // 题目数据会在需要时通过 loadQuestions 或 loadQuestionsBySubcategory 重新加载
       } catch (error) {
         this.error = error.message
 
@@ -943,8 +1018,78 @@ export const useQuizStore = defineStore('quiz', {
         return 0
       }
       
-      const shuffled = availableQuestions.sort(() => 0.5 - Math.random())
-      const actualCount = Math.max(1, Math.min(count, availableQuestions.length))
+      // 智能难度选题：根据题目难度分组，根据用户水平动态调整比例
+      const easyQuestions = availableQuestions.filter(q => (q.difficulty || 1) <= 2)
+      const mediumQuestions = availableQuestions.filter(q => (q.difficulty || 1) === 3)
+      const hardQuestions = availableQuestions.filter(q => (q.difficulty || 1) >= 4)
+      
+      // 打乱各组题目顺序
+      const shuffleArray = (arr) => [...arr].sort(() => 0.5 - Math.random())
+      
+      const shuffledEasy = shuffleArray(easyQuestions)
+      const shuffledMedium = shuffleArray(mediumQuestions)
+      const shuffledHard = shuffleArray(hardQuestions)
+      
+      // 根据用户在该题库的正确率调整难度比例
+      const userStats = questionStore.userSubcategoryStats[subcategoryId]
+      let easyRatio = 0.3, mediumRatio = 0.5, hardRatio = 0.2
+      
+      if (userStats && userStats.totalAttempts >= 5) {
+        // 有足够历史数据时，根据正确率调整
+        const accuracy = userStats.recentAccuracy || userStats.accuracy || 50
+        
+        if (accuracy >= 80) {
+          // 用户表现优秀，增加困难题目
+          easyRatio = 0.15
+          mediumRatio = 0.35
+          hardRatio = 0.5
+        } else if (accuracy >= 60) {
+          // 用户表现良好，略微增加困难
+          easyRatio = 0.2
+          mediumRatio = 0.5
+          hardRatio = 0.3
+        } else if (accuracy >= 40) {
+          // 用户表现一般，保持默认比例
+          easyRatio = 0.3
+          mediumRatio = 0.5
+          hardRatio = 0.2
+        } else {
+          // 用户表现较弱，增加简单题目
+          easyRatio = 0.5
+          mediumRatio = 0.4
+          hardRatio = 0.1
+        }
+      }
+      
+      // 计算各难度题目数量
+      let selectedQuestions = []
+      const easyCount = Math.ceil(count * easyRatio)
+      const mediumCount = Math.ceil(count * mediumRatio)
+      const hardCount = count - easyCount - mediumCount
+      
+      // 先从中等难度选择
+      selectedQuestions = selectedQuestions.concat(shuffledMedium.slice(0, mediumCount))
+      
+      // 如果中等难度不够，用其他难度补充
+      const remainingAfterMedium = mediumCount - selectedQuestions.length
+      
+      // 添加简单题目
+      const easyToAdd = remainingAfterMedium > 0 ? easyCount + remainingAfterMedium : easyCount
+      selectedQuestions = selectedQuestions.concat(shuffledEasy.slice(0, easyToAdd))
+      
+      // 添加困难题目
+      selectedQuestions = selectedQuestions.concat(shuffledHard.slice(0, hardCount))
+      
+      // 如果题目还不够，从所有可用题目中随机补充
+      if (selectedQuestions.length < count) {
+        const selectedIds = new Set(selectedQuestions.map(q => q.id))
+        const remaining = shuffleArray(availableQuestions.filter(q => !selectedIds.has(q.id)))
+        selectedQuestions = selectedQuestions.concat(remaining.slice(0, count - selectedQuestions.length))
+      }
+      
+      // 打乱最终选题顺序
+      const shuffled = shuffleArray(selectedQuestions)
+      const actualCount = Math.max(1, Math.min(count, shuffled.length))
       
       // 对每个题目的选项进行排序
       this.currentQuestions = shuffled.slice(0, actualCount).map(question => {

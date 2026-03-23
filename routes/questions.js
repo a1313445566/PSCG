@@ -2,6 +2,46 @@ const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
 
+// 获取子分类统计数据（题目数量和平均难度）
+router.get('/subcategories/stats', async (req, res) => {
+  try {
+    const { subjectId } = req.query;
+    
+    let query = `
+      SELECT 
+        subcategory_id as subcategoryId,
+        COUNT(*) as questionCount,
+        COALESCE(AVG(difficulty), 1) as avgDifficulty
+      FROM questions
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (subjectId) {
+      query += ' AND subject_id = ?';
+      params.push(Number(subjectId));
+    }
+    
+    query += ' GROUP BY subcategory_id';
+    
+    const stats = await db.all(query, params);
+    
+    // 转换为对象格式，方便前端查找
+    const statsMap = {};
+    stats.forEach(stat => {
+      statsMap[stat.subcategoryId] = {
+        questionCount: stat.questionCount,
+        avgDifficulty: Math.round(stat.avgDifficulty * 10) / 10
+      };
+    });
+    
+    res.json(statsMap);
+  } catch (error) {
+    console.error('获取子分类统计失败:', error);
+    res.status(500).json({ error: '获取数据失败' });
+  }
+});
+
 // 获取题目列表（支持分页和筛选）
 router.get('/', async (req, res) => {
   try {

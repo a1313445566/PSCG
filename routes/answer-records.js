@@ -518,9 +518,62 @@ router.post('/question-attempts', async (req, res) => {
     // 保存后自动调整题目难度
     await difficultyService.adjustQuestionDifficulty(questionId);
     
+    // 异步调整题库难度（不阻塞响应）
+    if (actualSubcategoryId) {
+      difficultyService.adjustSubcategoryDifficulty(actualSubcategoryId).catch(() => {});
+    }
+    
     res.json({ success: true });
   } catch (error) {
     res.status(500).json({ error: '保存题目尝试记录失败' });
+  }
+});
+
+// 获取用户在某题库的统计数据（用于智能选题）
+router.get('/user-subcategory-stats/:userId/:subcategoryId', async (req, res) => {
+  try {
+    const { userId, subcategoryId } = req.params;
+    
+    // 获取用户在该题库的答题统计
+    const stats = await db.get(`
+      SELECT 
+        COUNT(*) as totalAttempts,
+        SUM(is_correct) as correctCount,
+        CASE WHEN COUNT(*) > 0 THEN
+          (SUM(is_correct) * 100.0) / COUNT(*)
+        ELSE 0 END as accuracy
+      FROM question_attempts 
+      WHERE user_id = ? AND subcategory_id = ?
+    `, [userId, subcategoryId]);
+    
+    // 获取用户最近的答题趋势（最近20次）
+    const recentStats = await db.get(`
+      SELECT 
+        COUNT(*) as recentAttempts,
+        SUM(is_correct) as recentCorrect,
+        CASE WHEN COUNT(*) > 0 THEN
+          (SUM(is_correct) * 100.0) / COUNT(*)
+        ELSE 0 END as recentAccuracy
+      FROM (
+        SELECT is_correct
+        FROM question_attempts 
+        WHERE user_id = ? AND subcategory_id = ?
+        ORDER BY created_at DESC
+        LIMIT 20
+      ) as recent
+    `, [userId, subcategoryId]);
+    
+    res.json({
+      totalAttempts: stats?.totalAttempts || 0,
+      correctCount: stats?.correctCount || 0,
+      accuracy: stats?.accuracy || 0,
+      recentAttempts: recentStats?.recentAttempts || 0,
+      recentCorrect: recentStats?.recentCorrect || 0,
+      recentAccuracy: recentStats?.recentAccuracy || 0
+    });
+  } catch (error) {
+    console.error('获取用户题库统计失败:', error);
+    res.status(500).json({ error: '获取统计数据失败' });
   }
 });
 
