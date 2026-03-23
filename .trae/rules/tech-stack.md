@@ -1,16 +1,14 @@
-# 项目依赖规则
+# 技术栈规则
 
-## 核心依赖
-
+## 核心技术栈
 - Vue: ^3.5.25
 - Element Plus: ^2.13.3
 - Pinia: ^3.0.4
 - Vue Router: ^4.6.4
 - ECharts: ^6.0.0
-- Vue Quill: ^1.2.0
+- Quill: ^2.0.3
 
-## 后端依赖
-
+## 后端技术栈
 - Express: ^4.18.2
 - MySQL2: ^3.20.0
 - JSON Web Token: ^9.0.3
@@ -20,16 +18,6 @@
 - Compression: ^1.8.1
 - CORS: ^2.8.5
 
-# 后端服务器
-
-- PM2: ^5.3.0
-
-## 数据库
-
-- MySQL ^8.0
-
 ## 开发依赖
-
 - Vite: ^5.2.0
 - Vite Vue Plugin: ^5.0.4
-
