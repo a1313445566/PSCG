@@ -19,12 +19,14 @@ class DatabaseService {
         charset: 'utf8mb4',
         multipleStatements: true,
         waitForConnections: true,
-        connectionLimit: 10,
-        queueLimit: 0,
-        connectTimeout: 10000,
-        acquireTimeout: 10000,
-        timeout: 30000,
-        timezone: '+08:00'
+        connectionLimit: 20, // 增加连接池大小，提高并发能力
+        queueLimit: 100, // 增加队列限制
+        connectTimeout: 5000, // 减少连接超时时间
+        acquireTimeout: 5000, // 减少获取连接超时时间
+        timeout: 10000, // 减少查询超时时间
+        timezone: '+08:00',
+        enableKeepAlive: true, // 启用连接保持
+        keepAliveInitialDelay: 10000 // 连接保持间隔
       });
       
       // 测试连接
@@ -43,8 +45,9 @@ class DatabaseService {
       this.reconnectAttempts++;
       
       if (this.reconnectAttempts <= this.maxReconnectAttempts) {
-        console.log(`尝试重新连接... (${this.reconnectAttempts}/${this.maxReconnectAttempts})`);
-        await new Promise(resolve => setTimeout(resolve, 2000));
+        const waitTime = Math.min(1000 * Math.pow(2, this.reconnectAttempts - 1), 10000); // 指数退避
+        console.log(`尝试重新连接... (${this.reconnectAttempts}/${this.maxReconnectAttempts}), 等待 ${waitTime}ms`);
+        await new Promise(resolve => setTimeout(resolve, waitTime));
         return this.connect();
       }
       

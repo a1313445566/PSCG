@@ -9,6 +9,25 @@ router.get('/global', async (req, res) => {
   try {
     const { limit = 100, grade, class: className, id, student_id, subjectId } = req.query;
     
+    // 生成缓存键
+    const cacheKey = cacheService.generateLeaderboardKey({ 
+      subjectId, 
+      grade, 
+      className, 
+      limit,
+      id,
+      student_id
+    });
+    
+    // 尝试从缓存获取
+    const cachedData = cacheService.get(cacheKey);
+    if (cachedData) {
+      // 更新缓存时间戳（滑动过期）
+      cacheService.touch(cacheKey, cacheService.CACHE_DURATIONS.LEADERBOARD);
+      res.json(cachedData);
+      return;
+    }
+    
     let query = `
       SELECT u.id, u.student_id, u.name, u.grade, u.class, u.points,
              COUNT(DISTINCT ar.id) as total_sessions,
@@ -79,6 +98,10 @@ router.get('/global', async (req, res) => {
     }
     
     const users = await db.all(query, params);
+    
+    // 缓存结果
+    cacheService.set(cacheKey, users, cacheService.CACHE_DURATIONS.LEADERBOARD);
+    
     res.json(users);
   } catch (error) {
     // console.error('获取排行榜数据失败:', error);
@@ -137,6 +160,22 @@ router.get('/top10', async (req, res) => {
   try {
     const { subjectId } = req.query;
     
+    // 预计算本周开始和结束日期，避免在SQL中重复计算
+    const now = new Date();
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const diff = dayOfWeek === 0 ? 6 : dayOfWeek - 1; // 计算到本周一的差值
+    
+    const startOfWeek = new Date(now);
+    startOfWeek.setDate(now.getDate() - diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+    
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+    
+    const startDateStr = startOfWeek.toISOString().slice(0, 19).replace('T', ' ');
+    const endDateStr = endOfWeek.toISOString().slice(0, 19).replace('T', ' ');
+    
     let query = `
       SELECT u.id, u.student_id, u.name, u.grade, u.class,
              COUNT(DISTINCT ar.id) as total_sessions,
@@ -156,11 +195,10 @@ router.get('/top10', async (req, res) => {
       FROM users u
       JOIN answer_records ar ON u.id = ar.user_id
       WHERE 1=1
-      AND ar.created_at >= DATE_FORMAT(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), '%Y-%m-%d 00:00:00')
-      AND ar.created_at <= DATE_FORMAT(DATE_ADD(DATE_SUB(CURDATE(), INTERVAL WEEKDAY(CURDATE()) DAY), INTERVAL 6 DAY), '%Y-%m-%d 23:59:59')
+      AND ar.created_at >= ? AND ar.created_at <= ?
     `;
     
-    const params = [];
+    const params = [startDateStr, endDateStr];
     
     // 学科筛选
     if (subjectId) {

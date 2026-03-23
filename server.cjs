@@ -4,6 +4,9 @@ const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
 
+// 添加响应时间监控中间件
+const responseTime = require('./middleware/responseTime');
+
 // 配置multer存储
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
@@ -31,6 +34,10 @@ const backupRoutes = require('./routes/backup');
 const errorCollectionRoutes = require('./routes/error-collection');
 
 const db = require('./services/database');
+const cacheService = require('./services/cache');
+
+// 导入数据库性能监控
+const dbPerformanceMonitor = require('./middleware/dbPerformance');
 
 const app = express();
 const port = 3001;
@@ -39,6 +46,7 @@ app.use(cors());
 app.use(compression());
 app.use(express.json({ encoding: 'utf-8', limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' }));
+app.use(responseTime); // 添加响应时间监控
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -90,6 +98,17 @@ app.use('/api/difficulty', difficultyRoutes);
 app.use('/api', backupRoutes);
 app.use('/api/error-collection', errorCollectionRoutes);
 
+// 缓存管理API
+app.get('/api/cache/stats', (req, res) => {
+  const stats = cacheService.getStats();
+  res.json(stats);
+});
+
+app.post('/api/cache/clear', (req, res) => {
+  cacheService.clear();
+  res.json({ success: true, message: '缓存已清空' });
+});
+
 // 图片上传路由
 app.post('/api/upload/image', upload.single('image'), (req, res) => {
   if (!req.file) {
@@ -125,9 +144,16 @@ async function startServer() {
   try {
     await db.connect();
 
+    // 启用数据库性能监控
+    dbPerformanceMonitor.monitorQuery(db);
+    
+    // 添加性能监控API端点
+    dbPerformanceMonitor.createPerformanceEndpoint(app);
     
     const server = app.listen(port, '0.0.0.0', () => {
       console.log(`服务器已启动，监听端口 ${port}`);
+      console.log(`📊 性能监控已启用: http://localhost:${port}/api/performance/db`);
+      console.log(`🩺 健康检查: http://localhost:${port}/api/performance/health`);
     });
 
     server.on('error', (err) => {
@@ -138,9 +164,9 @@ async function startServer() {
       }
     });
 
-    server.timeout = 60000;
-    server.keepAliveTimeout = 65000;
-    server.headersTimeout = 66000;
+    server.timeout = 30000;
+    server.keepAliveTimeout = 55000;
+    server.headersTimeout = 56000;
     
   } catch (error) {
     console.error('服务器启动失败:', error);
