@@ -5,8 +5,10 @@
 - Element Plus: ^2.13.3
 - Pinia: ^3.0.4
 - Vue Router: ^4.6.4
-- ECharts: ^6.0.0
+- ECharts: ^5.4.3
 - Quill: ^2.0.3
+- Axios: ^1.13.6
+- XLSX: ^0.18.5
 
 ## 后端技术栈
 - Express: ^4.18.2
@@ -17,6 +19,7 @@
 - Node Fetch: ^3.3.2
 - Compression: ^1.8.1
 - CORS: ^2.8.5
+- Dotenv: ^17.3.1
 
 ## 开发依赖
 - Vite: ^5.2.0

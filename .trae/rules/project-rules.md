@@ -5,8 +5,10 @@
 - Element Plus: ^2.13.3
 - Pinia: ^3.0.4
 - Vue Router: ^4.6.4
-- ECharts: ^6.0.0
+- ECharts: ^5.4.3
 - Quill: ^2.0.3
+- Axios: ^1.13.6
+- XLSX: ^0.18.5
 
 ## 后端技术栈
 - Express: ^4.18.2
@@ -17,6 +19,7 @@
 - Node Fetch: ^3.3.2
 - Compression: ^1.8.1
 - CORS: ^2.8.5
+- Dotenv: ^17.3.1
 
 ## 服务器配置
 - 服务器框架: Express
@@ -90,13 +93,14 @@
 - `src/stores/` - Pinia 状态管理
 - `src/router/` - 路由配置
 - `src/utils/` - 工具函数
-- `src/assets/` - 静态资源
+- `src/config/` - 前端配置
+- `src/styles/` - 样式文件
 
 ### 后端目录
 - `routes/` - 路由
 - `services/` - 服务
-- `models/` - 数据模型
 - `config/` - 配置文件
+- `middleware/` - 中间件
 
 ## 最佳实践
 

@@ -49,7 +49,7 @@ router.get('/', async (req, res) => {
 
     // 根据是否排除内容字段，选择不同的查询字段
     const selectFields = excludeContent === 'true'
-      ? 'id, subject_id as subjectId, subcategory_id as subcategoryId, type, correct_answer as answer, difficulty, created_at as createdAt, SUBSTRING(content, 1, 200) as content, image_url as image, audio_url as audio'
+      ? 'id, subject_id as subjectId, subcategory_id as subcategoryId, type, correct_answer as answer, difficulty, created_at as createdAt, content, image_url as image, audio_url as audio'
       : '*';
 
     let query = `SELECT ${selectFields} FROM questions WHERE 1=1`;
@@ -192,20 +192,33 @@ router.get('/:id', async (req, res) => {
 // 添加题目
 router.post('/', async (req, res) => {
   try {
-    const { subjectId, subcategoryId, content, type, options, answer, explanation, audio, image } = req.body;
+    const { subjectId, subcategoryId, content, type, options, answer, explanation = '', audio = null, image = null } = req.body;
     
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' });
       return;
     }
     
+    // 处理 options 参数，确保它是一个数组
+    const optionsJson = JSON.stringify(options || []);
+    
     const result = await db.run(
       'INSERT INTO questions (subject_id, subcategory_id, content, type, options, correct_answer, explanation, audio_url, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-      [subjectId, subcategoryId, content, type, JSON.stringify(options), answer, explanation, audio, image]
+      [subjectId, subcategoryId, content, type, optionsJson, answer, explanation, audio, image]
     );
+    
+    // 检查插入是否成功
+    if (!result || !result.insertId) {
+      throw new Error('插入题目失败，未返回插入ID');
+    }
     
     // 返回新添加的题目
     const newQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [result.insertId]);
+    
+    // 检查是否成功获取新题目
+    if (!newQuestion) {
+      throw new Error('获取新添加的题目失败');
+    }
     
     // 格式化题目数据
     let formattedOptions = [];
@@ -214,7 +227,6 @@ router.post('/', async (req, res) => {
     try {
       formattedOptions = JSON.parse(newQuestion.options);
     } catch (error) {
-      // console.error('解析选项失败:', error);
       formattedOptions = [];
     }
     
@@ -244,8 +256,8 @@ router.post('/', async (req, res) => {
     
     res.json(formattedQuestion);
   } catch (error) {
-    // console.error('添加题目失败:', error);
-    res.status(500).json({ error: '添加题目失败' });
+    console.error('添加题目失败:', error);
+    res.status(500).json({ error: '添加题目失败', details: error.message });
   }
 });
 

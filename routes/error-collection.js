@@ -120,12 +120,22 @@ router.post('/update', async (req, res) => {
     }
     
     // 错题巩固题库积分规则：每题累计正确3次+1分
+    // 注意：quiz.js中的错题处理逻辑已经会处理积分，这里不再重复加分
+    // 只在直接通过此接口更新时加分，避免重复
     if (correctCount === 3) {
-      // 当累计正确次数达到3次时，增加1分
-      await db.run(
-        'UPDATE users SET points = COALESCE(points, 0) + 1 WHERE id = ?',
+      // 检查是否已经在quiz.js中处理过积分
+      const recentQuizRecord = await db.get(
+        'SELECT id FROM answer_records WHERE user_id = ? AND subcategory_id IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)',
         [userId]
       );
+      
+      if (!recentQuizRecord) {
+        // 当累计正确次数达到3次时，增加1分
+        await db.run(
+          'UPDATE users SET points = COALESCE(points, 0) + 1 WHERE id = ?',
+          [userId]
+        );
+      }
     }
     
     res.json({ success: true });

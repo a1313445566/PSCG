@@ -263,6 +263,9 @@ const selectedQuestions = ref([]);
 // 批量添加对话框
 const batchAddDialogVisible = ref(false);
 
+// 分页
+const currentPage = ref(1);
+
 // 计算筛选后的子分类
 const filterSubcategories = computed(() => {
   if (!filterSubjectId.value) return [];
@@ -367,7 +370,8 @@ const filteredQuestions = computed(() => {
       subjectName,
       subcategoryName,
       typeName,
-      createdAt: formattedCreatedAt
+      createdAt: formattedCreatedAt,
+      image: question.image || question.image_url || ''
     };
   });
 });
@@ -435,7 +439,8 @@ const categoryQuestions = computed(() => {
       subjectName,
       subcategoryName,
       typeName,
-      createdAt: formattedCreatedAt
+      createdAt: formattedCreatedAt,
+      image: question.image || question.image_url || ''
     };
   });
 });
@@ -542,8 +547,11 @@ const refreshQuestions = async () => {
 
 // 辅助方法
 const hasValidImage = (row) => {
-  // 优先检查image字段
+  // 优先检查image字段，然后检查image_url字段
   if (row.image) {
+    return true;
+  }
+  if (row.image_url) {
     return true;
   }
   //  fallback到从content中检查
@@ -551,9 +559,12 @@ const hasValidImage = (row) => {
 };
 
 const extractImageUrl = (row) => {
-  // 优先使用image字段
+  // 优先使用image字段，然后检查image_url字段
   if (row.image) {
     return row.image;
+  }
+  if (row.image_url) {
+    return row.image_url;
   }
   //  fallback到从content中提取
   if (typeof row.content !== 'string') {

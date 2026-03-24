@@ -152,13 +152,100 @@ router.post('/start', async (req, res) => {
   }
 });
 
+// 生成签名的函数（与前端相同）
+const generateSignature = (data, timestamp, userId) => {
+  const secret = process.env.SIGNATURE_SECRET;
+  if (!secret) {
+    throw new Error('SIGNATURE_SECRET environment variable is required');
+  }
+  // 按照固定顺序构建dataStr
+  const dataStr = JSON.stringify(data) + timestamp + userId;
+  
+  // 使用crypto模块实现HMAC-SHA256算法
+  return crypto.createHmac('sha256', secret).update(dataStr).digest('hex');
+};
+
+// 安全降级签名（用于非HTTPS环境）
+const generateFallbackSignature = (data, timestamp, userId) => {
+  const secret = process.env.SIGNATURE_SECRET;
+  if (!secret) {
+    throw new Error('SIGNATURE_SECRET environment variable is required');
+  }
+  
+  const dataStr = JSON.stringify(data) + timestamp + userId;
+  const combinedStr = secret + dataStr + secret;
+  let hash = 0;
+  
+  // 多轮哈希（与前端保持一致）
+  for (let round = 0; round < 64; round++) {
+    const roundStr = combinedStr + round.toString();
+    for (let i = 0; i < roundStr.length; i++) {
+      const char = roundStr.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+  }
+  
+  // 生成16位十六进制签名
+  let result = Math.abs(hash).toString(16);
+  while (result.length < 16) {
+    result = '0' + result;
+  }
+  
+  return result;
+};
+
+// 验证签名的函数
+const validateSignature = (data, timestamp, signature, userId) => {
+  try {
+    if (!data || !timestamp || !signature || !userId) {
+      console.log('签名验证失败: 缺少必要参数', { hasData: !!data, hasTimestamp: !!timestamp, hasSignature: !!signature, hasUserId: !!userId });
+      return false;
+    }
+    
+    // 检查时间戳是否在合理范围内（5分钟内）
+    const currentTime = Date.now();
+    const timeDiff = Math.abs(currentTime - timestamp);
+    if (timeDiff > 5 * 60 * 1000) {
+      console.log('签名验证失败: 时间戳超出范围', { currentTime, timestamp, timeDiff });
+      return false;
+    }
+    
+    // 生成预期签名并验证
+    const signatureData = {
+      quizId: data.quizId,
+      answers: data.answers,
+      timestamp: timestamp
+    };
+
+    const expectedSignature = generateSignature(signatureData, timestamp, userId);
+    const fallbackSignature = generateFallbackSignature(signatureData, timestamp, userId);
+    
+    // 支持 HMAC-SHA256（HTTPS环境）和 安全降级签名（HTTP环境）
+    const isValid = expectedSignature === signature || fallbackSignature === signature;
+    
+    if (!isValid) {
+      console.log('签名验证失败: 签名不匹配');
+      console.log('前端签名数据:', JSON.stringify(signatureData));
+      console.log('后端 HMAC 签名:', expectedSignature);
+      console.log('后端降级签名:', fallbackSignature);
+      console.log('前端传入签名:', signature);
+    }
+    
+    return isValid;
+  } catch (error) {
+    console.error('签名验证失败:', error);
+    return false;
+  }
+};
+
 // 提交答案API
 router.post('/submit', async (req, res) => {
   try {
-    const { quizId, answers } = req.body;
+    const { quizId, answers, timestamp, signature } = req.body;
     
     // 验证必填参数
-    if (!quizId || !answers) {
+    if (!quizId || !answers || !timestamp || !signature) {
       return res.status(400).json({ error: '缺少必填参数' });
     }
     
@@ -170,6 +257,11 @@ router.post('/submit', async (req, res) => {
     
     if (!session) {
       return res.status(404).json({ error: '答题会话不存在或已过期' });
+    }
+    
+    // 验证签名
+    if (!validateSignature(req.body, timestamp, signature, session.user_id)) {
+      return res.status(401).json({ error: '签名验证失败，提交无效' });
     }
     
     // 检查是否已经提交过
@@ -264,6 +356,31 @@ router.post('/submit', async (req, res) => {
       });
     }
     
+    // 检查重复提交
+    const checkDuplicateSubmission = async (userId, subjectId, subcategoryId, cooldownSeconds = 5) => {
+      let recentRecord;
+      if (subcategoryId === null) {
+        // 错题巩固题库，使用 IS NULL 条件
+        recentRecord = await db.get(
+          'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id IS NULL AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
+          [userId, subjectId, cooldownSeconds]
+        );
+      } else {
+        // 普通题库，使用 = 条件
+        recentRecord = await db.get(
+          'SELECT id FROM answer_records WHERE user_id = ? AND subject_id = ? AND subcategory_id = ? AND created_at >= DATE_SUB(NOW(), INTERVAL ? SECOND)',
+          [userId, subjectId, subcategoryId, cooldownSeconds]
+        );
+      }
+      return recentRecord;
+    };
+    
+    // 检查是否存在重复提交
+    const recentRecord = await checkDuplicateSubmission(userId, session.subject_id, session.subcategory_id);
+    if (recentRecord) {
+      return res.status(400).json({ error: '提交过于频繁，请稍后再试' });
+    }
+    
     // 计算积分
     const totalQuestions = sessionQuestions.length;
     let points = 0;
@@ -329,12 +446,6 @@ router.post('/submit', async (req, res) => {
       );
     }
     
-    // 更新用户积分
-    await db.run(
-      'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
-      [points, userId]
-    );
-    
     // 处理错题
     for (const result of results) {
       const question = sessionQuestions.find(q => q.id === result.questionId);
@@ -386,13 +497,11 @@ router.post('/submit', async (req, res) => {
       }
     }
     
-    // 如果是错题巩固且有积分，更新用户积分
-    if (points > 0 && session.subcategory_id === null) {
-      await db.run(
-        'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
-        [points, userId]
-      );
-    }
+    // 更新用户积分
+    await db.run(
+      'UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?',
+      [points, userId]
+    );
     
     // 准备返回数据
     const responseData = {

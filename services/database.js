@@ -247,7 +247,9 @@ class Database {
   // 执行查询
   async query(sql, params = []) {
     try {
-      const [rows] = await this.pool.execute(sql, params);
+      // 确保所有参数都不是 undefined，将 undefined 转换为 null
+      const safeParams = params.map(param => param === undefined ? null : param);
+      const [rows] = await this.pool.execute(sql, safeParams);
       return rows;
     } catch (error) {
       console.error('查询失败:', error);
@@ -258,7 +260,9 @@ class Database {
   // 获取单个结果
   async get(sql, params = []) {
     try {
-      const [rows] = await this.pool.execute(sql, params);
+      // 确保所有参数都不是 undefined，将 undefined 转换为 null
+      const safeParams = params.map(param => param === undefined ? null : param);
+      const [rows] = await this.pool.execute(sql, safeParams);
       return rows[0] || null;
     } catch (error) {
       console.error('获取单个结果失败:', error);
@@ -269,7 +273,9 @@ class Database {
   // 获取多个结果
   async all(sql, params = []) {
     try {
-      const [rows] = await this.pool.execute(sql, params);
+      // 确保所有参数都不是 undefined，将 undefined 转换为 null
+      const safeParams = params.map(param => param === undefined ? null : param);
+      const [rows] = await this.pool.execute(sql, safeParams);
       return rows;
     } catch (error) {
       console.error('获取多个结果失败:', error);
@@ -280,7 +286,9 @@ class Database {
   // 执行更新/插入/删除操作
   async run(sql, params = []) {
     try {
-      const [result] = await this.pool.execute(sql, params);
+      // 确保所有参数都不是 undefined，将 undefined 转换为 null
+      const safeParams = params.map(param => param === undefined ? null : param);
+      const [result] = await this.pool.execute(sql, safeParams);
       return result;
     } catch (error) {
       console.error('执行操作失败:', error);

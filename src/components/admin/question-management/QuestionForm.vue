@@ -509,17 +509,17 @@ const saveQuestion = async () => {
 
   // 构建要保存的题目数据
   const questionData = {
-    id: form.value.id,
+    id: form.value.id || null,
     subjectId: form.value.subjectId,
     subcategoryId: form.value.subcategoryId,
     type: form.value.type,
     content: contentHtml,
     options: processedOptions,
     answer: form.value.selectedAnswers.sort().join(''),
-    explanation: form.value.explanation,
-    audio: form.value.audio,
-    image: form.value.image,
-    difficulty: form.value.difficulty
+    explanation: form.value.explanation || '',
+    audio: form.value.audio || null,
+    image: form.value.image || null,
+    difficulty: form.value.difficulty || 1
   };
   
   // 发送保存事件

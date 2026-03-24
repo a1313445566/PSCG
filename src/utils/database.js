@@ -38,20 +38,17 @@ const fetchApi = async (url, options = {}) => {
     
     if (!response.ok) {
       const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || `请求失败: ${response.status}`);
+      throw new Error(errorData.error || errorData.message || `请求失败: ${response.status}`);
     }
     
-    return await response.json();
+    const data = await response.json();
+    
+    return data;
   } catch (error) {
     clearTimeout(timeoutId);
     
     if (error.name === 'AbortError') {
       throw new Error('请求超时，请检查网络连接');
-    }
-    
-    // 仅在开发环境输出错误日志
-    if (isDevelopment) {
-      console.error('API请求错误:', error);
     }
     
     throw error;

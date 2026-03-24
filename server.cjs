@@ -1,4 +1,4 @@
-require('dotenv').config({ path: process.env.NODE_ENV === 'production' ? '.env.production' : (process.env.NODE_ENV === 'development' ? '.env.development' : '.env') });
+require('dotenv').config();
 const express = require('express');
 const compression = require('compression');
 const cors = require('cors');

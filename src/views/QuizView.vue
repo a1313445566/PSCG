@@ -299,10 +299,26 @@ const submitAnswers = async () => {
   lastSubmitTime.value = currentTime
   
   try {
+    // 生成时间戳和签名
+    const timestamp = Date.now()
+    const userId = localStorage.getItem('userId') || 'unknown'
+    
+    // 构建签名数据
+    const signatureData = {
+      quizId: quizStore.quizId,
+      answers: userAnswers.value,
+      timestamp
+    }
+    
+    // 生成签名
+    const signature = await generateSignature(signatureData, timestamp, userId)
+    
     // 调用后端API提交答案
     const submitData = {
       quizId: quizStore.quizId,
-      answers: userAnswers.value
+      answers: userAnswers.value,
+      timestamp,
+      signature
     }
     
     const apiUrl = `${getApiBaseUrl()}/quiz/submit`

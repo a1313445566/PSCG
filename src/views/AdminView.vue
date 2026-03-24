@@ -1000,7 +1000,7 @@ const applyFilters = async () => {
         })
         .catch(error => {
           console.error('获取用户统计数据失败:', error)
-          return []
+          return { data: [] }
         }),
       // 获取最近答题记录
       fetch(`${getApiBaseUrl()}/answer-records/all?limit=0${recentRecordsParams.toString() ? '&' + recentRecordsParams.toString() : ''}`)
@@ -1017,8 +1017,8 @@ const applyFilters = async () => {
     ])
     
     // 更新数据
-    questionStore.userStats = userStatsData || []
-    questionStore.recentRecords = recentRecordsData || []
+    questionStore.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
+    questionStore.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
     
     // 显示成功消息
     ElMessage.success('筛选成功')

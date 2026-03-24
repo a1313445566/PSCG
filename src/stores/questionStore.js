@@ -187,10 +187,11 @@ export const useQuestionStore = defineStore('question', {
         const response = await fetch(url)
         if (response.ok) {
           const data = await response.json()
-          this.questions = data.questions || data // 兼容旧API
+          this.questions = Array.isArray(data) ? data : (data.questions || []) // 确保是数组
         }
       } catch (error) {
         this.error = error.message
+        this.questions = [] // 发生错误时设置为空数组
 
       } finally {
         this.isLoading = false
@@ -297,7 +298,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json())
-        this.userStats = Array.isArray(userStatsData) ? userStatsData : []
+        this.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
       } catch (error) {
         this.error = error.message
         this.userStats = []
@@ -316,7 +317,7 @@ export const useQuestionStore = defineStore('question', {
         const response = await fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`)
         if (response.ok) {
           const recentRecordsData = await response.json()
-          this.recentRecords = recentRecordsData
+          this.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
         } else {
           // 如果没有专门的all端点，尝试获取所有用户的记录
           // 这里可以根据实际情况调整
@@ -895,7 +896,7 @@ export const useQuizStore = defineStore('quiz', {
       {
         key: 'quiz-store',
         storage: localStorage,
-        paths: [] // 不持久化任何数据，因为答题会话由后端管理
+        paths: ['quizId', 'expiresAt', 'selectedSubjectId', 'selectedSubcategoryId'] // 持久化关键数据
       }
     ]
   },
