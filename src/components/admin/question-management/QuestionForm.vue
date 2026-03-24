@@ -196,11 +196,13 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
 import QuillEditor from '../../../components/common/QuillEditor.vue';
-import { ElMessage } from 'element-plus';
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus';
 import { Plus, Upload, Delete } from '@element-plus/icons-vue';
 import EditableContent from '../../common/EditableContent.vue';
+import draftStorage from '../../../utils/draftStorage.js';
+import { uploadImage } from '../../../utils/imageUpload.js';
 
 // 定义属性和事件
 const props = defineProps({
@@ -238,6 +240,12 @@ const form = ref({
 // 编辑器key，用于重置编辑器
 const editorKey = ref(0);
 
+// 自动保存定时器
+let autoSaveTimer = null;
+
+// 草稿恢复标记
+const draftRestored = ref(false);
+
 // 计算当前学科的子分类
 const currentSubcategories = computed(() => {
   if (!form.value.subjectId) return [];
@@ -249,13 +257,46 @@ const currentSubcategories = computed(() => {
 const isEditing = computed(() => !!props.question);
 
 // 监听visible变化
-watch(() => props.visible, (newValue) => {
+watch(() => props.visible, async (newValue) => {
   if (newValue) {
     if (props.question) {
       editQuestion(props.question);
     } else {
-      resetForm();
+      // 检查是否有草稿
+      const draftStatus = draftStorage.hasDraft(null);
+      if (draftStatus && !draftRestored.value) {
+        // 有草稿，询问是否恢复
+        try {
+          await ElMessageBox.confirm(
+            '检测到未保存的草稿，是否恢复？',
+            '恢复草稿',
+            {
+              confirmButtonText: '恢复',
+              cancelButtonText: '不恢复',
+              type: 'info'
+            }
+          );
+          // 恢复草稿
+          const draft = draftStorage.restore();
+          if (draft) {
+            form.value = {
+              ...form.value,
+              ...draft.data
+            };
+            draftRestored.value = true;
+            ElMessage.success('草稿已恢复');
+          }
+        } catch {
+          // 用户选择不恢复
+          resetForm();
+        }
+      } else {
+        resetForm();
+      }
     }
+    
+    // 启动自动保存
+    startAutoSave();
     
     // 延迟重置滚动位置，确保DOM已经渲染完成
     setTimeout(() => {
@@ -265,8 +306,11 @@ watch(() => props.visible, (newValue) => {
       }
     }, 100);
   } else {
-    // 当对话框关闭时，重置编辑器key，确保下次打开时重新创建编辑器实例
+    // 当对话框关闭时，停止自动保存并清除草稿
+    stopAutoSave();
+    // 保存成功后清除草稿会在saveQuestion中处理
     editorKey.value++;
+    draftRestored.value = false;
   }
 });
 
@@ -419,8 +463,72 @@ const deleteAudio = () => {
 };
 
 // 处理对话框关闭
-const handleClose = () => {
+const handleClose = async () => {
+  // 检查是否有未保存的更改
+  if (hasUnsavedChanges()) {
+    try {
+      await ElMessageBox.confirm(
+        '有未保存的更改，是否保存草稿？',
+        '保存草稿',
+        {
+          confirmButtonText: '保存草稿',
+          cancelButtonText: '不保存',
+          type: 'warning'
+        }
+      );
+      // 保存草稿
+      saveDraft();
+      ElMessage.success('草稿已保存');
+    } catch {
+      // 用户选择不保存，清除草稿
+      draftStorage.clear();
+    }
+  }
   emit('update:visible', false);
+};
+
+// 检查是否有未保存的更改
+const hasUnsavedChanges = () => {
+  const currentForm = form.value;
+  return currentForm.content || 
+         currentForm.options.some(opt => opt) || 
+         currentForm.explanation || 
+         currentForm.audio ||
+         currentForm.selectedAnswers.length > 0;
+};
+
+// 保存草稿
+const saveDraft = () => {
+  const formData = {
+    subjectId: form.value.subjectId,
+    subcategoryId: form.value.subcategoryId,
+    type: form.value.type,
+    content: form.value.content,
+    options: form.value.options,
+    selectedAnswers: form.value.selectedAnswers,
+    explanation: form.value.explanation,
+    audio: form.value.audio,
+    difficulty: form.value.difficulty
+  };
+  draftStorage.save(form.value.id, formData);
+};
+
+// 启动自动保存
+const startAutoSave = () => {
+  stopAutoSave();
+  autoSaveTimer = setInterval(() => {
+    if (hasUnsavedChanges()) {
+      saveDraft();
+    }
+  }, 30000); // 30秒自动保存一次
+};
+
+// 停止自动保存
+const stopAutoSave = () => {
+  if (autoSaveTimer) {
+    clearInterval(autoSaveTimer);
+    autoSaveTimer = null;
+  }
 };
 
 // 保存题目
@@ -524,6 +632,11 @@ const saveQuestion = async () => {
   
   // 发送保存事件
   emit('save-question', questionData);
+  
+  // 清除草稿
+  draftStorage.clear();
+  stopAutoSave();
+  
   emit('update:visible', false);
 };
 
@@ -534,7 +647,7 @@ const onQuillReady = (quill) => {
     quill.root.innerHTML = form.value.content;
   }
   
-  // 添加图片上传处理
+  // 添加图片上传处理（工具栏按钮）
   const toolbar = quill.getModule('toolbar');
   toolbar.addHandler('image', function() {
     const input = document.createElement('input');
@@ -543,35 +656,71 @@ const onQuillReady = (quill) => {
     input.onchange = async function() {
       const file = input.files[0];
       if (file) {
-        try {
-          const formData = new FormData();
-          formData.append('image', file);
-          
-          const response = await fetch('/api/upload/image', {
-            method: 'POST',
-            body: formData
-          });
-          
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-              const range = quill.getSelection();
-              quill.insertEmbed(range.index, 'image', result.url);
-              quill.setSelection(range.index + 1);
-            } else {
-              ElMessage.error('图片上传失败');
-            }
-          } else {
-            ElMessage.error('图片上传失败');
-          }
-        } catch (error) {
-          ElMessage.error('图片上传失败');
-        }
+        await insertImageToEditor(quill, file);
       }
     };
     input.click();
   });
+  
+  // 添加粘贴上传处理
+  quill.root.addEventListener('paste', async (e) => {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+    
+    for (let item of items) {
+      if (item.type.startsWith('image/')) {
+        e.preventDefault();
+        const file = item.getAsFile();
+        if (file) {
+          await insertImageToEditor(quill, file);
+        }
+      }
+    }
+  });
+  
+  // 添加拖拽上传处理
+  quill.root.addEventListener('drop', async (e) => {
+    const files = e.dataTransfer?.files;
+    if (!files) return;
+    
+    for (let file of files) {
+      if (file.type.startsWith('image/')) {
+        e.preventDefault();
+        await insertImageToEditor(quill, file);
+      }
+    }
+  });
 };
+
+// 插入图片到编辑器
+async function insertImageToEditor(quill, file) {
+  // 检查文件大小
+  if (file.size > 2 * 1024 * 1024) {
+    ElMessage.error('图片大小不能超过 2MB');
+    return;
+  }
+  
+  const loading = ElLoading.service({
+    lock: true,
+    text: '上传图片中...'
+  });
+  
+  try {
+    const url = await uploadImage(file);
+    const range = quill.getSelection(true);
+    quill.insertEmbed(range.index, 'image', url);
+    quill.setSelection(range.index + 1);
+  } catch (error) {
+    ElMessage.error(error.message || '图片上传失败');
+  } finally {
+    loading.close();
+  }
+}
+
+// 组件卸载时清理
+onUnmounted(() => {
+  stopAutoSave();
+});
 </script>
 
 <style scoped>

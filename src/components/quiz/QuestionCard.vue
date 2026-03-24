@@ -33,8 +33,60 @@
       <span class="source-name">{{ question.subcategory_name }}</span>
     </div>
     
+    <!-- 听力音频播放器 -->
+    <div v-if="question.audio_url" class="audio-section">
+      <div class="audio-player-wrapper">
+        <audio ref="audioPlayerRef" :src="question.audio_url" @loadedmetadata="onAudioLoaded" @timeupdate="onAudioTimeUpdate" @ended="onAudioEnded"></audio>
+        <div class="audio-player-controls">
+          <!-- 快退按钮 -->
+          <button class="seek-btn" @click="audioSeekBackward" title="后退5秒">
+            <span class="seek-icon">⟲</span>
+            <span class="seek-label">-5s</span>
+          </button>
+          
+          <!-- 播放/暂停主按钮 -->
+          <button class="play-main-btn" @click="toggleAudioPlay" :class="{ playing: audioPlaying }">
+            <span v-if="audioPlaying" class="play-icon">❚❚</span>
+            <span v-else class="play-icon">▶</span>
+          </button>
+          
+          <!-- 快进按钮 -->
+          <button class="seek-btn" @click="audioSeekForward" title="前进5秒">
+            <span class="seek-icon">⟳</span>
+            <span class="seek-label">+5s</span>
+          </button>
+          
+          <!-- 进度条 -->
+          <div class="progress-wrapper">
+            <span class="time-display">{{ formatAudioTime(audioCurrentTime) }}</span>
+            <el-slider v-model="audioProgress" :show-tooltip="false" @change="onAudioProgressChange" class="progress-slider" />
+            <span class="time-display">{{ formatAudioTime(audioDuration) }}</span>
+          </div>
+          
+          <!-- 倍速控制 -->
+          <div class="speed-control">
+            <el-dropdown @command="setAudioSpeed" trigger="click">
+              <span class="speed-btn">
+                {{ audioSpeed }}x 倍速
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item :command="0.5">0.5x</el-dropdown-item>
+                  <el-dropdown-item :command="0.75">0.75x</el-dropdown-item>
+                  <el-dropdown-item :command="1">1.0x</el-dropdown-item>
+                  <el-dropdown-item :command="1.25">1.25x</el-dropdown-item>
+                  <el-dropdown-item :command="1.5">1.5x</el-dropdown-item>
+                  <el-dropdown-item :command="2">2.0x</el-dropdown-item>
+                </el-dropdown-menu>
+              </template>
+            </el-dropdown>
+          </div>
+        </div>
+      </div>
+    </div>
+    
     <div class="question-content">
-        <div class="question-text" v-html="question.content"></div>
+        <div class="question-text" ref="contentRef" v-html="safeContent" @click="handleContentClick"></div>
       
       <div class="options" :class="optionLayout">
         <div 
@@ -50,7 +102,7 @@
         >
           <div class="option-content">
             <div class="option-label">{{ String.fromCharCode(65 + index) }}</div>
-            <div class="option-text" v-html="option"></div>
+            <div class="option-text" v-html="option" @click="handleContentClick"></div>
           </div>
           <div v-if="showResult" class="option-feedback">
             <span v-if="isOptionSelected(String.fromCharCode(65 + index))" class="feedback-selected">
@@ -72,12 +124,102 @@
         <p class="explanation-content">{{ question.explanation || '暂无解析' }}</p>
       </div>
     </div>
+    
+    <!-- 图片预览器 -->
+    <el-image-viewer
+      v-if="showImageViewer"
+      :url-list="previewImages"
+      :initial-index="previewIndex"
+      @close="closeImageViewer"
+      teleported
+    />
   </div>
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, ref, onMounted, nextTick, watch } from 'vue';
 import { MAX_CORRECT_COUNT, getProgressColor } from '../../utils/errorCollectionUtils';
+import { ElImageViewer } from 'element-plus';
+// 音频播放器使用自定义按钮样式
+import xssFilter from '../../utils/xss-filter.js';
+import { applyLazyLoadToContent, injectLazyLoadStyles, isLazyLoadSupported } from '../../utils/lazyLoad.js';
+
+// 注入懒加载样式
+if (isLazyLoadSupported()) {
+  injectLazyLoadStyles();
+}
+
+// 图片预览状态
+const showImageViewer = ref(false);
+const previewImages = ref([]);
+const previewIndex = ref(0);
+const contentRef = ref(null);
+
+// 音频播放器状态
+const audioPlayerRef = ref(null);
+const audioPlaying = ref(false);
+const audioCurrentTime = ref(0);
+const audioDuration = ref(0);
+const audioProgress = ref(0);
+const audioSpeed = ref(1);
+
+// 音频播放器方法
+const toggleAudioPlay = () => {
+  if (!audioPlayerRef.value) return;
+  if (audioPlaying.value) {
+    audioPlayerRef.value.pause();
+  } else {
+    audioPlayerRef.value.play();
+  }
+  audioPlaying.value = !audioPlaying.value;
+};
+
+const onAudioLoaded = () => {
+  if (audioPlayerRef.value) {
+    audioDuration.value = audioPlayerRef.value.duration;
+  }
+};
+
+const onAudioTimeUpdate = () => {
+  if (!audioPlayerRef.value) return;
+  audioCurrentTime.value = audioPlayerRef.value.currentTime;
+  if (audioDuration.value > 0) {
+    audioProgress.value = (audioCurrentTime.value / audioDuration.value) * 100;
+  }
+};
+
+const onAudioEnded = () => {
+  audioPlaying.value = false;
+  audioProgress.value = 0;
+};
+
+const onAudioProgressChange = (val) => {
+  if (!audioPlayerRef.value || !audioDuration.value) return;
+  audioPlayerRef.value.currentTime = (val / 100) * audioDuration.value;
+};
+
+const audioSeekBackward = () => {
+  if (!audioPlayerRef.value) return;
+  audioPlayerRef.value.currentTime = Math.max(0, audioPlayerRef.value.currentTime - 5);
+};
+
+const audioSeekForward = () => {
+  if (!audioPlayerRef.value) return;
+  audioPlayerRef.value.currentTime = Math.min(audioDuration.value, audioPlayerRef.value.currentTime + 5);
+};
+
+const setAudioSpeed = (speed) => {
+  if (!audioPlayerRef.value) return;
+  audioPlayerRef.value.playbackRate = speed;
+  audioSpeed.value = speed;
+};
+
+const formatAudioTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '00:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
 
 const props = defineProps({
   question: {
@@ -108,7 +250,12 @@ const props = defineProps({
 
 const emit = defineEmits(['select-option'])
 
-// 解析选项
+// XSS 过滤后的题目内容
+const safeContent = computed(() => {
+  return xssFilter.sanitize(props.question.content || '');
+});
+
+// XSS 过滤后的选项
 const parsedOptions = computed(() => {
   const { question } = props;
   
@@ -125,7 +272,27 @@ const parsedOptions = computed(() => {
     }
   }
   
-  return Array.isArray(options) ? options : [];
+  // XSS 过滤每个选项
+  if (Array.isArray(options)) {
+    return options.map(opt => {
+      if (opt === null || opt === undefined) {
+        return '';
+      }
+      if (typeof opt === 'string') {
+        return xssFilter.deepSanitize(opt);
+      }
+      if (typeof opt === 'object') {
+        // 处理对象类型的选项，遍历每个键值
+        return Object.keys(opt).reduce((acc, key) => {
+          acc[key] = typeof opt[key] === 'string' ? xssFilter.deepSanitize(opt[key]) : opt[key];
+          return acc;
+        }, {});
+      }
+      return xssFilter.deepSanitize(String(opt));
+    });
+  }
+  
+  return [];
 });
 
 // 计算选项排列方式
@@ -256,9 +423,228 @@ const selectOption = (option) => {
     emit('select-option', option);
   }
 }
+
+// 处理内容区域的点击事件，实现图片预览
+const handleContentClick = (e) => {
+  const target = e.target;
+  if (target.tagName === 'IMG') {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    // 收集当前题目中的所有图片
+    const questionCard = target.closest('.question-card');
+    const images = questionCard.querySelectorAll('.question-text img, .option-text img');
+    
+    // 构建图片列表
+    const imageList = Array.from(images).map(img => {
+      // 处理相对路径和绝对路径
+      let src = img.getAttribute('src') || img.src;
+      if (src.startsWith('/')) {
+        src = window.location.origin + src;
+      }
+      return src;
+    }).filter(src => src && !src.startsWith('data:')); // 排除 base64 图片
+    
+    if (imageList.length === 0) {
+      imageList.push(target.src);
+    }
+    
+    // 找到当前点击图片的索引
+    const clickedSrc = target.getAttribute('src') || target.src;
+    const clickedIndex = imageList.findIndex(src => {
+      const normalizedSrc = src.replace(window.location.origin, '');
+      const normalizedClicked = clickedSrc.replace(window.location.origin, '');
+      return normalizedSrc === normalizedClicked || src === clickedSrc;
+    });
+    
+    previewImages.value = imageList;
+    previewIndex.value = clickedIndex >= 0 ? clickedIndex : 0;
+    showImageViewer.value = true;
+  }
+};
+
+// 关闭图片预览
+const closeImageViewer = () => {
+  showImageViewer.value = false;
+  previewImages.value = [];
+  previewIndex.value = 0;
+};
+
+// 应用懒加载到图片
+const applyLazyLoad = () => {
+  if (!contentRef.value || !isLazyLoadSupported()) return;
+  
+  // 使用 nextTick 确保 DOM 已更新
+  nextTick(() => {
+    applyLazyLoadToContent(contentRef.value);
+    
+    // 同时处理选项中的图片
+    const optionImages = document.querySelectorAll('.option-text img[src]');
+    optionImages.forEach(img => {
+      if (!img.src.startsWith('data:')) {
+        img.dataset.src = img.src;
+        img.src = 'data:image/svg+xml,' + encodeURIComponent(`
+          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="50" viewBox="0 0 100 50">
+            <rect fill="#f5f5f5" width="100" height="50"/>
+          </svg>
+        `);
+        img.classList.add('lazy-loading');
+      }
+    });
+  });
+};
+
+// 监听题目变化，重新应用懒加载
+watch(() => props.question, () => {
+  applyLazyLoad();
+}, { immediate: false });
+
+onMounted(() => {
+  applyLazyLoad();
+});
+
 </script>
 
 <style scoped>
+/* 听力音频播放器样式 */
+.audio-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 12px;
+  padding: 16px;
+  margin: 15px 0;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.audio-player-wrapper {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.audio-player-wrapper audio {
+  display: none;
+}
+
+.audio-player-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+/* 快退/快进按钮 */
+.seek-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  border: none;
+  background: #f0f2f5;
+  border-radius: 50%;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  color: #606266;
+}
+
+.seek-btn:hover {
+  background: #e4e7ed;
+  transform: scale(1.05);
+}
+
+.seek-btn:active {
+  transform: scale(0.95);
+}
+
+.seek-icon {
+  font-size: 16px;
+  line-height: 1;
+}
+
+.seek-label {
+  font-size: 10px;
+  font-weight: 600;
+  margin-top: 2px;
+}
+
+/* 主播放按钮 */
+.play-main-btn {
+  width: 64px;
+  height: 64px;
+  border: none;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.play-main-btn:hover {
+  transform: scale(1.08);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.5);
+}
+
+.play-main-btn:active {
+  transform: scale(0.95);
+}
+
+.play-main-btn.playing {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+}
+
+.play-icon {
+  font-size: 22px;
+  line-height: 1;
+}
+
+.progress-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 200px;
+}
+
+.progress-slider {
+  flex: 1;
+}
+
+.time-display {
+  font-size: 13px;
+  color: #606266;
+  min-width: 48px;
+  text-align: center;
+  font-family: monospace;
+  font-weight: 500;
+}
+
+/* 倍速控制 */
+.speed-control {
+  flex-shrink: 0;
+}
+
+.speed-btn {
+  font-size: 13px;
+  color: #606266;
+  cursor: pointer;
+  padding: 6px 12px;
+  background: #f0f2f5;
+  border-radius: 16px;
+  transition: all 0.2s ease;
+  white-space: nowrap;
+}
+
+.speed-btn:hover {
+  background: #e4e7ed;
+  color: #667eea;
+}
+
 /* 错题巩固进度样式 */
 .error-collection-progress {
   background: #f9f9f9;

@@ -21,7 +21,7 @@
         </el-select>
       </div>
       <div class="toolbar-right">
-        <el-button type="primary" @click="showAddQuestionDialog">
+        <el-button type="primary" @click="openAddPanel">
           <el-icon><Plus /></el-icon> 添加题目
         </el-button>
         <el-button type="success" @click="showBatchAddQuestionDialog">
@@ -86,8 +86,200 @@
         <div class="resize-handle" @mousedown="startResize"></div>
       </div>
 
-      <!-- 右侧表格区 -->
-      <div class="content-area">
+      <!-- 右侧内容区 -->
+      <div class="content-wrapper" :class="{ 'has-edit-panel': splitEditMode }">
+        <!-- 编辑面板（移到顶部） -->
+        <div v-if="splitEditMode" class="edit-panel" :style="{ height: editPanelHeight + 'px' }">
+          <div class="edit-panel-header">
+            <div class="edit-panel-title">
+              <el-icon><Edit /></el-icon>
+              <span>{{ editMode === 'add' ? '添加新题目' : `编辑题目 #${editingQuestionId}` }}</span>
+            </div>
+            <div class="edit-panel-actions">
+              <el-button type="primary" size="small" @click="saveSplitEdit" :loading="splitEditSaving">
+                <el-icon><Check /></el-icon> {{ editMode === 'add' ? '添加' : '保存' }}
+              </el-button>
+              <el-button v-if="editMode === 'edit'" type="success" size="small" @click="saveAndNext" :loading="splitEditSaving">
+                <el-icon><Right /></el-icon> 保存并下一个
+              </el-button>
+              <el-button size="small" @click="closeSplitEdit">
+                <el-icon><Close /></el-icon> 关闭
+              </el-button>
+            </div>
+          </div>
+          <div class="edit-panel-body" v-if="splitEditData">
+            <div class="split-edit-form">
+              <!-- 基本信息 -->
+              <div class="quick-edit-row">
+                <el-select v-model="splitEditData.subjectId" placeholder="学科" size="small" style="width: 120px;" @change="onSplitEditSubjectChange">
+                  <el-option v-for="subject in props.subjects" :key="subject.id" :label="subject.name" :value="subject.id" />
+                </el-select>
+                <el-select v-model="splitEditData.subcategoryId" placeholder="题库" size="small" style="width: 140px;">
+                  <el-option v-for="sub in splitEditSubcategories" :key="sub.id" :label="sub.name" :value="sub.id" />
+                </el-select>
+                <el-select v-model="splitEditData.type" placeholder="类型" size="small" style="width: 100px;">
+                  <el-option label="单选" value="single" />
+                  <el-option label="多选" value="multiple" />
+                  <el-option label="判断" value="judgment" />
+                </el-select>
+                <el-select v-model="splitEditData.difficulty" placeholder="难度" size="small" style="width: 100px;">
+                  <el-option label="简单" :value="1" />
+                  <el-option label="较简单" :value="2" />
+                  <el-option label="中等" :value="3" />
+                  <el-option label="较难" :value="4" />
+                  <el-option label="困难" :value="5" />
+                </el-select>
+              </div>
+
+              <!-- 题目内容 -->
+              <div class="quick-edit-section">
+                <label class="section-label">题目内容</label>
+                <div class="content-editor-wrapper">
+                  <QuillEditor
+                    v-if="splitEditData.content !== undefined"
+                    :key="'content-' + editingQuestionId"
+                    v-model="splitEditData.content"
+                    :options="{
+                      modules: {
+                        toolbar: [
+                          ['bold', 'italic', 'underline'],
+                          [{ 'color': [] }, { 'background': [] }],
+                          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                          ['clean'],
+                          ['image']
+                        ]
+                      },
+                      placeholder: '输入题目内容'
+                    }"
+                  />
+                </div>
+              </div>
+
+              <!-- 选项 -->
+              <div class="quick-edit-section">
+                <label class="section-label">
+                  答案选项
+                  <el-button type="primary" size="small" text @click="addSplitEditOption">
+                    <el-icon><Plus /></el-icon> 添加
+                  </el-button>
+                </label>
+                <div class="options-grid">
+                  <div v-for="(option, index) in splitEditData.options" :key="index" class="quick-option-item">
+                    <el-checkbox
+                      :label="String.fromCharCode(65 + index)"
+                      v-model="splitEditData.selectedAnswers"
+                      :disabled="splitEditData.type === 'single' && splitEditData.selectedAnswers.length > 0 && !splitEditData.selectedAnswers.includes(String.fromCharCode(65 + index))"
+                    >
+                      <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
+                    </el-checkbox>
+                    <EditableContent
+                      v-model="splitEditData.options[index]"
+                      placeholder="输入选项内容"
+                      class="quick-option-input"
+                    />
+                    <el-button type="danger" size="small" text @click="removeSplitEditOption(index)">
+                      <el-icon><Delete /></el-icon>
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- 解析 -->
+              <div class="quick-edit-section">
+                <label class="section-label">解析（可选）</label>
+                <el-input
+                  v-model="splitEditData.explanation"
+                  type="textarea"
+                  :rows="2"
+                  placeholder="输入答案解析..."
+                />
+              </div>
+
+              <!-- 音频上传 -->
+              <div class="quick-edit-section">
+                <label class="section-label">音频（听力题用）</label>
+                <div class="audio-upload-area">
+                  <!-- 上传区域 -->
+                  <div v-if="!splitEditData.audio && !audioUploading">
+                    <el-upload
+                      class="audio-uploader"
+                      action=""
+                      :auto-upload="false"
+                      :show-file-list="false"
+                      accept="audio/*"
+                      :drag="true"
+                      :on-change="handleSplitEditAudioChange"
+                    >
+                      <div class="audio-upload-dragger">
+                        <el-icon class="upload-icon"><Upload /></el-icon>
+                        <div class="upload-text">拖拽音频文件到此处，或<em>点击上传</em></div>
+                        <div class="upload-tip">支持 MP3、WAV、OGG、M4A 格式，最大 10MB</div>
+                      </div>
+                    </el-upload>
+                  </div>
+                  <!-- 上传进度 -->
+                  <div v-if="audioUploading" class="audio-uploading">
+                    <el-progress type="circle" :percentage="audioUploadProgress" :width="60" />
+                    <span>{{ audioUploadProgress >= 100 ? '处理中...' : '上传中...' }}</span>
+                  </div>
+                  <!-- 音频预览 -->
+                  <div v-if="splitEditData.audio && !audioUploading" class="audio-preview">
+                    <!-- 增强的音频播放器 -->
+                    <div class="audio-player">
+                      <audio ref="audioPlayerRef" :src="splitEditData.audio" @loadedmetadata="onAudioLoaded" @timeupdate="onAudioTimeUpdate" @ended="onAudioEnded"></audio>
+                      <div class="player-controls">
+                        <el-button-group class="play-buttons">
+                          <el-button size="small" @click="audioSeekBackward">
+                            <el-icon><DArrowLeft /></el-icon>
+                          </el-button>
+                          <el-button size="small" type="primary" @click="toggleAudioPlay">
+                            <el-icon v-if="audioPlaying"><VideoPause /></el-icon>
+                            <el-icon v-else><VideoPlay /></el-icon>
+                          </el-button>
+                          <el-button size="small" @click="audioSeekForward">
+                            <el-icon><DArrowRight /></el-icon>
+                          </el-button>
+                        </el-button-group>
+                        <div class="progress-wrapper">
+                          <span class="time-display">{{ formatAudioTime(audioCurrentTime) }}</span>
+                          <el-slider v-model="audioProgress" :show-tooltip="false" @change="onAudioProgressChange" class="progress-slider" />
+                          <span class="time-display">{{ formatAudioTime(audioDuration) }}</span>
+                        </div>
+                        <div class="speed-control">
+                          <el-dropdown @command="setAudioSpeed" trigger="click">
+                            <el-button size="small">
+                              {{ audioSpeed }}x <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                            </el-button>
+                            <template #dropdown>
+                              <el-dropdown-menu>
+                                <el-dropdown-item :command="0.5">0.5x</el-dropdown-item>
+                                <el-dropdown-item :command="0.75">0.75x</el-dropdown-item>
+                                <el-dropdown-item :command="1">1.0x</el-dropdown-item>
+                                <el-dropdown-item :command="1.25">1.25x</el-dropdown-item>
+                                <el-dropdown-item :command="1.5">1.5x</el-dropdown-item>
+                                <el-dropdown-item :command="2">2.0x</el-dropdown-item>
+                              </el-dropdown-menu>
+                            </template>
+                          </el-dropdown>
+                        </div>
+                        <el-button type="danger" size="small" @click="deleteSplitEditAudio">
+                          <el-icon><Delete /></el-icon>
+                        </el-button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="edit-panel-body edit-panel-loading" v-else>
+            <el-icon class="is-loading"><Loading /></el-icon>
+            <span>加载中...</span>
+          </div>
+        </div>
+
+        <!-- 右侧表格区 -->
+        <div class="content-area">
         <!-- 当前路径面包屑 -->
         <div class="breadcrumb-bar">
           <el-breadcrumb separator="/">
@@ -249,6 +441,7 @@
             @current-change="handlePageChange"
           />
         </div>
+        </div>
       </div>
     </div>
 
@@ -372,11 +565,14 @@ import { ref, computed, watch, onMounted, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Search, Plus, Upload, ArrowDown, Delete, Star, Document, FolderOpened,
-  Refresh, Folder, Reading, Notebook, View, Edit, Microphone
+  Refresh, Folder, Reading, Notebook, View, Edit, Microphone, Check, Right, Close, Loading,
+  VideoPlay, VideoPause, DArrowLeft, DArrowRight
 } from '@element-plus/icons-vue';
 import { useQuestionStore } from '../../../stores/questionStore';
 import { formatDate } from '../../../utils/dateUtils';
 import { getApiBaseUrl } from '../../../utils/database';
+import EditableContent from '../../common/EditableContent.vue';
+import QuillEditor from '../../common/QuillEditor.vue';
 
 // Props
 const props = defineProps({
@@ -444,6 +640,25 @@ const tableRef = ref(null);
 // 删除撤销相关
 const pendingDeletes = ref(new Map()); // 存储待删除的题目
 
+// 分屏编辑相关
+const splitEditMode = ref(false);
+const editMode = ref('edit'); // 'add' 或 'edit'
+const editingQuestionId = ref(null);
+const splitEditData = ref(null);
+const splitEditSaving = ref(false);
+const editPanelHeight = ref(800);
+const splitEditQuill = ref(null);
+
+// 音频播放器相关
+const audioPlayerRef = ref(null);
+const audioPlaying = ref(false);
+const audioCurrentTime = ref(0);
+const audioDuration = ref(0);
+const audioProgress = ref(0);
+const audioSpeed = ref(1);
+const audioUploading = ref(false);
+const audioUploadProgress = ref(0);
+
 // 防抖定时器
 let searchTimer = null;
 
@@ -492,6 +707,13 @@ const currentSubcategoryName = computed(() => {
 const batchMoveSubcategories = computed(() => {
   if (!batchMoveSubjectId.value) return [];
   const subject = props.subjects.find(s => s.id == batchMoveSubjectId.value);
+  return subject ? subject.subcategories || [] : [];
+});
+
+// 分屏编辑的子分类列表
+const splitEditSubcategories = computed(() => {
+  if (!splitEditData.value?.subjectId) return [];
+  const subject = props.subjects.find(s => s.id == splitEditData.value.subjectId);
   return subject ? subject.subcategories || [] : [];
 });
 
@@ -953,12 +1175,441 @@ const showImagePreview = (row) => {
 
 // 编辑题目
 const editQuestion = (row) => {
-  emit('edit-question', row);
+  // 开启分屏编辑模式
+  openSplitEdit(row);
 };
 
-// 显示添加对话框
-const showAddQuestionDialog = () => {
-  emit('show-add-dialog');
+// 打开添加面板
+const openAddPanel = () => {
+  editMode.value = 'add';
+  editingQuestionId.value = null;
+  splitEditMode.value = true;
+
+  // 初始化空表单
+  const defaultSubjectId = props.subjects.length > 0 ? props.subjects[0].id : null;
+  const defaultSubcategoryId = defaultSubjectId && props.subjects[0]?.subcategories?.length > 0
+    ? props.subjects[0].subcategories[0].id
+    : null;
+
+  splitEditData.value = {
+    subjectId: defaultSubjectId,
+    subcategoryId: defaultSubcategoryId,
+    type: 'single',
+    difficulty: 1,
+    content: '',
+    options: ['', '', '', ''],
+    selectedAnswers: [],
+    explanation: '',
+    audio: null
+  };
+};
+
+// 开启分屏编辑
+const openSplitEdit = async (row) => {
+  editMode.value = 'edit';
+  // 先显示面板和加载状态
+  splitEditMode.value = true;
+  splitEditData.value = null;
+  editingQuestionId.value = row.id;
+
+  try {
+    // 获取完整题目数据
+    const response = await fetch(`${getApiBaseUrl()}/questions/${row.id}`);
+    const data = await response.json();
+
+    let options = data.options || [];
+    if (typeof options === 'string') {
+      try {
+        options = JSON.parse(options);
+      } catch (e) {
+        options = [];
+      }
+    }
+
+    // 解析答案
+    let selectedAnswers = [];
+    const answer = data.answer || data.correct_answer;
+    if (answer) {
+      if (data.type === 'multiple') {
+        selectedAnswers = String(answer).split('');
+      } else {
+        selectedAnswers = [String(answer)];
+      }
+    }
+
+    // 设置数据
+    splitEditData.value = {
+      subjectId: data.subjectId || data.subject_id,
+      subcategoryId: data.subcategoryId || data.subcategory_id,
+      type: data.type,
+      difficulty: data.difficulty || 1,
+      content: data.content || '',
+      options: options,
+      selectedAnswers: selectedAnswers,
+      explanation: data.explanation || '',
+      audio: data.audio_url || data.audio || null
+    };
+
+  } catch (error) {
+    console.error('获取题目详情失败:', error);
+    ElMessage.error('获取题目详情失败');
+    closeSplitEdit();
+  }
+};
+
+// 关闭分屏编辑
+const closeSplitEdit = () => {
+  splitEditMode.value = false;
+  editMode.value = 'edit';
+  editingQuestionId.value = null;
+  splitEditData.value = null;
+  splitEditQuill.value = null;
+};
+
+// 保存分屏编辑
+const saveSplitEdit = async () => {
+  if (!splitEditData.value) return;
+
+  // 验证
+  if (!splitEditData.value.subjectId) {
+    ElMessage.warning('请选择学科');
+    return;
+  }
+  if (!splitEditData.value.subcategoryId) {
+    ElMessage.warning('请选择题库');
+    return;
+  }
+  if (!splitEditData.value.content) {
+    ElMessage.warning('请输入题目内容');
+    return;
+  }
+  if (splitEditData.value.selectedAnswers.length === 0) {
+    ElMessage.warning('请选择正确答案');
+    return;
+  }
+  // 验证选项内容
+  if (splitEditData.value.options.some(opt => !opt || (typeof opt === 'string' && !opt.trim()))) {
+    ElMessage.warning('请填写所有选项内容');
+    return;
+  }
+
+  splitEditSaving.value = true;
+
+  try {
+    const answer = splitEditData.value.type === 'multiple'
+      ? splitEditData.value.selectedAnswers.join('')
+      : splitEditData.value.selectedAnswers[0];
+
+    const requestBody = {
+      subjectId: splitEditData.value.subjectId,
+      subcategoryId: splitEditData.value.subcategoryId || null,
+      type: splitEditData.value.type,
+      difficulty: splitEditData.value.difficulty,
+      content: splitEditData.value.content,
+      options: splitEditData.value.options,
+      answer: answer,
+      explanation: splitEditData.value.explanation,
+      audio: splitEditData.value.audio || null
+    };
+
+    let response;
+    if (editMode.value === 'add') {
+      // 添加新题目
+      response = await fetch(`${getApiBaseUrl()}/questions`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+    } else {
+      // 编辑现有题目
+      response = await fetch(`${getApiBaseUrl()}/questions/${editingQuestionId.value}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(requestBody)
+      });
+    }
+
+    if (response.ok) {
+      ElMessage.success(editMode.value === 'add' ? '添加成功' : '保存成功');
+      // 刷新列表
+      loadQuestions();
+      // 添加成功后关闭面板
+      if (editMode.value === 'add') {
+        closeSplitEdit();
+      }
+    } else {
+      const error = await response.json();
+      ElMessage.error(error.error || '保存失败');
+    }
+  } catch (error) {
+    console.error('保存失败:', error);
+    ElMessage.error('保存失败');
+  } finally {
+    splitEditSaving.value = false;
+  }
+};
+
+// 保存并下一个
+const saveAndNext = async () => {
+  await saveSplitEdit();
+  
+  if (!splitEditMode.value) return; // 保存失败则不继续
+  
+  // 找到当前题目的索引
+  const currentIndex = serverQuestions.value.findIndex(q => q.id === editingQuestionId.value);
+  
+  if (currentIndex < serverQuestions.value.length - 1) {
+    // 打开下一个题目
+    const nextQuestion = serverQuestions.value[currentIndex + 1];
+    openSplitEdit(nextQuestion);
+  } else {
+    ElMessage.info('已是最后一题');
+    closeSplitEdit();
+  }
+};
+
+// 分屏编辑学科变化
+const onSplitEditSubjectChange = () => {
+  splitEditData.value.subcategoryId = null;
+};
+
+// 分屏编辑 Quill 准备
+const onSplitQuillReady = (quill) => {
+  splitEditQuill.value = quill;
+};
+
+// 添加选项
+const addSplitEditOption = () => {
+  if (!splitEditData.value) return;
+  if (splitEditData.value.options.length >= 6) {
+    ElMessage.warning('最多添加6个选项');
+    return;
+  }
+  splitEditData.value.options.push('');
+};
+
+// 删除选项
+const removeSplitEditOption = (index) => {
+  if (!splitEditData.value) return;
+  const letter = String.fromCharCode(65 + index);
+  // 移除选项
+  splitEditData.value.options.splice(index, 1);
+  // 移除答案中的该选项
+  splitEditData.value.selectedAnswers = splitEditData.value.selectedAnswers.filter(a => a !== letter);
+};
+
+// 处理音频文件上传
+const handleSplitEditAudioChange = async (file) => {
+  console.log('[音频上传] 文件信息:', {
+    name: file?.name,
+    size: file?.raw?.size,
+    type: file?.raw?.type,
+    sizeMB: file?.raw?.size ? (file.raw.size / 1024 / 1024).toFixed(2) + ' MB' : 'unknown'
+  });
+  
+  if (!file || !file.raw) return;
+  
+  // 检查文件大小
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  const fileSizeMB = (file.raw.size / 1024 / 1024).toFixed(2);
+  
+  console.log(`[音频上传] 文件大小: ${fileSizeMB} MB, 限制: 10 MB`);
+  
+  if (file.raw.size > maxSize) {
+    ElMessage.error(`音频文件大小 ${fileSizeMB} MB 超过限制（最大 10MB）`);
+    return;
+  }
+  
+  // 检查文件类型
+  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/ogg', 'audio/mp4', 'audio/x-m4a', 'audio/m4a'];
+  const ext = file.name.split('.').pop().toLowerCase();
+  const allowedExts = ['mp3', 'wav', 'ogg', 'm4a'];
+  
+  if (!allowedTypes.includes(file.raw.type) && !allowedExts.includes(ext)) {
+    ElMessage.error('不支持的音频格式，仅支持 MP3、WAV、OGG、M4A');
+    return;
+  }
+  
+  audioUploading.value = true;
+  audioUploadProgress.value = 0;
+  
+  const formData = new FormData();
+  formData.append('audio', file.raw);
+  
+  // 使用 XMLHttpRequest 获取真实上传进度
+  const xhr = new XMLHttpRequest();
+  xhr.timeout = 60000; // 60秒超时
+  
+  // 添加 readystatechange 监听
+  xhr.addEventListener('readystatechange', () => {
+    console.log('[音频上传] readyState:', xhr.readyState, 'status:', xhr.status);
+  });
+  
+  xhr.upload.addEventListener('progress', (e) => {
+    if (e.lengthComputable) {
+      audioUploadProgress.value = Math.round((e.loaded / e.total) * 100);
+    }
+  });
+  
+  xhr.addEventListener('load', () => {
+    console.log('[音频上传] 状态:', xhr.status, '响应:', xhr.responseText);
+    try {
+      const result = JSON.parse(xhr.responseText);
+      if (xhr.status === 200 && result.success) {
+        // 确保 splitEditData 存在
+        if (!splitEditData.value) {
+          splitEditData.value = {
+            subjectId: null,
+            subcategoryId: null,
+            type: 'single',
+            difficulty: 1,
+            content: '',
+            options: ['', '', '', ''],
+            selectedAnswers: [],
+            explanation: '',
+            audio: result.url
+          };
+        } else {
+          splitEditData.value.audio = result.url;
+        }
+        console.log('[音频上传] 设置 audio URL:', result.url);
+        ElMessage.success('音频上传成功');
+      } else {
+        // 显示服务器返回的具体错误信息
+        const errorMsg = result.error || result.message || `上传失败 (${xhr.status})`;
+        console.error('[音频上传] 服务器错误:', errorMsg);
+        ElMessage.error(errorMsg);
+      }
+    } catch (e) {
+      console.error('[音频上传] 解析错误:', e);
+      ElMessage.error(xhr.status === 200 ? '解析响应失败' : `上传失败: ${xhr.status}`);
+    }
+  });
+  
+  xhr.addEventListener('loadend', () => {
+    console.log('[音频上传] 请求结束');
+    audioUploading.value = false;
+    audioUploadProgress.value = 0;
+  });
+  
+  xhr.addEventListener('error', () => {
+    console.error('[音频上传] 网络错误');
+    ElMessage.error('网络错误，上传失败');
+  });
+  
+  xhr.addEventListener('timeout', () => {
+    console.error('[音频上传] 超时');
+    ElMessage.error('上传超时');
+  });
+  
+  xhr.addEventListener('abort', () => {
+    console.log('[音频上传] 被中止');
+    ElMessage.warning('上传已取消');
+  });
+  
+  console.log('[音频上传] 开始上传:', file.name, '大小:', file.raw.size);
+  console.log('[音频上传] API URL:', `${getApiBaseUrl()}/upload/audio`);
+  
+  xhr.open('POST', `${getApiBaseUrl()}/upload/audio`);
+  xhr.send(formData);
+  
+  console.log('[音频上传] 请求已发送');
+};
+
+// 删除音频
+const deleteSplitEditAudio = () => {
+  if (splitEditData.value) {
+    splitEditData.value.audio = null;
+    audioPlaying.value = false;
+    audioCurrentTime.value = 0;
+    audioDuration.value = 0;
+    audioProgress.value = 0;
+  }
+};
+
+// 音频播放器控制
+const toggleAudioPlay = () => {
+  if (!audioPlayerRef.value) return;
+  
+  if (audioPlaying.value) {
+    audioPlayerRef.value.pause();
+  } else {
+    audioPlayerRef.value.play();
+  }
+  audioPlaying.value = !audioPlaying.value;
+};
+
+const onAudioLoaded = () => {
+  if (audioPlayerRef.value) {
+    audioDuration.value = audioPlayerRef.value.duration;
+  }
+};
+
+const onAudioTimeUpdate = () => {
+  if (!audioPlayerRef.value) return;
+  audioCurrentTime.value = audioPlayerRef.value.currentTime;
+  if (audioDuration.value > 0) {
+    audioProgress.value = (audioCurrentTime.value / audioDuration.value) * 100;
+  }
+};
+
+const onAudioEnded = () => {
+  audioPlaying.value = false;
+  audioProgress.value = 0;
+};
+
+const onAudioProgressChange = (val) => {
+  if (!audioPlayerRef.value || !audioDuration.value) return;
+  audioPlayerRef.value.currentTime = (val / 100) * audioDuration.value;
+};
+
+const audioSeekBackward = () => {
+  if (!audioPlayerRef.value) return;
+  audioPlayerRef.value.currentTime = Math.max(0, audioPlayerRef.value.currentTime - 5);
+};
+
+const audioSeekForward = () => {
+  if (!audioPlayerRef.value) return;
+  audioPlayerRef.value.currentTime = Math.min(audioDuration.value, audioPlayerRef.value.currentTime + 5);
+};
+
+const setAudioSpeed = (speed) => {
+  if (!audioPlayerRef.value) return;
+  audioPlayerRef.value.playbackRate = speed;
+  audioSpeed.value = speed;
+};
+
+const formatAudioTime = (seconds) => {
+  if (!seconds || isNaN(seconds)) return '00:00';
+  const mins = Math.floor(seconds / 60);
+  const secs = Math.floor(seconds % 60);
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+};
+
+// 编辑面板拖拽调整高度
+let isPanelResizing = false;
+let startPanelY = 0;
+let startPanelHeight = 0;
+
+const startPanelResize = (e) => {
+  isPanelResizing = true;
+  startPanelY = e.clientY;
+  startPanelHeight = editPanelHeight.value;
+  document.addEventListener('mousemove', handlePanelResize);
+  document.addEventListener('mouseup', stopPanelResize);
+};
+
+const handlePanelResize = (e) => {
+  if (!isPanelResizing) return;
+  const diff = startPanelY - e.clientY;
+  const newHeight = Math.max(200, Math.min(500, startPanelHeight + diff));
+  editPanelHeight.value = newHeight;
+};
+
+const stopPanelResize = () => {
+  isPanelResizing = false;
+  document.removeEventListener('mousemove', handlePanelResize);
+  document.removeEventListener('mouseup', stopPanelResize);
 };
 
 // 显示批量添加对话框
@@ -1170,6 +1821,286 @@ defineExpose({
   overflow: hidden;
   padding: 20px;
   background: #f5f7fa;
+}
+
+.content-wrapper {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.content-wrapper.has-edit-panel .content-area {
+  flex: 1;
+  min-height: 0;
+}
+
+/* 分屏编辑面板（顶部） */
+.edit-panel {
+  background: #fff;
+  border-bottom: 3px solid #409eff;
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  flex-shrink: 0;
+  min-height: 280px;
+  max-height: 80vh;
+  z-index: 100;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.edit-panel-header {
+  display: flex;
+  align-items: center;
+  padding: 12px 20px;
+  background: #f5f7fa;
+  border-bottom: 1px solid #e4e7ed;
+  position: relative;
+}
+
+.edit-panel-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.edit-panel-actions {
+  margin-left: auto;
+  display: flex;
+  gap: 8px;
+}
+
+.panel-resize-handle {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  cursor: row-resize;
+  background: transparent;
+  transition: background 0.2s;
+}
+
+.panel-resize-handle:hover {
+  background: #409eff;
+}
+
+.edit-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px 20px;
+}
+
+.edit-panel-empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.edit-panel-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  color: #409eff;
+  font-size: 16px;
+}
+
+.edit-panel-loading .is-loading {
+  animation: rotating 2s linear infinite;
+}
+
+@keyframes rotating {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.split-edit-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.quick-edit-row {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.quick-edit-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.section-label {
+  font-size: 14px;
+  font-weight: 500;
+  color: #606266;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.content-editor-wrapper {
+  border: 1px solid #dcdfe6;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.content-editor-wrapper :deep(.ql-container) {
+  min-height: 100px;
+  max-height: 180px;
+  overflow-y: auto;
+}
+
+.content-editor-wrapper :deep(.ql-editor) {
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.audio-upload-area {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.audio-upload-dragger {
+  padding: 20px;
+  border: 2px dashed #dcdfe6;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s;
+  background: #fafafa;
+}
+
+.audio-upload-dragger:hover {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.audio-upload-dragger .upload-icon {
+  font-size: 48px;
+  color: #909399;
+  margin-bottom: 8px;
+}
+
+.audio-upload-dragger .upload-text {
+  font-size: 14px;
+  color: #606266;
+}
+
+.audio-upload-dragger .upload-text em {
+  color: #409eff;
+  font-style: normal;
+}
+
+.audio-upload-dragger .upload-tip {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 8px;
+}
+
+.audio-uploading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  padding: 20px;
+  background: #fafafa;
+  border-radius: 8px;
+}
+
+.audio-preview {
+  width: 100%;
+}
+
+.audio-player {
+  background: #f5f7fa;
+  border-radius: 8px;
+  padding: 12px;
+}
+
+.audio-player audio {
+  display: none;
+}
+
+.player-controls {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.play-buttons {
+  flex-shrink: 0;
+}
+
+.progress-wrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 200px;
+}
+
+.progress-slider {
+  flex: 1;
+}
+
+.time-display {
+  font-size: 12px;
+  color: #606266;
+  min-width: 45px;
+  text-align: center;
+}
+
+.speed-control {
+  flex-shrink: 0;
+}
+
+.quick-option-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: #f5f7fa;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+}
+
+.quick-option-item:hover {
+  border-color: #409eff;
+}
+
+.option-letter {
+  font-weight: 600;
+  color: #409eff;
+  min-width: 20px;
+}
+
+.quick-option-input {
+  flex: 1;
+}
+
+.quick-option-input :deep(.ql-container) {
+  min-height: 40px;
+}
+
+.quick-option-input :deep(.ql-editor) {
+  font-size: 13px;
+  padding: 8px;
 }
 
 .breadcrumb-bar {

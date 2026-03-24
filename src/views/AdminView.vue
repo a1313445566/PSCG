@@ -368,6 +368,27 @@
   padding: 20px;
   background-color: #fff;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* Tab 面板高度限制 */
+:deep(.el-tabs__content) {
+  flex: 1;
+  overflow: auto;
+  min-height: 0;
+}
+
+:deep(.el-tab-pane) {
+  height: 100%;
+}
+
+/* 题目管理容器 */
+.question-management {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .correct-answer {

@@ -17,18 +17,52 @@ const signatureCache = require('./middleware/signatureCache');
 // 添加管理员权限验证
 const adminAuth = require('./middleware/adminAuth');
 
+// CSRF 防护中间件
+const { csrfTokenMiddleware, csrfVerifyMiddleware } = require('./middleware/csrf');
+
 // 配置multer存储
 const storage = multer.diskStorage({
   destination: function (req, file, cb) {
-    cb(null, './images');
+    // 根据文件类型选择存储目录
+    if (file.mimetype.startsWith('audio/')) {
+      cb(null, './audio');
+    } else {
+      cb(null, './images');
+    }
   },
   filename: function (req, file, cb) {
+    // 生成唯一文件名：字段名-时间戳-随机数.扩展名
     const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
-    cb(null, file.fieldname + '-' + uniqueSuffix + path.extname(file.originalname));
+    const ext = path.extname(file.originalname);
+    // 根据文件类型使用不同的前缀
+    const prefix = file.mimetype.startsWith('audio/') ? 'audio' : 'image';
+    cb(null, `${prefix}-${uniqueSuffix}${ext}`);
   }
 });
 
-const upload = multer({ storage: storage });
+// 文件过滤
+const fileFilter = function (req, file, cb) {
+  // 允许的图片类型
+  if (file.mimetype.startsWith('image/')) {
+    cb(null, true);
+  }
+  // 允许的音频类型
+  else if (file.mimetype.startsWith('audio/')) {
+    cb(null, true);
+  }
+  // 其他类型拒绝
+  else {
+    cb(new Error('不支持的文件类型'), false);
+  }
+};
+
+const upload = multer({ 
+  storage: storage,
+  fileFilter: fileFilter,
+  limits: {
+    fileSize: 10 * 1024 * 1024 // 最大 10MB
+  }
+});
 
 const dataRoutes = require('./routes/data');
 const settingsRoutes = require('./routes/settings');
@@ -44,6 +78,7 @@ const difficultyRoutes = require('./routes/difficulty');
 const backupRoutes = require('./routes/backup');
 const errorCollectionRoutes = require('./routes/error-collection');
 const adminRoutes = require('./routes/admin');
+const uploadRoutes = require('./routes/upload');
 
 const db = require('./services/database');
 const cacheService = require('./services/cache');
@@ -88,14 +123,47 @@ app.use('/assets', express.static(path.join(__dirname, 'dist', 'assets'), {
 }));
 
 app.use('/audio', express.static(path.join(__dirname, 'audio'), {
-  maxAge: '7d',
-  etag: true
+  maxAge: '30d',
+  etag: true,
+  lastModified: true
 }));
 
 app.use('/images', express.static(path.join(__dirname, 'images'), {
-  maxAge: '7d',
-  etag: true
+  maxAge: '30d',
+  etag: true,
+  lastModified: true
 }));
+
+// 安全：目录遍历防护中间件
+const createPathTraversalGuard = (baseDir) => {
+  return (req, res, next) => {
+    // 解码 URL（处理 %2e%2e%2f 等编码形式）
+    let decodedPath;
+    try {
+      decodedPath = decodeURIComponent(req.path);
+    } catch (e) {
+      return res.status(400).send('Invalid path encoding');
+    }
+    
+    // 规范化路径，解析 .. 和 .
+    const normalizedPath = path.normalize(decodedPath);
+    
+    // 获取绝对路径
+    const resolvedPath = path.resolve(baseDir, normalizedPath);
+    
+    // 检查解析后的路径是否仍在目标目录内
+    if (!resolvedPath.startsWith(baseDir)) {
+      console.warn(`[Security] Path traversal attempt blocked: ${req.path} -> ${resolvedPath}`);
+      return res.status(403).send('Forbidden');
+    }
+    
+    next();
+  };
+};
+
+// 应用目录遍历防护
+app.use('/images', createPathTraversalGuard(path.join(__dirname, 'images')));
+app.use('/audio', createPathTraversalGuard(path.join(__dirname, 'audio')));
 
 app.use('/fonts', express.static(path.join(__dirname, 'fonts'), {
   maxAge: '30d',
@@ -117,6 +185,12 @@ app.use('/api/difficulty', difficultyRoutes);
 app.use('/api', backupRoutes);
 app.use('/api/error-collection', errorCollectionRoutes);
 app.use('/api/admin', adminRoutes);
+app.use('/api/upload', uploadRoutes);
+
+// CSRF Token 接口
+app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {
+  res.json({ success: true, csrfToken: res.locals.csrfToken });
+});
 
 // 缓存管理API
 app.get('/api/cache/stats', (req, res) => {
@@ -191,26 +265,6 @@ app.post('/api/security/unblock-all', adminAuth, (req, res) => {
       submit: submitResult
     }
   });
-});
-
-// 图片上传路由
-app.post('/api/upload/image', upload.single('image'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: '没有上传文件' });
-  }
-  
-  const imageUrl = `/images/${req.file.filename}`;
-  res.json({ success: true, url: imageUrl });
-});
-
-// 音频上传路由
-app.post('/api/upload/audio', upload.single('audio'), (req, res) => {
-  if (!req.file) {
-    return res.status(400).json({ error: '没有上传文件' });
-  }
-  
-  const audioUrl = `/audio/${req.file.filename}`;
-  res.json({ success: true, url: audioUrl });
 });
 
 process.on('uncaughtException', (err) => {

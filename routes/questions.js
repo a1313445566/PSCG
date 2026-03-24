@@ -1,6 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
+const xssFilter = require('../utils/xss-filter');
 
 // 获取子分类统计数据（题目数量和平均难度）
 router.get('/subcategories/stats', async (req, res) => {
@@ -206,6 +207,7 @@ router.get('/:id', async (req, res) => {
       subcategoryId: question.subcategory_id,
       content: question.content,
       type: question.type,
+      difficulty: question.difficulty || 1,
       options: options,
       answer: answer,
       explanation: question.explanation,
@@ -224,15 +226,37 @@ router.get('/:id', async (req, res) => {
 // 添加题目
 router.post('/', async (req, res) => {
   try {
-    const { subjectId, subcategoryId, content, type, options, answer, explanation = '', audio = null, image = null } = req.body;
+    let { subjectId, subcategoryId, content, type, options, answer, explanation = '', audio = null, image = null } = req.body;
     
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' });
       return;
     }
     
+    // XSS 过滤 - 对富文本内容进行清理
+    content = xssFilter.deepSanitize(content);
+    explanation = xssFilter.sanitize(explanation);
+    
+    // 过滤选项中的富文本内容
+    const sanitizedOptions = options.map(opt => {
+      if (opt === null || opt === undefined) {
+        return '';
+      }
+      if (typeof opt === 'string') {
+        return xssFilter.deepSanitize(opt);
+      }
+      if (typeof opt === 'object') {
+        // 递归处理对象属性
+        return Object.keys(opt).reduce((acc, key) => {
+          acc[key] = typeof opt[key] === 'string' ? xssFilter.deepSanitize(opt[key]) : opt[key];
+          return acc;
+        }, {});
+      }
+      return opt;
+    });
+    
     // 处理 options 参数，确保它是一个数组
-    const optionsJson = JSON.stringify(options || []);
+    const optionsJson = JSON.stringify(sanitizedOptions || []);
     
     const result = await db.run(
       'INSERT INTO questions (subject_id, subcategory_id, content, type, options, correct_answer, explanation, audio_url, image_url) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
@@ -297,16 +321,38 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { subjectId, subcategoryId, content, type, options, answer, explanation, audio, image } = req.body;
+    let { subjectId, subcategoryId, content, type, options, answer, explanation, audio, image } = req.body;
     
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' });
       return;
     }
     
+    // XSS 过滤 - 对富文本内容进行清理
+    content = xssFilter.deepSanitize(content);
+    explanation = xssFilter.sanitize(explanation);
+    
+    // 过滤选项中的富文本内容
+    const sanitizedOptions = options.map(opt => {
+      if (opt === null || opt === undefined) {
+        return '';
+      }
+      if (typeof opt === 'string') {
+        return xssFilter.deepSanitize(opt);
+      }
+      if (typeof opt === 'object') {
+        // 递归处理对象属性
+        return Object.keys(opt).reduce((acc, key) => {
+          acc[key] = typeof opt[key] === 'string' ? xssFilter.deepSanitize(opt[key]) : opt[key];
+          return acc;
+        }, {});
+      }
+      return opt;
+    });
+    
     await db.run(
       'UPDATE questions SET subject_id = ?, subcategory_id = ?, content = ?, type = ?, options = ?, correct_answer = ?, explanation = ?, audio_url = ?, image_url = ? WHERE id = ?',
-      [subjectId, subcategoryId, content, type, JSON.stringify(options), answer, explanation, audio, image, id]
+      [subjectId, subcategoryId, content, type, JSON.stringify(sanitizedOptions), answer, explanation, audio, image, id]
     );
     
     // 返回更新后的题目

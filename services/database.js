@@ -199,6 +199,19 @@ class Database {
           INDEX idx_quiz_session (quiz_session_id),
           INDEX idx_question_id (question_id),
           FOREIGN KEY (quiz_session_id) REFERENCES quiz_sessions(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建文件哈希表（用于文件去重）
+        `CREATE TABLE IF NOT EXISTS file_hashes (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          file_hash VARCHAR(64) NOT NULL UNIQUE,
+          file_path VARCHAR(255) NOT NULL,
+          file_type ENUM('image', 'audio') NOT NULL,
+          file_size INT NOT NULL,
+          ref_count INT DEFAULT 1,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_file_hash (file_hash),
+          INDEX idx_file_type (file_type)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
       ];
 
