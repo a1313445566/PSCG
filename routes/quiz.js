@@ -195,19 +195,69 @@ const generateFallbackSignature = (data, timestamp, userId) => {
   return result;
 };
 
+// 安全的签名脱敏函数（只显示前8位和后8位）
+const maskSignature = (signature) => {
+  if (!signature || signature.length < 20) {
+    return '***invalid***';
+  }
+  const start = signature.substring(0, 8);
+  const end = signature.substring(signature.length - 8);
+  return `${start}***${end}`;
+};
+
+// 安全的日志输出函数
+const logSignatureDebug = (message, data = {}) => {
+  const isProduction = process.env.NODE_ENV === 'production';
+  
+  // 生产环境只输出关键信息
+  if (isProduction) {
+    console.log(`[签名验证] ${message}`, {
+      ...data,
+      timestamp: undefined,
+      fullSignature: undefined,
+      secret: undefined
+    });
+  } else {
+    // 开发环境输出详细信息（脱敏）
+    console.log(`[签名验证] ${message}`, data);
+  }
+};
+
 // 验证签名的函数
 const validateSignature = (data, timestamp, signature, userId) => {
   try {
+    logSignatureDebug('开始验证签名', {
+      quizId: data.quizId,
+      userId,
+      hasTimestamp: !!timestamp,
+      hasSignature: !!signature,
+      answerCount: data.answers ? Object.keys(data.answers).length : 0
+    });
+    
     if (!data || !timestamp || !signature || !userId) {
-      console.log('签名验证失败: 缺少必要参数', { hasData: !!data, hasTimestamp: !!timestamp, hasSignature: !!signature, hasUserId: !!userId });
+      logSignatureDebug('❌ 验证失败: 缺少必要参数', {
+        hasData: !!data,
+        hasTimestamp: !!timestamp,
+        hasSignature: !!signature,
+        hasUserId: !!userId
+      });
       return false;
     }
     
     // 检查时间戳是否在合理范围内（5分钟内）
     const currentTime = Date.now();
     const timeDiff = Math.abs(currentTime - timestamp);
+    
+    logSignatureDebug('时间戳检查', {
+      timeDiff: `${Math.round(timeDiff / 1000)}秒`,
+      isValid: timeDiff <= 5 * 60 * 1000
+    });
+    
     if (timeDiff > 5 * 60 * 1000) {
-      console.log('签名验证失败: 时间戳超出范围', { currentTime, timestamp, timeDiff });
+      logSignatureDebug('❌ 验证失败: 时间戳超出范围', {
+        timeDiff: `${Math.round(timeDiff / 1000)}秒`,
+        maxAllowed: '300秒'
+      });
       return false;
     }
     
@@ -221,20 +271,37 @@ const validateSignature = (data, timestamp, signature, userId) => {
     const expectedSignature = generateSignature(signatureData, timestamp, userId);
     const fallbackSignature = generateFallbackSignature(signatureData, timestamp, userId);
     
-    // 支持 HMAC-SHA256（HTTPS环境）和 安全降级签名（HTTP环境）
-    const isValid = expectedSignature === signature || fallbackSignature === signature;
+    logSignatureDebug('签名生成完成', {
+      hmacLength: expectedSignature.length,
+      fallbackLength: fallbackSignature.length,
+      receivedLength: signature.length
+    });
     
-    if (!isValid) {
-      console.log('签名验证失败: 签名不匹配');
-      console.log('前端签名数据:', JSON.stringify(signatureData));
-      console.log('后端 HMAC 签名:', expectedSignature);
-      console.log('后端降级签名:', fallbackSignature);
-      console.log('前端传入签名:', signature);
+    // 支持 HMAC-SHA256（HTTPS环境）和 安全降级签名（HTTP环境）
+    const isHmacValid = expectedSignature === signature;
+    const isFallbackValid = fallbackSignature === signature;
+    const isValid = isHmacValid || isFallbackValid;
+    
+    if (isValid) {
+      logSignatureDebug('✅ 签名验证成功', {
+        method: isHmacValid ? 'HMAC-SHA256' : '降级签名',
+        signature: maskSignature(signature)
+      });
+    } else {
+      logSignatureDebug('❌ 验证失败: 签名不匹配', {
+        received: maskSignature(signature),
+        expectedHmac: maskSignature(expectedSignature),
+        expectedFallback: maskSignature(fallbackSignature),
+        hint: '请检查前后端签名密钥是否一致'
+      });
     }
     
     return isValid;
   } catch (error) {
-    console.error('签名验证失败:', error);
+    logSignatureDebug('❌ 验证异常', {
+      error: error.message,
+      stack: error.stack
+    });
     return false;
   }
 };

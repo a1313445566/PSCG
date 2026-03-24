@@ -210,8 +210,44 @@ const getSignatureSecret = () => {
   return secret;
 };
 
+// 安全的签名脱敏函数（只显示前8位和后8位）
+const maskSignature = (signature) => {
+  if (!signature || signature.length < 20) {
+    return '***invalid***';
+  }
+  const start = signature.substring(0, 8);
+  const end = signature.substring(signature.length - 8);
+  return `${start}***${end}`;
+};
+
+// 安全的日志输出函数
+const logSignatureDebug = (message, data = {}) => {
+  const isProduction = import.meta.env.PROD;
+  
+  // 生产环境只输出关键信息
+  if (isProduction) {
+    console.log(`[签名生成] ${message}`, {
+      ...data,
+      timestamp: undefined,
+      fullSignature: undefined,
+      secret: undefined,
+      answers: undefined
+    });
+  } else {
+    // 开发环境输出详细信息（脱敏）
+    console.log(`[签名生成] ${message}`, data);
+  }
+};
+
 // 生成签名（与后端保持一致）
 const generateSignature = async (data, timestamp, userId) => {
+  logSignatureDebug('开始生成签名', {
+    quizId: data.quizId,
+    userId,
+    answerCount: Object.keys(data.answers).length,
+    hasSecret: !!getSignatureSecret()
+  });
+  
   const secret = getSignatureSecret();
   // 按照固定顺序构建dataStr
   const dataStr = JSON.stringify(data) + timestamp + userId;
@@ -240,9 +276,17 @@ const generateSignature = async (data, timestamp, userId) => {
         .map(b => b.toString(16).padStart(2, '0'))
         .join('');
       
+      logSignatureDebug('✅ HMAC-SHA256 签名生成成功', {
+        method: 'HMAC-SHA256',
+        signature: maskSignature(hex),
+        length: hex.length
+      });
+      
       return hex;
     } catch (error) {
-      console.warn('Web Crypto API 失败，使用安全降级方案:', error);
+      logSignatureDebug('⚠️ HMAC 失败，切换到降级方案', {
+        error: error.message
+      });
     }
   }
   
@@ -268,6 +312,12 @@ const generateSignature = async (data, timestamp, userId) => {
   while (result.length < 16) {
     result = '0' + result;
   }
+  
+  logSignatureDebug('✅ 降级签名生成成功', {
+    method: '降级签名（非HTTPS环境）',
+    signature: maskSignature(result),
+    length: result.length
+  });
   
   return result;
 }
@@ -303,6 +353,13 @@ const submitAnswers = async () => {
     const timestamp = Date.now()
     const userId = localStorage.getItem('userId') || 'unknown'
     
+    logSignatureDebug('准备提交答案', {
+      quizId: quizStore.quizId,
+      userId,
+      answerCount: Object.keys(userAnswers.value).length,
+      timestamp
+    });
+    
     // 构建签名数据
     const signatureData = {
       quizId: quizStore.quizId,
@@ -313,6 +370,11 @@ const submitAnswers = async () => {
     // 生成签名
     const signature = await generateSignature(signatureData, timestamp, userId)
     
+    logSignatureDebug('签名生成完成，准备发送', {
+      signature: maskSignature(signature),
+      dataLength: JSON.stringify(signatureData).length
+    });
+    
     // 调用后端API提交答案
     const submitData = {
       quizId: quizStore.quizId,
@@ -322,6 +384,12 @@ const submitAnswers = async () => {
     }
     
     const apiUrl = `${getApiBaseUrl()}/quiz/submit`
+    
+    logSignatureDebug('发送请求到后端', {
+      url: apiUrl,
+      method: 'POST'
+    });
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
@@ -332,11 +400,22 @@ const submitAnswers = async () => {
     
     if (!response.ok) {
       const errorData = await response.json()
+      logSignatureDebug('❌ 提交失败', {
+        status: response.status,
+        error: errorData.error
+      });
       ElMessage.error(errorData.error || '提交答案失败')
       return
     }
     
     const result = await response.json()
+    
+    logSignatureDebug('✅ 提交成功', {
+      score: result.score,
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      points: result.points
+    });
     
     // 验证积分数据
     let validatedPoints = result.points || 0
