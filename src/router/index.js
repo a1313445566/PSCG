@@ -40,6 +40,11 @@ const routes = [
     path: '/leaderboard',
     name: 'Leaderboard',
     component: () => import('../views/LeaderboardView.vue')
+  },
+  {
+    path: '/docs',
+    name: 'Docs',
+    component: () => import('../views/DocsView.vue')
   }
 ]
 
@@ -57,8 +62,8 @@ router.beforeEach((to, from, next) => {
   // 检查用户是否已登录
   const isLoggedIn = !!localStorage.getItem('studentId')
   
-  // 允许访问后台管理页面，不需要学生登录
-  if (to.path === '/admin') {
+  // 允许访问后台管理页面和文档中心，不需要学生登录
+  if (to.path === '/admin' || to.path === '/docs') {
     next()
   }
   // 如果用户已登录

@@ -1,9 +1,10 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
+import docsGenerator from './vite-plugins/docsGenerator.js'
 
 // https://vite.dev/config/
 export default defineConfig({
-  plugins: [vue()],
+  plugins: [vue(), docsGenerator()],
   base: './',
   build: {
     chunkSizeWarningLimit: 1000,

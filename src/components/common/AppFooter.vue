@@ -11,6 +11,7 @@
           <li><router-link to="/home">首页</router-link></li>
           <li><router-link to="/leaderboard">排行榜</router-link></li>
           <li><router-link to="/admin">后台管理</router-link></li>
+          <li><router-link to="/docs">文档中心</router-link></li>
         </ul>
       </div>
       <div class="footer-section">
