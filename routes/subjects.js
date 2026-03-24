@@ -28,6 +28,7 @@ router.get('/', async (req, res) => {
       id: subject.id,
       name: subject.name,
       iconIndex: subject.icon_index,
+      showInHistoryQuiz: subject.show_in_history_quiz === 1,
       subcategories: subject.subcategories.map(subcat => ({
         id: subcat.id,
         subjectId: subcat.subject_id,
@@ -144,18 +145,20 @@ router.put('/sort', async (req, res) => {
       return;
     }
     
-    // 开启事务
-    await db.run('START TRANSACTION');
+    // 获取连接并开启事务
+    const connection = await db.pool.getConnection();
     
     try {
+      await connection.beginTransaction();
+      
       // 更新每个学科的排序值
       for (let i = 0; i < subjectOrder.length; i++) {
         const subjectId = subjectOrder[i];
-        await db.run('UPDATE subjects SET sort_order = ? WHERE id = ?', [i, subjectId]);
+        await connection.execute('UPDATE subjects SET sort_order = ? WHERE id = ?', [i, subjectId]);
       }
       
       // 提交事务
-      await db.run('COMMIT');
+      await connection.commit();
       
       // 清除缓存
       cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
@@ -163,8 +166,19 @@ router.put('/sort', async (req, res) => {
       res.json({ success: true });
     } catch (error) {
       // 回滚事务
-      await db.run('ROLLBACK');
+      if (connection) {
+        await connection.rollback();
+      }
       throw error;
+    } finally {
+      // 释放连接
+      if (connection) {
+        try {
+          connection.release();
+        } catch (e) {
+          console.error('释放连接失败:', e);
+        }
+      }
     }
   } catch (error) {
     console.error('更新学科排序失败:', error);
@@ -176,14 +190,17 @@ router.put('/sort', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, iconIndex } = req.body;
+    const { name, iconIndex, showInHistoryQuiz } = req.body;
     
     if (!name) {
       res.status(400).json({ error: '学科名称不能为空' });
       return;
     }
     
-    await db.run('UPDATE subjects SET name = ?, icon_index = ? WHERE id = ?', [name, iconIndex, id]);
+    // 将 showInHistoryQuiz 转换为 0/1
+    const showInHistoryQuizValue = showInHistoryQuiz ? 1 : 0;
+    
+    await db.run('UPDATE subjects SET name = ?, icon_index = ?, show_in_history_quiz = ? WHERE id = ?', [name, iconIndex, showInHistoryQuizValue, id]);
     
     // 清除缓存
     cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
@@ -194,7 +211,8 @@ router.put('/:id', async (req, res) => {
     const formattedSubject = {
       id: updatedSubject.id,
       name: updatedSubject.name,
-      iconIndex: updatedSubject.icon_index
+      iconIndex: updatedSubject.icon_index,
+      showInHistoryQuiz: updatedSubject.show_in_history_quiz === 1
     };
     res.json(formattedSubject);
   } catch (error) {
@@ -325,18 +343,20 @@ router.put('/:subjectId/subcategories/sort', async (req, res) => {
       return;
     }
     
-    // 开启事务
-    await db.run('START TRANSACTION');
+    // 获取连接并开启事务
+    const connection = await db.pool.getConnection();
     
     try {
+      await connection.beginTransaction();
+      
       // 更新每个子分类的排序值
       for (let i = 0; i < subcategoryOrder.length; i++) {
         const subcategoryId = subcategoryOrder[i];
-        await db.run('UPDATE subcategories SET sort_order = ? WHERE id = ? AND subject_id = ?', [i, subcategoryId, subjectId]);
+        await connection.execute('UPDATE subcategories SET sort_order = ? WHERE id = ? AND subject_id = ?', [i, subcategoryId, subjectId]);
       }
       
       // 提交事务
-      await db.run('COMMIT');
+      await connection.commit();
       
       // 清除缓存
       cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
@@ -345,8 +365,19 @@ router.put('/:subjectId/subcategories/sort', async (req, res) => {
       res.json({ success: true });
     } catch (error) {
       // 回滚事务
-      await db.run('ROLLBACK');
+      if (connection) {
+        await connection.rollback();
+      }
       throw error;
+    } finally {
+      // 释放连接
+      if (connection) {
+        try {
+          connection.release();
+        } catch (e) {
+          console.error('释放连接失败:', e);
+        }
+      }
     }
   } catch (error) {
     console.error('更新子分类排序失败:', error);

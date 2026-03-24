@@ -215,7 +215,7 @@ class Database {
     }
   }
 
-  // 添加索引
+  // 添加索引和新字段
   async addIndexes() {
     try {
       // 检查并添加 quiz_sessions 表的索引
@@ -236,6 +236,17 @@ class Database {
         await this.pool.execute(
           `ALTER TABLE quiz_attempts ADD INDEX idx_quiz_question (quiz_session_id, question_id)`
         );
+      }
+
+      // 检查并添加 subjects 表的 show_in_history_quiz 字段
+      const subjectsColumns = await this.pool.execute(
+        `SHOW COLUMNS FROM subjects LIKE 'show_in_history_quiz'`
+      );
+      if (subjectsColumns[0].length === 0) {
+        await this.pool.execute(
+          `ALTER TABLE subjects ADD COLUMN show_in_history_quiz TINYINT(1) DEFAULT 0`
+        );
+        console.log('subjects 表添加 show_in_history_quiz 字段成功');
       }
 
       console.log('索引添加成功');

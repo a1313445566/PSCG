@@ -416,18 +416,18 @@ export const useQuestionStore = defineStore('question', {
     },
     
     // 更新学科
-    async updateSubject(subjectId, subjectName, iconIndex = 0) {
+    async updateSubject(subjectId, subjectName, iconIndex = 0, showInHistoryQuiz = false) {
       try {
         this.isLoading = true
         this.error = null
-        const result = await updateSubjectApi(subjectId, subjectName, iconIndex)
+        const result = await updateSubjectApi(subjectId, subjectName, iconIndex, showInHistoryQuiz)
         if (!result) {
           throw new Error('更新学科失败')
         }
         // 直接更新本地状态，避免重新加载所有数据
         const index = this.subjects.findIndex(s => s.id === subjectId)
         if (index !== -1) {
-          this.subjects[index] = { ...this.subjects[index], name: subjectName, iconIndex }
+          this.subjects[index] = { ...this.subjects[index], name: subjectName, iconIndex, showInHistoryQuiz }
         }
       } catch (error) {
         this.error = error.message

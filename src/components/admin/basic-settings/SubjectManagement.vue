@@ -47,24 +47,27 @@
                 <!-- 操作按钮 -->
                 <div style="display: flex; gap: 8px;">
                   <el-button
-                    type="text"
+                    link
+                    type="primary"
                     @click="startEdit(data)"
-                    style="color: #409eff; font-size: 14px;"
+                    style="font-size: 14px;"
                   >
                     编辑
                   </el-button>
                   <el-button
                     v-if="data.type === 'subject'"
-                    type="text"
+                    link
+                    type="primary"
                     @click="addSubcategory(data.id)"
-                    style="color: #409eff; font-size: 14px;"
+                    style="font-size: 14px;"
                   >
                     添加题库
                   </el-button>
                   <el-button
-                    type="text"
+                    link
+                    type="danger"
                     @click="deleteNode(data)"
-                    style="color: #f56c6c; font-size: 14px;"
+                    style="font-size: 14px;"
                   >
                     删除
                   </el-button>
@@ -99,18 +102,29 @@
                     <el-option label="困难" value="5" />
                   </el-select>
                 </div>
+                <!-- 高级闯关显示设置（仅学科） -->
+                <div v-if="editingData.type === 'subject'" style="display: flex; align-items: center; gap: 12px; padding: 8px 0;">
+                  <el-switch
+                    v-model="editingData.showInHistoryQuiz"
+                    active-text="显示在高级闯关里面"
+                    inactive-text=""
+                  />
+                  <span style="font-size: 14px; color: #909399;">开启后该学科会显示在首页"高级闯关"卡片中</span>
+                </div>
                 <div style="display: flex; gap: 8px; justify-content: flex-end;">
                   <el-button
-                    type="text"
+                    link
+                    type="success"
                     @click="saveEdit"
-                    style="color: #67c23a; font-size: 14px;"
+                    style="font-size: 14px;"
                   >
                     保存
                   </el-button>
                   <el-button
-                    type="text"
+                    link
+                    type="info"
                     @click="cancelEdit"
-                    style="color: #909399; font-size: 14px;"
+                    style="font-size: 14px;"
                   >
                     取消
                   </el-button>
@@ -235,6 +249,7 @@ const loadNode = async (node, resolve) => {
         label: subject.name,
         icon: subjectIcons[subject.iconIndex || 0],
         type: 'subject',
+        showInHistoryQuiz: subject.showInHistoryQuiz || false,
         hasChildren: subject.subcategories && subject.subcategories.length > 0
       }));
       
@@ -406,6 +421,8 @@ const startEdit = (data) => {
   editingData.value.iconIndex = subjectIcons.indexOf(data.icon);
   // 确保name字段正确赋值
   editingData.value.name = data.label;
+  // 初始化 showInHistoryQuiz（仅学科）
+  editingData.value.showInHistoryQuiz = data.showInHistoryQuiz || false;
   data.isEditing = true;
   // 保存当前编辑的节点引用
   editingData.value.nodeRef = data;
@@ -421,10 +438,12 @@ const saveEdit = async () => {
   loading.value = true;
   try {
     if (editingData.value.type === 'subject') {
+      // 使用 store 方法更新学科，同步更新本地状态
       await questionStore.updateSubject(
         editingData.value.id,
         editingData.value.name.trim(),
-        editingData.value.iconIndex
+        editingData.value.iconIndex,
+        editingData.value.showInHistoryQuiz || false
       );
     } else if (editingData.value.type === 'subcategory') {
       await questionStore.updateSubcategory(
@@ -445,8 +464,6 @@ const saveEdit = async () => {
     if (editingData.value && editingData.value.nodeRef) {
       editingData.value.nodeRef.isEditing = false;
     }
-    // 重新加载数据，确保前端显示最新数据
-    await questionStore.loadData();
     // 强制刷新树组件
     treeVisible.value = false;
     // 等待DOM更新

@@ -106,11 +106,11 @@ export const addSubject = async (name, iconIndex = 0) => {
 };
 
 // 更新学科
-export const updateSubject = async (subjectId, name, iconIndex = 0) => {
+export const updateSubject = async (subjectId, name, iconIndex = 0, showInHistoryQuiz = false) => {
   try {
     return await fetchApi(`${API_BASE_URL}/subjects/${subjectId}`, {
       method: 'PUT',
-      body: JSON.stringify({ name, iconIndex })
+      body: JSON.stringify({ name, iconIndex, showInHistoryQuiz })
     });
   } catch (error) {
 

@@ -40,18 +40,35 @@
       </div>
       
       <div class="subject-section">
-        <h3 class="section-title">📚 选择学科</h3>
-        <div class="subject-grid" v-if="subjects.length > 0">
+        <h3 class="section-title">📚 基础闯关</h3>
+        <div class="subject-grid" v-if="normalSubjects.length > 0">
           <SubjectCard 
-            v-for="subject in subjects" 
+            v-for="subject in normalSubjects" 
             :key="subject.id"
             :subject="subject"
             :questions="questions"
             @select="selectSubject"
           />
         </div>
-        <div class="subject-grid skeleton-grid" v-else>
+        <div class="subject-grid skeleton-grid" v-else-if="subjects.length === 0">
           <SkeletonLoader v-for="i in 4" :key="i" type="subject-card" />
+        </div>
+        <div v-else class="empty-tip">
+          <p>所有学科都已设置为历史机测</p>
+        </div>
+      </div>
+      
+      <!-- 高级闯关卡片 -->
+      <div class="subject-section" v-if="historyQuizSubjects.length > 0">
+        <h3 class="section-title">📖 高级闯关</h3>
+        <div class="subject-grid">
+          <SubjectCard 
+            v-for="subject in historyQuizSubjects" 
+            :key="subject.id"
+            :subject="subject"
+            :questions="questions"
+            @select="selectSubject"
+          />
         </div>
       </div>
       
@@ -159,6 +176,16 @@ const subjects = computed(() => {
   return questionStore.subjects;
 })
 const questions = computed(() => questionStore.questions)
+
+// 普通学科（未设置显示在历史机测）
+const normalSubjects = computed(() => {
+  return subjects.value.filter(subject => subject.showInHistoryQuiz !== true);
+})
+
+// 历史机测学科（筛选出设置了 showInHistoryQuiz 的学科）
+const historyQuizSubjects = computed(() => {
+  return subjects.value.filter(subject => subject.showInHistoryQuiz === true);
+})
 
 // 用户信息
 const currentStudentId = computed(() => localStorage.getItem('studentId'))
@@ -475,6 +502,13 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
   gap: 2rem;
+}
+
+.empty-tip {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-secondary);
+  font-size: 1.1rem;
 }
 
 .leaderboard-preview {
