@@ -393,11 +393,15 @@ const submitAnswers = async () => {
       dataLength: JSON.stringify(signatureData).length
     });
     
+    // 计算用时（秒）
+    const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
+    
     // 调用后端API提交答案
     const submitData = {
       quizId: quizStore.quizId,
       answers: userAnswers.value,
       shuffleMappings, // 添加打乱映射（实际是 reverseMapping）
+      timeSpent: timeSpentSeconds,
       timestamp,
       signature
     }
@@ -486,7 +490,6 @@ const submitAnswers = async () => {
     }
     
     // 存储用时数据到localStorage
-    const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
     localStorage.setItem('timeSpent', timeSpentSeconds.toString())
     
     // 跳转到结果页面

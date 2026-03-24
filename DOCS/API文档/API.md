@@ -1145,14 +1145,224 @@
   }
   ```
 
-## 16. 错误码说明
+## 16. 管理员认证 API
+
+### 16.1 管理员登录
+- **请求方法**：POST
+- **API路径**：`/api/admin/login`
+- **请求体**：
+  ```json
+  {
+    "username": "admin",
+    "password": "your_password"
+  }
+  ```
+- **功能**：管理员登录，返回 JWT Token
+- **响应**：
+  ```json
+  {
+    "success": true,
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "username": "admin"
+  }
+  ```
+
+### 16.2 验证 Token
+- **请求方法**：GET
+- **API路径**：`/api/admin/verify`
+- **请求头**：`Authorization: Bearer <token>`
+- **功能**：验证 Token 是否有效
+- **响应**：
+  ```json
+  {
+    "success": true,
+    "username": "admin"
+  }
+  ```
+
+### 16.3 修改密码
+- **请求方法**：POST
+- **API路径**：`/api/admin/change-password`
+- **请求头**：`Authorization: Bearer <token>`
+- **请求体**：
+  ```json
+  {
+    "oldPassword": "current_password",
+    "newPassword": "new_password"
+  }
+  ```
+- **功能**：修改管理员密码
+- **响应**：
+  ```json
+  {
+    "success": true,
+    "message": "密码修改成功"
+  }
+  ```
+
+### 16.4 数据管理二次验证
+- **请求方法**：POST
+- **API路径**：`/api/admin/verify-data-management`
+- **请求头**：`Authorization: Bearer <token>`
+- **请求体**：
+  ```json
+  {
+    "password": "admin_password"
+  }
+  ```
+- **功能**：数据管理操作的二次验证
+- **响应**：
+  ```json
+  {
+    "success": true,
+    "message": "验证成功"
+  }
+  ```
+
+## 17. 安全监控 API
+
+### 17.1 获取安全状态
+- **请求方法**：GET
+- **API路径**：`/api/security/status`
+- **请求头**：`Authorization: Bearer <token>`
+- **功能**：获取系统安全状态
+- **响应**：
+  ```json
+  {
+    "totalRequests": 1000,
+    "blockedIPs": ["192.168.1.100"],
+    "blockedList": [
+      {
+        "ip": "192.168.1.100",
+        "blockedAt": "2024-03-24T10:00:00Z",
+        "reason": "请求过于频繁"
+      }
+    ]
+  }
+  ```
+
+### 17.2 获取封禁 IP 列表
+- **请求方法**：GET
+- **API路径**：`/api/security/blocked-ips`
+- **请求头**：`Authorization: Bearer <token>`
+- **功能**：获取当前被封禁的 IP 列表
+- **响应**：
+  ```json
+  {
+    "blockedIPs": ["192.168.1.100", "192.168.1.101"]
+  }
+  ```
+
+### 17.3 解封指定 IP
+- **请求方法**：POST
+- **API路径**：`/api/security/unblock-ip`
+- **请求头**：`Authorization: Bearer <token>`
+- **请求体**：
+  ```json
+  {
+    "ip": "192.168.1.100"
+  }
+  ```
+- **功能**：解封指定 IP
+- **响应**：
+  ```json
+  {
+    "success": true,
+    "message": "IP 已解封"
+  }
+  ```
+
+### 17.4 解封所有 IP
+- **请求方法**：POST
+- **API路径**：`/api/security/unblock-all`
+- **请求头**：`Authorization: Bearer <token>`
+- **功能**：解封所有被封禁的 IP
+- **响应**：
+  ```json
+  {
+    "success": true,
+    "message": "已解封所有 IP",
+    "unblockedCount": 2
+  }
+  ```
+
+## 18. 答题流程 API
+
+### 18.1 开始答题
+- **请求方法**：POST
+- **API路径**：`/api/quiz/start`
+- **请求体**：
+  ```json
+  {
+    "studentId": "123",
+    "grade": "1",
+    "class": "1",
+    "subjectId": 1,
+    "subcategoryId": 1,
+    "isErrorCollection": false
+  }
+  ```
+- **功能**：开始答题会话，获取题目
+- **响应**：
+  ```json
+  {
+    "quizId": "uuid-string",
+    "questions": [
+      {
+        "id": 1,
+        "content": "题目内容",
+        "options": ["选项A", "选项B", "选项C", "选项D"],
+        "type": "single",
+        "difficulty": 1
+      }
+    ],
+    "totalQuestions": 10
+  }
+  ```
+
+### 18.2 提交答案
+- **请求方法**：POST
+- **API路径**：`/api/quiz/submit`
+- **请求体**：
+  ```json
+  {
+    "quizId": "uuid-string",
+    "answers": {"1": "A", "2": "B"},
+    "shuffleMappings": {"1": {"0": 2, "1": 0, "2": 3, "3": 1}},
+    "timestamp": 1711286400000,
+    "signature": "signature-string",
+    "timeSpent": 120
+  }
+  ```
+- **功能**：提交答案并获取结果
+- **响应**：
+  ```json
+  {
+    "score": 80,
+    "correctCount": 8,
+    "totalQuestions": 10,
+    "points": 6,
+    "results": [
+      {
+        "questionId": 1,
+        "userAnswer": "A",
+        "correctAnswer": "B",
+        "isCorrect": false,
+        "explanation": "解析内容"
+      }
+    ]
+  }
+  ```
+
+## 19. 错误码说明
 
 | 错误码 | 描述 |
 |--------|------|
 | 400 | 请求参数错误 |
-| 401 | 未授权 |
-| 403 | 禁止访问 |
+| 401 | 未授权/Token过期/签名验证失败 |
+| 403 | 禁止访问/IP被封禁 |
 | 404 | 资源不存在 |
+| 429 | 请求过于频繁 |
 | 500 | 服务器内部错误 |
 | 503 | 服务不可用 |
 

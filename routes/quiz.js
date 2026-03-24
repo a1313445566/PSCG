@@ -364,12 +364,15 @@ const mapAnswerToOriginal = (userAnswer, reverseMapping) => {
 // 提交答案API - 应用严格限流
 router.post('/submit', submitLimiter.middleware(), async (req, res) => {
   try {
-    const { quizId, answers, shuffleMappings, timestamp, signature } = req.body;
+    const { quizId, answers, shuffleMappings, timestamp, signature, timeSpent } = req.body;
     
     // 验证必填参数
     if (!quizId || !answers || !timestamp || !signature) {
       return res.status(400).json({ error: '缺少必填参数' });
     }
+    
+    // 用时默认为 0，确保是数字
+    const timeSpentSeconds = parseInt(timeSpent) || 0;
     
     // 【优化】先进行基础验证，再查询数据库
     
@@ -583,7 +586,7 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
     const answerRecordResult = await db.run(
       `INSERT INTO answer_records (user_id, subject_id, subcategory_id, total_questions, correct_count, time_spent)
        VALUES (?, ?, ?, ?, ?, ?)`,
-      [userId, session.subject_id, session.subcategory_id, totalQuestions, correctCount, 0]
+      [userId, session.subject_id, session.subcategory_id, totalQuestions, correctCount, timeSpentSeconds]
     );
     
     const answerRecordId = answerRecordResult.insertId;
