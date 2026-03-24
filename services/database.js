@@ -249,6 +249,24 @@ class Database {
         console.log('subjects 表添加 show_in_history_quiz 字段成功');
       }
 
+      // 新增：questions 表性能优化索引
+      const questionIndexes = [
+        { name: 'idx_questions_type', sql: 'ALTER TABLE questions ADD INDEX idx_questions_type (type)' },
+        { name: 'idx_questions_created', sql: 'ALTER TABLE questions ADD INDEX idx_questions_created (created_at)' },
+        { name: 'idx_questions_filter', sql: 'ALTER TABLE questions ADD INDEX idx_questions_filter (subject_id, subcategory_id, type)' }
+      ];
+
+      for (const index of questionIndexes) {
+        const existing = await this.pool.execute(
+          `SHOW INDEXES FROM questions WHERE Key_name = ?`,
+          [index.name]
+        );
+        if (existing[0].length === 0) {
+          await this.pool.execute(index.sql);
+          console.log(`questions 表添加 ${index.name} 索引成功`);
+        }
+      }
+
       console.log('索引添加成功');
     } catch (error) {
       console.error('添加索引失败:', error);

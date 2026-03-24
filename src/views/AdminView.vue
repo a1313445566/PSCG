@@ -52,12 +52,11 @@
       <!-- 题目管理 -->
       <el-tab-pane label="题目管理" name="questions">
         <div class="question-management">
-          <QuestionList 
-            :questions="questions"
+          <QuestionList
+            ref="questionListRef"
             :subjects="subjects"
             @edit-question="editQuestion"
             @delete-question="deleteQuestion"
-            @batch-delete-questions="batchDeleteQuestions"
             @show-add-dialog="showAddQuestionDialog"
             @show-batch-add-dialog="batchAddDialogVisible = true"
           />
@@ -616,7 +615,6 @@ const router = useRouter()
 // 状态管理
 const activeTab = ref('basic-settings')
 const subjects = computed(() => questionStore.subjects)
-const questions = computed(() => questionStore.questions)
 const userStats = computed(() => questionStore.userStats)
 const recentRecords = computed(() => questionStore.recentRecords)
 const grades = computed(() => questionStore.grades)
@@ -672,6 +670,7 @@ const dialogVisible = ref(false)
 const isEditing = ref(false)
 const batchAddDialogVisible = ref(false)
 const selectedQuestion = ref(null)
+const questionListRef = ref(null)
 
 // 子分类管理相关
 const subcategoryDialogVisible = ref(false)
@@ -723,7 +722,7 @@ const handlePasswordVerify = async (isVerified) => {
     // 加载题目和学科数据
     await questionStore.loadData()
     // 加载所有题目数据
-    await questionStore.loadQuestions(null, null, true)
+    await questionStore.loadQuestions({ excludeContent: true })
   }
 }
 
@@ -879,25 +878,6 @@ const handleChangePassword = async () => {
   }
 }
 
-const batchDeleteQuestions = (questionIds) => {
-  if (!questionIds || questionIds.length === 0) return
-  
-  ElMessageBox.confirm(`确定要删除选中的 ${questionIds.length} 道题目吗？`, '删除确认', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning',
-  })
-  .then(() => {
-    questionIds.forEach(id => {
-      questionStore.deleteQuestion(id)
-    })
-    ElMessage.success('题目批量删除成功')
-  })
-  .catch(() => {
-    // 取消删除
-  })
-}
-
 const showAddQuestionDialog = () => {
   isEditing.value = false
   selectedQuestion.value = null
@@ -916,6 +896,8 @@ const editQuestion = (question) => {
 // 删除题目
 const deleteQuestion = (questionId) => {
   questionStore.deleteQuestion(questionId)
+  // 刷新题目列表
+  questionListRef.value?.refresh()
 }
 
 const saveQuestion = async (formData) => {
@@ -927,8 +909,10 @@ const saveQuestion = async (formData) => {
       await questionStore.addQuestion(formData)
       ElMessage.success('题目添加成功！')
     }
-    
+
     dialogVisible.value = false
+    // 刷新题目列表
+    questionListRef.value?.refresh()
   } catch (error) {
 
     ElMessage.error('保存题目失败，请稍后重试！')
@@ -1184,6 +1168,8 @@ const handleBatchAddQuestions = async (questions) => {
       await questionStore.addQuestion(question)
     }
     ElMessage.success(`成功添加 ${questions.length} 道题目`)
+    // 刷新题目列表
+    questionListRef.value?.refresh()
   } catch (error) {
 
     ElMessage.error('批量添加题目失败，请稍后重试')
@@ -1504,7 +1490,7 @@ onMounted(async () => {
     // 加载题目和学科数据
     await questionStore.loadData()
     // 加载所有题目数据
-    await questionStore.loadQuestions(null, null, true)
+    await questionStore.loadQuestions({ excludeContent: true })
     // 加载排行榜数据
     await questionStore.loadUserStats()
     await questionStore.loadRecentRecords()

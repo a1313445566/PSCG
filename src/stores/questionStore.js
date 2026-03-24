@@ -1,8 +1,6 @@
 import { defineStore } from 'pinia'
 import { 
   initDatabase, 
-  getSubjects, 
-  getQuestions, 
   addSubject, 
   deleteSubject, 
   addSubcategory, 
@@ -23,7 +21,6 @@ import {
   deleteClass
 } from '../utils/database'
 import { getApiBaseUrl } from '../utils/database'
-import { apiCache } from '../utils/apiCache'
 
 // 主题和题目数据 store
 export const useQuestionStore = defineStore('question', {
@@ -38,6 +35,11 @@ export const useQuestionStore = defineStore('question', {
     errorCollectionStats: {}, // 错题巩固统计，格式: { questionId: { correctCount: number } }
     subcategoryStats: {}, // 子分类统计，格式: { subcategoryId: { questionCount, avgDifficulty } }
     userSubcategoryStats: {}, // 用户题库统计，格式: { subcategoryId: { accuracy, totalAttempts, recentAccuracy } }
+    pagination: {
+      total: 0,
+      page: 1,
+      limit: 50
+    },
     isLoading: false,
     error: null
   }),
@@ -122,7 +124,7 @@ export const useQuestionStore = defineStore('question', {
     // 获取并缓存数据
     async fetchAndCacheCoreData() {
       // 并行请求核心数据
-      const [subjectsData, gradesData, classesData, subjectStatsData] = await Promise.all([
+      const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] = await Promise.all([
         fetch(`${getApiBaseUrl()}/subjects`)
           .then(res => res.json())
           .catch(() => []),
@@ -134,15 +136,23 @@ export const useQuestionStore = defineStore('question', {
           .catch(() => []),
         fetch(`${getApiBaseUrl()}/subjects/stats`)
           .then(res => res.json())
-          .catch(() => [])
+          .catch(() => []),
+        // 加载子分类统计
+        fetch(`${getApiBaseUrl()}/questions/subcategories/stats`)
+          .then(res => res.json())
+          .catch(() => ({}))
       ])
 
-      // 合并题目数量统计
+      // 合并题目数量统计（学科和子分类）
       this.subjects = subjectsData.map(subject => {
         const stat = subjectStatsData.find(s => s.id === subject.id)
         return {
           ...subject,
-          questionCount: stat ? stat.questionCount : 0
+          questionCount: stat ? stat.questionCount : 0,
+          subcategories: (subject.subcategories || []).map(sub => ({
+            ...sub,
+            questionCount: subcategoryStatsData[sub.id]?.questionCount || 0
+          }))
         }
       })
       this.grades = gradesData
@@ -158,41 +168,74 @@ export const useQuestionStore = defineStore('question', {
       localStorage.setItem('coreDataExpiry', Date.now() + 24 * 60 * 60 * 1000) // 24小时过期
     },
     
-    // 加载题目数据（按需加载）
-    async loadQuestions(subjectId = null, subcategoryId = null, excludeContent = false) {
+    // 加载题目数据（支持服务端分页）
+    async loadQuestions(params = {}) {
       try {
         this.isLoading = true
         this.error = null
 
+        const {
+          subjectId = null,
+          subcategoryId = null,
+          type = null,
+          keyword = null,
+          page = 1,
+          limit = 50,
+          excludeContent = false
+        } = params
+
         let url = `${getApiBaseUrl()}/questions`
-        const params = []
+        const queryParams = []
 
         if (subjectId) {
-          params.push(`subjectId=${subjectId}`)
+          queryParams.push(`subjectId=${subjectId}`)
         }
         if (subcategoryId) {
-          params.push(`subcategoryId=${subcategoryId}`)
+          queryParams.push(`subcategoryId=${subcategoryId}`)
         }
-        // 添加较大的limit参数，确保获取所有题目
-        params.push('limit=1000')
-        // 排除内容字段以提升性能
+        if (type) {
+          queryParams.push(`type=${type}`)
+        }
+        if (keyword) {
+          queryParams.push(`keyword=${encodeURIComponent(keyword)}`)
+        }
+        queryParams.push(`page=${page}`)
+        queryParams.push(`limit=${limit}`)
         if (excludeContent) {
-          params.push('excludeContent=true')
+          queryParams.push('excludeContent=true')
         }
 
-        if (params.length > 0) {
-          url += `?${params.join('&')}`
+        if (queryParams.length > 0) {
+          url += `?${queryParams.join('&')}`
         }
 
         const response = await fetch(url)
         if (response.ok) {
-          const data = await response.json()
-          this.questions = Array.isArray(data) ? data : (data.questions || []) // 确保是数组
+          const result = await response.json()
+          // 适配新的 API 返回格式 { data, total, page, limit }
+          if (result.data !== undefined) {
+            // 新格式
+            this.questions = Array.isArray(result.data) ? result.data : []
+            this.pagination = {
+              total: result.total || 0,
+              page: result.page || page,
+              limit: result.limit || limit
+            }
+            return result
+          } else {
+            // 兼容旧格式（数组）
+            this.questions = Array.isArray(result) ? result : (result.questions || [])
+            this.pagination = {
+              total: this.questions.length,
+              page: page,
+              limit: limit
+            }
+            return { data: this.questions, total: this.questions.length, page, limit }
+          }
         }
       } catch (error) {
         this.error = error.message
-        this.questions = [] // 发生错误时设置为空数组
-
+        this.questions = []
       } finally {
         this.isLoading = false
       }
