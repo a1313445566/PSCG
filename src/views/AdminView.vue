@@ -34,6 +34,8 @@
             :min-question-count="minQuestionCount"
             :max-question-count="maxQuestionCount"
             :fixed-question-count-value="fixedQuestionCountValue"
+            :subjects="subjects"
+            :subject-question-counts="subjectQuestionCounts"
             @update-settings="updateAnswerSettings"
           />
           
@@ -659,6 +661,10 @@ const maxQuestionCount = computed({
 const fixedQuestionCountValue = computed({
   get: () => settingsStore.settings.fixedQuestionCountValue,
   set: (value) => { settingsStore.settings.fixedQuestionCountValue = value }
+})
+const subjectQuestionCounts = computed({
+  get: () => settingsStore.settings.subjectQuestionCounts,
+  set: (value) => { settingsStore.settings.subjectQuestionCounts = value }
 })
 
 // 题目管理相关
@@ -1455,7 +1461,8 @@ const updateAnswerSettings = async (settings) => {
     fixedQuestionCount: settings.fixedQuestionCount.toString(),
     minQuestionCount: settings.minQuestionCount.toString(),
     maxQuestionCount: settings.maxQuestionCount.toString(),
-    fixedQuestionCountValue: settings.fixedQuestionCountValue.toString()
+    fixedQuestionCountValue: settings.fixedQuestionCountValue.toString(),
+    subjectQuestionCounts: settings.subjectQuestionCounts
   })
   if (success) {
     ElMessage.success('答题设置更新成功！')

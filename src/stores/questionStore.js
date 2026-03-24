@@ -978,7 +978,8 @@ export const useSettingsStore = defineStore('settings', {
       fixedQuestionCount: false,
       minQuestionCount: 1,
       maxQuestionCount: 10,
-      fixedQuestionCountValue: 5
+      fixedQuestionCountValue: 5,
+      subjectQuestionCounts: {} // 学科独立题目数量配置
     },
     isLoading: false,
     error: null
@@ -992,6 +993,26 @@ export const useSettingsStore = defineStore('settings', {
         return state.settings.fixedQuestionCountValue
       }
       return Math.floor(Math.random() * (state.settings.maxQuestionCount - state.settings.minQuestionCount + 1)) + state.settings.minQuestionCount
+    },
+    // 根据学科ID获取题目数量
+    getQuestionCountForSubject: (state) => (subjectId) => {
+      const config = state.settings.subjectQuestionCounts?.[subjectId]
+      
+      // 如果学科有独立配置且已启用
+      if (config?.enabled) {
+        if (config.fixed) {
+          return config.value
+        }
+        return Math.floor(Math.random() * (config.max - config.min + 1)) + config.min
+      }
+      
+      // 否则使用全局默认
+      if (state.settings.fixedQuestionCount) {
+        return state.settings.fixedQuestionCountValue
+      }
+      return Math.floor(Math.random() * 
+        (state.settings.maxQuestionCount - state.settings.minQuestionCount + 1)
+      ) + state.settings.minQuestionCount
     }
   },
   actions: {
@@ -1009,6 +1030,17 @@ export const useSettingsStore = defineStore('settings', {
           this.settings.minQuestionCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
           this.settings.maxQuestionCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
           this.settings.fixedQuestionCountValue = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+          // 加载学科独立题目数量配置
+          if (settings.subjectQuestionCounts) {
+            try {
+              const parsed = settings.subjectQuestionCounts.replace(/'/g, '')
+              this.settings.subjectQuestionCounts = JSON.parse(parsed)
+            } catch (e) {
+              this.settings.subjectQuestionCounts = {}
+            }
+          } else {
+            this.settings.subjectQuestionCounts = {}
+          }
           // 加载界面名称
           if (settings.interfaceName) {
             this.interfaceName = settings.interfaceName
@@ -1042,6 +1074,17 @@ export const useSettingsStore = defineStore('settings', {
           this.settings.minQuestionCount = parseInt(newSettings.minQuestionCount?.replace(/'/g, '')) || 3
           this.settings.maxQuestionCount = parseInt(newSettings.maxQuestionCount?.replace(/'/g, '')) || 5
           this.settings.fixedQuestionCountValue = parseInt(newSettings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+          // 更新学科独立题目数量配置
+          if (newSettings.subjectQuestionCounts) {
+            try {
+              const parsed = typeof newSettings.subjectQuestionCounts === 'string' 
+                ? newSettings.subjectQuestionCounts.replace(/'/g, '')
+                : JSON.stringify(newSettings.subjectQuestionCounts)
+              this.settings.subjectQuestionCounts = JSON.parse(parsed)
+            } catch (e) {
+              this.settings.subjectQuestionCounts = {}
+            }
+          }
           return true
         }
         return false

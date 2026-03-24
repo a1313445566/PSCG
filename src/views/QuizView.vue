@@ -557,14 +557,8 @@ onMounted(async () => {
   
   // 调用后端API开始答题
   try {
-    const { fixedQuestionCount, minQuestionCount, maxQuestionCount, fixedQuestionCountValue } = settingsStore.settings
-    
-    let questionCount
-    if (fixedQuestionCount) {
-      questionCount = fixedQuestionCountValue
-    } else {
-      questionCount = Math.floor(Math.random() * (maxQuestionCount - minQuestionCount + 1)) + minQuestionCount
-    }
+    // 使用学科独立配置获取题目数量
+    const questionCount = settingsStore.getQuestionCountForSubject(subjectId.value)
     
     const startData = {
       subjectId: subjectId.value,
