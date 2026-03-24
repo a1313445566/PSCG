@@ -2,13 +2,23 @@
   <div class="setting-card">
     <h3 class="setting-title">答题设置</h3>
     <div class="answer-setting" style="display: flex; align-items: center; justify-content: flex-start; gap: 15px; padding: 20px;">
-      <span style="font-weight: bold; width: 120px;">答案随机排序</span>
+      <span style="font-weight: bold; width: 150px;">普通题库选项随机排序</span>
       <div style="display: flex; gap: 10px;">
           <el-button :class="localRandomizeAnswers ? 'is-primary' : ''" @click="localRandomizeAnswers = true">开启</el-button>
           <el-button :class="!localRandomizeAnswers ? 'is-primary' : ''" @click="localRandomizeAnswers = false">关闭</el-button>
         </div>
       <span style="color: #67c23a; font-weight: bold; margin-right: 15px;">
         {{ localRandomizeAnswers ? '当前状态：开启' : '当前状态：关闭' }}
+      </span>
+    </div>
+    <div class="answer-setting" style="display: flex; align-items: center; justify-content: flex-start; gap: 15px; padding: 20px; border-top: 1px solid #e0e0e0;">
+      <span style="font-weight: bold; width: 150px;">错题巩固选项随机排序</span>
+      <div style="display: flex; gap: 10px;">
+          <el-button :class="localRandomizeErrorCollectionAnswers ? 'is-primary' : ''" @click="localRandomizeErrorCollectionAnswers = true">开启</el-button>
+          <el-button :class="!localRandomizeErrorCollectionAnswers ? 'is-primary' : ''" @click="localRandomizeErrorCollectionAnswers = false">关闭</el-button>
+        </div>
+      <span style="color: #67c23a; font-weight: bold; margin-right: 15px;">
+        {{ localRandomizeErrorCollectionAnswers ? '当前状态：开启' : '当前状态：关闭' }}
       </span>
     </div>
     <div class="question-count-setting" style="display: flex; align-items: center; justify-content: flex-start; gap: 15px; padding: 20px; border-top: 1px solid #e0e0e0;">
@@ -47,6 +57,10 @@ const props = defineProps({
     type: Boolean,
     default: false
   },
+  randomizeErrorCollectionAnswers: {
+    type: Boolean,
+    default: false
+  },
   fixedQuestionCount: {
     type: Boolean,
     default: false
@@ -70,6 +84,7 @@ const emit = defineEmits(['update-settings']);
 
 // 本地答题设置
 const localRandomizeAnswers = ref(props.randomizeAnswers);
+const localRandomizeErrorCollectionAnswers = ref(props.randomizeErrorCollectionAnswers);
 const localFixedQuestionCount = ref(props.fixedQuestionCount);
 const localMinQuestionCount = ref(props.minQuestionCount);
 const localMaxQuestionCount = ref(props.maxQuestionCount);
@@ -78,6 +93,10 @@ const localFixedQuestionCountValue = ref(props.fixedQuestionCountValue);
 // 监听 props 的变化
 watch(() => props.randomizeAnswers, (newValue) => {
   localRandomizeAnswers.value = newValue;
+});
+
+watch(() => props.randomizeErrorCollectionAnswers, (newValue) => {
+  localRandomizeErrorCollectionAnswers.value = newValue;
 });
 
 watch(() => props.fixedQuestionCount, (newValue) => {
@@ -107,6 +126,7 @@ watch([localMinQuestionCount, localMaxQuestionCount], ([newMin, newMax]) => {
 const updateAnswerSettings = () => {
   const settings = {
     randomizeAnswers: localRandomizeAnswers.value,
+    randomizeErrorCollectionAnswers: localRandomizeErrorCollectionAnswers.value,
     fixedQuestionCount: localFixedQuestionCount.value,
     minQuestionCount: localMinQuestionCount.value,
     maxQuestionCount: localMaxQuestionCount.value,

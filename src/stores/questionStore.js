@@ -974,6 +974,7 @@ export const useSettingsStore = defineStore('settings', {
     interfaceName: '',
     settings: {
       randomizeAnswers: false,
+      randomizeErrorCollectionAnswers: false,
       fixedQuestionCount: false,
       minQuestionCount: 1,
       maxQuestionCount: 10,
@@ -984,6 +985,7 @@ export const useSettingsStore = defineStore('settings', {
   }),
   getters: {
     getRandomizeAnswers: (state) => state.settings.randomizeAnswers,
+    getRandomizeErrorCollectionAnswers: (state) => state.settings.randomizeErrorCollectionAnswers,
     getFixedQuestionCount: (state) => state.settings.fixedQuestionCount,
     getQuestionCount: (state) => {
       if (state.settings.fixedQuestionCount) {
@@ -1001,7 +1003,8 @@ export const useSettingsStore = defineStore('settings', {
         const response = await fetch(`${getApiBaseUrl()}/settings`)
         if (response.ok) {
           const settings = await response.json()
-          this.settings.randomizeAnswers = settings.randomizeAnswers !== 'false'
+          this.settings.randomizeAnswers = settings.randomizeAnswers === 'true' || settings.randomizeAnswers === true
+          this.settings.randomizeErrorCollectionAnswers = settings.randomizeErrorCollectionAnswers === 'true' || settings.randomizeErrorCollectionAnswers === true
           this.settings.fixedQuestionCount = settings.fixedQuestionCount === 'true'
           this.settings.minQuestionCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
           this.settings.maxQuestionCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
@@ -1033,7 +1036,8 @@ export const useSettingsStore = defineStore('settings', {
         })
         if (response.ok) {
           // 更新本地状态
-          this.settings.randomizeAnswers = newSettings.randomizeAnswers !== 'false'
+          this.settings.randomizeAnswers = newSettings.randomizeAnswers === 'true' || newSettings.randomizeAnswers === true
+          this.settings.randomizeErrorCollectionAnswers = newSettings.randomizeErrorCollectionAnswers === 'true' || newSettings.randomizeErrorCollectionAnswers === true
           this.settings.fixedQuestionCount = newSettings.fixedQuestionCount === 'true'
           this.settings.minQuestionCount = parseInt(newSettings.minQuestionCount?.replace(/'/g, '')) || 3
           this.settings.maxQuestionCount = parseInt(newSettings.maxQuestionCount?.replace(/'/g, '')) || 5

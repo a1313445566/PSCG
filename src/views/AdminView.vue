@@ -27,6 +27,7 @@
           <!-- 答题设置 -->
           <AnswerSetting 
             :randomize-answers="randomizeAnswers"
+            :randomize-error-collection-answers="randomizeErrorCollectionAnswers"
             :fixed-question-count="fixedQuestionCount"
             :min-question-count="minQuestionCount"
             :max-question-count="maxQuestionCount"
@@ -584,6 +585,10 @@ const interfaceName = computed({
 const randomizeAnswers = computed({
   get: () => settingsStore.settings.randomizeAnswers,
   set: (value) => { settingsStore.settings.randomizeAnswers = value }
+})
+const randomizeErrorCollectionAnswers = computed({
+  get: () => settingsStore.settings.randomizeErrorCollectionAnswers,
+  set: (value) => { settingsStore.settings.randomizeErrorCollectionAnswers = value }
 })
 const fixedQuestionCount = computed({
   get: () => settingsStore.settings.fixedQuestionCount,
@@ -1344,6 +1349,7 @@ const updateInterfaceName = async (value) => {
 const updateAnswerSettings = async (settings) => {
   const success = await settingsStore.updateSettings({
     randomizeAnswers: settings.randomizeAnswers.toString(),
+    randomizeErrorCollectionAnswers: settings.randomizeErrorCollectionAnswers.toString(),
     fixedQuestionCount: settings.fixedQuestionCount.toString(),
     minQuestionCount: settings.minQuestionCount.toString(),
     maxQuestionCount: settings.maxQuestionCount.toString(),

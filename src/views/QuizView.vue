@@ -9,6 +9,9 @@
           <div class="quiz-stats">
             <span class="question-count">共 {{ totalQuestions }} 题</span>
             <span class="time-spent">用时: {{ formatTime(timeSpent) }}</span>
+            <span class="shuffle-tag" :class="shouldRandomize ? 'shuffle-on' : 'shuffle-off'">
+              {{ shouldRandomize ? '🔀 答案选项随机排序' : '📋 答案选项固定顺序' }}
+            </span>
           </div>
         </div>
         
@@ -78,6 +81,7 @@ import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
 import { ElMessage } from 'element-plus'
+import { shuffleOptions } from '../utils/shuffleOptions'
 
 const router = useRouter()
 const route = useRoute()
@@ -91,6 +95,14 @@ const subcategoryId = computed(() => route.params.subcategoryId)
 
 // 检测是否是错题巩固题库
 const isErrorCollection = computed(() => subcategoryId.value === 'error-collection')
+
+// 是否开启了选项打乱（根据题库类型使用不同设置）
+const shouldRandomize = computed(() => {
+  if (isErrorCollection.value) {
+    return settingsStore.settings.randomizeErrorCollectionAnswers
+  }
+  return settingsStore.settings.randomizeAnswers
+})
 
 // 当前学科和题库
 const currentSubject = computed(() => {
@@ -360,6 +372,12 @@ const submitAnswers = async () => {
       timestamp
     });
     
+    // 准备打乱映射数据
+    const shuffleMappings = {};
+    currentQuestions.value.forEach(q => {
+      shuffleMappings[q.id] = q.shuffleMapping; // 前端传递 reverseMapping，后端接收名为 shuffleMappings
+    });
+    
     // 构建签名数据
     const signatureData = {
       quizId: quizStore.quizId,
@@ -379,6 +397,7 @@ const submitAnswers = async () => {
     const submitData = {
       quizId: quizStore.quizId,
       answers: userAnswers.value,
+      shuffleMappings, // 添加打乱映射（实际是 reverseMapping）
       timestamp,
       signature
     }
@@ -535,7 +554,7 @@ onMounted(async () => {
   
   // 调用后端API开始答题
   try {
-    const { randomizeAnswers, fixedQuestionCount, minQuestionCount, maxQuestionCount, fixedQuestionCountValue } = settingsStore.settings
+    const { fixedQuestionCount, minQuestionCount, maxQuestionCount, fixedQuestionCountValue } = settingsStore.settings
     
     let questionCount
     if (fixedQuestionCount) {
@@ -587,11 +606,33 @@ onMounted(async () => {
     quizStore.expiresAt = data.expiresAt
     
     // 设置题目数据（后端已返回不含正确答案的题目）
-    quizStore.currentQuestions = data.questions.map(q => ({
-      ...q,
-      shuffledOptions: q.options,
-      type: q.type || 'single'
-    }))
+    // 根据设置决定是否对每道题的选项进行打乱
+    const questionsWithShuffled = data.questions.map(q => {
+      const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+      
+      // 根据题库类型的设置决定是否打乱选项
+      if (shouldRandomize.value) {
+        const { shuffledOptions, reverseMapping } = shuffleOptions(options);
+        
+        return {
+          ...q,
+          options: shuffledOptions, // 打乱后的选项
+          originalOptions: options, // 保存原始选项（可选）
+          shuffleMapping: reverseMapping, // 打乱映射：{打乱后位置: 原始位置}
+          type: q.type || 'single'
+        };
+      } else {
+        // 不打乱选项
+        return {
+          ...q,
+          options: options,
+          shuffleMapping: null, // 不打乱时映射为 null
+          type: q.type || 'single'
+        };
+      }
+    });
+    
+    quizStore.currentQuestions = questionsWithShuffled
     quizStore.userAnswers = {}
     quizStore.score = null
     quizStore.startTime = Date.now()
@@ -733,6 +774,31 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+}
+
+.shuffle-tag {
+  padding: 0.6rem 1.2rem;
+  border-radius: 20px;
+  font-weight: bold;
+  font-size: 0.95rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+}
+
+.shuffle-tag.shuffle-on {
+  background: linear-gradient(135deg, #FFE066 0%, #FFD166 100%);
+  color: #5D4E37;
+  border: 2px solid #E6B800;
+  box-shadow: 0 3px 0 rgba(230, 184, 0, 0.4);
+}
+
+.shuffle-tag.shuffle-off {
+  background: linear-gradient(135deg, #A8E6CF 0%, #88D8B0 100%);
+  color: #2E7D32;
+  border: 2px solid #66BB6A;
+  box-shadow: 0 3px 0 rgba(102, 187, 106, 0.4);
 }
 
 .progress-section {

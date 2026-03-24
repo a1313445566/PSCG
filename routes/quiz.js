@@ -306,10 +306,63 @@ const validateSignature = (data, timestamp, signature, userId) => {
   }
 };
 
+// 将正确答案从原始位置映射到打乱后位置的函数
+const mapAnswerToShuffled = (correctAnswer, shuffleMapping) => {
+  if (!correctAnswer || !shuffleMapping) return correctAnswer;
+  
+  const letterToIndex = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5 };
+  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F'];
+  
+  if (Array.isArray(correctAnswer)) {
+    // 多选题
+    return correctAnswer.map(letter => {
+      const originalIndex = letterToIndex[letter];
+      const shuffledIndex = shuffleMapping[originalIndex];
+      return indexToLetter[shuffledIndex];
+    });
+  } else if (typeof correctAnswer === 'string' && correctAnswer.length > 1) {
+    // 多选题，格式为 "ABC"
+    const letters = correctAnswer.split('');
+    const mappedLetters = letters.map(letter => {
+      const originalIndex = letterToIndex[letter];
+      const shuffledIndex = shuffleMapping[originalIndex];
+      return indexToLetter[shuffledIndex];
+    });
+    return mappedLetters.join('');
+  } else {
+    // 单选题
+    const originalIndex = letterToIndex[correctAnswer];
+    const shuffledIndex = shuffleMapping[originalIndex];
+    return indexToLetter[shuffledIndex];
+  }
+};
+
+// 将用户答案从打乱后的位置映射回原始位置的函数
+const mapAnswerToOriginal = (userAnswer, reverseMapping) => {
+  if (!userAnswer || !reverseMapping) return userAnswer;
+  
+  const letterToIndex = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5 };
+  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F'];
+  
+  if (Array.isArray(userAnswer)) {
+    // 多选题
+    return userAnswer.map(letter => {
+      const shuffledIndex = letterToIndex[letter];
+      const originalIndex = reverseMapping[shuffledIndex];
+      return indexToLetter[originalIndex];
+    });
+  } else {
+    // 单选题
+    const shuffledIndex = letterToIndex[userAnswer];
+    const originalIndex = reverseMapping[shuffledIndex];
+    return indexToLetter[originalIndex];
+  }
+};
+
 // 提交答案API
 router.post('/submit', async (req, res) => {
   try {
-    const { quizId, answers, timestamp, signature } = req.body;
+    const { quizId, answers, shuffleMappings, timestamp, signature } = req.body;
     
     // 验证必填参数
     if (!quizId || !answers || !timestamp || !signature) {
@@ -374,21 +427,59 @@ router.post('/submit', async (req, res) => {
         // 保持原始值
       }
       
-      // 判断答案是否正确
+      // 获取该题的打乱映射（前端传递的是 reverseMapping）
+      const reverseMapping = shuffleMappings ? shuffleMappings[question.id] : null;
+      
+      // 计算 shuffleMapping（从 reverseMapping 反转）
+      let shuffleMapping = null;
+      if (reverseMapping) {
+        shuffleMapping = {};
+        Object.keys(reverseMapping).forEach(key => {
+          shuffleMapping[reverseMapping[key]] = key;
+        });
+      }
+      
+      // 将用户答案映射回原始位置（使用 reverseMapping）
+      let mappedUserAnswer = userAnswer;
+      if (reverseMapping) {
+        mappedUserAnswer = mapAnswerToOriginal(userAnswer, reverseMapping);
+      }
+      
+      // 判断答案是否正确（使用映射后的答案）
       let isCorrect = false;
       if (question.type === 'multiple') {
         const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('');
-        if (Array.isArray(userAnswer)) {
-          const sortedUserAnswer = [...userAnswer].sort();
+        if (Array.isArray(mappedUserAnswer)) {
+          const sortedUserAnswer = [...mappedUserAnswer].sort();
           const sortedCorrectAnswer = [...correctAnswers].sort();
           isCorrect = JSON.stringify(sortedUserAnswer) === JSON.stringify(sortedCorrectAnswer);
         }
       } else {
-        if (Array.isArray(userAnswer)) {
-          isCorrect = userAnswer[0] === correctAnswer;
+        if (Array.isArray(mappedUserAnswer)) {
+          isCorrect = mappedUserAnswer[0] === correctAnswer;
         } else {
-          isCorrect = userAnswer === correctAnswer;
+          isCorrect = mappedUserAnswer === correctAnswer;
         }
+      }
+      
+      // 将正确答案映射到打乱后的位置（用于前端显示）
+      let displayCorrectAnswer = correctAnswer;
+      let shuffledOptions = question.options;
+      
+      if (shuffleMapping) {
+        displayCorrectAnswer = mapAnswerToShuffled(correctAnswer, shuffleMapping);
+      }
+      
+      // 生成打乱后的选项（使用 reverseMapping）
+      if (reverseMapping) {
+        const originalOptions = typeof question.options === 'string' 
+          ? JSON.parse(question.options) 
+          : question.options;
+        
+        // 根据 reverseMapping（打乱后位置 -> 原始位置）生成打乱后的选项
+        shuffledOptions = Object.keys(reverseMapping)
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .map(key => originalOptions[reverseMapping[key]]);
       }
       
       if (isCorrect) {
@@ -411,15 +502,17 @@ router.post('/submit', async (req, res) => {
       results.push({
         questionId: question.id,
         userAnswer,
-        correctAnswer,
+        correctAnswer: displayCorrectAnswer, // 使用映射后的正确答案
         isCorrect,
         explanation: originalQuestion.explanation,
         // 添加完整的题目信息
         content: originalQuestion.content,
-        options: question.options,
+        options: shuffledOptions, // 使用打乱后的选项
         type: question.type || 'single',
         audio_url: originalQuestion.audio_url,
-        image_url: originalQuestion.image_url
+        image_url: originalQuestion.image_url,
+        // 添加打乱映射，用于前端显示（实际上前端不需要了，因为后端已经处理好了）
+        shuffleMapping: reverseMapping
       });
     }
     
@@ -496,6 +589,23 @@ router.post('/submit', async (req, res) => {
         // 保持原始值
       }
       
+      // 获取该题的打乱映射（前端传递的是 reverseMapping）
+      const reverseMapping = shuffleMappings ? shuffleMappings[question.id] : null;
+      
+      // 生成打乱后的选项
+      let shuffledOptions = question.options;
+      if (reverseMapping) {
+        // 解析原始选项
+        const originalOptions = typeof question.options === 'string' 
+          ? JSON.parse(question.options) 
+          : question.options;
+        
+        // 根据 reverseMapping（打乱后位置 -> 原始位置）生成打乱后的选项
+        shuffledOptions = Object.keys(reverseMapping)
+          .sort((a, b) => parseInt(a) - parseInt(b))
+          .map(key => originalOptions[reverseMapping[key]]);
+      }
+      
       await db.run(
         `INSERT INTO question_attempts (user_id, question_id, subject_id, subcategory_id, user_answer, correct_answer, is_correct, answer_record_id, shuffled_options)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -508,7 +618,7 @@ router.post('/submit', async (req, res) => {
           JSON.stringify(correctAnswer),
           result.isCorrect ? 1 : 0,
           answerRecordId,
-          JSON.stringify(question.options)
+          JSON.stringify(shuffledOptions)
         ]
       );
     }
