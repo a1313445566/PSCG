@@ -235,23 +235,32 @@ const batchDeleteUsers = () => {
   })
   .then(async () => {
     try {
-      let successCount = 0;
-      for (const user of selectedUsers.value) {
-        const userId = user.id;
-        if (userId) {
-          // 调用删除用户API
-          const response = await fetch(`${getApiBaseUrl()}/users/${userId}`, { method: 'DELETE' });
-          if (response.ok) {
-            successCount++;
-          }
-        }
+      const userIds = selectedUsers.value.map(user => user.id).filter(id => id);
+      
+      if (userIds.length === 0) {
+        ElMessage.warning('没有有效的用户ID');
+        return;
       }
       
-      ElMessage.success(`成功删除 ${successCount} 个用户！`);
-      // 触发更新用户列表
-      emit('update-users');
-      // 清空选择
-      selectedUsers.value = [];
+      const response = await fetch(`${getApiBaseUrl()}/users/batch-delete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ userIds })
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        ElMessage.success(result.message || '批量删除成功！');
+        // 触发更新用户列表
+        emit('update-users');
+        // 清空选择
+        selectedUsers.value = [];
+      } else {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || '批量删除失败');
+      }
     } catch (error) {
       console.error('批量删除用户失败:', error);
       ElMessage.error('批量删除用户失败，请稍后重试');

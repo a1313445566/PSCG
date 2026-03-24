@@ -338,6 +338,22 @@ class Database {
     }
   }
 
+  // 执行事务
+  async transaction(callback) {
+    const connection = await this.pool.getConnection();
+    try {
+      await connection.beginTransaction();
+      const result = await callback(connection);
+      await connection.commit();
+      return result;
+    } catch (error) {
+      await connection.rollback();
+      throw error;
+    } finally {
+      connection.release();
+    }
+  }
+
   // 关闭连接
   async close() {
     if (this.pool) {

@@ -188,31 +188,94 @@ router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params;
     
-    // 开始事务
-    await db.run('START TRANSACTION');
-    
-    try {
+    await db.transaction(async (conn) => {
+      // 删除用户的错题记录
+      await conn.execute('DELETE FROM error_collection WHERE user_id = ?', [id]);
+      
+      // 删除用户的答题尝试记录
+      await conn.execute('DELETE FROM quiz_attempts WHERE quiz_session_id IN (SELECT id FROM quiz_sessions WHERE user_id = ?)', [id]);
+      
+      // 删除用户的答题会话
+      await conn.execute('DELETE FROM quiz_sessions WHERE user_id = ?', [id]);
+      
       // 删除用户的题目尝试记录
-      await db.run('DELETE FROM question_attempts WHERE user_id = ?', [id]);
+      await conn.execute('DELETE FROM question_attempts WHERE user_id = ?', [id]);
       
       // 删除用户的答题记录
-      await db.run('DELETE FROM answer_records WHERE user_id = ?', [id]);
+      await conn.execute('DELETE FROM answer_records WHERE user_id = ?', [id]);
       
       // 删除用户
-      await db.run('DELETE FROM users WHERE id = ?', [id]);
-      
-      // 提交事务
-      await db.run('COMMIT');
-      
-      res.json({ success: true });
-    } catch (error) {
-      // 回滚事务
-      await db.run('ROLLBACK');
-      throw error;
-    }
+      await conn.execute('DELETE FROM users WHERE id = ?', [id]);
+    });
+    
+    res.json({ success: true });
   } catch (error) {
-    // console.error('删除用户失败:', error);
+    console.error('删除用户失败:', error);
     res.status(500).json({ error: '删除用户失败' });
+  }
+});
+
+// 批量删除用户
+router.post('/batch-delete', async (req, res) => {
+  try {
+    const { userIds } = req.body;
+    
+    if (!Array.isArray(userIds) || userIds.length === 0) {
+      return res.status(400).json({ error: '请选择要删除的用户' });
+    }
+    
+    // 限制单次批量删除数量，防止过载
+    const MAX_BATCH_SIZE = 100;
+    if (userIds.length > MAX_BATCH_SIZE) {
+      return res.status(400).json({ 
+        error: `单次最多删除 ${MAX_BATCH_SIZE} 个用户，当前选择 ${userIds.length} 个` 
+      });
+    }
+    
+    // 过滤有效的用户ID
+    const validUserIds = userIds.filter(id => Number.isInteger(id) && id > 0);
+    if (validUserIds.length === 0) {
+      return res.status(400).json({ error: '没有有效的用户ID' });
+    }
+    
+    // 构建 IN 子句占位符
+    const placeholders = validUserIds.map(() => '?').join(',');
+    
+    let deletedCount = 0;
+    
+    await db.transaction(async (conn) => {
+      // 批量删除用户的错题记录
+      await conn.execute(`DELETE FROM error_collection WHERE user_id IN (${placeholders})`, validUserIds);
+      
+      // 批量删除用户的答题尝试记录（通过子查询）
+      await conn.execute(
+        `DELETE FROM quiz_attempts WHERE quiz_session_id IN (SELECT id FROM quiz_sessions WHERE user_id IN (${placeholders}))`,
+        validUserIds
+      );
+      
+      // 批量删除用户的答题会话
+      await conn.execute(`DELETE FROM quiz_sessions WHERE user_id IN (${placeholders})`, validUserIds);
+      
+      // 批量删除用户的题目尝试记录
+      await conn.execute(`DELETE FROM question_attempts WHERE user_id IN (${placeholders})`, validUserIds);
+      
+      // 批量删除用户的答题记录
+      await conn.execute(`DELETE FROM answer_records WHERE user_id IN (${placeholders})`, validUserIds);
+      
+      // 批量删除用户
+      const [result] = await conn.execute(`DELETE FROM users WHERE id IN (${placeholders})`, validUserIds);
+      deletedCount = result.affectedRows;
+    });
+    
+    res.json({ 
+      success: true, 
+      message: `成功删除 ${deletedCount} 个用户`,
+      successCount: deletedCount,
+      failCount: validUserIds.length - deletedCount
+    });
+  } catch (error) {
+    console.error('批量删除用户失败:', error);
+    res.status(500).json({ error: '批量删除用户失败' });
   }
 });
 
