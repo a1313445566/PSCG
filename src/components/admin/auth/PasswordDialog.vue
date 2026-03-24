@@ -11,14 +11,29 @@
       @open="focusPasswordInput"
       @close="handleClose"
     >
-      <el-form :model="passwordForm" label-width="80px" @submit.prevent="verifyPassword">
+      <el-form :model="loginForm" label-width="80px" @submit.prevent="handleLogin">
+        <el-form-item label="用户名">
+          <el-input 
+            ref="usernameInputRef" 
+            v-model="loginForm.username" 
+            placeholder="请输入用户名"
+            @keyup="handleKeyUp"
+          ></el-input>
+        </el-form-item>
         <el-form-item label="密码">
-          <el-input ref="passwordInputRef" v-model="passwordForm.password" type="password" placeholder="请输入管理密码" show-password @keyup="handleKeyUp"></el-input>
+          <el-input 
+            ref="passwordInputRef" 
+            v-model="loginForm.password" 
+            type="password" 
+            placeholder="请输入密码" 
+            show-password 
+            @keyup="handleKeyUp"
+          ></el-input>
         </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button type="primary" @click="verifyPassword">登录</el-button>
+          <el-button type="primary" @click="handleLogin" :loading="loading">登录</el-button>
         </span>
       </template>
     </el-dialog>
@@ -26,9 +41,9 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, watch } from 'vue';
+import { ref, defineProps, defineEmits, watch, onMounted } from 'vue';
 import { ElMessage } from 'element-plus';
-import { passwords } from '../../../config/passwords';
+import { getApiBaseUrl } from '../../../utils/database';
 
 // 定义属性
 const props = defineProps({
@@ -47,6 +62,9 @@ const dialogVisible = ref(props.visible);
 // 监听 props.visible 的变化
 watch(() => props.visible, (newValue) => {
   dialogVisible.value = newValue;
+  if (newValue) {
+    checkInitStatus();
+  }
 });
 
 // 监听本地 dialogVisible 的变化
@@ -54,26 +72,51 @@ watch(dialogVisible, (newValue) => {
   emit('update:visible', newValue);
 });
 
-// 密码表单
-const passwordForm = ref({
+// 登录表单
+const loginForm = ref({
+  username: '',
   password: ''
 });
 
-// 密码输入框引用
+// 加载状态
+const loading = ref(false);
+
+// 是否已初始化
+const isInitialized = ref(false);
+
+// 输入框引用
+const usernameInputRef = ref(null);
 const passwordInputRef = ref(null);
+
+// 检查初始化状态
+const checkInitStatus = async () => {
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/admin/status`);
+    const data = await response.json();
+    isInitialized.value = data.initialized;
+    
+    if (data.username) {
+      loginForm.value.username = data.username;
+    }
+  } catch (error) {
+    console.error('检查状态失败:', error);
+  }
+};
 
 // 聚焦密码输入框
 const focusPasswordInput = () => {
   setTimeout(() => {
     try {
-      if (passwordInputRef.value && passwordInputRef.value.$el) {
-        const inputElement = passwordInputRef.value.$el.querySelector('input');
+      // 如果有用户名，聚焦密码框；否则聚焦用户名框
+      const inputRef = loginForm.value.username ? passwordInputRef : usernameInputRef;
+      if (inputRef.value && inputRef.value.$el) {
+        const inputElement = inputRef.value.$el.querySelector('input');
         if (inputElement) {
           inputElement.focus();
         }
       }
     } catch (error) {
-
+      // 忽略错误
     }
   }, 300);
 };
@@ -81,7 +124,7 @@ const focusPasswordInput = () => {
 // 处理键盘事件
 const handleKeyUp = (event) => {
   if (event.key === 'Enter') {
-    verifyPassword();
+    handleLogin();
   }
 };
 
@@ -90,19 +133,57 @@ const handleClose = () => {
   emit('update:visible', false);
 };
 
-// 验证密码
-const verifyPassword = () => {
-  const password = passwordForm.value.password;
+// 登录处理
+const handleLogin = async () => {
+  const { username, password } = loginForm.value;
   
-  // 简单的密码验证，实际项目中应该使用更安全的方式
-  if (password === passwords.adminLogin) {
-    emit('login-success', true);
-    emit('update:visible', false);
-    passwordForm.value.password = '';
-  } else {
-    ElMessage.error('密码错误，请重试');
+  if (!username || !password) {
+    ElMessage.warning('请输入用户名和密码');
+    return;
+  }
+  
+  loading.value = true;
+  
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ username, password })
+    });
+    
+    const data = await response.json();
+    
+    if (response.ok && data.success) {
+      // 存储 Token 到 sessionStorage
+      sessionStorage.setItem('adminToken', data.token);
+      sessionStorage.setItem('adminUsername', data.username);
+      sessionStorage.setItem('adminAuthenticated', 'true');
+      
+      ElMessage.success('登录成功');
+      emit('login-success', true);
+      emit('update:visible', false);
+      
+      // 清空密码
+      loginForm.value.password = '';
+    } else {
+      ElMessage.error(data.error || '登录失败');
+    }
+  } catch (error) {
+    console.error('登录失败:', error);
+    ElMessage.error('登录失败，请检查网络连接');
+  } finally {
+    loading.value = false;
   }
 };
+
+// 组件挂载时检查状态
+onMounted(() => {
+  if (props.visible) {
+    checkInitStatus();
+  }
+});
 </script>
 
 <style scoped>

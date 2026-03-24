@@ -152,7 +152,7 @@ const timeSpent = ref(0)
 let timerInterval = null
 
 // 提交冷却时间（10秒）
-const SUBMIT_COOLDOWN = 10
+const SUBMIT_COOLDOWN = 20
 const countdown = ref(SUBMIT_COOLDOWN)
 let countdownInterval = null
 const canSubmit = ref(false)
@@ -777,28 +777,30 @@ onUnmounted(() => {
 }
 
 .shuffle-tag {
-  padding: 0.6rem 1.2rem;
-  border-radius: 20px;
+  background: var(--header-gradient);
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
   font-weight: bold;
-  font-size: 0.95rem;
+  font-size: 1.1rem;
+  border: 2px solid #7DD3F8;
+  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  gap: 0.5rem;
   font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
 }
 
 .shuffle-tag.shuffle-on {
-  background: linear-gradient(135deg, #FFE066 0%, #FFD166 100%);
-  color: #5D4E37;
-  border: 2px solid #E6B800;
-  box-shadow: 0 3px 0 rgba(230, 184, 0, 0.4);
+  background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
+  border-color: #FF9A9E;
+  box-shadow: 0 4px 0 rgba(255, 154, 158, 0.5);
 }
 
 .shuffle-tag.shuffle-off {
-  background: linear-gradient(135deg, #A8E6CF 0%, #88D8B0 100%);
-  color: #2E7D32;
-  border: 2px solid #66BB6A;
-  box-shadow: 0 3px 0 rgba(102, 187, 106, 0.4);
+  background: var(--header-gradient);
+  border-color: #7DD3F8;
+  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
 }
 
 .progress-section {

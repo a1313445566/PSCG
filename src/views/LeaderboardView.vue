@@ -751,15 +751,10 @@ const loadAnswerQuestions = async (recordId) => {
           // 解析失败，使用原始值
         }
         
-        // 解析选项
+        // 解析选项 - 使用原始选项，因为 user_answer 和 correct_answer 都保存的是原始位置
         let options = []
         try {
-          if (item.shuffled_options) {
-            const parsedOptions = JSON.parse(item.shuffled_options)
-            if (Array.isArray(parsedOptions)) {
-              options = parsedOptions
-            }
-          } else if (item.options) {
+          if (item.options) {
             const parsedOptions = JSON.parse(item.options)
             if (Array.isArray(parsedOptions)) {
               options = parsedOptions

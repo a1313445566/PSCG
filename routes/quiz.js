@@ -3,6 +3,8 @@ const router = express.Router();
 const db = require('../services/database');
 const { validateSubjectId } = require('../services/validationService');
 const crypto = require('crypto');
+const { submitLimiter } = require('../middleware/rateLimit');
+const signatureCache = require('../middleware/signatureCache');
 
 // 生成随机会话ID
 const generateQuizId = () => {
@@ -359,14 +361,23 @@ const mapAnswerToOriginal = (userAnswer, reverseMapping) => {
   }
 };
 
-// 提交答案API
-router.post('/submit', async (req, res) => {
+// 提交答案API - 应用严格限流
+router.post('/submit', submitLimiter.middleware(), async (req, res) => {
   try {
     const { quizId, answers, shuffleMappings, timestamp, signature } = req.body;
     
     // 验证必填参数
     if (!quizId || !answers || !timestamp || !signature) {
       return res.status(400).json({ error: '缺少必填参数' });
+    }
+    
+    // 【优化】先进行基础验证，再查询数据库
+    
+    // 检查时间戳是否在合理范围内（提前验证，避免无效请求消耗数据库资源）
+    // 严格限制：不允许未来时间戳超过 1 分钟容错，不允许过去时间戳超过 5 分钟
+    const currentTime = Date.now();
+    if (timestamp > currentTime + 60000 || currentTime - timestamp > 300000) {
+      return res.status(401).json({ error: '请求已过期，请重新提交' });
     }
     
     // 查询会话
@@ -379,10 +390,19 @@ router.post('/submit', async (req, res) => {
       return res.status(404).json({ error: '答题会话不存在或已过期' });
     }
     
+    // 【防护】检查签名是否已被使用（防止重放攻击）
+    if (signatureCache.isUsed(signature, quizId, session.user_id)) {
+      console.warn(`🚨 [安全] 检测到签名重放攻击: quizId=${quizId}, userId=${session.user_id}`);
+      return res.status(401).json({ error: '请求已被处理，请勿重复提交' });
+    }
+    
     // 验证签名
     if (!validateSignature(req.body, timestamp, signature, session.user_id)) {
       return res.status(401).json({ error: '签名验证失败，提交无效' });
     }
+    
+    // 【防护】标记签名为已使用
+    signatureCache.markAsUsed(signature, quizId, session.user_id);
     
     // 检查是否已经提交过
     const existingAttempts = await db.get(
@@ -502,6 +522,7 @@ router.post('/submit', async (req, res) => {
       results.push({
         questionId: question.id,
         userAnswer,
+        mappedUserAnswer, // 添加映射回原始位置的答案
         correctAnswer: displayCorrectAnswer, // 使用映射后的正确答案
         isCorrect,
         explanation: originalQuestion.explanation,
@@ -606,6 +627,12 @@ router.post('/submit', async (req, res) => {
           .map(key => originalOptions[reverseMapping[key]]);
       }
       
+      // 计算映射回原始位置的用户答案
+      let userAnswerOriginal = result.userAnswer;
+      if (reverseMapping) {
+        userAnswerOriginal = mapAnswerToOriginal(result.userAnswer, reverseMapping);
+      }
+      
       await db.run(
         `INSERT INTO question_attempts (user_id, question_id, subject_id, subcategory_id, user_answer, correct_answer, is_correct, answer_record_id, shuffled_options)
          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -614,11 +641,11 @@ router.post('/submit', async (req, res) => {
           question.id,
           session.subject_id,
           session.subcategory_id,
-          JSON.stringify(result.userAnswer),
-          JSON.stringify(correctAnswer),
+          JSON.stringify(userAnswerOriginal),  // 保存映射回原始位置的答案
+          JSON.stringify(correctAnswer),       // 原始位置的正确答案
           result.isCorrect ? 1 : 0,
           answerRecordId,
-          JSON.stringify(shuffledOptions)
+          JSON.stringify(shuffledOptions)      // 打乱后的选项
         ]
       );
     }
@@ -765,7 +792,7 @@ router.get('/history', async (req, res) => {
 });
 
 // 清理过期会话（定时任务）
-router.post('/cleanup', async (req, res) => {
+router.post('/cleanup', async (_req, res) => {
   try {
     const result = await db.run(
       'DELETE FROM quiz_sessions WHERE expires_at < NOW()'

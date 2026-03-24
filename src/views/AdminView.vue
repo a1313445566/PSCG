@@ -9,6 +9,8 @@
     <div class="admin-header" v-if="isAuthenticated">
       <h1 class="title">题库管理系统</h1>
       <div class="header-buttons">
+        <span class="admin-username">{{ adminUsername }}</span>
+        <el-button type="warning" @click="showChangePasswordDialog">修改密码</el-button>
         <el-button type="primary" @click="backToHome" class="action-btn">🏠 返回首页</el-button>
         <el-button type="danger" @click="logout">退出登录</el-button>
       </div>
@@ -189,6 +191,11 @@
           <el-button type="primary" @click="showDataManagementPasswordDialog">解锁数据库管理</el-button>
         </div>
       </el-tab-pane>
+      
+      <!-- 安全监控 -->
+      <el-tab-pane label="安全监控" name="security">
+        <SecurityMonitor />
+      </el-tab-pane>
     </el-tabs>
     
     <!-- 数据库管理密码验证对话框 -->
@@ -234,6 +241,45 @@
       v-model:dialogVisible="questionDetailDialogVisible"
       :selectedQuestionDetail="selectedQuestionDetail"
     />
+
+    <!-- 修改密码对话框 -->
+    <el-dialog
+      v-model="changePasswordDialogVisible"
+      title="修改密码"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-form :model="changePasswordForm" label-width="100px" @submit.prevent="handleChangePassword">
+        <el-form-item label="旧密码">
+          <el-input 
+            v-model="changePasswordForm.oldPassword" 
+            type="password" 
+            placeholder="请输入旧密码" 
+            show-password
+          />
+        </el-form-item>
+        <el-form-item label="新密码">
+          <el-input 
+            v-model="changePasswordForm.newPassword" 
+            type="password" 
+            placeholder="请输入新密码（至少6位）" 
+            show-password
+          />
+        </el-form-item>
+        <el-form-item label="确认密码">
+          <el-input 
+            v-model="changePasswordForm.confirmPassword" 
+            type="password" 
+            placeholder="请再次输入新密码" 
+            show-password
+          />
+        </el-form-item>
+      </el-form>
+      <template #footer>
+        <el-button @click="changePasswordDialogVisible = false">取消</el-button>
+        <el-button type="primary" @click="handleChangePassword" :loading="changePasswordLoading">确认修改</el-button>
+      </template>
+    </el-dialog>
 
     <!-- 学科题库管理对话框 -->
     <SubcategoryDialog
@@ -307,6 +353,14 @@
 
 .admin-header .action-btn {
   margin-right: 10px;
+}
+
+.admin-username {
+  color: #409eff;
+  font-weight: 500;
+  margin-right: 16px;
+  padding: 0 12px;
+  border-right: 1px solid #dcdfe6;
 }
 
 .el-tabs {
@@ -530,7 +584,6 @@ import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { getApiBaseUrl } from '../utils/database'
-import { passwords } from '../config/passwords'
 
 // 导入模块化组件
 import PasswordDialog from '../components/admin/auth/PasswordDialog.vue'
@@ -549,6 +602,7 @@ import UserDetailDialog from '../components/admin/common/UserDetailDialog.vue'
 import QuestionDetailDialog from '../components/admin/common/QuestionDetailDialog.vue'
 import SubcategoryDialog from '../components/admin/common/SubcategoryDialog.vue'
 import UserManagement from '../components/admin/user-management/UserManagement.vue'
+import SecurityMonitor from '../components/admin/security/SecurityMonitor.vue'
 
 // 动态导入AnalysisView，减少初始加载体积
 const AnalysisView = defineAsyncComponent(() => import('./AnalysisView.vue'))
@@ -578,7 +632,7 @@ const filterTimeRange = ref('')
 // 界面名称设置
 const interfaceName = computed({
   get: () => settingsStore.interfaceName,
-  set: (value) => {}
+  set: () => {}
 })
 
 // 答题设置
@@ -608,8 +662,6 @@ const fixedQuestionCountValue = computed({
 })
 
 // 题目管理相关
-const isCategoryView = ref(false)
-const selectedQuestions = ref([])
 const dialogVisible = ref(false)
 const isEditing = ref(false)
 const batchAddDialogVisible = ref(false)
@@ -622,7 +674,16 @@ const currentSubjectForSubcategory = ref(null)
 // 密码验证相关
 const isAuthenticated = ref(false)
 const passwordDialogVisible = ref(true)
-const passwordInputRef = ref(null)
+const adminUsername = ref('')
+
+// 修改密码相关
+const changePasswordDialogVisible = ref(false)
+const changePasswordLoading = ref(false)
+const changePasswordForm = ref({
+  oldPassword: '',
+  newPassword: '',
+  confirmPassword: ''
+})
 
 // 数据库管理验证相关
 const isDataManagementAuthenticated = ref(false)
@@ -642,24 +703,13 @@ const selectedUserQuestionAttempts = ref([])
 const questionDetailDialogVisible = ref(false)
 const selectedQuestionDetail = ref(null)
 
-// 表单数据
-const form = ref({
-  id: null,
-  subjectId: '',
-  subcategoryId: '',
-  type: 'single',
-  content: '<p>请输入题目内容</p>',
-  options: ['', '', '', ''],
-  answer: '',
-  selectedAnswers: [],
-  explanation: ''
-})
-
 // 方法
 const handlePasswordVerify = async (isVerified) => {
   if (isVerified) {
     isAuthenticated.value = true
     passwordDialogVisible.value = false
+    // 获取用户名
+    adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
     // 使用sessionStorage存储状态
     sessionStorage.setItem('adminAuthenticated', 'true')
     // 加载设置
@@ -671,22 +721,14 @@ const handlePasswordVerify = async (isVerified) => {
   }
 }
 
-const focusPasswordInput = () => {
-  setTimeout(() => {
-    if (passwordInputRef.value && passwordInputRef.value.$el) {
-      const inputElement = passwordInputRef.value.$el.querySelector('input')
-      if (inputElement) {
-        inputElement.focus()
-      }
-    }
-  }, 100)
-}
-
 const logout = () => {
   isAuthenticated.value = false
   isDataManagementAuthenticated.value = false
   passwordDialogVisible.value = true
+  adminUsername.value = ''
   sessionStorage.removeItem('adminAuthenticated')
+  sessionStorage.removeItem('adminToken')
+  sessionStorage.removeItem('adminUsername')
   sessionStorage.removeItem('dataManagementAuthenticated')
 }
 
@@ -713,19 +755,40 @@ const showQuestionDetail = (row) => {
   questionDetailDialogVisible.value = true
 }
 
-const verifyDataManagementPassword = () => {
-  // 使用配置文件中的密码
-  const correctPassword = passwords.dataManagement
-  
-  if (dataManagementPasswordForm.value.password === correctPassword) {
-    isDataManagementAuthenticated.value = true
-    dataManagementPasswordDialogVisible.value = false
-    // 使用sessionStorage存储状态
-    sessionStorage.setItem('dataManagementAuthenticated', 'true')
-    ElMessage.success('数据库管理功能已解锁！')
-  } else {
-    ElMessage.error('密码错误，请重新输入！')
-    dataManagementPasswordForm.value.password = ''
+const verifyDataManagementPassword = async () => {
+  const token = sessionStorage.getItem('adminToken')
+  if (!token) {
+    ElMessage.error('请先登录')
+    return
+  }
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/admin/verify-data-management`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        password: dataManagementPasswordForm.value.password
+      })
+    })
+
+    const data = await response.json()
+
+    if (response.ok && data.valid) {
+      isDataManagementAuthenticated.value = true
+      dataManagementPasswordDialogVisible.value = false
+      sessionStorage.setItem('dataManagementAuthenticated', 'true')
+      ElMessage.success('数据库管理功能已解锁！')
+      dataManagementPasswordForm.value.password = ''
+    } else {
+      ElMessage.error(data.error || '密码错误')
+      dataManagementPasswordForm.value.password = ''
+    }
+  } catch (error) {
+    console.error('验证失败:', error)
+    ElMessage.error('验证失败，请重试')
   }
 }
 
@@ -746,12 +809,68 @@ const handleDataManagementKeyUp = (event) => {
   }
 }
 
-const toggleViewMode = () => {
-  isCategoryView.value = !isCategoryView.value
+// 显示修改密码对话框
+const showChangePasswordDialog = () => {
+  changePasswordForm.value = {
+    oldPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  }
+  changePasswordDialogVisible.value = true
 }
 
-const handleSelectionChange = (selection) => {
-  selectedQuestions.value = selection
+// 修改密码
+const handleChangePassword = async () => {
+  const { oldPassword, newPassword, confirmPassword } = changePasswordForm.value
+
+  if (!oldPassword || !newPassword || !confirmPassword) {
+    ElMessage.warning('请填写所有字段')
+    return
+  }
+
+  if (newPassword.length < 6) {
+    ElMessage.warning('新密码长度不能少于6位')
+    return
+  }
+
+  if (newPassword !== confirmPassword) {
+    ElMessage.warning('两次输入的新密码不一致')
+    return
+  }
+
+  const token = sessionStorage.getItem('adminToken')
+  if (!token) {
+    ElMessage.error('请重新登录')
+    logout()
+    return
+  }
+
+  changePasswordLoading.value = true
+
+  try {
+    const response = await fetch(`${getApiBaseUrl()}/admin/change-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ oldPassword, newPassword })
+    })
+
+    const data = await response.json()
+
+    if (response.ok && data.success) {
+      ElMessage.success('密码修改成功')
+      changePasswordDialogVisible.value = false
+    } else {
+      ElMessage.error(data.error || '修改失败')
+    }
+  } catch (error) {
+    console.error('修改密码失败:', error)
+    ElMessage.error('修改密码失败')
+  } finally {
+    changePasswordLoading.value = false
+  }
 }
 
 const batchDeleteQuestions = (questionIds) => {
@@ -795,29 +914,12 @@ const deleteQuestion = (questionId) => {
 
 const saveQuestion = async (formData) => {
   try {
-    let savedQuestion;
     if (isEditing.value) {
-      savedQuestion = await questionStore.updateQuestion(formData)
+      await questionStore.updateQuestion(formData)
       ElMessage.success('题目更新成功！')
     } else {
-      savedQuestion = await questionStore.addQuestion(formData)
+      await questionStore.addQuestion(formData)
       ElMessage.success('题目添加成功！')
-    }
-    
-    // 添加调试信息，显示保存后的题目数据
-
-    
-    // 如果有题目ID，从数据库获取完整数据
-    if (savedQuestion && savedQuestion.id) {
-      try {
-        const response = await fetch(`/api/questions/${savedQuestion.id}`);
-        if (response.ok) {
-          const questionFromDb = await response.json();
-
-        }
-      } catch (error) {
-
-      }
     }
     
     dialogVisible.value = false
@@ -1384,6 +1486,8 @@ onMounted(async () => {
   if (sessionStorage.getItem('adminAuthenticated') === 'true') {
     isAuthenticated.value = true
     passwordDialogVisible.value = false
+    // 恢复用户名
+    adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
     // 检查数据库管理认证状态
     if (sessionStorage.getItem('dataManagementAuthenticated') === 'true') {
       isDataManagementAuthenticated.value = true
