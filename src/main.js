@@ -25,7 +25,6 @@ app.config.errorHandler = (err, instance, info) => {
     errorMessage.includes('Cannot read properties of undefined')
   
   if (isIgnorableError) {
-    console.warn('[Vue] 忽略渲染竞态错误:', errorMessage)
     return
   }
   

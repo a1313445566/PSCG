@@ -7,19 +7,6 @@
       @login-success="handlePasswordVerify"
     />
     
-    <!-- 调试信息面板 -->
-    <div v-if="debugMode" class="debug-panel">
-      <div class="debug-title">调试信息</div>
-      <div>isAuthenticated: {{ isAuthenticated }}</div>
-      <div>isDataReady: {{ isDataReady }}</div>
-      <div>passwordDialogVisible: {{ passwordDialogVisible }}</div>
-      <div>pageLoading: {{ pageLoading }}</div>
-      <div>isComponentMounted: {{ isComponentMounted }}</div>
-      <div>activeTab: {{ activeTab }}</div>
-      <div>subjects.length: {{ subjects?.length || 0 }}</div>
-      <div>时间线: {{ debugTimeline.join(' → ') }}</div>
-    </div>
-
     <div class="admin-header" v-if="isAuthenticated">
       <h1 class="title">题库管理系统</h1>
       <div class="header-buttons">
@@ -787,16 +774,6 @@ const isDataReady = ref(false) // 数据是否加载完成
 // 数据加载锁 - 防止重复加载
 let isLoadingData = false
 
-// 调试模式（可通过 URL 参数 ?debug=1 开启）
-const debugMode = ref(false)
-const debugTimeline = ref([])
-const addDebugLog = (msg) => {
-  const timestamp = new Date().toISOString().split('T')[1].slice(0, 12)
-  debugTimeline.value.push(`${timestamp} ${msg}`)
-  if (debugTimeline.value.length > 20) debugTimeline.value.shift()
-  console.log(`[DEBUG] ${msg}`)
-}
-
 // 排行榜筛选相关
 const filterStudentId = ref('')
 const filterGrade = ref('')
@@ -885,24 +862,17 @@ const selectedQuestionDetail = ref(null)
 
 // 方法
 const handlePasswordVerify = (isVerified) => {
-  console.log('[AdminView] handlePasswordVerify 被调用', { isVerified, isComponentMounted })
-  addDebugLog('handlePasswordVerify 开始')
   if (isVerified && isComponentMounted) {
-    console.log('[AdminView] 登录成功')
-    addDebugLog('登录成功')
     // 设置用户名
     adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
     
     // 先关闭对话框
     passwordDialogVisible.value = false
     
-    // 立即设置认证状态 - 使用 setTimeout 确保在下一个事件循环执行
-    // 避免阻塞，让 Vue 有时间更新 DOM
+    // 设置认证状态
     setTimeout(() => {
       if (isComponentMounted) {
         isAuthenticated.value = true
-        addDebugLog('isAuthenticated = true (setTimeout)')
-        console.log('[AdminView] 认证状态已设置')
       }
     }, 50)
   }
@@ -910,24 +880,14 @@ const handlePasswordVerify = (isVerified) => {
 
 // 监听认证状态变化，安全地加载数据
 watch(isAuthenticated, (newValue, oldValue) => {
-  console.log('[AdminView] watch(isAuthenticated) 触发', { newValue, oldValue, isComponentMounted, isDataReady: isDataReady.value })
-  addDebugLog(`watch(isAuth): ${oldValue}→${newValue}`)
   // 只在认证状态从 false 变为 true 且数据未准备好时加载
   if (newValue && !oldValue && !isDataReady.value && isComponentMounted) {
-    console.log('[AdminView] 开始加载数据（PasswordDialog 已关闭）')
-    addDebugLog('开始 loadPageData')
-    
-    // 使用 setTimeout 让 Vue 先完成当前渲染周期（销毁 PasswordDialog）
-    // 然后再开始数据加载，避免阻塞渲染
+    // 使用 setTimeout 让 Vue 先完成当前渲染周期
     setTimeout(() => {
       if (!isComponentMounted) return
       
-      loadPageData().then(() => {
-        console.log('[AdminView] loadPageData 完成')
-        addDebugLog('loadPageData 完成')
-      }).catch(error => {
+      loadPageData().catch(error => {
         console.error('[AdminView] 加载数据失败:', error)
-        addDebugLog(`错误: ${error.message}`)
       })
     }, 100)
   }
@@ -1880,12 +1840,10 @@ watch(
   }
 )
 
-// 初始化 - 优化加载流程
+// 初始化
 onMounted(async () => {
-  console.log('[AdminView] onMounted 被调用，组件已挂载')
   // 检查sessionStorage中的登录状态
   if (sessionStorage.getItem('adminAuthenticated') === 'true') {
-    console.log('[AdminView] 发现已登录状态，恢复会话')
     isAuthenticated.value = true
     passwordDialogVisible.value = false
     // 恢复用户名
@@ -1895,22 +1853,16 @@ onMounted(async () => {
       isDataManagementAuthenticated.value = true
     }
     
-    // 等待DOM完全更新，避免竞态条件
-    console.log('[AdminView] 等待 DOM 更新...')
+    // 等待DOM完全更新
     await nextTick()
     await nextTick()
     
-    // 再次检查组件是否仍然挂载
+    // 开始加载页面数据
     if (isComponentMounted) {
-      console.log('[AdminView] 开始加载页面数据')
-      // 开始加载页面数据
       await loadPageData()
-    } else {
-      console.warn('[AdminView] 组件已卸载，取消数据加载')
     }
   } else {
-    console.log('[AdminView] 未登录，显示登录对话框')
-    // 设置密码对话框为可见，确保登录框自动弹出
+    // 设置密码对话框为可见
     passwordDialogVisible.value = true
     isAuthenticated.value = false
   }
@@ -1918,12 +1870,10 @@ onMounted(async () => {
 
 // 组件卸载时设置标志并清理定时器
 onUnmounted(() => {
-  console.log('[AdminView] onUnmounted 被调用，组件正在卸载')
   isComponentMounted = false
   cleanupLoading()
   timeoutIds.forEach(id => clearTimeout(id))
   timeoutIds.length = 0
-  console.log('[AdminView] 组件卸载完成，已清理所有定时器')
 })
 
 // 错误捕获 - 处理子组件渲染竞态错误
@@ -1936,7 +1886,6 @@ onErrorCaptured((err, instance, info) => {
     errorMessage.includes('Cannot read properties of undefined')
   
   if (isIgnorableError) {
-    console.warn('[AdminView] 捕获并忽略渲染竞态错误:', errorMessage)
     return false // 阻止错误继续传播
   }
   
@@ -1964,14 +1913,8 @@ const refreshPageData = async () => {
 
 // 统一加载页面数据 - 串行加载避免状态竞争
 const loadPageData = async () => {
-  console.log('[AdminView] loadPageData 被调用', { isComponentMounted, isLoadingData })
-  
   // 防止重复加载
-  if (isLoadingData) {
-    console.warn('[AdminView] 数据正在加载中，跳过重复请求')
-    return
-  }
-  
+  if (isLoadingData) return
   if (!isComponentMounted) return
   
   isLoadingData = true
@@ -1982,9 +1925,7 @@ const loadPageData = async () => {
   const loadSingleData = async (name, loader) => {
     if (!isComponentMounted) throw new Error('组件已卸载')
     try {
-      console.log(`[AdminView] 开始加载: ${name}`)
       await loader()
-      console.log(`[AdminView] 完成: ${name}`)
       // 每个数据加载后等待 Vue 状态稳定
       await nextTick()
       await new Promise(resolve => {
@@ -1994,12 +1935,10 @@ const loadPageData = async () => {
         timeoutIds.push(timeoutId)
       })
     } catch (error) {
-      console.error(`[AdminView] 加载失败: ${name}`, error)
       loadErrors.value.push(`${name}: ${error.message}`)
     }
   }
   
-  console.log('[AdminView] 开始串行加载数据...')
   try {
     // 1. 先加载核心数据（学科、年级、班级）
     await loadSingleData('核心数据', () => questionStore.loadData())
@@ -2022,7 +1961,6 @@ const loadPageData = async () => {
     if (!isComponentMounted) return
     
     // 最终稳定等待
-    console.log('[AdminView] 所有数据加载完成，等待最终稳定...')
     await nextTick()
     await new Promise(resolve => {
       const timeoutId = setTimeout(() => {
@@ -2037,18 +1975,14 @@ const loadPageData = async () => {
       ElMessage.warning(`部分数据加载失败: ${loadErrors.value.length} 项`)
     }
     
-    console.log('[AdminView] 设置 isDataReady = true')
     isDataReady.value = true
   } catch (error) {
-    console.error('[AdminView] 加载页面数据失败:', error)
     if (isComponentMounted) {
       ElMessage.error('页面数据加载失败,请刷新页面重试')
     }
   } finally {
-    console.log('[AdminView] 设置 pageLoading = false, isLoadingData = false')
     pageLoading.value = false
     isLoadingData = false
   }
-  console.log('[AdminView] loadPageData 完成')
 }
 </script>
