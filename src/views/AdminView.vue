@@ -164,7 +164,7 @@
       <el-tab-pane label="用户管理" name="user-management" @tab-click="handleUserManagementTabClick">
         <div class="user-management-tab">
           <UserManagement 
-            :users="allUsers"
+            ref="userManagementRef"
             :grades="grades"
             :classes="classes"
             @update-users="updateUserList"
@@ -761,7 +761,9 @@ const recentRecords = computed(() => questionStore.recentRecords)
 const grades = computed(() => questionStore.grades)
 const classes = computed(() => questionStore.classes)
 const backupHistory = ref([])
-const allUsers = ref([])
+
+// 组件引用
+const userManagementRef = ref(null)
 
 // 全局加载状态
 const pageLoading = ref(false)
@@ -1303,35 +1305,12 @@ const handleBatchAddQuestions = async (questions) => {
   }
 }
 
-// 加载所有用户数据
-const loadAllUsers = async () => {
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/users?limit=0&withStats=true`)
-    if (response.ok) {
-      const users = await response.json()
-      
-      // 按学号数字排序
-      users.sort((a, b) => {
-        const studentIdA = parseInt(a.student_id) || 0
-        const studentIdB = parseInt(b.student_id) || 0
-        return studentIdA - studentIdB
-      })
-      
-      allUsers.value = users
-    } else {
-      throw new Error(`加载用户失败: ${response.status}`)
-    }
-  } catch (error) {
-    console.error('加载所有用户失败:', error)
-    throw error // 向上抛出错误
-  }
-}
-
 // 更新用户列表
 const updateUserList = async () => {
   try {
     await questionStore.loadUserStats()
-    await loadAllUsers()
+    // 刷新用户管理组件
+    userManagementRef.value?.refresh()
     ElMessage.success('用户列表已更新')
   } catch (error) {
     console.error('更新用户列表失败:', error)
@@ -1588,17 +1567,17 @@ const updateAnswerSettings = async (settings) => {
 }
 
 // 处理用户管理标签点击
-const handleUserManagementTabClick = async () => {
-  // 重新加载用户数据
-  await loadAllUsers()
+const handleUserManagementTabClick = () => {
+  // 组件内部自动加载数据
 }
 
-// 监听标签变化，确保用户管理标签切换时加载数据
+// 监听标签变化
 watch(
   () => activeTab.value,
   async (newTab) => {
+    // 用户管理标签切换时刷新数据
     if (newTab === 'user-management') {
-      await loadAllUsers()
+      userManagementRef.value?.refresh()
     }
   }
 )
@@ -1655,8 +1634,7 @@ const loadPageData = async () => {
         questionStore.loadData(),
         questionStore.loadQuestions({ excludeContent: true }),
         questionStore.loadUserStats(),
-        questionStore.loadRecentRecords(),
-        loadAllUsers()
+        questionStore.loadRecentRecords()
       ])
       
       // 检查是否有失败的操作

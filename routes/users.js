@@ -7,93 +7,136 @@ const jwt = require('jsonwebtoken');
 const JWT_SECRET = 'your-secret-key';
 const JWT_EXPIRES_IN = '24h'; // 24小时过期
 
-// 获取用户列表
+// 获取用户列表（支持服务端分页）
 router.get('/', async (req, res) => {
   try {
-    const { grade, class: className, page = 1, limit, withStats = false } = req.query;
+    const { 
+      grade, 
+      class: className, 
+      page = 1, 
+      limit, 
+      withStats = false,
+      student_id,
+      name
+    } = req.query;
     
-    let query = 'SELECT * FROM users WHERE 1=1';
+    // 构建查询条件
+    const conditions = [];
     const params = [];
     
+    if (student_id) {
+      conditions.push('student_id LIKE ?');
+      params.push(`%${student_id}%`);
+    }
+    
+    if (name) {
+      conditions.push('name LIKE ?');
+      params.push(`%${name}%`);
+    }
+    
     if (grade) {
-      query += ' AND grade = ?';
+      conditions.push('grade = ?');
       params.push(grade);
     }
     
     if (className) {
-      query += ' AND class = ?';
+      conditions.push('class = ?');
       params.push(className);
     }
     
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+    
     const pageNum = parseInt(page) || 1;
-    let limitNum = limit === '0' ? 0 : parseInt(limit) || 50;
+    let limitNum = limit === '0' ? 0 : parseInt(limit) || 20;
     
-    // 如果limit为0或负数，返回所有用户
+    // 如果limit为0或负数，返回所有用户（向后兼容）
     if (limitNum <= 0) {
-      query += ' ORDER BY CAST(student_id AS UNSIGNED)';
-    } else {
-      const offset = (pageNum - 1) * limitNum;
-      query += ` ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`;
-    }
-    
-    let users = await db.all(query, params);
-    
-    // 如果需要统计数据，批量获取所有用户的统计信息
-    if (withStats === 'true' && users.length > 0) {
-      try {
-        // 提取所有用户ID
-        const userIds = users.map(user => user.id);
-        
-        // 批量获取所有用户的统计数据
-        const batchStatsQuery = `
-          SELECT 
-            ar.user_id,
-            COUNT(DISTINCT ar.id) as totalSessions,
-            SUM(ar.total_questions) as totalQuestions,
-            SUM(ar.correct_count) as totalCorrect,
-            CASE WHEN SUM(ar.total_questions) > 0 THEN
-              (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
-            ELSE 0 END as avgAccuracy
-          FROM answer_records ar
-          WHERE ar.user_id IN (${userIds.map(() => '?').join(',')})
-          GROUP BY ar.user_id
-        `;
-        
-        const statsResults = await db.all(batchStatsQuery, userIds);
-        
-        // 将统计数据映射到用户对象
-        const statsMap = {};
-        statsResults.forEach(stat => {
-          statsMap[stat.user_id] = stat;
-        });
-        
-        // 为每个用户设置统计数据
-        for (const user of users) {
-          const stats = statsMap[user.id] || {
-            totalSessions: 0,
-            totalQuestions: 0,
-            totalCorrect: 0,
-            avgAccuracy: 0
-          };
-          user.total_sessions = stats.totalSessions || 0;
-          user.avg_accuracy = stats.avgAccuracy || 0;
-        }
-      } catch (error) {
-        // console.error('批量获取用户统计数据失败:', error);
-        // 失败时为所有用户设置默认值
-        for (const user of users) {
-          user.total_sessions = 0;
-          user.avg_accuracy = 0;
-        }
+      const query = `SELECT * FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED)`;
+      let users = await db.all(query, params);
+      
+      // 添加统计数据
+      if (withStats === 'true' && users.length > 0) {
+        await attachUserStats(users);
       }
+      
+      // 向后兼容：返回数组格式
+      res.json(users);
+    } else {
+      // 服务端分页模式
+      // 1. 获取总数
+      const countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`;
+      const countResult = await db.get(countQuery, params);
+      const total = countResult?.total || 0;
+      
+      // 2. 获取分页数据
+      const offset = (pageNum - 1) * limitNum;
+      const dataQuery = `SELECT * FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`;
+      let users = await db.all(dataQuery, params);
+      
+      // 3. 添加统计数据
+      if (withStats === 'true' && users.length > 0) {
+        await attachUserStats(users);
+      }
+      
+      // 返回分页格式
+      res.json({
+        data: users,
+        total,
+        page: pageNum,
+        limit: limitNum,
+        totalPages: Math.ceil(total / limitNum)
+      });
     }
-    
-    res.json(users);
   } catch (error) {
-    // console.error('获取用户失败:', error);
+    console.error('[getUsers] 获取用户失败:', error);
     res.status(500).json({ error: '获取用户失败' });
   }
 });
+
+// 为用户附加统计数据的辅助函数
+async function attachUserStats(users) {
+  try {
+    const userIds = users.map(user => user.id);
+    
+    const batchStatsQuery = `
+      SELECT 
+        ar.user_id,
+        COUNT(DISTINCT ar.id) as totalSessions,
+        SUM(ar.total_questions) as totalQuestions,
+        SUM(ar.correct_count) as totalCorrect,
+        CASE WHEN SUM(ar.total_questions) > 0 THEN
+          (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
+        ELSE 0 END as avgAccuracy
+      FROM answer_records ar
+      WHERE ar.user_id IN (${userIds.map(() => '?').join(',')})
+      GROUP BY ar.user_id
+    `;
+    
+    const statsResults = await db.all(batchStatsQuery, userIds);
+    
+    const statsMap = {};
+    statsResults.forEach(stat => {
+      statsMap[stat.user_id] = stat;
+    });
+    
+    for (const user of users) {
+      const stats = statsMap[user.id] || {
+        totalSessions: 0,
+        totalQuestions: 0,
+        totalCorrect: 0,
+        avgAccuracy: 0
+      };
+      user.total_sessions = stats.totalSessions || 0;
+      user.avg_accuracy = stats.avgAccuracy || 0;
+    }
+  } catch (error) {
+    console.warn('[attachUserStats] 批量获取用户统计数据失败:', error);
+    for (const user of users) {
+      user.total_sessions = 0;
+      user.avg_accuracy = 0;
+    }
+  }
+}
 
 // 获取单个用户
 router.get('/:id', async (req, res) => {
