@@ -7,6 +7,7 @@
     :close-on-click-modal="false"
     :close-on-press-escape="false"
     :show-close="false"
+    :destroy-on-close="true"
     @open="focusPasswordInput"
     @close="handleClose"
   >
@@ -52,7 +53,7 @@ const props = defineProps({
 });
 
 // 定义事件
-const emit = defineEmits(['update:visible', 'login-success']);
+const emit = defineEmits(['close', 'login-success']);
 
 // 本地对话框可见性状态
 const dialogVisible = ref(props.visible);
@@ -72,7 +73,9 @@ watch(() => props.visible, (newValue) => {
 
 // 监听本地 dialogVisible 的变化
 watch(dialogVisible, (newValue) => {
-  emit('update:visible', newValue);
+  if (!newValue) {
+    emit('close');
+  }
 });
 
 // 登录表单
@@ -136,7 +139,7 @@ const handleKeyUp = (event) => {
 
 // 处理对话框关闭
 const handleClose = () => {
-  emit('update:visible', false);
+  dialogVisible.value = false;
 };
 
 // 登录处理
@@ -170,16 +173,12 @@ const handleLogin = async () => {
       // 清空密码
       loginForm.value.password = '';
 
-      // 先关闭对话框
-      emit('update:visible', false);
-
-      // 等待 DOM 更新完成后再触发登录成功事件
-      // 这确保父组件有时间处理 visible 变化
-      await nextTick();
-      
       if (isComponentMounted) {
         ElMessage.success('登录成功');
+        // 触发登录成功事件，让父组件设置认证状态
         emit('login-success', true);
+        // 直接关闭对话框
+        dialogVisible.value = false;
       }
     } else {
       if (isComponentMounted) {

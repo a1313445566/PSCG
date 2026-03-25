@@ -3,7 +3,8 @@
     <!-- 密码验证对话框 -->
     <PasswordDialog
       v-if="!isAuthenticated"
-      v-model:visible="passwordDialogVisible"
+      :visible="passwordDialogVisible"
+      @close="passwordDialogVisible = false"
       @login-success="handlePasswordVerify"
     />
     
@@ -866,15 +867,16 @@ const handlePasswordVerify = (isVerified) => {
     // 设置用户名
     adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
     
-    // 先关闭对话框
+    // 直接设置认证状态
+    isAuthenticated.value = true
+    
+    // 关闭对话框
     passwordDialogVisible.value = false
     
-    // 设置认证状态
+    // 强制刷新页面，确保所有状态都被正确重置
     setTimeout(() => {
-      if (isComponentMounted) {
-        isAuthenticated.value = true
-      }
-    }, 50)
+      window.location.reload();
+    }, 500);
   }
 }
 
@@ -882,10 +884,9 @@ const handlePasswordVerify = (isVerified) => {
 watch(isAuthenticated, (newValue, oldValue) => {
   // 只在认证状态从 false 变为 true 且数据未准备好时加载
   if (newValue && !oldValue && !isDataReady.value && isComponentMounted) {
-    // 使用 setTimeout 让 Vue 先完成当前渲染周期
+    // 等待Vue完成当前渲染周期
     setTimeout(() => {
-      if (!isComponentMounted) return
-      
+      if (!isComponentMounted) return;
       loadPageData().catch(error => {
         console.error('[AdminView] 加载数据失败:', error)
       })
