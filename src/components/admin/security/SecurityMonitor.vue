@@ -31,29 +31,40 @@
       
       <div class="stats-grid">
         <div class="stat-item">
-          <div class="stat-value">{{ rateLimitStatus.global?.activeIPs || 0 }}</div>
-          <div class="stat-label">全局活跃IP</div>
+          <div class="stat-value">{{ rateLimitStatus.api?.activeUsers || 0 }}</div>
+          <div class="stat-label">活跃用户</div>
         </div>
         <div class="stat-item">
           <div class="stat-value">{{ rateLimitStatus.api?.activeIPs || 0 }}</div>
-          <div class="stat-label">API活跃IP</div>
+          <div class="stat-label">匿名IP</div>
         </div>
         <div class="stat-item">
-          <div class="stat-value">{{ rateLimitStatus.submit?.activeIPs || 0 }}</div>
-          <div class="stat-label">提交活跃IP</div>
+          <div class="stat-value">{{ rateLimitStatus.submit?.activeUsers || 0 }}</div>
+          <div class="stat-label">答题用户</div>
         </div>
         <div class="stat-item danger">
           <div class="stat-value">{{ rateLimitStatus.blockedIPs || 0 }}</div>
-          <div class="stat-label">被封禁IP</div>
+          <div class="stat-label">被封禁</div>
         </div>
       </div>
 
-      <!-- 被封禁IP列表 -->
+      <!-- 被封禁列表 -->
       <div class="blocked-list" v-if="rateLimitStatus.blockedList && rateLimitStatus.blockedList.length > 0">
-        <h4>被封禁IP列表</h4>
+        <h4>被封禁列表</h4>
         <el-table :data="rateLimitStatus.blockedList" stripe style="width: 100%">
-          <el-table-column prop="ip" label="IP地址" width="180" />
-          <el-table-column prop="reason" label="原因" width="150">
+          <el-table-column prop="key" label="标识" width="200">
+            <template #default="{ row }">
+              <span>{{ row.key || row.ip }}</span>
+            </template>
+          </el-table-column>
+          <el-table-column prop="type" label="类型" width="100">
+            <template #default="{ row }">
+              <el-tag :type="row.type === 'user' ? 'primary' : 'warning'" size="small">
+                {{ row.type === 'user' ? '用户' : 'IP' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="reason" label="原因" width="120">
             <template #default="{ row }">
               <el-tag :type="row.reason === 'manual_block' ? 'warning' : 'danger'" size="small">
                 {{ row.reason === 'manual_block' ? '手动封禁' : '频率超限' }}
@@ -67,7 +78,7 @@
           </el-table-column>
           <el-table-column label="操作" width="120">
             <template #default="{ row }">
-              <el-button type="success" size="small" @click="unblockIP(row.ip)">
+              <el-button type="success" size="small" @click="unblockIP(row.ip || row.key)">
                 解封
               </el-button>
             </template>
@@ -168,11 +179,21 @@
       </template>
       
       <el-descriptions :column="1" border>
-        <el-descriptions-item label="全局API限流">
-          每分钟最多 200 次请求，超限封禁 1 分钟
+        <el-descriptions-item label="限流策略">
+          <el-tag type="primary" size="small">用户ID优先</el-tag>
+          <span style="margin-left: 8px; color: #409eff;">登录用户独立配额，支持学校NAT环境</span>
         </el-descriptions-item>
-        <el-descriptions-item label="提交接口限流">
-          每分钟最多 10 次提交，超限封禁 5 分钟
+        <el-descriptions-item label="API限流（用户）">
+          每个用户每分钟最多 150 次请求
+        </el-descriptions-item>
+        <el-descriptions-item label="API限流（IP）">
+          每个 IP 每分钟最多 1000 次请求（支持 NAT 多用户）
+        </el-descriptions-item>
+        <el-descriptions-item label="提交限流（用户）">
+          每个用户每分钟最多 20 次提交
+        </el-descriptions-item>
+        <el-descriptions-item label="提交限流（IP）">
+          每个 IP 每分钟最多 500 次提交（防御匿名攻击）
         </el-descriptions-item>
         <el-descriptions-item label="签名防重放">
           同一签名 5 分钟内只能使用一次
@@ -180,9 +201,9 @@
         <el-descriptions-item label="白名单IP">
           127.0.0.1, ::1 不受限流影响
         </el-descriptions-item>
-        <el-descriptions-item label="对正常用户影响">
-          <el-tag type="success" size="small">无影响</el-tag>
-          <span style="margin-left: 8px; color: #67c23a;">正常做题速度下完全不受限制</span>
+        <el-descriptions-item label="学校环境适配">
+          <el-tag type="success" size="small">已启用</el-tag>
+          <span style="margin-left: 8px; color: #67c23a;">同一AP下多用户各自独立配额</span>
         </el-descriptions-item>
       </el-descriptions>
     </el-card>

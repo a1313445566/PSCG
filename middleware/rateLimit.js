@@ -1,21 +1,43 @@
 /**
- * IP 限流中间件
+ * IP/用户限流中间件
  * 防止恶意高频请求
+ * 
+ * 支持：
+ * - 用户 ID 限流（登录用户独立配额，适配学校 NAT 环境）
+ * - IP 限流（未登录用户，防止匿名攻击）
+ * - IP 白名单
+ * - JWT Token 验证（优先从 token 解析用户 ID）
  */
+
+const jwt = require('jsonwebtoken');
+const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 class RateLimiter {
   constructor(options = {}) {
     this.windowMs = options.windowMs || 60000; // 时间窗口（默认1分钟）
-    this.maxRequests = options.maxRequests || 100; // 窗口内最大请求数
+    this.maxRequests = options.maxRequests || 100; // 用户最大请求数
+    this.maxRequestsForIP = options.maxRequestsForIP || options.maxRequests || 100; // IP 最大请求数（支持 NAT）
     this.blockDuration = options.blockDuration || 300000; // 封禁时长（默认5分钟）
     this.whitelist = options.whitelist || ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
+    this.keyGenerator = options.keyGenerator || null; // 自定义 key 生成器
     
-    // 存储结构：Map<IP, { count, firstRequestTime, blocked }>
+    // 存储结构：Map<key, { count, firstRequestTime, blocked, type }>
     this.requests = new Map();
-    this.blockedIPs = new Map();
+    this.blockedKeys = new Map();
     
     // 定期清理过期数据
     this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
+  }
+
+  // 销毁实例，清理定时器（防止内存泄漏）
+  destroy() {
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval);
+      this.cleanupInterval = null;
+    }
+    // 清空存储
+    this.requests.clear();
+    this.blockedKeys.clear();
   }
 
   // 获取客户端真实 IP
@@ -27,18 +49,77 @@ class RateLimiter {
            'unknown';
   }
 
-  // 检查是否在白名单
-  isWhitelisted(ip) {
+  // 获取用户 ID（优先从 JWT token 解析，确保安全性）
+  getUserId(req) {
+    // 1. 优先从 JWT token 解析（最安全）
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const decoded = jwt.verify(token, JWT_SECRET);
+        if (decoded && decoded.userId) {
+          return `user:${decoded.userId}`;
+        }
+      } catch (err) {
+        // token 无效或过期，继续尝试其他方式
+      }
+    }
+    
+    // 2. 从请求体获取（仅作为后备，存在安全风险）
+    // 注意：请求体中的 student_id 可被篡改，仅用于限流目的
+    if (req.body?.student_id) {
+      return `user:student:${req.body.student_id}`;
+    }
+    
+    // 3. 从请求头获取（仅作为后备）
+    if (req.headers['x-student-id']) {
+      return `user:student:${req.headers['x-student-id']}`;
+    }
+    
+    // 4. 从 URL 参数获取（支持 GET 请求）
+    if (req.query?.studentId || req.query?.student_id) {
+      return `user:student:${req.query.studentId || req.query.student_id}`;
+    }
+    
+    // 5. 从 URL 路径获取（如 /users/stats/:userId）
+    if (req.params?.userId) {
+      return `user:${req.params.userId}`;
+    }
+    
+    return null;
+  }
+
+  // 获取限流 key
+  getRateLimitKey(req) {
+    // 如果有自定义 key 生成器，使用它
+    if (this.keyGenerator) {
+      return this.keyGenerator(req);
+    }
+    
+    // 优先使用用户 ID（登录用户独立配额）
+    const userId = this.getUserId(req);
+    if (userId) {
+      return userId;
+    }
+    
+    // 未登录用户使用 IP
+    const ip = this.getClientIP(req);
+    return `ip:${ip}`;
+  }
+
+  // 检查 IP 是否在白名单
+  isWhitelisted(req) {
+    const ip = this.getClientIP(req);
     return this.whitelist.includes(ip);
   }
 
   // 检查是否被封禁
-  isBlocked(ip) {
-    const blockInfo = this.blockedIPs.get(ip);
+  isBlocked(key) {
+    const blockInfo = this.blockedKeys.get(key);
     if (!blockInfo) return false;
     
     if (Date.now() > blockInfo.expiresAt) {
-      this.blockedIPs.delete(ip);
+      this.blockedKeys.delete(key);
       return false;
     }
     
@@ -46,66 +127,75 @@ class RateLimiter {
   }
 
   // 记录请求
-  recordRequest(ip) {
+  recordRequest(key) {
     const now = Date.now();
-    let info = this.requests.get(ip);
+    let info = this.requests.get(key);
     
     if (!info || now - info.firstRequestTime > this.windowMs) {
       // 新窗口
       info = {
         count: 1,
-        firstRequestTime: now
+        firstRequestTime: now,
+        type: key.startsWith('user:') ? 'user' : 'ip'
       };
     } else {
       // 累加请求
       info.count++;
     }
     
-    this.requests.set(ip, info);
+    this.requests.set(key, info);
+    
+    // 根据类型使用不同的限制
+    const maxLimit = key.startsWith('user:') ? this.maxRequests : this.maxRequestsForIP;
     
     // 检查是否超出限制
-    if (info.count > this.maxRequests) {
-      this.blockIP(ip);
+    if (info.count > maxLimit) {
+      this.blockKey(key);
       return { allowed: false, reason: 'rate_limit_exceeded', retryAfter: this.blockDuration };
     }
     
     return { 
       allowed: true, 
-      remaining: this.maxRequests - info.count,
+      remaining: maxLimit - info.count,
       resetTime: info.firstRequestTime + this.windowMs
     };
   }
 
-  // 封禁 IP
-  blockIP(ip) {
-    this.blockedIPs.set(ip, {
+  // 封禁 key
+  blockKey(key) {
+    this.blockedKeys.set(key, {
       expiresAt: Date.now() + this.blockDuration,
-      reason: 'rate_limit_exceeded'
+      reason: 'rate_limit_exceeded',
+      type: key.startsWith('user:') ? 'user' : 'ip'
     });
     
-    console.warn(`🚫 [限流] IP ${ip} 已被封禁 ${this.blockDuration / 1000} 秒`);
+    const type = key.startsWith('user:') ? '用户' : 'IP';
+    console.warn(`🚫 [限流] ${type} ${key} 已被封禁 ${this.blockDuration / 1000} 秒`);
   }
 
   // 手动封禁 IP
   manualBlock(ip, duration = 3600000) {
-    this.blockedIPs.set(ip, {
+    const key = `ip:${ip}`;
+    this.blockedKeys.set(key, {
       expiresAt: Date.now() + duration,
-      reason: 'manual_block'
+      reason: 'manual_block',
+      type: 'ip'
     });
   }
 
   // 解除封禁
   unblock(ip) {
-    this.blockedIPs.delete(ip);
-    this.requests.delete(ip);
+    const key = `ip:${ip}`;
+    this.blockedKeys.delete(key);
+    this.requests.delete(key);
   }
 
   // 解除所有封禁（标准方法）
   unblockAll() {
-    const blockedCount = this.blockedIPs.size;
+    const blockedCount = this.blockedKeys.size;
     const requestCount = this.requests.size;
     
-    this.blockedIPs.clear();
+    this.blockedKeys.clear();
     this.requests.clear();
     
     return {
@@ -120,28 +210,44 @@ class RateLimiter {
     const now = Date.now();
     
     // 清理过期请求记录
-    for (const [ip, info] of this.requests.entries()) {
+    for (const [key, info] of this.requests.entries()) {
       if (now - info.firstRequestTime > this.windowMs) {
-        this.requests.delete(ip);
+        this.requests.delete(key);
       }
     }
     
     // 清理过期封禁
-    for (const [ip, info] of this.blockedIPs.entries()) {
+    for (const [key, info] of this.blockedKeys.entries()) {
       if (now > info.expiresAt) {
-        this.blockedIPs.delete(ip);
+        this.blockedKeys.delete(key);
       }
     }
   }
 
   // 获取统计信息
   getStats() {
+    // 统计用户和 IP 数量
+    let userCount = 0;
+    let ipCount = 0;
+    
+    for (const [key] of this.requests.entries()) {
+      if (key.startsWith('user:')) {
+        userCount++;
+      } else {
+        ipCount++;
+      }
+    }
+    
     return {
-      activeIPs: this.requests.size,
-      blockedIPs: this.blockedIPs.size,
-      blockedList: Array.from(this.blockedIPs.entries()).map(([ip, info]) => ({
-        ip,
+      activeIPs: ipCount,
+      activeUsers: userCount,
+      activeKeys: this.requests.size,
+      blockedIPs: this.blockedKeys.size,
+      blockedList: Array.from(this.blockedKeys.entries()).map(([key, info]) => ({
+        ip: key.startsWith('ip:') ? key.substring(3) : key,
+        key: key,
         reason: info.reason,
+        type: info.type,
         remainingTime: Math.max(0, info.expiresAt - Date.now())
       }))
     };
@@ -150,40 +256,52 @@ class RateLimiter {
   // Express 中间件
   middleware() {
     return (req, res, next) => {
-      const ip = this.getClientIP(req);
-      
-      // 白名单放行
-      if (this.isWhitelisted(ip)) {
+      // IP 白名单放行
+      if (this.isWhitelisted(req)) {
         return next();
       }
       
+      // 获取限流 key
+      const key = this.getRateLimitKey(req);
+      
+      // 调试日志（仅首次请求时打印，避免日志过多）
+      const ip = this.getClientIP(req);
+      if (!this.requests.has(key)) {
+        const userId = this.getUserId(req);
+        console.log(`📍 [限流] 新请求 - IP: ${ip}, Key: ${key}, userId来源: ${userId ? '已识别' : '未识别'}`);
+      }
+      
       // 检查是否被封禁
-      if (this.isBlocked(ip)) {
-        const blockInfo = this.blockedIPs.get(ip);
+      if (this.isBlocked(key)) {
+        const blockInfo = this.blockedKeys.get(key);
         const remainingTime = Math.ceil((blockInfo.expiresAt - Date.now()) / 1000);
         
         res.setHeader('Retry-After', remainingTime);
         return res.status(429).json({
           error: '请求过于频繁，请稍后再试',
-          retryAfter: remainingTime
+          retryAfter: remainingTime,
+          limitedBy: key.startsWith('user:') ? 'user' : 'ip'
         });
       }
       
       // 记录请求
-      const result = this.recordRequest(ip);
+      const result = this.recordRequest(key);
       
       if (!result.allowed) {
         res.setHeader('Retry-After', this.blockDuration / 1000);
         return res.status(429).json({
           error: '请求过于频繁，请稍后再试',
-          retryAfter: this.blockDuration / 1000
+          retryAfter: this.blockDuration / 1000,
+          limitedBy: key.startsWith('user:') ? 'user' : 'ip'
         });
       }
       
-      // 设置响应头
-      res.setHeader('X-RateLimit-Limit', this.maxRequests);
+      // 设置响应头（根据类型显示不同的限制）
+      const maxLimit = key.startsWith('user:') ? this.maxRequests : this.maxRequestsForIP;
+      res.setHeader('X-RateLimit-Limit', maxLimit);
       res.setHeader('X-RateLimit-Remaining', result.remaining);
       res.setHeader('X-RateLimit-Reset', result.resetTime);
+      res.setHeader('X-RateLimit-Type', key.startsWith('user:') ? 'user' : 'ip');
       
       next();
     };
@@ -193,22 +311,26 @@ class RateLimiter {
 // 创建全局限流器实例
 const globalLimiter = new RateLimiter({
   windowMs: 60000,      // 1分钟
-  maxRequests: 300,     // 每分钟最多 300 次请求
+  maxRequests: 500,     // 用户最多 500 次/分钟
+  maxRequestsForIP: 1000, // IP 最多 1000 次/分钟（支持 NAT 多用户）
   blockDuration: 60000  // 超限后封禁 1 分钟
 });
 
-// 创建 API 限流器实例（普通使用）
+// 创建 API 限流器实例（学校环境适配）
+// 每个登录用户独立配额，不会因 NAT 共享 IP 而互相影响
 const apiLimiter = new RateLimiter({
   windowMs: 60000,      // 1分钟
-  maxRequests: 200,     // 每分钟最多 200 次请求（后台加载需要并发）
+  maxRequests: 150,     // 每个用户最多 150 次/分钟
+  maxRequestsForIP: 1000, // IP 最多 1000 次/分钟（支持 50 人 NAT 环境，每人 20 次公共请求）
   blockDuration: 60000  // 超限后封禁 1 分钟
 });
 
-// 创建提交限流器实例（最严格 - 防刷分）
+// 创建提交限流器实例（防刷分）
 const submitLimiter = new RateLimiter({
   windowMs: 60000,      // 1分钟
-  maxRequests: 10,      // 每分钟最多 10 次提交
-  blockDuration: 300000 // 超限后封禁 5 分钟
+  maxRequests: 20,      // 每个用户每分钟最多 20 次提交（每3秒可提交一次）
+  maxRequestsForIP: 500, // IP 最多 500 次/分钟（防御匿名攻击）
+  blockDuration: 60000  // 超限后封禁 1 分钟
 });
 
 module.exports = {

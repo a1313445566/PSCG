@@ -19,7 +19,13 @@
       </div>
     </div>
     
-    <el-tabs v-model="activeTab" v-if="isAuthenticated">
+    <!-- 数据加载中提示 -->
+    <div v-if="isAuthenticated && !isDataReady" class="loading-container">
+      <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
+      <p>正在加载数据，请稍候...</p>
+    </div>
+    
+    <el-tabs v-model="activeTab" v-if="isAuthenticated && isDataReady">
       <!-- 基础设置 -->
       <el-tab-pane label="基础设置" name="basic-settings">
         <div class="basic-settings">
@@ -601,14 +607,45 @@
   color: #909399;
   margin-bottom: 30px;
 }
+
+/* 加载中提示样式 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  background: white;
+  margin: 20px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.loading-container .loading-icon {
+  font-size: 48px;
+  color: #409eff;
+  margin-bottom: 16px;
+  animation: spin 1s linear infinite;
+}
+
+.loading-container p {
+  font-size: 16px;
+  color: #606266;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
 </style>
 
 <script setup>
 import { ref, computed, onMounted, defineAsyncComponent, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
-import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { getApiBaseUrl } from '../utils/database'
+import { useLoading } from '../composables/useLoading'
 
 // 导入模块化组件
 import PasswordDialog from '../components/admin/auth/PasswordDialog.vue'
@@ -636,6 +673,7 @@ const AnalysisView = defineAsyncComponent(() => import('./AnalysisView.vue'))
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
 const router = useRouter()
+const { showLoading, hideLoading, withLoading } = useLoading()
 
 // 状态管理
 const activeTab = ref('basic-settings')
@@ -650,6 +688,7 @@ const allUsers = ref([])
 // 全局加载状态
 const pageLoading = ref(false)
 const loadErrors = ref([])
+const isDataReady = ref(false) // 数据是否加载完成
 
 // 排行榜筛选相关
 const filterStudentId = ref('')
@@ -746,12 +785,9 @@ const handlePasswordVerify = async (isVerified) => {
     adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
     // 使用sessionStorage存储状态
     sessionStorage.setItem('adminAuthenticated', 'true')
-    // 加载设置
-    await loadSettings()
-    // 加载题目和学科数据
-    await questionStore.loadData()
-    // 加载所有题目数据
-    await questionStore.loadQuestions({ excludeContent: true })
+    
+    // 使用统一的加载方法
+    await loadPageData()
   }
 }
 
@@ -1049,145 +1085,129 @@ const openUserDetailDialog = async (user, source = 'userStats', answerRecordId =
 
 // 排行榜筛选相关方法
 const applyFilters = async () => {
-  try {
-    // 显示加载状态
-    ElLoading.service({
-      lock: true,
-      text: '正在筛选数据...',
-      background: 'rgba(0, 0, 0, 0.7)'
-    })
-    
-    // 构建筛选参数
-    const userStatsParams = new URLSearchParams()
-    const recentRecordsParams = new URLSearchParams()
-    
-    // 处理学号筛选
-    if (filterStudentId.value) {
-      userStatsParams.append('student_id', filterStudentId.value)
-      recentRecordsParams.append('student_id', filterStudentId.value)
-    }
-    
-    // 处理年级筛选
-    if (filterGrade.value) {
-      userStatsParams.append('grade', filterGrade.value)
-      recentRecordsParams.append('grade', filterGrade.value)
-    }
-    
-    // 处理班级筛选
-    if (filterClass.value) {
-      userStatsParams.append('class', filterClass.value)
-      recentRecordsParams.append('class', filterClass.value)
-    }
-    
-    // 处理学科筛选
-    if (filterSubject.value) {
-      userStatsParams.append('subjectId', filterSubject.value)
-      recentRecordsParams.append('subjectId', filterSubject.value)
-    }
-    
-    // 处理时间范围筛选
-    if (filterTimeRange.value) {
-      const now = new Date()
-      let startDate, endDate
+  await withLoading(async () => {
+    try {
+      // 构建筛选参数
+      const userStatsParams = new URLSearchParams()
+      const recentRecordsParams = new URLSearchParams()
       
-      switch (filterTimeRange.value) {
-        case 'today':
-          startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-          endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
-          break
-        case 'week':
-          startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-          endDate = new Date()
-          break
-        case 'month':
-          startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-          endDate = new Date()
-          break
-        default:
-          startDate = null
-          endDate = null
+      // 处理学号筛选
+      if (filterStudentId.value) {
+        userStatsParams.append('student_id', filterStudentId.value)
+        recentRecordsParams.append('student_id', filterStudentId.value)
       }
       
-      if (startDate && endDate) {
-        recentRecordsParams.append('startDate', startDate.toISOString())
-        recentRecordsParams.append('endDate', endDate.toISOString())
+      // 处理年级筛选
+      if (filterGrade.value) {
+        userStatsParams.append('grade', filterGrade.value)
+        recentRecordsParams.append('grade', filterGrade.value)
       }
+      
+      // 处理班级筛选
+      if (filterClass.value) {
+        userStatsParams.append('class', filterClass.value)
+        recentRecordsParams.append('class', filterClass.value)
+      }
+      
+      // 处理学科筛选
+      if (filterSubject.value) {
+        userStatsParams.append('subjectId', filterSubject.value)
+        recentRecordsParams.append('subjectId', filterSubject.value)
+      }
+      
+      // 处理时间范围筛选
+      if (filterTimeRange.value) {
+        const now = new Date()
+        let startDate, endDate
+        
+        switch (filterTimeRange.value) {
+          case 'today':
+            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
+            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
+            break
+          case 'week':
+            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
+            endDate = new Date()
+            break
+          case 'month':
+            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
+            endDate = new Date()
+            break
+          default:
+            startDate = null
+            endDate = null
+        }
+        
+        if (startDate && endDate) {
+          recentRecordsParams.append('startDate', startDate.toISOString())
+          recentRecordsParams.append('endDate', endDate.toISOString())
+        }
+      }
+      
+      // 加载筛选后的数据
+      const [userStatsData, recentRecordsData] = await Promise.all([
+        // 获取用户统计数据
+        fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0${userStatsParams.toString() ? '&' + userStatsParams.toString() : ''}`)
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`)
+            }
+            return res.json()
+          })
+          .catch(error => {
+            console.error('获取用户统计数据失败:', error)
+            return { data: [] }
+          }),
+        // 获取最近答题记录
+        fetch(`${getApiBaseUrl()}/answer-records/all?limit=0${recentRecordsParams.toString() ? '&' + recentRecordsParams.toString() : ''}`)
+          .then(res => {
+            if (!res.ok) {
+              throw new Error(`HTTP error! status: ${res.status}`)
+            }
+            return res.json()
+          })
+          .catch(error => {
+            console.error('获取最近答题记录失败:', error)
+            return []
+          })
+      ])
+      
+      // 更新数据
+      questionStore.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
+      questionStore.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
+      
+      // 显示成功消息
+      ElMessage.success('筛选成功')
+    } catch (error) {
+      console.error('筛选数据失败:', error)
+      ElMessage.error('筛选数据失败，请稍后重试')
     }
-    
-    // 加载筛选后的数据
-    const [userStatsData, recentRecordsData] = await Promise.all([
-      // 获取用户统计数据
-      fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0${userStatsParams.toString() ? '&' + userStatsParams.toString() : ''}`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`)
-          }
-          return res.json()
-        })
-        .catch(error => {
-          console.error('获取用户统计数据失败:', error)
-          return { data: [] }
-        }),
-      // 获取最近答题记录
-      fetch(`${getApiBaseUrl()}/answer-records/all?limit=0${recentRecordsParams.toString() ? '&' + recentRecordsParams.toString() : ''}`)
-        .then(res => {
-          if (!res.ok) {
-            throw new Error(`HTTP error! status: ${res.status}`)
-          }
-          return res.json()
-        })
-        .catch(error => {
-          console.error('获取最近答题记录失败:', error)
-          return []
-        })
-    ])
-    
-    // 更新数据
-    questionStore.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
-    questionStore.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
-    
-    // 显示成功消息
-    ElMessage.success('筛选成功')
-  } catch (error) {
-    console.error('筛选数据失败:', error)
-    ElMessage.error('筛选数据失败，请稍后重试')
-  } finally {
-    // 关闭加载状态
-    ElLoading.service().close()
-  }
+  }, '正在筛选数据...')
 }
 
 const resetFilters = async () => {
-  try {
-    // 显示加载状态
-    ElLoading.service({
-      lock: true,
-      text: '正在重置筛选...',
-      background: 'rgba(0, 0, 0, 0.7)'
-    })
-    
-    // 重置筛选条件
-    filterStudentId.value = ''
-    filterGrade.value = ''
-    filterClass.value = ''
-    filterSubject.value = ''
-    filterTimeRange.value = ''
-    
-    // 重新加载所有数据
-    await Promise.all([
-      questionStore.loadUserStats(),
-      questionStore.loadRecentRecords()
-    ])
-    
-    // 显示成功消息
-    ElMessage.success('重置筛选成功')
-  } catch (error) {
-    console.error('重置筛选失败:', error)
-    ElMessage.error('重置筛选失败，请稍后重试')
-  } finally {
-    // 关闭加载状态
-    ElLoading.service().close()
-  }
+  await withLoading(async () => {
+    try {
+      // 重置筛选条件
+      filterStudentId.value = ''
+      filterGrade.value = ''
+      filterClass.value = ''
+      filterSubject.value = ''
+      filterTimeRange.value = ''
+      
+      // 重新加载所有数据
+      await Promise.all([
+        questionStore.loadUserStats(),
+        questionStore.loadRecentRecords()
+      ])
+      
+      // 显示成功消息
+      ElMessage.success('重置筛选成功')
+    } catch (error) {
+      console.error('重置筛选失败:', error)
+      ElMessage.error('重置筛选失败，请稍后重试')
+    }
+  }, '正在重置筛选...')
 }
 
 // 处理批量添加题目
@@ -1547,37 +1567,36 @@ const refreshPageData = async () => {
 const loadPageData = async () => {
   pageLoading.value = true
   loadErrors.value = []
+  isDataReady.value = false // 开始加载前重置状态
   
-  const loadingInstance = ElLoading.service({
-    lock: true,
-    text: '正在加载后台数据...',
-    background: 'rgba(0, 0, 0, 0.7)'
-  })
-  
-  try {
-    // 并行加载所有必需数据,提高加载效率
-    const results = await Promise.allSettled([
-      loadSettings(),
-      questionStore.loadData(),
-      questionStore.loadQuestions({ excludeContent: true }),
-      questionStore.loadUserStats(),
-      questionStore.loadRecentRecords(),
-      loadAllUsers()
-    ])
-    
-    // 检查是否有失败的操作
-    const failedOperations = results.filter(r => r.status === 'rejected')
-    if (failedOperations.length > 0) {
-      const errorMessages = failedOperations.map(r => r.reason?.message || '未知错误')
-      loadErrors.value = errorMessages
-      ElMessage.warning(`部分数据加载失败,可能需要刷新页面: ${errorMessages.length} 项失败`)
+  await withLoading(async () => {
+    try {
+      // 并行加载所有必需数据,提高加载效率
+      const results = await Promise.allSettled([
+        loadSettings(),
+        questionStore.loadData(),
+        questionStore.loadQuestions({ excludeContent: true }),
+        questionStore.loadUserStats(),
+        questionStore.loadRecentRecords(),
+        loadAllUsers()
+      ])
+      
+      // 检查是否有失败的操作
+      const failedOperations = results.filter(r => r.status === 'rejected')
+      if (failedOperations.length > 0) {
+        const errorMessages = failedOperations.map(r => r.reason?.message || '未知错误')
+        loadErrors.value = errorMessages
+        ElMessage.warning(`部分数据加载失败,可能需要刷新页面: ${errorMessages.length} 项失败`)
+      }
+      
+      // 数据加载完成
+      isDataReady.value = true
+    } catch (error) {
+      console.error('加载页面数据失败:', error)
+      ElMessage.error('页面数据加载失败,请刷新页面重试')
+    } finally {
+      pageLoading.value = false
     }
-  } catch (error) {
-    console.error('加载页面数据失败:', error)
-    ElMessage.error('页面数据加载失败,请刷新页面重试')
-  } finally {
-    pageLoading.value = false
-    loadingInstance.close()
-  }
+  }, '正在加载后台数据...')
 }
 </script>

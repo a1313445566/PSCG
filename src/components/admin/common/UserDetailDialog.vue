@@ -188,16 +188,18 @@ const pageSize = ref(10);
 
 // 分页后的答题记录
 const paginatedUserRecords = computed(() => {
+  const records = props.selectedUserRecords || [];
   const start = (currentRecordsPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
-  return props.selectedUserRecords.slice(start, end);
+  return records.slice(start, end);
 });
 
 // 分页后的做题记录
 const paginatedUserQuestionAttempts = computed(() => {
+  const attempts = props.selectedUserQuestionAttempts || [];
   const start = (currentAttemptsPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
-  return props.selectedUserQuestionAttempts.slice(start, end);
+  return attempts.slice(start, end);
 });
 
 // 监听对话框可见性变化

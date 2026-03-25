@@ -151,11 +151,12 @@ const searchClass = ref('');
 
 // 计算筛选后的用户列表
 const filteredUsers = computed(() => {
-  return props.users.filter(user => {
-    const studentId = user.student_id || user.user_id || '';
-    const name = user.name || '';
-    const grade = user.grade || '';
-    const classNum = user.class || '';
+  const users = props.users || [];
+  return users.filter(user => {
+    const studentId = user?.student_id || user?.user_id || '';
+    const name = user?.name || '';
+    const grade = user?.grade || '';
+    const classNum = user?.class || '';
     
     return (
       studentId.includes(searchStudentId.value) &&

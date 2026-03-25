@@ -89,13 +89,14 @@ const currentPage = ref(1);
 const pageSize = ref(10);
 
 // 计算总数
-const total = computed(() => props.recentRecords.length);
+const total = computed(() => (props.recentRecords || []).length);
 
 // 计算分页后的最近记录
 const paginatedRecentRecords = computed(() => {
+  const records = props.recentRecords || [];
   const start = (currentPage.value - 1) * pageSize.value;
   const end = start + pageSize.value;
-  return props.recentRecords.slice(start, end);
+  return records.slice(start, end);
 });
 
 // 打开用户详情对话框

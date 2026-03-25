@@ -252,12 +252,17 @@ const emit = defineEmits(['select-option'])
 
 // XSS 过滤后的题目内容
 const safeContent = computed(() => {
-  return xssFilter.sanitize(props.question.content || '');
+  return xssFilter.sanitize(props.question?.content || '');
 });
 
 // XSS 过滤后的选项
 const parsedOptions = computed(() => {
-  const { question } = props;
+  const question = props.question;
+  
+  // 防御性检查：如果 question 不存在，返回空数组
+  if (!question) {
+    return [];
+  }
   
   // 优先使用shuffledOptions（如果有）
   let options = question.shuffledOptions || question.options;
@@ -333,7 +338,7 @@ const optionLayout = computed(() => {
 
 // 解析用户答案
 const parsedUserAnswer = computed(() => {
-  let userAnswer = props.userAnswer || props.question.user_answer;
+  let userAnswer = props.userAnswer || props.question?.user_answer;
   
   if (typeof userAnswer === 'string') {
     try {
@@ -348,7 +353,7 @@ const parsedUserAnswer = computed(() => {
 
 // 解析正确答案
 const parsedCorrectAnswer = computed(() => {
-  let correctAnswer = props.question.correct_answer || props.question.answer;
+  let correctAnswer = props.question?.correct_answer || props.question?.answer;
   
   if (typeof correctAnswer === 'string') {
     try {
@@ -381,7 +386,7 @@ const isOptionSelected = (option) => {
   const userAnswer = parsedUserAnswer.value;
   if (!userAnswer) return false
   
-  if (props.question.type === 'multiple') {
+  if (props.question?.type === 'multiple') {
     if (Array.isArray(userAnswer)) {
       return userAnswer.includes(option);
     } else if (typeof userAnswer === 'string') {
@@ -397,7 +402,7 @@ const isOptionSelected = (option) => {
 const isOptionCorrect = (option) => {
   const correctAnswer = parsedCorrectAnswer.value;
   
-  if (props.question.type === 'multiple') {
+  if (props.question?.type === 'multiple') {
     let correctAnswers;
     if (Array.isArray(correctAnswer)) {
       correctAnswers = correctAnswer;
@@ -476,21 +481,8 @@ const applyLazyLoad = () => {
   
   // 使用 nextTick 确保 DOM 已更新
   nextTick(() => {
+    // 懒加载会自动检测视口内的图片并立即加载
     applyLazyLoadToContent(contentRef.value);
-    
-    // 同时处理选项中的图片
-    const optionImages = document.querySelectorAll('.option-text img[src]');
-    optionImages.forEach(img => {
-      if (!img.src.startsWith('data:')) {
-        img.dataset.src = img.src;
-        img.src = 'data:image/svg+xml,' + encodeURIComponent(`
-          <svg xmlns="http://www.w3.org/2000/svg" width="100" height="50" viewBox="0 0 100 50">
-            <rect fill="#f5f5f5" width="100" height="50"/>
-          </svg>
-        `);
-        img.classList.add('lazy-loading');
-      }
-    });
   });
 };
 

@@ -413,10 +413,15 @@ const submitAnswers = async () => {
       method: 'POST'
     });
     
+    // 获取 token 用于身份验证
+    const token = localStorage.getItem('token')
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // 使用 JWT token 进行身份验证（优先）
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       },
       body: JSON.stringify(submitData)
     })
@@ -570,10 +575,16 @@ onMounted(async () => {
     }
     
     const apiUrl = `${getApiBaseUrl()}/quiz/start`
+    
+    // 获取 token 用于身份验证
+    const token = localStorage.getItem('token')
+    
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/json'
+        'Content-Type': 'application/json',
+        // 使用 JWT token 进行身份验证（优先）
+        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
       },
       body: JSON.stringify(startData)
     })
