@@ -21,6 +21,13 @@ import {
   deleteClass
 } from '../utils/database'
 import { getApiBaseUrl } from '../utils/database'
+import { 
+  getCacheKeys, 
+  getCacheTTL, 
+  getCacheSafely, 
+  setCacheSafely,
+  clearCurrentCache
+} from '../utils/cacheConfig'
 
 // 主题和题目数据 store
 export const useQuestionStore = defineStore('question', {
@@ -88,18 +95,20 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
 
+        // 使用前后台分离的缓存键
+        const { data: dataKey, expiry: expiryKey } = getCacheKeys()
+
         // 检查缓存 - 优先使用缓存,立即返回
-        const cachedData = localStorage.getItem('coreData')
-        const cacheExpiry = localStorage.getItem('coreDataExpiry')
+        const cachedData = getCacheSafely(dataKey)
+        const cacheExpiry = localStorage.getItem(expiryKey)
 
         if (cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)) {
-          const data = JSON.parse(cachedData)
-          this.subjects = data.subjects
-          this.grades = data.grades
-          this.classes = data.classes
+          this.subjects = cachedData.subjects
+          this.grades = cachedData.grades
+          this.classes = cachedData.classes
           // 后台更新缓存 - 添加错误处理
           this.updateCacheInBackground().catch(error => {
-            console.warn('后台更新缓存失败:', error)
+            console.warn('[loadCoreData] 后台更新缓存失败:', error)
           })
           return
         }
@@ -108,10 +117,9 @@ export const useQuestionStore = defineStore('question', {
         await this.fetchAndCacheCoreData()
       } catch (error) {
         this.error = error.message
-        console.error('加载核心数据失败:', error)
+        console.error('[loadCoreData] 加载核心数据失败:', error)
         // 清除可能损坏的缓存
-        localStorage.removeItem('coreData')
-        localStorage.removeItem('coreDataExpiry')
+        clearCurrentCache()
       } finally {
         this.isLoading = false
       }
@@ -163,14 +171,18 @@ export const useQuestionStore = defineStore('question', {
       this.grades = gradesData
       this.classes = classesData
 
+      // 使用前后台分离的缓存键
+      const { data: dataKey, expiry: expiryKey } = getCacheKeys()
+      const ttl = getCacheTTL()
+
       // 缓存数据
       const coreData = {
         subjects: this.subjects,
         grades: this.grades,
         classes: this.classes
       }
-      localStorage.setItem('coreData', JSON.stringify(coreData))
-      localStorage.setItem('coreDataExpiry', Date.now() + 24 * 60 * 60 * 1000) // 24小时过期
+      setCacheSafely(dataKey, coreData)
+      localStorage.setItem(expiryKey, Date.now() + ttl)
     },
     
     // 加载题目数据（支持服务端分页）

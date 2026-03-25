@@ -1,5 +1,7 @@
 # PSCG - 智能题库系统
 
+> ⚠️ **AI 编码规则**: 本项目有严格的错误处理要求，详见 [`.cursorrules`](.cursorrules)
+
 ## 项目简介
 
 PSCG (Primary School Comprehensive Quiz) 是一个基于现代Web技术构建的智能题库系统，为学生提供个性化学习体验，为教师提供高效教学管理工具。
@@ -32,6 +34,20 @@ PSCG (Primary School Comprehensive Quiz) 是一个基于现代Web技术构建的
 - **难度调整**: 自动调整、时间加权、批量调整
 - **排行榜**: 全局排行、个人排名、积分系统
 - **数据分析**: 个人统计、学科分析、难度分布、趋势分析
+
+## 错误管理机制
+
+项目采用五层错误处理架构：
+
+| 层级 | 位置 | 机制 |
+|------|------|------|
+| API层 | `src/utils/api.js` | 自动重试、超时、防抖、统一提示 |
+| Store层 | `src/stores/*.js` | try-catch、错误状态、缓存清理 |
+| 路由层 | `src/router/index.js` | 懒加载捕获、404处理、全局监听 |
+| 组件层 | `defineAsyncComponent` | loading/error状态、超时处理 |
+| 后端层 | `routes/*.js` | try-catch、统一JSON响应 |
+
+详细规范见 [`DOCS/开发文档/编码规范.md`](DOCS/开发文档/编码规范.md)
 
 ## 快速开始
 

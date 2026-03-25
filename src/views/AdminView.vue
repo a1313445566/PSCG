@@ -637,38 +637,116 @@
   from { transform: rotate(0deg); }
   to { transform: rotate(360deg); }
 }
+
+/* 异步组件加载状态 */
+.async-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 40px;
+  color: #606266;
+}
+
+.async-loading .loading-icon {
+  font-size: 32px;
+  color: #409eff;
+  margin-bottom: 12px;
+  animation: spin 1s linear infinite;
+}
+
+/* 异步组件错误状态 */
+.async-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 200px;
+  padding: 40px;
+  color: #f56c6c;
+}
+
+.async-error .error-icon {
+  font-size: 32px;
+  margin-bottom: 12px;
+}
+
+.async-error span {
+  margin-bottom: 16px;
+}
 </style>
 
 <script setup>
-import { ref, computed, onMounted, defineAsyncComponent, watch } from 'vue'
+import { ref, computed, onMounted, defineAsyncComponent, watch, h } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { getApiBaseUrl } from '../utils/database'
 import { useLoading } from '../composables/useLoading'
 
-// 导入模块化组件
+// 核心组件 - 同步导入（首屏必需）
 import PasswordDialog from '../components/admin/auth/PasswordDialog.vue'
 import InterfaceNameSetting from '../components/admin/basic-settings/InterfaceNameSetting.vue'
 import AnswerSetting from '../components/admin/basic-settings/AnswerSetting.vue'
 import SubjectManagement from '../components/admin/basic-settings/SubjectManagement.vue'
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
-import QuestionList from '../components/admin/question-management/QuestionList.vue'
-import QuestionForm from '../components/admin/question-management/QuestionForm.vue'
-import BatchAddQuestion from '../components/admin/question-management/BatchAddQuestion.vue'
 import UserStats from '../components/admin/leaderboard-management/UserStats.vue'
 import RecentRecords from '../components/admin/leaderboard-management/RecentRecords.vue'
-import BackupRestore from '../components/admin/data-management/BackupRestore.vue'
-import DataCleanup from '../components/admin/data-management/DataCleanup.vue'
-import UserDetailDialog from '../components/admin/common/UserDetailDialog.vue'
-import QuestionDetailDialog from '../components/admin/common/QuestionDetailDialog.vue'
-import SubcategoryDialog from '../components/admin/common/SubcategoryDialog.vue'
-import UserManagement from '../components/admin/user-management/UserManagement.vue'
-import SecurityMonitor from '../components/admin/security/SecurityMonitor.vue'
 import { Refresh } from '@element-plus/icons-vue'
 
-// 动态导入AnalysisView，减少初始加载体积
-const AnalysisView = defineAsyncComponent(() => import('./AnalysisView.vue'))
+// 加载中组件
+const LoadingComponent = {
+  template: `
+    <div class="async-loading">
+      <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
+      <span>加载中...</span>
+    </div>
+  `
+}
+
+// 错误组件
+const ErrorComponent = {
+  template: `
+    <div class="async-error">
+      <el-icon class="error-icon"><i class="el-icon-warning"></i></el-icon>
+      <span>组件加载失败</span>
+      <el-button size="small" @click="retry">重试</el-button>
+    </div>
+  `,
+  methods: {
+    retry() {
+      // 触发页面刷新重新加载
+      window.location.reload()
+    }
+  }
+}
+
+// 异步组件配置工厂函数
+const createAsyncComponent = (loader) => {
+  return defineAsyncComponent({
+    loader,
+    loadingComponent: LoadingComponent,
+    errorComponent: ErrorComponent,
+    delay: 200,        // 延迟 200ms 显示 loading
+    timeout: 10000     // 10 秒超时
+  })
+}
+
+// Tab 面板组件 - 异步导入（按需加载）
+const QuestionList = createAsyncComponent(() => import('../components/admin/question-management/QuestionList.vue'))
+const UserManagement = createAsyncComponent(() => import('../components/admin/user-management/UserManagement.vue'))
+const SecurityMonitor = createAsyncComponent(() => import('../components/admin/security/SecurityMonitor.vue'))
+const BackupRestore = createAsyncComponent(() => import('../components/admin/data-management/BackupRestore.vue'))
+const DataCleanup = createAsyncComponent(() => import('../components/admin/data-management/DataCleanup.vue'))
+const AnalysisView = createAsyncComponent(() => import('./AnalysisView.vue'))
+
+// 对话框组件 - 异步导入（交互时才加载）
+const QuestionForm = createAsyncComponent(() => import('../components/admin/question-management/QuestionForm.vue'))
+const BatchAddQuestion = createAsyncComponent(() => import('../components/admin/question-management/BatchAddQuestion.vue'))
+const UserDetailDialog = createAsyncComponent(() => import('../components/admin/common/UserDetailDialog.vue'))
+const QuestionDetailDialog = createAsyncComponent(() => import('../components/admin/common/QuestionDetailDialog.vue'))
+const SubcategoryDialog = createAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()

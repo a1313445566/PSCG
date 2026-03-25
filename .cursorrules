@@ -1,0 +1,103 @@
+# PSCG 项目 AI 编码规则（精简版）
+
+## 🔴 编码前必做检查
+
+```
+1. 搜索项目中是否已有相关 Hook/工具方法
+   - src/composables/  目录下的 useXxx.js
+   - src/utils/        目录下的工具函数
+   - src/stores/       目录下的 Store
+
+2. 没有才新建，有则复用
+```
+
+## 🔴 强制性规则
+
+### 前端
+| 规则 | 说明 |
+|------|------|
+| async 必须 try-catch | 所有异步函数必须有错误处理 |
+| API 用 api.js | 使用 `src/utils/api.js` 封装客户端 |
+| 路由懒加载用 lazyLoad | `lazyLoad('XxxView.vue')` + `.catch()` |
+| 异步组件完整配置 | `defineAsyncComponent({ loader, loadingComponent, errorComponent, timeout })` |
+| Store actions 有 error | `this.error = error.message` + 向上抛出 |
+| fetch 检查 response.ok | 处理非 200 响应 |
+
+### 后端
+| 规则 | 说明 |
+|------|------|
+| 路由 try-catch | 所有 `async (req, res)` 必须有错误处理 |
+| 参数化查询 | 防止 SQL 注入 |
+| 参数验证优先 | 验证在业务逻辑之前 |
+| 事务有 rollback | 失败时回滚 |
+
+### Composables (Hooks)
+| 规则 | 说明 |
+|------|------|
+| 文件命名 | `src/composables/useXxx.js` |
+| 异步操作 try-catch-finally | 必须有错误处理 |
+| onUnmounted 清理 | 定时器、事件监听、网络请求必须清理 |
+| 错误向上抛出 | `throw error` 让调用者处理 |
+| 日志带前缀 | `console.error('[useXxx] 错误:', error)` |
+
+## 📋 标准模板
+
+### Composable 模板
+```javascript
+import { ref, onUnmounted } from 'vue'
+
+export function useXxx(options = {}) {
+  const data = ref(null)
+  const isLoading = ref(false)
+  const error = ref(null)
+  let timer = null
+
+  const execute = async (params) => {
+    isLoading.value = true
+    try {
+      const result = await api.get('/endpoint', params)
+      data.value = result
+      return result
+    } catch (err) {
+      error.value = err.message
+      console.error('[useXxx] 失败:', err)
+      throw err
+    } finally {
+      isLoading.value = false
+    }
+  }
+
+  const cleanup = () => { if (timer) clearTimeout(timer) }
+  onUnmounted(cleanup)
+
+  return { data, isLoading, error, execute, cleanup }
+}
+```
+
+### 后端路由模板
+```javascript
+router.get('/', async (req, res) => {
+  try {
+    const data = await db.all('SELECT * FROM table')
+    res.json(data)
+  } catch (error) {
+    console.error('操作失败:', error)
+    res.status(500).json({ error: '操作失败' })
+  }
+})
+```
+
+### 异步组件模板
+```javascript
+defineAsyncComponent({
+  loader: () => import('./Component.vue'),
+  loadingComponent: { template: '<div>加载中...</div>' },
+  errorComponent: { template: '<div>加载失败</div>' },
+  delay: 200,
+  timeout: 10000
+})
+```
+
+## 📚 详细规范
+
+详见：`DOCS/开发文档/编码规范.md`

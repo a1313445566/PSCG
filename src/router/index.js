@@ -1,4 +1,40 @@
 import { createRouter, createWebHashHistory } from 'vue-router'
+import { defineComponent, h } from 'vue'
+
+// 错误页面组件
+const RouteErrorComponent = defineComponent({
+  name: 'RouteError',
+  setup() {
+    const reload = () => location.reload()
+    return () => h('div', { class: 'route-error' }, [
+      h('h2', '页面加载失败'),
+      h('p', '抱歉，页面加载失败，请刷新重试'),
+      h('button', { onClick: reload }, '刷新页面')
+    ])
+  }
+})
+
+// 404 页面组件
+const NotFoundComponent = defineComponent({
+  name: 'NotFound',
+  setup() {
+    const goHome = () => location.href = '#/'
+    return () => h('div', { class: 'not-found' }, [
+      h('h2', '页面不存在'),
+      h('p', '您访问的页面不存在'),
+      h('a', { onClick: goHome, style: 'cursor: pointer;' }, '返回首页')
+    ])
+  }
+})
+
+// 路由懒加载 - 带错误处理（文件扩展名必须是静态的）
+const lazyLoad = (viewName) => {
+  return () => import(`../views/${viewName}.vue`)
+    .catch(error => {
+      console.error(`[路由加载失败] ${viewName}:`, error)
+      return { default: RouteErrorComponent }
+    })
+}
 
 const routes = [
   {
@@ -8,43 +44,49 @@ const routes = [
   {
     path: '/login',
     name: 'Login',
-    component: () => import('../views/LoginView.vue')
+    component: lazyLoad('LoginView')
   },
   {
     path: '/home',
     name: 'Home',
-    component: () => import('../views/HomeView.vue')
+    component: lazyLoad('HomeView')
   },
   {
     path: '/subcategory/:subjectId',
     name: 'Subcategory',
-    component: () => import('../views/SubcategoryView.vue')
+    component: lazyLoad('SubcategoryView')
   },
   {
     path: '/quiz/:subjectId/:subcategoryId',
     name: 'Quiz',
-    component: () => import('../views/QuizView.vue')
+    component: lazyLoad('QuizView')
   },
   {
     path: '/result/:subjectId/:subcategoryId',
     name: 'Result',
-    component: () => import('../views/ResultView.vue')
+    component: lazyLoad('ResultView')
   },
 
   {
     path: '/admin',
     name: 'Admin',
-    component: () => import('../views/AdminView.vue')
+    component: lazyLoad('AdminView')
   },
   {
     path: '/leaderboard',
     name: 'Leaderboard',
-    component: () => import('../views/LeaderboardView.vue')
+    component: lazyLoad('LeaderboardView')
   },
   {
     path: '/docs',
     name: 'Docs',
-    component: () => import('../views/DocsView.vue')
+    component: lazyLoad('DocsView')
+  },
+  // 全局 404 页面
+  {
+    path: '/:pathMatch(.*)*',
+    name: 'NotFound',
+    component: NotFoundComponent
   }
 ]
 
@@ -55,6 +97,12 @@ const router = createRouter({
     // 始终滚动到顶部
     return { top: 0 }
   }
+})
+
+// 全局路由错误处理
+router.onError((error) => {
+  console.error('[路由错误]', error)
+  // 可以在这里添加错误上报
 })
 
 // 导航守卫：检查用户是否已登录

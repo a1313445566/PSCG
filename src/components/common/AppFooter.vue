@@ -8,10 +8,10 @@
       <div class="footer-section">
         <h4 class="footer-subtitle">快速链接</h4>
         <ul class="footer-links">
-          <li><router-link to="/home">首页</router-link></li>
-          <li><router-link to="/leaderboard">排行榜</router-link></li>
-          <li><router-link to="/admin">后台管理</router-link></li>
-          <li><router-link to="/docs">文档中心</router-link></li>
+          <li><router-link to="/home" class="footer-link">首页</router-link></li>
+          <li><router-link to="/leaderboard" class="footer-link">排行榜</router-link></li>
+          <li><router-link to="/admin" class="footer-link">后台管理</router-link></li>
+          <li><router-link to="/docs" class="footer-link">文档中心</router-link></li>
         </ul>
       </div>
       <div class="footer-section">
@@ -91,17 +91,22 @@
   margin-bottom: 0.5rem;
 }
 
-.footer-links a {
+.footer-link {
+  display: inline-block;
   color: white;
   text-decoration: none;
   transition: all 0.3s ease;
   font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 4px;
+  cursor: pointer;
 }
 
-.footer-links a:hover {
+.footer-link:hover {
   color: var(--accent-color);
   text-shadow: 0 0 10px rgba(255, 209, 102, 0.5);
   transform: translateX(5px);
+  background-color: rgba(255, 255, 255, 0.1);
 }
 
 .footer-contact {
