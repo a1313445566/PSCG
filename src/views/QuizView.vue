@@ -232,23 +232,15 @@ const maskSignature = (signature) => {
   return `${start}***${end}`;
 };
 
-// 安全的日志输出函数
+// 安全的日志输出函数（生产环境禁用）
 const logSignatureDebug = (message, data = {}) => {
-  const isProduction = import.meta.env.PROD;
-  
-  // 生产环境只输出关键信息
-  if (isProduction) {
-    console.log(`[签名生成] ${message}`, {
-      ...data,
-      timestamp: undefined,
-      fullSignature: undefined,
-      secret: undefined,
-      answers: undefined
-    });
-  } else {
-    // 开发环境输出详细信息（脱敏）
-    console.log(`[签名生成] ${message}`, data);
+  // 生产环境不输出任何日志
+  if (import.meta.env.PROD) {
+    return;
   }
+  
+  // 开发环境输出详细信息（脱敏）
+  console.log(`[签名生成] ${message}`, data);
 };
 
 // 生成签名（与后端保持一致）

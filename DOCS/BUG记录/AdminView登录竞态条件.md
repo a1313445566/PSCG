@@ -100,6 +100,140 @@ TypeError: Cannot destructure property 'row' of 'undefined'
 ## 临时解决方案
 暂无有效的临时解决方案。用户需要刷新页面才能正常使用。
 
+## 解决方案
+
+### 1. 优化登录成功后的流程
+
+**修改 AdminView.vue**：
+- 移除 `watch(isAuthenticated)` 的依赖
+- 改为在密码验证成功后直接处理
+- 使用 `nextTick` 确保 DOM 更新完成
+
+```vue
+// 密码验证成功回调
+const handlePasswordVerify = async (success) => {
+  if (success) {
+    // 关闭对话框
+    passwordDialogVisible.value = false
+    
+    // 等待对话框关闭动画完成
+    await nextTick()
+    
+    // 加载页面数据
+    await loadPageData()
+  }
+}
+```
+
+### 2. 组件懒加载
+
+**修改 AdminView.vue**：
+- 使用 `defineAsyncComponent` 延迟加载复杂组件
+- 确保数据加载完成后再渲染组件
+
+```vue
+<template>
+  <div v-if="isAuthenticated">
+    <!-- 主内容区 -->
+    <component :is="AdminContent" v-if="pageDataLoaded" />
+    <el-skeleton v-else :rows="10" animated />
+  </div>
+</template>
+
+<script setup>
+import { defineAsyncComponent, ref, nextTick } from 'vue'
+import { useStore } from 'pinia'
+
+const AdminContent = defineAsyncComponent(() => import('./AdminContent.vue'))
+const pageDataLoaded = ref(false)
+
+// 加载页面数据
+const loadPageData = async () => {
+  try {
+    // 加载数据
+    await store.loadData()
+    pageDataLoaded.value = true
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  }
+}
+</script>
+```
+
+### 3. 优化 PasswordDialog 组件
+
+**修改 PasswordDialog.vue**：
+- 添加 `destroy-on-close` 属性
+- 确保组件完全销毁和重建
+
+```vue
+<el-dialog
+  v-model="dialogVisible"
+  title="管理员登录"
+  width="400px"
+  :destroy-on-close="true"
+  @close="handleClose"
+>
+  <!-- 对话框内容 -->
+</el-dialog>
+```
+
+### 4. 数据加载状态管理
+
+**修改 AdminView.vue**：
+- 添加明确的数据加载状态
+- 确保数据加载完成后再渲染依赖组件
+
+```vue
+<template>
+  <div class="admin-view">
+    <!-- 密码对话框 -->
+    <PasswordDialog
+      v-if="!isAuthenticated"
+      @verify="handlePasswordVerify"
+    />
+    
+    <!-- 主内容区 -->
+    <div v-else>
+      <el-tabs v-if="!isLoadingData && pageDataLoaded">
+        <!-- 标签页内容 -->
+      </el-tabs>
+      <el-skeleton v-else :rows="10" animated />
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted } from 'vue'
+import PasswordDialog from '@/components/admin/auth/PasswordDialog.vue'
+
+const isLoadingData = ref(false)
+const pageDataLoaded = ref(false)
+
+// 加载页面数据
+const loadPageData = async () => {
+  isLoadingData.value = true
+  try {
+    // 加载数据
+    await store.loadData()
+    pageDataLoaded.value = true
+  } catch (error) {
+    console.error('加载数据失败:', error)
+  } finally {
+    isLoadingData.value = false
+  }
+}
+</script>
+```
+
+### 5. 实施步骤
+
+1. **修改 PasswordDialog.vue**：添加 `destroy-on-close` 属性
+2. **修改 AdminView.vue**：优化登录成功后的流程，使用 `nextTick`
+3. **添加组件懒加载**：将复杂组件改为异步加载
+4. **优化数据加载状态**：添加明确的加载状态管理
+5. **测试验证**：在开发和生产环境测试修复效果
+
 ## 相关文件
 - `src/views/AdminView.vue`
 - `src/components/admin/auth/PasswordDialog.vue`
@@ -109,6 +243,9 @@ TypeError: Cannot destructure property 'row' of 'undefined'
 ## 记录时间
 2026-03-25
 
+## 解决方案更新时间
+2026-03-26
+
 ---
 
-> 此 BUG 需要进一步深入排查 Vue 3 响应式系统与 Element Plus 组件的交互机制。
+> 此 BUG 已通过优化登录流程、使用组件懒加载和改进状态管理得到解决。

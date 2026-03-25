@@ -141,7 +141,6 @@ const handleClose = () => {
 
 // 登录处理
 const handleLogin = async () => {
-  console.log('[PasswordDialog] handleLogin 被调用', { username: loginForm.value.username, isComponentMounted });
   const { username, password } = loginForm.value;
 
   if (!username || !password) {
@@ -152,7 +151,6 @@ const handleLogin = async () => {
   loading.value = true;
 
   try {
-    console.log('[PasswordDialog] 开始发送登录请求...');
     const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
       method: 'POST',
       headers: {
@@ -162,10 +160,8 @@ const handleLogin = async () => {
     });
 
     const data = await response.json();
-    console.log('[PasswordDialog] 登录响应:', { ok: response.ok, success: data.success });
 
     if (response.ok && data.success) {
-      console.log('[PasswordDialog] 登录成功，保存 Token');
       // 存储 Token 到 sessionStorage
       sessionStorage.setItem('adminToken', data.token);
       sessionStorage.setItem('adminUsername', data.username);
@@ -175,20 +171,17 @@ const handleLogin = async () => {
       loginForm.value.password = '';
 
       // 先关闭对话框
-      console.log('[PasswordDialog] 发送 update:visible 事件 (false)');
       emit('update:visible', false);
 
       // 等待 DOM 更新完成后再触发登录成功事件
       // 这确保父组件有时间处理 visible 变化
       await nextTick();
       
-      console.log('[PasswordDialog] 发送 login-success 事件');
       if (isComponentMounted) {
         ElMessage.success('登录成功');
         emit('login-success', true);
       }
     } else {
-      console.warn('[PasswordDialog] 登录失败:', data.error);
       if (isComponentMounted) {
         ElMessage.error(data.error || '登录失败');
       }
@@ -200,7 +193,6 @@ const handleLogin = async () => {
     }
   } finally {
     loading.value = false;
-    console.log('[PasswordDialog] handleLogin 完成');
   }
 };
 
@@ -213,12 +205,10 @@ onMounted(() => {
 
 // 组件卸载时设置标志并清理定时器
 onUnmounted(() => {
-  console.log('[PasswordDialog] onUnmounted 被调用，组件正在卸载');
   isComponentMounted = false;
   // 清理所有定时器
   timeoutIds.forEach(id => clearTimeout(id));
   timeoutIds = [];
-  console.log('[PasswordDialog] 组件卸载完成，已清理所有定时器');
 });
 </script>
 

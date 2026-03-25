@@ -19,14 +19,14 @@
           <div class="setting-item">
             <label class="setting-label">备份类型</label>
             <el-radio-group v-model="backupType" class="setting-control">
-              <el-radio label="full">完整备份</el-radio>
-              <el-radio label="incremental">增量备份</el-radio>
+              <el-radio value="full">完整备份</el-radio>
+              <el-radio value="incremental">增量备份</el-radio>
             </el-radio-group>
           </div>
           <div class="setting-item">
             <label class="setting-label">文件格式</label>
             <el-radio-group v-model="backupFormat" class="setting-control">
-              <el-radio label="db">DB</el-radio>
+              <el-radio value="db">DB</el-radio>
             </el-radio-group>
           </div>
         </div>
@@ -34,16 +34,16 @@
           <div class="setting-item full-width">
             <label class="setting-label">备份内容</label>
             <el-checkbox-group v-model="selectedDataTypes" class="setting-control">
-              <el-checkbox label="questions">题目</el-checkbox>
-              <el-checkbox label="users">用户</el-checkbox>
-              <el-checkbox label="answers">答题记录</el-checkbox>
-              <el-checkbox label="settings">系统设置</el-checkbox>
-              <el-checkbox label="subjects">学科</el-checkbox>
-              <el-checkbox label="subcategories">子分类</el-checkbox>
-              <el-checkbox label="grades">年级</el-checkbox>
-              <el-checkbox label="classes">班级</el-checkbox>
-              <el-checkbox label="leaderboard">排行榜数据</el-checkbox>
-              <el-checkbox label="analysis">分析数据</el-checkbox>
+              <el-checkbox value="questions">题目</el-checkbox>
+              <el-checkbox value="users">用户</el-checkbox>
+              <el-checkbox value="answers">答题记录</el-checkbox>
+              <el-checkbox value="settings">系统设置</el-checkbox>
+              <el-checkbox value="subjects">学科</el-checkbox>
+              <el-checkbox value="subcategories">子分类</el-checkbox>
+              <el-checkbox value="grades">年级</el-checkbox>
+              <el-checkbox value="classes">班级</el-checkbox>
+              <el-checkbox value="leaderboard">排行榜数据</el-checkbox>
+              <el-checkbox value="analysis">分析数据</el-checkbox>
             </el-checkbox-group>
           </div>
         </div>

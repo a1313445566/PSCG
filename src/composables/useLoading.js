@@ -36,9 +36,7 @@ export function useLoading() {
    * @param {string} text - Loading 提示文本，默认"加载中..."
    */
   const showLoading = (text = '加载中...') => {
-    console.log('[useLoading] showLoading 被调用', { text, isMounted })
     if (!isMounted) {
-      console.warn('[useLoading] 组件已卸载，取消 showLoading')
       return
     }
     
@@ -47,7 +45,7 @@ export function useLoading() {
       try {
         loadingInstance.value.close()
       } catch (e) {
-        console.warn('[useLoading] 关闭旧实例失败:', e)
+        // 忽略关闭错误
       }
     }
 
@@ -58,7 +56,6 @@ export function useLoading() {
         text,
         background: 'rgba(255, 255, 255, 0.7)'  // 半透明白色背景
       })
-      console.log('[useLoading] Loading 实例创建成功')
     } catch (e) {
       console.error('[useLoading] 创建 Loading 实例失败:', e)
       loadingInstance.value = null
@@ -69,21 +66,17 @@ export function useLoading() {
    * 隐藏 Loading 动画
    */
   const hideLoading = () => {
-    console.log('[useLoading] hideLoading 被调用', { isMounted, hasInstance: !!loadingInstance.value })
     if (!isMounted) {
-      console.warn('[useLoading] 组件已卸载，取消 hideLoading')
       return
     }
     
     if (loadingInstance.value) {
       try {
         loadingInstance.value.close()
-        console.log('[useLoading] Loading 实例已关闭')
       } catch (e) {
-        console.warn('[useLoading] 关闭 Loading 失败:', e)
+        // 忽略关闭错误
       } finally {
         loadingInstance.value = null  // 清空引用，避免内存泄漏
-        console.log('[useLoading] Loading 引用已清空')
       }
     }
   }
@@ -101,17 +94,13 @@ export function useLoading() {
    * )
    */
   const withLoading = async (fn, text = '加载中...') => {
-    console.log('[useLoading] withLoading 被调用', { text, isMounted })
     if (!isMounted) {
-      console.warn('[useLoading] 组件已卸载，取消 withLoading')
       return
     }
     
     showLoading(text)
     try {
-      console.log('[useLoading] 开始执行异步函数')
       const result = await fn()
-      console.log('[useLoading] 异步函数执行完成')
       return result
     } catch (error) {
       // 记录错误但向上抛出让调用者处理
@@ -119,7 +108,6 @@ export function useLoading() {
       throw error
     } finally {
       // 无论成功还是失败，都确保关闭 Loading
-      console.log('[useLoading] finally 块：准备关闭 Loading')
       hideLoading()
     }
   }
@@ -128,7 +116,6 @@ export function useLoading() {
    * 清理资源（组件卸载时手动调用）
    */
   const cleanup = () => {
-    console.log('[useLoading] cleanup 被调用，设置 isMounted = false')
     isMounted = false
     hideLoading()
   }
