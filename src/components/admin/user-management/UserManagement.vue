@@ -52,38 +52,40 @@
         <el-table-column type="selection" width="55"></el-table-column>
         <el-table-column prop="student_id" label="学号" width="120" align="center">
           <template #default="{ row }">
-            {{ row.student_id || row.user_id || '未设置' }}
+            <span v-if="row">{{ row.student_id || row.user_id || '未设置' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="name" label="姓名" width="100" align="center">
           <template #default="{ row }">
-            {{ row.name || '未设置' }}
+            <span v-if="row">{{ row.name || '未设置' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="grade" label="年级" width="100" align="center">
           <template #default="{ row }">
-            {{ row.grade || '未设置' }}
+            <span v-if="row">{{ row.grade || '未设置' }}</span>
           </template>
         </el-table-column>
         <el-table-column prop="class" label="班级" width="100" align="center">
           <template #default="{ row }">
-            {{ row.class || '未设置' }}
+            <span v-if="row">{{ row.class || '未设置' }}</span>
           </template>
         </el-table-column>
         <el-table-column label="答题次数" width="120" align="center">
           <template #default="{ row }">
-            {{ row.total_sessions || 0 }}
+            <span v-if="row">{{ row.total_sessions || 0 }}</span>
           </template>
         </el-table-column>
         <el-table-column label="正确率" width="120" align="center">
           <template #default="{ row }">
-            {{ Math.round(row.avg_accuracy || 0) }}%
+            <span v-if="row">{{ Math.round(row.avg_accuracy || 0) }}%</span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="200" align="center">
           <template #default="{ row }">
-            <el-button type="primary" size="small" @click="editUser(row)">编辑</el-button>
-            <el-button type="danger" size="small" @click="deleteUser(row)">删除</el-button>
+            <template v-if="row">
+              <el-button type="primary" size="small" @click="editUser(row)">编辑</el-button>
+              <el-button type="danger" size="small" @click="deleteUser(row)">删除</el-button>
+            </template>
           </template>
         </el-table-column>
       </el-table>

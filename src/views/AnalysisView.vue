@@ -38,7 +38,7 @@
                 <el-table-column prop="correct" label="正确数"></el-table-column>
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
-                    <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
+                    <span v-if="scope.row" :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
                       {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
@@ -58,7 +58,7 @@
               <el-table :data="analysisData.gradeAnalysisList" style="width: 100%" stripe border>
                 <el-table-column prop="grade" label="年级" width="100">
                   <template #default="scope">
-                    {{ scope.row.grade }}年级
+                    <span v-if="scope.row">{{ scope.row.grade }}年级</span>
                   </template>
                 </el-table-column>
                 <el-table-column prop="users" label="用户数"></el-table-column>
@@ -67,7 +67,7 @@
                 <el-table-column prop="correct" label="正确数"></el-table-column>
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
-                    <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
+                    <span v-if="scope.row" :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
                       {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>
@@ -91,7 +91,7 @@
                 <el-table-column prop="correct" label="正确数"></el-table-column>
                 <el-table-column label="正确率" sortable>
                   <template #default="scope">
-                    <span :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
+                    <span v-if="scope.row" :class="{'text-success': scope.row.accuracy >= 80, 'text-warning': scope.row.accuracy >= 60 && scope.row.accuracy < 80, 'text-danger': scope.row.accuracy < 60}">
                       {{ typeof scope.row.accuracy === 'number' ? scope.row.accuracy.toFixed(1) : '0.0' }}%
                     </span>
                   </template>

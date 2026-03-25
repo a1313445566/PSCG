@@ -1,4 +1,4 @@
-import { ref, onUnmounted } from 'vue'
+import { ref } from 'vue'
 import { ElLoading } from 'element-plus'
 
 /**
@@ -8,7 +8,10 @@ import { ElLoading } from 'element-plus'
  *
  * @example
  * ```js
- * const { showLoading, hideLoading, withLoading } = useLoading()
+ * const { showLoading, hideLoading, withLoading, cleanup } = useLoading()
+ * 
+ * // 在组件卸载时调用清理
+ * onUnmounted(cleanup)
  *
  * // 方式1：手动控制
  * showLoading('加载中...')
@@ -24,12 +27,21 @@ import { ElLoading } from 'element-plus'
 export function useLoading() {
   // Loading 实例引用
   const loadingInstance = ref(null)
+  
+  // 组件挂载状态
+  let isMounted = true
 
   /**
    * 显示 Loading 动画
    * @param {string} text - Loading 提示文本，默认"加载中..."
    */
   const showLoading = (text = '加载中...') => {
+    console.log('[useLoading] showLoading 被调用', { text, isMounted })
+    if (!isMounted) {
+      console.warn('[useLoading] 组件已卸载，取消 showLoading')
+      return
+    }
+    
     // 先关闭已有实例，避免重复实例
     if (loadingInstance.value) {
       try {
@@ -46,6 +58,7 @@ export function useLoading() {
         text,
         background: 'rgba(255, 255, 255, 0.7)'  // 半透明白色背景
       })
+      console.log('[useLoading] Loading 实例创建成功')
     } catch (e) {
       console.error('[useLoading] 创建 Loading 实例失败:', e)
       loadingInstance.value = null
@@ -56,13 +69,21 @@ export function useLoading() {
    * 隐藏 Loading 动画
    */
   const hideLoading = () => {
+    console.log('[useLoading] hideLoading 被调用', { isMounted, hasInstance: !!loadingInstance.value })
+    if (!isMounted) {
+      console.warn('[useLoading] 组件已卸载，取消 hideLoading')
+      return
+    }
+    
     if (loadingInstance.value) {
       try {
         loadingInstance.value.close()
+        console.log('[useLoading] Loading 实例已关闭')
       } catch (e) {
         console.warn('[useLoading] 关闭 Loading 失败:', e)
       } finally {
         loadingInstance.value = null  // 清空引用，避免内存泄漏
+        console.log('[useLoading] Loading 引用已清空')
       }
     }
   }
@@ -80,28 +101,37 @@ export function useLoading() {
    * )
    */
   const withLoading = async (fn, text = '加载中...') => {
+    console.log('[useLoading] withLoading 被调用', { text, isMounted })
+    if (!isMounted) {
+      console.warn('[useLoading] 组件已卸载，取消 withLoading')
+      return
+    }
+    
     showLoading(text)
     try {
-      return await fn()
+      console.log('[useLoading] 开始执行异步函数')
+      const result = await fn()
+      console.log('[useLoading] 异步函数执行完成')
+      return result
     } catch (error) {
       // 记录错误但向上抛出让调用者处理
       console.error('[useLoading] 异步操作失败:', error)
       throw error
     } finally {
       // 无论成功还是失败，都确保关闭 Loading
+      console.log('[useLoading] finally 块：准备关闭 Loading')
       hideLoading()
     }
   }
 
   /**
-   * 清理资源（组件卸载时自动调用）
+   * 清理资源（组件卸载时手动调用）
    */
   const cleanup = () => {
+    console.log('[useLoading] cleanup 被调用，设置 isMounted = false')
+    isMounted = false
     hideLoading()
   }
-
-  // 组件卸载时自动清理
-  onUnmounted(cleanup)
 
   return {
     showLoading,

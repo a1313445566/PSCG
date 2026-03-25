@@ -33,7 +33,8 @@
           :loading="loading"
         >
           <template #default="{ node, data }">
-            <div class="tree-node-content" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 8px 0;">
+            <!-- 添加数据验证，防止 undefined 错误 -->
+            <div v-if="node && data" class="tree-node-content" style="display: flex; flex-direction: column; align-items: flex-start; width: 100%; padding: 8px 0;">
               <!-- 节点内容 -->
               <div v-if="!data.isEditing" style="display: flex; align-items: center; justify-content: space-between; width: 100%;">
                 <div style="display: flex; align-items: center; gap: 8px;">
@@ -201,16 +202,11 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted } from 'vue';
+import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useQuestionStore } from '../../../stores/questionStore';
 import { getApiBaseUrl } from '../../../utils/database';
 import { Plus, Refresh } from '@element-plus/icons-vue';
-
-// 组件挂载时初始化数据
-onMounted(async () => {
-  await questionStore.loadData();
-});
 
 // 定义属性和事件
 const props = defineProps({
@@ -219,6 +215,10 @@ const props = defineProps({
 const emit = defineEmits(['manage-subcategories']);
 
 const questionStore = useQuestionStore();
+
+// 组件挂载状态和定时器管理
+let isComponentMounted = true;
+const timeoutIds = [];
 
 // 使用计算属性获取最新的学科数据
 const subjects = computed(() => questionStore.subjects);
@@ -238,8 +238,10 @@ const loadNode = async (node, resolve) => {
   if (node.level === 0) {
     // 加载根节点（学科）
     try {
-      // 总是重新加载数据，确保使用最新数据
-      await questionStore.loadData();
+      // 只在数据为空时才重新加载
+      if (questionStore.subjects.length === 0) {
+        await questionStore.loadData();
+      }
       
       // 使用从数据库获取的排序（已在后端按sort_order排序）
       let orderedSubjects = [...questionStore.subjects];
@@ -261,8 +263,6 @@ const loadNode = async (node, resolve) => {
   } else if (node.data.type === 'subject') {
     // 加载学科的子节点（题库）
     try {
-      // 确保使用最新数据
-      await questionStore.loadData();
       const subjectId = node.data.id;
       const subject = questionStore.subjects.find(s => s.id === subjectId);
       if (subject && subject.subcategories) {
@@ -334,7 +334,14 @@ const refreshTree = async () => {
     // 强制刷新树组件
     treeVisible.value = false;
     // 等待DOM更新
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => {
+      const timeoutId = setTimeout(() => {
+        if (isComponentMounted) {
+          resolve();
+        }
+      }, 100);
+      timeoutIds.push(timeoutId);
+    });
     treeVisible.value = true;
     ElMessage.success('刷新成功');
   } catch (error) {
@@ -369,7 +376,14 @@ const confirmAddSubject = async () => {
     // 强制刷新树组件
     treeVisible.value = false;
     // 等待DOM更新
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => {
+      const timeoutId = setTimeout(() => {
+        if (isComponentMounted) {
+          resolve();
+        }
+      }, 100);
+      timeoutIds.push(timeoutId);
+    });
     treeVisible.value = true;
     addSubjectDialogVisible.value = false;
     loading.value = false;
@@ -407,7 +421,14 @@ const confirmAddSubcategory = async () => {
     // 强制刷新树组件
     treeVisible.value = false;
     // 等待DOM更新
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => {
+      const timeoutId = setTimeout(() => {
+        if (isComponentMounted) {
+          resolve();
+        }
+      }, 100);
+      timeoutIds.push(timeoutId);
+    });
     treeVisible.value = true;
     addSubcategoryDialogVisible.value = false;
     loading.value = false;
@@ -467,7 +488,14 @@ const saveEdit = async () => {
     // 强制刷新树组件
     treeVisible.value = false;
     // 等待DOM更新
-    await new Promise(resolve => setTimeout(resolve, 100));
+    await new Promise(resolve => {
+      const timeoutId = setTimeout(() => {
+        if (isComponentMounted) {
+          resolve();
+        }
+      }, 100);
+      timeoutIds.push(timeoutId);
+    });
     treeVisible.value = true;
     editingData.value = null;
     loading.value = false;
@@ -638,7 +666,14 @@ const deleteNode = async (data) => {
       // 强制刷新树组件
       treeVisible.value = false;
       // 等待DOM更新
-      await new Promise(resolve => setTimeout(resolve, 100));
+      await new Promise(resolve => {
+        const timeoutId = setTimeout(() => {
+          if (isComponentMounted) {
+            resolve();
+          }
+        }, 100);
+        timeoutIds.push(timeoutId);
+      });
       treeVisible.value = true;
       loading.value = false;
     }
@@ -646,6 +681,13 @@ const deleteNode = async (data) => {
     // 取消删除
   });
 };
+
+// 组件卸载时清理
+onUnmounted(() => {
+  isComponentMounted = false;
+  timeoutIds.forEach(id => clearTimeout(id));
+  timeoutIds.length = 0;
+});
 </script>
 
 <style scoped>

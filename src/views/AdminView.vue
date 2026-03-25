@@ -2,9 +2,23 @@
   <div class="admin-container">
     <!-- 密码验证对话框 -->
     <PasswordDialog
+      v-if="!isAuthenticated"
       v-model:visible="passwordDialogVisible"
       @login-success="handlePasswordVerify"
     />
+    
+    <!-- 调试信息面板 -->
+    <div v-if="debugMode" class="debug-panel">
+      <div class="debug-title">调试信息</div>
+      <div>isAuthenticated: {{ isAuthenticated }}</div>
+      <div>isDataReady: {{ isDataReady }}</div>
+      <div>passwordDialogVisible: {{ passwordDialogVisible }}</div>
+      <div>pageLoading: {{ pageLoading }}</div>
+      <div>isComponentMounted: {{ isComponentMounted }}</div>
+      <div>activeTab: {{ activeTab }}</div>
+      <div>subjects.length: {{ subjects?.length || 0 }}</div>
+      <div>时间线: {{ debugTimeline.join(' → ') }}</div>
+    </div>
 
     <div class="admin-header" v-if="isAuthenticated">
       <h1 class="title">题库管理系统</h1>
@@ -173,8 +187,8 @@
       </el-tab-pane>
       
       <!-- 数据库管理 -->
-      <el-tab-pane label="数据库管理" name="data-management" @click="handleDataManagementClick">
-        <div v-if="isDataManagementAuthenticated" class="data-management">
+      <el-tab-pane label="数据库管理" name="data-management">
+        <div class="data-management">
           <BackupRestore 
             :backup-history="backupHistory"
             @backup-data="backupData"
@@ -194,12 +208,6 @@
             @clear-classes="clearClasses"
           />
         </div>
-        <div v-else class="data-management-locked">
-          <el-icon class="lock-icon"><i class="el-icon-lock"></i></el-icon>
-          <h3>数据库管理功能已锁定</h3>
-          <p>请输入管理员密码解锁数据库管理功能</p>
-          <el-button type="primary" @click="showDataManagementPasswordDialog">解锁数据库管理</el-button>
-        </div>
       </el-tab-pane>
       
       <!-- 安全监控 -->
@@ -208,8 +216,9 @@
       </el-tab-pane>
     </el-tabs>
     
-    <!-- 数据库管理密码验证对话框 -->
+    <!-- 数据库管理密码验证对话框 - 已禁用
     <el-dialog
+      v-if="isAuthenticated"
       v-model="dataManagementPasswordDialogVisible"
       title="🔐 数据库管理验证"
       width="480px"
@@ -226,12 +235,12 @@
         <p class="dialog-description">为了保护系统安全，请输入管理员密码解锁数据库管理功能</p>
         <el-form :model="dataManagementPasswordForm" label-width="100px" @submit.prevent="verifyDataManagementPassword" class="password-form">
           <el-form-item label="管理员密码" class="password-input-item">
-            <el-input 
-              ref="dataManagementPasswordInputRef" 
-              v-model="dataManagementPasswordForm.password" 
-              type="password" 
-              placeholder="请输入管理员密码" 
-              show-password 
+            <el-input
+              ref="dataManagementPasswordInputRef"
+              v-model="dataManagementPasswordForm.password"
+              type="password"
+              placeholder="请输入管理员密码"
+              show-password
               @keyup="handleDataManagementKeyUp"
               class="password-input"
             ></el-input>
@@ -245,6 +254,7 @@
         </span>
       </template>
     </el-dialog>
+    -->
 
     <!-- 题目详情对话框 -->
     <QuestionDetailDialog
@@ -678,7 +688,7 @@
 </style>
 
 <script setup>
-import { ref, computed, onMounted, defineAsyncComponent, watch, h } from 'vue'
+import { ref, computed, onMounted, onUnmounted, defineAsyncComponent, watch, h, nextTick, onErrorCaptured } from 'vue'
 import { useRouter } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { ElMessage, ElMessageBox } from 'element-plus'
@@ -751,7 +761,7 @@ const SubcategoryDialog = createAsyncComponent(() => import('../components/admin
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
 const router = useRouter()
-const { showLoading, hideLoading, withLoading } = useLoading()
+const { showLoading, hideLoading, withLoading, cleanup: cleanupLoading } = useLoading()
 
 // 状态管理
 const activeTab = ref('basic-settings')
@@ -767,8 +777,25 @@ const userManagementRef = ref(null)
 
 // 全局加载状态
 const pageLoading = ref(false)
+
+// 组件挂载状态（用于防止异步操作完成时组件已卸载导致的错误）
+let isComponentMounted = true
+const timeoutIds = []
 const loadErrors = ref([])
 const isDataReady = ref(false) // 数据是否加载完成
+
+// 数据加载锁 - 防止重复加载
+let isLoadingData = false
+
+// 调试模式（可通过 URL 参数 ?debug=1 开启）
+const debugMode = ref(false)
+const debugTimeline = ref([])
+const addDebugLog = (msg) => {
+  const timestamp = new Date().toISOString().split('T')[1].slice(0, 12)
+  debugTimeline.value.push(`${timestamp} ${msg}`)
+  if (debugTimeline.value.length > 20) debugTimeline.value.shift()
+  console.log(`[DEBUG] ${msg}`)
+}
 
 // 排行榜筛选相关
 const filterStudentId = ref('')
@@ -857,23 +884,59 @@ const questionDetailDialogVisible = ref(false)
 const selectedQuestionDetail = ref(null)
 
 // 方法
-const handlePasswordVerify = async (isVerified) => {
-  if (isVerified) {
-    isAuthenticated.value = true
-    passwordDialogVisible.value = false
-    // 获取用户名
+const handlePasswordVerify = (isVerified) => {
+  console.log('[AdminView] handlePasswordVerify 被调用', { isVerified, isComponentMounted })
+  addDebugLog('handlePasswordVerify 开始')
+  if (isVerified && isComponentMounted) {
+    console.log('[AdminView] 登录成功')
+    addDebugLog('登录成功')
+    // 设置用户名
     adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
-    // 使用sessionStorage存储状态
-    sessionStorage.setItem('adminAuthenticated', 'true')
     
-    // 使用统一的加载方法
-    await loadPageData()
+    // 先关闭对话框
+    passwordDialogVisible.value = false
+    
+    // 立即设置认证状态 - 使用 setTimeout 确保在下一个事件循环执行
+    // 避免阻塞，让 Vue 有时间更新 DOM
+    setTimeout(() => {
+      if (isComponentMounted) {
+        isAuthenticated.value = true
+        addDebugLog('isAuthenticated = true (setTimeout)')
+        console.log('[AdminView] 认证状态已设置')
+      }
+    }, 50)
   }
 }
+
+// 监听认证状态变化，安全地加载数据
+watch(isAuthenticated, (newValue, oldValue) => {
+  console.log('[AdminView] watch(isAuthenticated) 触发', { newValue, oldValue, isComponentMounted, isDataReady: isDataReady.value })
+  addDebugLog(`watch(isAuth): ${oldValue}→${newValue}`)
+  // 只在认证状态从 false 变为 true 且数据未准备好时加载
+  if (newValue && !oldValue && !isDataReady.value && isComponentMounted) {
+    console.log('[AdminView] 开始加载数据（PasswordDialog 已关闭）')
+    addDebugLog('开始 loadPageData')
+    
+    // 使用 setTimeout 让 Vue 先完成当前渲染周期（销毁 PasswordDialog）
+    // 然后再开始数据加载，避免阻塞渲染
+    setTimeout(() => {
+      if (!isComponentMounted) return
+      
+      loadPageData().then(() => {
+        console.log('[AdminView] loadPageData 完成')
+        addDebugLog('loadPageData 完成')
+      }).catch(error => {
+        console.error('[AdminView] 加载数据失败:', error)
+        addDebugLog(`错误: ${error.message}`)
+      })
+    }, 100)
+  }
+})
 
 const logout = () => {
   isAuthenticated.value = false
   isDataManagementAuthenticated.value = false
+  isDataReady.value = false  // 重置数据就绪状态
   passwordDialogVisible.value = true
   adminUsername.value = ''
   sessionStorage.removeItem('adminAuthenticated')
@@ -906,9 +969,13 @@ const showQuestionDetail = (row) => {
 }
 
 const verifyDataManagementPassword = async () => {
+  if (!isComponentMounted) return
+  
   const token = sessionStorage.getItem('adminToken')
   if (!token) {
-    ElMessage.error('请先登录')
+    if (isComponentMounted) {
+      ElMessage.error('请先登录')
+    }
     return
   }
 
@@ -926,6 +993,8 @@ const verifyDataManagementPassword = async () => {
 
     const data = await response.json()
 
+    if (!isComponentMounted) return
+    
     if (response.ok && data.valid) {
       isDataManagementAuthenticated.value = true
       dataManagementPasswordDialogVisible.value = false
@@ -938,19 +1007,22 @@ const verifyDataManagementPassword = async () => {
     }
   } catch (error) {
     console.error('验证失败:', error)
-    ElMessage.error('验证失败，请重试')
+    if (isComponentMounted) {
+      ElMessage.error('验证失败，请重试')
+    }
   }
 }
 
 const focusDataManagementPasswordInput = () => {
-  setTimeout(() => {
-    if (dataManagementPasswordInputRef.value && dataManagementPasswordInputRef.value.$el) {
+  const timeoutId = setTimeout(() => {
+    if (isComponentMounted && dataManagementPasswordInputRef.value && dataManagementPasswordInputRef.value.$el) {
       const inputElement = dataManagementPasswordInputRef.value.$el.querySelector('input')
       if (inputElement) {
         inputElement.focus()
       }
     }
   }, 100)
+  timeoutIds.push(timeoutId)
 }
 
 const handleDataManagementKeyUp = (event) => {
@@ -971,27 +1043,37 @@ const showChangePasswordDialog = () => {
 
 // 修改密码
 const handleChangePassword = async () => {
+  if (!isComponentMounted) return
+  
   const { oldPassword, newPassword, confirmPassword } = changePasswordForm.value
 
   if (!oldPassword || !newPassword || !confirmPassword) {
-    ElMessage.warning('请填写所有字段')
+    if (isComponentMounted) {
+      ElMessage.warning('请填写所有字段')
+    }
     return
   }
 
   if (newPassword.length < 6) {
-    ElMessage.warning('新密码长度不能少于6位')
+    if (isComponentMounted) {
+      ElMessage.warning('新密码长度不能少于6位')
+    }
     return
   }
 
   if (newPassword !== confirmPassword) {
-    ElMessage.warning('两次输入的新密码不一致')
+    if (isComponentMounted) {
+      ElMessage.warning('两次输入的新密码不一致')
+    }
     return
   }
 
   const token = sessionStorage.getItem('adminToken')
   if (!token) {
-    ElMessage.error('请重新登录')
-    logout()
+    if (isComponentMounted) {
+      ElMessage.error('请重新登录')
+      logout()
+    }
     return
   }
 
@@ -1009,6 +1091,8 @@ const handleChangePassword = async () => {
 
     const data = await response.json()
 
+    if (!isComponentMounted) return
+    
     if (response.ok && data.success) {
       ElMessage.success('密码修改成功')
       changePasswordDialogVisible.value = false
@@ -1017,9 +1101,13 @@ const handleChangePassword = async () => {
     }
   } catch (error) {
     console.error('修改密码失败:', error)
-    ElMessage.error('修改密码失败')
+    if (isComponentMounted) {
+      ElMessage.error('修改密码失败')
+    }
   } finally {
-    changePasswordLoading.value = false
+    if (isComponentMounted) {
+      changePasswordLoading.value = false
+    }
   }
 }
 
@@ -1049,10 +1137,14 @@ const saveQuestion = async (formData) => {
   try {
     if (isEditing.value) {
       await questionStore.updateQuestion(formData)
-      ElMessage.success('题目更新成功！')
+      if (isComponentMounted) {
+        ElMessage.success('题目更新成功！')
+      }
     } else {
       await questionStore.addQuestion(formData)
-      ElMessage.success('题目添加成功！')
+      if (isComponentMounted) {
+        ElMessage.success('题目添加成功！')
+      }
     }
 
     dialogVisible.value = false
@@ -1060,7 +1152,9 @@ const saveQuestion = async (formData) => {
     questionListRef.value?.refresh()
   } catch (error) {
 
-    ElMessage.error('保存题目失败，请稍后重试！')
+    if (isComponentMounted) {
+      ElMessage.error('保存题目失败，请稍后重试！')
+    }
   }
 }
 
@@ -1073,10 +1167,16 @@ const manageSubcategories = (subject) => {
 const addSubcategory = async (subjectId, subcategory) => {
   try {
     await questionStore.addSubcategory(subjectId, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
-    ElMessage.success('学科题库添加成功！')
+    if (isComponentMounted) {
+      ElMessage.success('学科题库添加成功！')
+    }
+    // 刷新学科数据
+    await questionStore.loadData()
   } catch (error) {
 
-    ElMessage.error('添加学科题库失败，请稍后重试！')
+    if (isComponentMounted) {
+      ElMessage.error('添加学科题库失败，请稍后重试！')
+    }
   }
 }
 
@@ -1084,10 +1184,16 @@ const addSubcategory = async (subjectId, subcategory) => {
 const updateSubcategory = async (subjectId, subcategory) => {
   try {
     await questionStore.updateSubcategory(subjectId, subcategory.id, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
-    ElMessage.success('学科题库更新成功！')
+    if (isComponentMounted) {
+      ElMessage.success('学科题库更新成功！')
+    }
+    // 刷新学科数据
+    await questionStore.loadData()
   } catch (error) {
 
-    ElMessage.error('更新学科题库失败，请稍后重试！')
+    if (isComponentMounted) {
+      ElMessage.error('更新学科题库失败，请稍后重试！')
+    }
   }
 }
 
@@ -1095,14 +1201,23 @@ const updateSubcategory = async (subjectId, subcategory) => {
 const deleteSubcategory = async (subjectId, subcategoryId) => {
   try {
     await questionStore.deleteSubcategory(subjectId, subcategoryId)
-    ElMessage.success('学科题库删除成功！')
+    if (isComponentMounted) {
+      ElMessage.success('学科题库删除成功！')
+    }
+    // 刷新学科数据和题目列表
+    await questionStore.loadData()
+    questionListRef.value?.refresh()
   } catch (error) {
 
-    ElMessage.error('删除学科题库失败，请稍后重试！')
+    if (isComponentMounted) {
+      ElMessage.error('删除学科题库失败，请稍后重试！')
+    }
   }
 }
 
 const openUserDetailDialog = async (user, source = 'userStats', answerRecordId = null) => {
+  if (!isComponentMounted) return
+  
   // 确定用户ID，优先使用user_id字段，特别是在从recentRecords点击时
   const userId = user.user_id || user.id
   
@@ -1111,6 +1226,7 @@ const openUserDetailDialog = async (user, source = 'userStats', answerRecordId =
     const statsResponse = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000&id=${userId}`)
     if (statsResponse.ok) {
       const statsData = await statsResponse.json()
+      if (!isComponentMounted) return
       if (statsData && statsData.length > 0) {
         selectedUser.value = statsData[0]
       } else {
@@ -1123,8 +1239,12 @@ const openUserDetailDialog = async (user, source = 'userStats', answerRecordId =
     }
   } catch (error) {
     console.error('加载用户统计数据失败:', error)
-    selectedUser.value = user
+    if (isComponentMounted) {
+      selectedUser.value = user
+    }
   }
+  
+  if (!isComponentMounted) return
   
   dialogSource.value = source
   currentAnswerRecordId.value = answerRecordId
@@ -1134,20 +1254,20 @@ const openUserDetailDialog = async (user, source = 'userStats', answerRecordId =
     if (source === 'userStats' && userId) {
       // 加载用户的答题记录
       const recordsResponse = await fetch(`${getApiBaseUrl()}/answer-records/${userId}`)
-      if (recordsResponse.ok) {
+      if (recordsResponse.ok && isComponentMounted) {
         selectedUserRecords.value = await recordsResponse.json()
       }
     } else if (source === 'recentRecords' && answerRecordId && userId) {
       // 加载用户的做题记录
       // 使用正确的接口路径格式
       const attemptsResponse = await fetch(`${getApiBaseUrl()}/answer-records/question-attempts/${userId}?answerRecordId=${answerRecordId}`)
-      if (attemptsResponse.ok) {
+      if (attemptsResponse.ok && isComponentMounted) {
         const attemptsData = await attemptsResponse.json()
         selectedUserQuestionAttempts.value = attemptsData
-      } else {
+      } else if (isComponentMounted) {
         // 尝试使用备用接口获取用户的所有做题记录
         const allAttemptsResponse = await fetch(`${getApiBaseUrl()}/answer-records/question-attempts/${userId}`)
-        if (allAttemptsResponse.ok) {
+        if (allAttemptsResponse.ok && isComponentMounted) {
           const allAttemptsData = await allAttemptsResponse.json()
           // 过滤出与当前answerRecordId相关的记录，确保类型一致
           selectedUserQuestionAttempts.value = allAttemptsData.filter(attempt => {
@@ -1160,12 +1280,18 @@ const openUserDetailDialog = async (user, source = 'userStats', answerRecordId =
     console.error('加载用户记录失败:', error)
   }
   
-  userDetailDialogVisible.value = true
+  if (isComponentMounted) {
+    userDetailDialogVisible.value = true
+  }
 }
 
 // 排行榜筛选相关方法
 const applyFilters = async () => {
+  if (!isComponentMounted) return
+  
   await withLoading(async () => {
+    if (!isComponentMounted) return
+    
     try {
       // 构建筛选参数
       const userStatsParams = new URLSearchParams()
@@ -1252,21 +1378,31 @@ const applyFilters = async () => {
           })
       ])
       
+      if (!isComponentMounted) return
+      
       // 更新数据
       questionStore.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
       questionStore.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
       
       // 显示成功消息
-      ElMessage.success('筛选成功')
+      if (isComponentMounted) {
+        ElMessage.success('筛选成功')
+      }
     } catch (error) {
       console.error('筛选数据失败:', error)
-      ElMessage.error('筛选数据失败，请稍后重试')
+      if (isComponentMounted) {
+        ElMessage.error('筛选数据失败，请稍后重试')
+      }
     }
   }, '正在筛选数据...')
 }
 
 const resetFilters = async () => {
+  if (!isComponentMounted) return
+  
   await withLoading(async () => {
+    if (!isComponentMounted) return
+    
     try {
       // 重置筛选条件
       filterStudentId.value = ''
@@ -1282,97 +1418,180 @@ const resetFilters = async () => {
       ])
       
       // 显示成功消息
-      ElMessage.success('重置筛选成功')
+      if (isComponentMounted) {
+        ElMessage.success('重置筛选成功')
+      }
     } catch (error) {
       console.error('重置筛选失败:', error)
-      ElMessage.error('重置筛选失败，请稍后重试')
+      if (isComponentMounted) {
+        ElMessage.error('重置筛选失败，请稍后重试')
+      }
     }
   }, '正在重置筛选...')
 }
 
 // 处理批量添加题目
 const handleBatchAddQuestions = async (questions) => {
+  if (!isComponentMounted) return
+  
   try {
     for (const question of questions) {
+      if (!isComponentMounted) return
       await questionStore.addQuestion(question)
     }
-    ElMessage.success(`成功添加 ${questions.length} 道题目`)
-    // 刷新题目列表
-    questionListRef.value?.refresh()
+    if (isComponentMounted) {
+      ElMessage.success(`成功添加 ${questions.length} 道题目`)
+      // 刷新题目列表
+      questionListRef.value?.refresh()
+    }
   } catch (error) {
-
-    ElMessage.error('批量添加题目失败，请稍后重试')
+    console.error('批量添加题目失败:', error)
+    if (isComponentMounted) {
+      ElMessage.error('批量添加题目失败，请稍后重试')
+    }
   }
 }
 
 // 更新用户列表
 const updateUserList = async () => {
+  if (!isComponentMounted) return
+  
   try {
     await questionStore.loadUserStats()
-    // 刷新用户管理组件
-    userManagementRef.value?.refresh()
-    ElMessage.success('用户列表已更新')
+    if (isComponentMounted) {
+      // 刷新用户管理组件
+      userManagementRef.value?.refresh()
+      ElMessage.success('用户列表已更新')
+    }
   } catch (error) {
     console.error('更新用户列表失败:', error)
-    ElMessage.error('更新用户列表失败，请稍后重试')
+    if (isComponentMounted) {
+      ElMessage.error('更新用户列表失败，请稍后重试')
+    }
   }
 }
 
 // 数据管理相关方法
 const clearAllData = async () => {
+  if (!isComponentMounted) return
+  
   try {
     await fetch(`${getApiBaseUrl()}/data/clear-all`, { method: 'POST' })
-    await questionStore.loadData()
-    ElMessage.success('所有数据已清空')
+    // 刷新所有数据（使用 allSettled 确保所有操作都尝试执行）
+    const results = await Promise.allSettled([
+      questionStore.loadData(),
+      questionStore.loadQuestions({ excludeContent: true }),
+      questionStore.loadUserStats(),
+      questionStore.loadRecentRecords()
+    ])
+    
+    // 检查组件是否仍然挂载
+    if (!isComponentMounted) return
+    
+    // 收集失败的操作
+    const failedOperations = results
+      .map((r, i) => {
+        if (r.status === 'rejected') {
+          const names = ['学科数据', '题目数据', '用户统计', '最近记录']
+          return `${names[i]}: ${r.reason?.message || '未知错误'}`
+        }
+        return null
+      })
+      .filter(Boolean)
+    
+    questionListRef.value?.refresh()
+    userManagementRef.value?.refresh()
+    
+    if (failedOperations.length > 0) {
+      ElMessage.warning(`数据已清空，但部分数据刷新失败: ${failedOperations.join(', ')}`)
+    } else {
+      ElMessage.success('所有数据已清空')
+    }
   } catch (error) {
-    console.error('清空数据失败:', error)
-    ElMessage.error('清空数据失败，请稍后重试')
+    console.error('[clearAllData] 清空数据失败:', error)
+    if (isComponentMounted) {
+      ElMessage.error('清空数据失败，请稍后重试')
+    }
   }
 }
 
 const clearUserRecords = async () => {
+  if (!isComponentMounted) return
+  
   try {
     await fetch(`${getApiBaseUrl()}/data/clear-records`, { method: 'POST' })
-    ElMessage.success('用户答题记录已清空')
+    // 刷新用户统计数据
+    await questionStore.loadUserStats()
+    if (isComponentMounted) {
+      userManagementRef.value?.refresh()
+      ElMessage.success('用户答题记录已清空')
+    }
   } catch (error) {
     console.error('清空用户答题记录失败:', error)
-    ElMessage.error('清空用户答题记录失败，请稍后重试')
+    if (isComponentMounted) {
+      ElMessage.error('清空用户答题记录失败，请稍后重试')
+    }
   }
 }
 
 const clearLeaderboard = async () => {
+  if (!isComponentMounted) return
+  
   try {
     await fetch(`${getApiBaseUrl()}/data/clear-leaderboard`, { method: 'POST' })
-    ElMessage.success('排行榜数据已清空')
+    // 刷新排行榜数据
+    await questionStore.loadUserStats()
+    await questionStore.loadRecentRecords()
+    if (isComponentMounted) {
+      ElMessage.success('排行榜数据已清空')
+    }
   } catch (error) {
     console.error('清空排行榜数据失败:', error)
-    ElMessage.error('清空排行榜数据失败，请稍后重试')
+    if (isComponentMounted) {
+      ElMessage.error('清空排行榜数据失败，请稍后重试')
+    }
   }
 }
 
 const clearGrades = async () => {
+  if (!isComponentMounted) return
+  
   try {
     await fetch(`${getApiBaseUrl()}/data/clear-grades`, { method: 'POST' })
     await questionStore.loadData()
-    ElMessage.success('年级数据已清空')
+    if (isComponentMounted) {
+      userManagementRef.value?.refresh()
+      ElMessage.success('年级数据已清空')
+    }
   } catch (error) {
     console.error('清空年级数据失败:', error)
-    ElMessage.error('清空年级数据失败，请稍后重试')
+    if (isComponentMounted) {
+      ElMessage.error('清空年级数据失败，请稍后重试')
+    }
   }
 }
 
 const clearClasses = async () => {
+  if (!isComponentMounted) return
+  
   try {
     await fetch(`${getApiBaseUrl()}/data/clear-classes`, { method: 'POST' })
     await questionStore.loadData()
-    ElMessage.success('班级数据已清空')
+    if (isComponentMounted) {
+      userManagementRef.value?.refresh()
+      ElMessage.success('班级数据已清空')
+    }
   } catch (error) {
     console.error('清空班级数据失败:', error)
-    ElMessage.error('清空班级数据失败，请稍后重试')
+    if (isComponentMounted) {
+      ElMessage.error('清空班级数据失败，请稍后重试')
+    }
   }
 }
 
 const backupData = async (backupParams = {}) => {
+  if (!isComponentMounted) return
+  
   try {
     // 构建API请求URL
     const baseUrl = `${getApiBaseUrl()}/backup`;
@@ -1396,10 +1615,14 @@ const backupData = async (backupParams = {}) => {
     a.download = `backup-${new Date().toISOString().slice(0, 10)}-${backupParams.type || 'full'}.${extension}`;
     a.click();
     URL.revokeObjectURL(downloadUrl);
-    ElMessage.success('数据备份成功');
+    if (isComponentMounted) {
+      ElMessage.success('数据备份成功');
+    }
   } catch (error) {
     console.error('备份数据失败:', error);
-    ElMessage.error('备份数据失败，请稍后重试');
+    if (isComponentMounted) {
+      ElMessage.error('备份数据失败，请稍后重试');
+    }
   }
 }
 
@@ -1408,6 +1631,8 @@ const restoreData = async () => {
 }
 
 const exportData = async () => {
+  if (!isComponentMounted) return
+  
   try {
     const response = await fetch(`${getApiBaseUrl()}/export`);
     const blob = await response.blob();
@@ -1417,14 +1642,20 @@ const exportData = async () => {
     a.download = `export-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
-    ElMessage.success('数据导出成功');
+    if (isComponentMounted) {
+      ElMessage.success('数据导出成功');
+    }
   } catch (error) {
     console.error('导出数据失败:', error);
-    ElMessage.error('导出数据失败，请稍后重试');
+    if (isComponentMounted) {
+      ElMessage.error('导出数据失败，请稍后重试');
+    }
   }
 }
 
 const uploadBackup = async (file) => {
+  if (!isComponentMounted) return
+  
   try {
     const formData = new FormData()
     formData.append('backup', file.raw)
@@ -1435,35 +1666,75 @@ const uploadBackup = async (file) => {
     })
     
     if (response.ok) {
-      await questionStore.loadData()
-      ElMessage.success('数据恢复成功')
+      // 刷新所有数据（使用 allSettled 确保所有操作都尝试执行）
+      const results = await Promise.allSettled([
+        questionStore.loadData(),
+        questionStore.loadQuestions({ excludeContent: true }),
+        questionStore.loadUserStats(),
+        questionStore.loadRecentRecords()
+      ])
+      
+      // 检查组件是否仍然挂载
+      if (!isComponentMounted) return
+      
+      // 收集失败的操作
+      const failedOperations = results
+        .map((r, i) => {
+          if (r.status === 'rejected') {
+            const names = ['学科数据', '题目数据', '用户统计', '最近记录']
+            return `${names[i]}: ${r.reason?.message || '未知错误'}`
+          }
+          return null
+        })
+        .filter(Boolean)
+      
+      // 刷新题目列表
+      questionListRef.value?.refresh()
+      // 刷新用户管理组件
+      userManagementRef.value?.refresh()
+      
+      if (failedOperations.length > 0) {
+        ElMessage.warning(`数据已恢复，但部分数据刷新失败: ${failedOperations.join(', ')}`)
+      } else {
+        ElMessage.success('数据恢复成功')
+      }
     } else {
       throw new Error('恢复数据失败')
     }
   } catch (error) {
-
-    ElMessage.error('上传备份文件失败，请稍后重试')
+    console.error('上传备份文件失败:', error)
+    if (isComponentMounted) {
+      ElMessage.error('上传备份文件失败，请稍后重试')
+    }
   }
 }
 
 // 获取备份历史
 const getBackupHistory = async () => {
+  if (!isComponentMounted) return []
+  
   try {
     const response = await fetch(`${getApiBaseUrl()}/backup/history`);
     const history = await response.json();
     // 将历史数据存储到变量中
-    backupHistory.value = history;
+    if (isComponentMounted) {
+      backupHistory.value = history;
+    }
     return history;
   } catch (error) {
     console.error('获取备份历史失败:', error);
-    ElMessage.error('获取备份历史失败，请稍后重试');
-    backupHistory.value = [];
+    if (isComponentMounted) {
+      ElMessage.error('获取备份历史失败，请稍后重试');
+      backupHistory.value = [];
+    }
     return [];
   }
 }
 
 // 下载备份
 const downloadBackup = async (backupId) => {
+  if (!isComponentMounted) return
+  
   try {
     const response = await fetch(`${getApiBaseUrl()}/backup/${backupId}`);
     const blob = await response.blob();
@@ -1473,26 +1744,38 @@ const downloadBackup = async (backupId) => {
     a.download = `backup-${backupId}.db`;
     a.click();
     URL.revokeObjectURL(url);
-    ElMessage.success('备份文件下载成功');
+    if (isComponentMounted) {
+      ElMessage.success('备份文件下载成功');
+    }
   } catch (error) {
     console.error('下载备份失败:', error);
-    ElMessage.error('下载备份失败，请稍后重试');
+    if (isComponentMounted) {
+      ElMessage.error('下载备份失败，请稍后重试');
+    }
   }
 }
 
 // 删除备份
 const deleteBackup = async (backupId) => {
+  if (!isComponentMounted) return
+  
   try {
     await fetch(`${getApiBaseUrl()}/backup/${backupId}`, { method: 'DELETE' });
-    ElMessage.success('备份文件删除成功');
+    if (isComponentMounted) {
+      ElMessage.success('备份文件删除成功');
+    }
   } catch (error) {
     console.error('删除备份失败:', error);
-    ElMessage.error('删除备份失败，请稍后重试');
+    if (isComponentMounted) {
+      ElMessage.error('删除备份失败，请稍后重试');
+    }
   }
 }
 
 // 验证备份文件
 const verifyBackup = async (file) => {
+  if (!isComponentMounted) return
+  
   try {
     const formData = new FormData();
     formData.append('backup', file.raw);
@@ -1504,6 +1787,8 @@ const verifyBackup = async (file) => {
     
     if (response.ok) {
       const result = await response.json();
+      if (!isComponentMounted) return
+      
       if (result.valid) {
         ElMessageBox.alert(
           `<div style="text-align: left;">
@@ -1527,7 +1812,9 @@ const verifyBackup = async (file) => {
     }
   } catch (error) {
     console.error('验证备份文件失败:', error);
-    ElMessage.error('验证备份文件失败，请稍后重试');
+    if (isComponentMounted) {
+      ElMessage.error('验证备份文件失败，请稍后重试');
+    }
   }
 }
 
@@ -1535,21 +1822,30 @@ const verifyBackup = async (file) => {
 
 // 加载设置
 const loadSettings = async () => {
+  if (!isComponentMounted) return
   await settingsStore.loadSettings()
 }
 
 // 更新界面名称
 const updateInterfaceName = async (value) => {
+  if (!isComponentMounted) return
+  
   if (value) {
     await settingsStore.updateInterfaceName(value)
-    ElMessage.success('界面名称更新成功！')
+    if (isComponentMounted) {
+      ElMessage.success('界面名称更新成功！')
+    }
   } else {
-    ElMessage.error('请输入界面名称')
+    if (isComponentMounted) {
+      ElMessage.error('请输入界面名称')
+    }
   }
 }
 
 // 更新答题设置
 const updateAnswerSettings = async (settings) => {
+  if (!isComponentMounted) return
+  
   const success = await settingsStore.updateSettings({
     randomizeAnswers: settings.randomizeAnswers.toString(),
     randomizeErrorCollectionAnswers: settings.randomizeErrorCollectionAnswers.toString(),
@@ -1559,10 +1855,12 @@ const updateAnswerSettings = async (settings) => {
     fixedQuestionCountValue: settings.fixedQuestionCountValue.toString(),
     subjectQuestionCounts: settings.subjectQuestionCounts
   })
-  if (success) {
-    ElMessage.success('答题设置更新成功！')
-  } else {
-    ElMessage.error('答题设置更新失败')
+  if (isComponentMounted) {
+    if (success) {
+      ElMessage.success('答题设置更新成功！')
+    } else {
+      ElMessage.error('答题设置更新失败')
+    }
   }
 }
 
@@ -1584,8 +1882,10 @@ watch(
 
 // 初始化 - 优化加载流程
 onMounted(async () => {
+  console.log('[AdminView] onMounted 被调用，组件已挂载')
   // 检查sessionStorage中的登录状态
   if (sessionStorage.getItem('adminAuthenticated') === 'true') {
+    console.log('[AdminView] 发现已登录状态，恢复会话')
     isAuthenticated.value = true
     passwordDialogVisible.value = false
     // 恢复用户名
@@ -1595,18 +1895,60 @@ onMounted(async () => {
       isDataManagementAuthenticated.value = true
     }
     
-    // 开始加载页面数据
-    await loadPageData()
+    // 等待DOM完全更新，避免竞态条件
+    console.log('[AdminView] 等待 DOM 更新...')
+    await nextTick()
+    await nextTick()
+    
+    // 再次检查组件是否仍然挂载
+    if (isComponentMounted) {
+      console.log('[AdminView] 开始加载页面数据')
+      // 开始加载页面数据
+      await loadPageData()
+    } else {
+      console.warn('[AdminView] 组件已卸载，取消数据加载')
+    }
   } else {
+    console.log('[AdminView] 未登录，显示登录对话框')
     // 设置密码对话框为可见，确保登录框自动弹出
     passwordDialogVisible.value = true
     isAuthenticated.value = false
   }
 })
 
+// 组件卸载时设置标志并清理定时器
+onUnmounted(() => {
+  console.log('[AdminView] onUnmounted 被调用，组件正在卸载')
+  isComponentMounted = false
+  cleanupLoading()
+  timeoutIds.forEach(id => clearTimeout(id))
+  timeoutIds.length = 0
+  console.log('[AdminView] 组件卸载完成，已清理所有定时器')
+})
+
+// 错误捕获 - 处理子组件渲染竞态错误
+onErrorCaptured((err, instance, info) => {
+  const errorMessage = err?.message || ''
+  const isIgnorableError = 
+    errorMessage.includes("Cannot destructure property 'node' of 'undefined'") ||
+    errorMessage.includes("Cannot destructure property 'row' of 'undefined'") ||
+    errorMessage.includes('emitsOptions') ||
+    errorMessage.includes('Cannot read properties of undefined')
+  
+  if (isIgnorableError) {
+    console.warn('[AdminView] 捕获并忽略渲染竞态错误:', errorMessage)
+    return false // 阻止错误继续传播
+  }
+  
+  // 其他错误正常抛出
+  return true
+})
+
 // 手动刷新页面数据
 const refreshPageData = async () => {
-  ElMessage.info('正在重新加载数据...')
+  if (isComponentMounted) {
+    ElMessage.info('正在重新加载数据...')
+  }
   
   // 清除缓存,强制重新加载
   localStorage.removeItem('coreData')
@@ -1615,44 +1957,98 @@ const refreshPageData = async () => {
   // 重新加载
   await loadPageData()
   
-  if (loadErrors.value.length === 0) {
+  if (loadErrors.value.length === 0 && isComponentMounted) {
     ElMessage.success('数据刷新成功')
   }
 }
 
-// 统一加载页面数据 - 并行加载提高效率
+// 统一加载页面数据 - 串行加载避免状态竞争
 const loadPageData = async () => {
+  console.log('[AdminView] loadPageData 被调用', { isComponentMounted, isLoadingData })
+  
+  // 防止重复加载
+  if (isLoadingData) {
+    console.warn('[AdminView] 数据正在加载中，跳过重复请求')
+    return
+  }
+  
+  if (!isComponentMounted) return
+  
+  isLoadingData = true
   pageLoading.value = true
   loadErrors.value = []
-  isDataReady.value = false // 开始加载前重置状态
+  isDataReady.value = false
   
-  await withLoading(async () => {
+  const loadSingleData = async (name, loader) => {
+    if (!isComponentMounted) throw new Error('组件已卸载')
     try {
-      // 并行加载所有必需数据,提高加载效率
-      const results = await Promise.allSettled([
-        loadSettings(),
-        questionStore.loadData(),
-        questionStore.loadQuestions({ excludeContent: true }),
-        questionStore.loadUserStats(),
-        questionStore.loadRecentRecords()
-      ])
-      
-      // 检查是否有失败的操作
-      const failedOperations = results.filter(r => r.status === 'rejected')
-      if (failedOperations.length > 0) {
-        const errorMessages = failedOperations.map(r => r.reason?.message || '未知错误')
-        loadErrors.value = errorMessages
-        ElMessage.warning(`部分数据加载失败,可能需要刷新页面: ${errorMessages.length} 项失败`)
-      }
-      
-      // 数据加载完成
-      isDataReady.value = true
+      console.log(`[AdminView] 开始加载: ${name}`)
+      await loader()
+      console.log(`[AdminView] 完成: ${name}`)
+      // 每个数据加载后等待 Vue 状态稳定
+      await nextTick()
+      await new Promise(resolve => {
+        const timeoutId = setTimeout(() => {
+          if (isComponentMounted) resolve()
+        }, 50)
+        timeoutIds.push(timeoutId)
+      })
     } catch (error) {
-      console.error('加载页面数据失败:', error)
-      ElMessage.error('页面数据加载失败,请刷新页面重试')
-    } finally {
-      pageLoading.value = false
+      console.error(`[AdminView] 加载失败: ${name}`, error)
+      loadErrors.value.push(`${name}: ${error.message}`)
     }
-  }, '正在加载后台数据...')
+  }
+  
+  console.log('[AdminView] 开始串行加载数据...')
+  try {
+    // 1. 先加载核心数据（学科、年级、班级）
+    await loadSingleData('核心数据', () => questionStore.loadData())
+    if (!isComponentMounted) return
+    
+    // 2. 加载设置
+    await loadSingleData('系统设置', () => loadSettings())
+    if (!isComponentMounted) return
+    
+    // 3. 加载题目列表
+    await loadSingleData('题目数据', () => questionStore.loadQuestions({ excludeContent: true }))
+    if (!isComponentMounted) return
+    
+    // 4. 加载用户统计
+    await loadSingleData('用户统计', () => questionStore.loadUserStats())
+    if (!isComponentMounted) return
+    
+    // 5. 加载最近记录
+    await loadSingleData('最近记录', () => questionStore.loadRecentRecords())
+    if (!isComponentMounted) return
+    
+    // 最终稳定等待
+    console.log('[AdminView] 所有数据加载完成，等待最终稳定...')
+    await nextTick()
+    await new Promise(resolve => {
+      const timeoutId = setTimeout(() => {
+        if (isComponentMounted) resolve()
+      }, 100)
+      timeoutIds.push(timeoutId)
+    })
+    
+    if (!isComponentMounted) return
+    
+    if (loadErrors.value.length > 0 && isComponentMounted) {
+      ElMessage.warning(`部分数据加载失败: ${loadErrors.value.length} 项`)
+    }
+    
+    console.log('[AdminView] 设置 isDataReady = true')
+    isDataReady.value = true
+  } catch (error) {
+    console.error('[AdminView] 加载页面数据失败:', error)
+    if (isComponentMounted) {
+      ElMessage.error('页面数据加载失败,请刷新页面重试')
+    }
+  } finally {
+    console.log('[AdminView] 设置 pageLoading = false, isLoadingData = false')
+    pageLoading.value = false
+    isLoadingData = false
+  }
+  console.log('[AdminView] loadPageData 完成')
 }
 </script>

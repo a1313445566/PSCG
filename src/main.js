@@ -14,6 +14,25 @@ const pinia = createPinia()
 app.use(pinia)
 app.use(router)
 
+// 全局错误处理器 - 捕获组件渲染期间的错误
+app.config.errorHandler = (err, instance, info) => {
+  // 忽略 Element Plus 组件在销毁/渲染期间的竞态错误
+  const errorMessage = err?.message || ''
+  const isIgnorableError = 
+    errorMessage.includes("Cannot destructure property 'node' of 'undefined'") ||
+    errorMessage.includes("Cannot destructure property 'row' of 'undefined'") ||
+    errorMessage.includes('emitsOptions') ||
+    errorMessage.includes('Cannot read properties of undefined')
+  
+  if (isIgnorableError) {
+    console.warn('[Vue] 忽略渲染竞态错误:', errorMessage)
+    return
+  }
+  
+  // 其他错误正常抛出
+  console.error('[Vue Error]', err, info)
+}
+
 // 立即挂载应用
 app.mount('#app')
 
@@ -34,9 +53,5 @@ import('element-plus').then(ElementPlus => {
   console.error('Element Plus 加载失败:', err)
 })
 
-// 后台加载数据
-import { useQuestionStore } from './stores/questionStore'
-const questionStore = useQuestionStore()
-questionStore.initialize().catch(error => {
-  console.error('初始化数据失败:', error)
-})
+// 注意：数据初始化由各个页面自己管理，不再在全局初始化
+// 这样可以避免竞态条件和重复初始化的问题

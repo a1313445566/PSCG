@@ -54,31 +54,31 @@
         <el-table :data="rateLimitStatus.blockedList" stripe style="width: 100%">
           <el-table-column prop="key" label="标识" width="200">
             <template #default="{ row }">
-              <span>{{ row.key || row.ip }}</span>
+              <span v-if="row">{{ row.key || row.ip }}</span>
             </template>
           </el-table-column>
           <el-table-column prop="type" label="类型" width="100">
             <template #default="{ row }">
-              <el-tag :type="row.type === 'user' ? 'primary' : 'warning'" size="small">
+              <el-tag v-if="row" :type="row.type === 'user' ? 'primary' : 'warning'" size="small">
                 {{ row.type === 'user' ? '用户' : 'IP' }}
               </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="reason" label="原因" width="120">
             <template #default="{ row }">
-              <el-tag :type="row.reason === 'manual_block' ? 'warning' : 'danger'" size="small">
+              <el-tag v-if="row" :type="row.reason === 'manual_block' ? 'warning' : 'danger'" size="small">
                 {{ row.reason === 'manual_block' ? '手动封禁' : '频率超限' }}
               </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="remainingTime" label="剩余时间">
             <template #default="{ row }">
-              {{ formatTime(row.remainingTime) }}
+              <span v-if="row">{{ formatTime(row.remainingTime) }}</span>
             </template>
           </el-table-column>
           <el-table-column label="操作" width="120">
             <template #default="{ row }">
-              <el-button type="success" size="small" @click="unblockIP(row.ip || row.key)">
+              <el-button v-if="row" type="success" size="small" @click="unblockIP(row.ip || row.key)">
                 解封
               </el-button>
             </template>

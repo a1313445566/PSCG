@@ -202,15 +202,17 @@
           <el-table-column prop="filename" label="文件名" min-width="200"></el-table-column>
           <el-table-column prop="type" label="类型" width="100">
             <template #default="{ row }">
-              <el-tag :type="row.type === 'full' ? 'primary' : 'success'">{{ row.type === 'full' ? '完整' : '增量' }}</el-tag>
+              <el-tag v-if="row" :type="row.type === 'full' ? 'primary' : 'success'">{{ row.type === 'full' ? '完整' : '增量' }}</el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="size" label="大小" width="100"></el-table-column>
           <el-table-column prop="createdAt" label="创建时间" width="200"></el-table-column>
           <el-table-column label="操作" width="150">
             <template #default="{ row }">
-              <el-button type="primary" size="small" @click="downloadBackup(row.id)">下载</el-button>
-              <el-button type="danger" size="small" @click="deleteBackup(row.id)">删除</el-button>
+              <template v-if="row">
+                <el-button type="primary" size="small" @click="downloadBackup(row.id)">下载</el-button>
+                <el-button type="danger" size="small" @click="deleteBackup(row.id)">删除</el-button>
+              </template>
             </template>
           </el-table-column>
         </el-table>

@@ -73,7 +73,7 @@
             @node-click="handleTreeNodeClick"
           >
             <template #default="{ node, data }">
-              <span class="tree-node">
+              <span v-if="node && data" class="tree-node">
                 <el-icon v-if="data.type === 'subject'"><Reading /></el-icon>
                 <el-icon v-else><Notebook /></el-icon>
                 <span class="tree-node-label">{{ node.label }}</span>

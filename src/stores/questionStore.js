@@ -29,6 +29,21 @@ import {
   clearCurrentCache
 } from '../utils/cacheConfig'
 
+// 全局应用挂载状态（用于防止应用卸载后异步操作更新状态导致的错误）
+let _isAppMounted = true
+
+// 设置应用挂载状态
+export const setAppMountedState = (mounted) => {
+  _isAppMounted = mounted
+}
+
+// 检查应用是否仍然挂载
+export const isAppMounted = () => _isAppMounted
+
+// 初始化锁 - 防止多个页面同时调用 initialize
+let _isInitializing = false
+let _initPromise = null
+
 // 主题和题目数据 store
 export const useQuestionStore = defineStore('question', {
   state: () => ({
@@ -74,19 +89,30 @@ export const useQuestionStore = defineStore('question', {
     }
   },
   actions: {
-    // 初始化数据
+    // 初始化数据 - 添加锁机制防止重复初始化
     async initialize() {
-      try {
-        this.isLoading = true
-        this.error = null
-        await initDatabase()
-        await this.loadCoreData()
-      } catch (error) {
-        this.error = error.message
-
-      } finally {
-        this.isLoading = false
+      // 如果正在初始化，返回已有的 Promise
+      if (_isInitializing && _initPromise) {
+        return _initPromise
       }
+      
+      _isInitializing = true
+      _initPromise = (async () => {
+        try {
+          this.isLoading = true
+          this.error = null
+          await initDatabase()
+          await this.loadCoreData()
+        } catch (error) {
+          this.error = error.message
+          throw error
+        } finally {
+          this.isLoading = false
+          _isInitializing = false
+        }
+      })()
+      
+      return _initPromise
     },
     
     // 加载核心数据（学科、年级、班级、题目数量统计）
@@ -103,6 +129,9 @@ export const useQuestionStore = defineStore('question', {
         const cacheExpiry = localStorage.getItem(expiryKey)
 
         if (cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)) {
+          // 检查应用是否仍然挂载
+          if (!_isAppMounted) return
+          
           this.subjects = cachedData.subjects
           this.grades = cachedData.grades
           this.classes = cachedData.classes
@@ -155,6 +184,9 @@ export const useQuestionStore = defineStore('question', {
           .then(res => res.json())
           .catch(() => ({}))
       ])
+
+      // 检查应用是否仍然挂载
+      if (!_isAppMounted) return
 
       // 合并题目数量统计（学科和子分类）
       this.subjects = subjectsData.map(subject => {
@@ -229,6 +261,8 @@ export const useQuestionStore = defineStore('question', {
         const response = await fetch(url)
         if (response.ok) {
           const result = await response.json()
+          // 检查应用是否仍然挂载
+          if (!_isAppMounted) return
           // 适配新的 API 返回格式 { data, total, page, limit }
           if (result.data !== undefined) {
             // 新格式
@@ -347,6 +381,9 @@ export const useQuestionStore = defineStore('question', {
           })
         ]);
         
+        // 检查应用是否仍然挂载
+        if (!_isAppMounted) return
+        
         this.subjects = subjectsData
         this.grades = gradesData
         this.classes = classesData
@@ -368,6 +405,8 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json())
+        // 检查应用是否仍然挂载
+        if (!_isAppMounted) return
         this.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
       } catch (error) {
         this.error = error.message
@@ -388,6 +427,8 @@ export const useQuestionStore = defineStore('question', {
         const response = await fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`)
         if (response.ok) {
           const recentRecordsData = await response.json()
+          // 检查应用是否仍然挂载
+          if (!_isAppMounted) return
           this.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
         } else {
           // 如果没有专门的all端点，尝试获取所有用户的记录

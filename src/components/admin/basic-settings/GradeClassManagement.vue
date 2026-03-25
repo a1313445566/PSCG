@@ -15,12 +15,12 @@
               <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
               <el-table-column label="年级名称" align="center">
                 <template #default="{ row }">
-                  <div v-if="editingGradeId === row.id" class="grade-edit">
+                  <div v-if="row && editingGradeId === row.id" class="grade-edit">
                     <el-input v-model="editingGradeName" placeholder="输入年级名称" style="width: 200px; margin-right: 10px;"></el-input>
                     <el-button type="primary" size="small" @click="saveGradeEdit(row.id)">保存</el-button>
                     <el-button size="small" @click="cancelGradeEdit">取消</el-button>
                   </div>
-                  <div v-else class="grade-info">
+                  <div v-else-if="row" class="grade-info">
                     <span>{{ row.name }}</span>
                     <el-button link size="small" @click="editGrade(row)">编辑</el-button>
                   </div>
@@ -28,7 +28,7 @@
               </el-table-column>
               <el-table-column label="操作" width="120" align="center">
                 <template #default="{ row }">
-                  <el-button type="danger" size="small" @click="deleteGrade(row.id)">删除</el-button>
+                  <el-button v-if="row" type="danger" size="small" @click="deleteGrade(row.id)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>
@@ -48,12 +48,12 @@
               <el-table-column prop="id" label="ID" width="80" align="center"></el-table-column>
               <el-table-column label="班级名称" align="center">
                 <template #default="{ row }">
-                  <div v-if="editingClassId === row.id" class="class-edit">
+                  <div v-if="row && editingClassId === row.id" class="class-edit">
                     <el-input v-model="editingClassName" placeholder="输入班级名称" style="width: 200px; margin-right: 10px;"></el-input>
                     <el-button type="primary" size="small" @click="saveClassEdit(row.id)">保存</el-button>
                     <el-button size="small" @click="cancelClassEdit">取消</el-button>
                   </div>
-                  <div v-else class="class-info">
+                  <div v-else-if="row" class="class-info">
                     <span>{{ row.name }}</span>
                     <el-button link size="small" @click="editClass(row)">编辑</el-button>
                   </div>
@@ -61,7 +61,7 @@
               </el-table-column>
               <el-table-column label="操作" width="120" align="center">
                 <template #default="{ row }">
-                  <el-button type="danger" size="small" @click="deleteClass(row.id)">删除</el-button>
+                  <el-button v-if="row" type="danger" size="small" @click="deleteClass(row.id)">删除</el-button>
                 </template>
               </el-table-column>
             </el-table>

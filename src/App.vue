@@ -13,10 +13,10 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue'
+import { ref, watch, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppFooter from './components/common/AppFooter.vue'
-import { useQuestionStore } from './stores/questionStore'
+import { useQuestionStore, setAppMountedState } from './stores/questionStore'
 
 const route = useRoute()
 const isLoading = ref(false)
@@ -34,6 +34,11 @@ watch(() => route.path, async (newPath, oldPath) => {
     
     isLoading.value = false
   }
+})
+
+// 组件卸载时设置全局挂载状态
+onUnmounted(() => {
+  setAppMountedState(false)
 })
 </script>
 

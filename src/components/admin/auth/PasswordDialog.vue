@@ -1,16 +1,15 @@
 <template>
   <!-- 密码验证对话框 -->
-  <div v-if="visible">
-    <el-dialog
-      v-model="dialogVisible"
-      title="🔐 后台管理登录"
-      width="400px"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      :show-close="false"
-      @open="focusPasswordInput"
-      @close="handleClose"
-    >
+  <el-dialog
+    v-model="dialogVisible"
+    title="🔐 后台管理登录"
+    width="400px"
+    :close-on-click-modal="false"
+    :close-on-press-escape="false"
+    :show-close="false"
+    @open="focusPasswordInput"
+    @close="handleClose"
+  >
       <el-form :model="loginForm" label-width="80px" @submit.prevent="handleLogin">
         <el-form-item label="用户名">
           <el-input 
@@ -37,11 +36,10 @@
         </span>
       </template>
     </el-dialog>
-  </div>
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, watch, onMounted } from 'vue';
+import { ref, defineProps, defineEmits, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
 import { getApiBaseUrl } from '../../../utils/database';
 
@@ -58,6 +56,11 @@ const emit = defineEmits(['update:visible', 'login-success']);
 
 // 本地对话框可见性状态
 const dialogVisible = ref(props.visible);
+
+// 组件挂载状态（用于防止异步操作完成时组件已卸载）
+let isComponentMounted = true;
+// 存储定时器ID，用于组件卸载时清理
+let timeoutIds = [];
 
 // 监听 props.visible 的变化
 watch(() => props.visible, (newValue) => {
@@ -105,8 +108,10 @@ const checkInitStatus = async () => {
 
 // 聚焦密码输入框
 const focusPasswordInput = () => {
-  setTimeout(() => {
+  const timeoutId = setTimeout(() => {
     try {
+      // 检查组件是否仍然挂载
+      if (!isComponentMounted) return;
       // 如果有用户名，聚焦密码框；否则聚焦用户名框
       const inputRef = loginForm.value.username ? passwordInputRef : usernameInputRef;
       if (inputRef.value && inputRef.value.$el) {
@@ -119,6 +124,7 @@ const focusPasswordInput = () => {
       // 忽略错误
     }
   }, 300);
+  timeoutIds.push(timeoutId);
 };
 
 // 处理键盘事件
@@ -135,16 +141,18 @@ const handleClose = () => {
 
 // 登录处理
 const handleLogin = async () => {
+  console.log('[PasswordDialog] handleLogin 被调用', { username: loginForm.value.username, isComponentMounted });
   const { username, password } = loginForm.value;
-  
+
   if (!username || !password) {
     ElMessage.warning('请输入用户名和密码');
     return;
   }
-  
+
   loading.value = true;
-  
+
   try {
+    console.log('[PasswordDialog] 开始发送登录请求...');
     const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
       method: 'POST',
       headers: {
@@ -152,29 +160,47 @@ const handleLogin = async () => {
       },
       body: JSON.stringify({ username, password })
     });
-    
+
     const data = await response.json();
-    
+    console.log('[PasswordDialog] 登录响应:', { ok: response.ok, success: data.success });
+
     if (response.ok && data.success) {
+      console.log('[PasswordDialog] 登录成功，保存 Token');
       // 存储 Token 到 sessionStorage
       sessionStorage.setItem('adminToken', data.token);
       sessionStorage.setItem('adminUsername', data.username);
       sessionStorage.setItem('adminAuthenticated', 'true');
-      
-      ElMessage.success('登录成功');
-      emit('login-success', true);
-      emit('update:visible', false);
-      
+
       // 清空密码
       loginForm.value.password = '';
+
+      // 先关闭对话框
+      console.log('[PasswordDialog] 发送 update:visible 事件 (false)');
+      emit('update:visible', false);
+
+      // 等待 DOM 更新完成后再触发登录成功事件
+      // 这确保父组件有时间处理 visible 变化
+      await nextTick();
+      
+      console.log('[PasswordDialog] 发送 login-success 事件');
+      if (isComponentMounted) {
+        ElMessage.success('登录成功');
+        emit('login-success', true);
+      }
     } else {
-      ElMessage.error(data.error || '登录失败');
+      console.warn('[PasswordDialog] 登录失败:', data.error);
+      if (isComponentMounted) {
+        ElMessage.error(data.error || '登录失败');
+      }
     }
   } catch (error) {
-    console.error('登录失败:', error);
-    ElMessage.error('登录失败，请检查网络连接');
+    console.error('[PasswordDialog] 登录失败:', error);
+    if (isComponentMounted) {
+      ElMessage.error('登录失败，请检查网络连接');
+    }
   } finally {
     loading.value = false;
+    console.log('[PasswordDialog] handleLogin 完成');
   }
 };
 
@@ -183,6 +209,16 @@ onMounted(() => {
   if (props.visible) {
     checkInitStatus();
   }
+});
+
+// 组件卸载时设置标志并清理定时器
+onUnmounted(() => {
+  console.log('[PasswordDialog] onUnmounted 被调用，组件正在卸载');
+  isComponentMounted = false;
+  // 清理所有定时器
+  timeoutIds.forEach(id => clearTimeout(id));
+  timeoutIds = [];
+  console.log('[PasswordDialog] 组件卸载完成，已清理所有定时器');
 });
 </script>
 
