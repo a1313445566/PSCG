@@ -66,6 +66,30 @@ class ApiCache {
   }
 
   /**
+   * 清除过期的缓存
+   */
+  clearExpired() {
+    const now = Date.now();
+    for (const [key, value] of this.cache.entries()) {
+      if (now > value.expiry) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  /**
+   * 清除匹配模式的缓存
+   * @param {string} pattern - 匹配模式（例如：'GET:/api/subjects'）
+   */
+  clearPattern(pattern) {
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+
+  /**
    * 缓存的 fetch 方法
    * @param {string} url - 请求 URL
    * @param {object} options - 请求选项

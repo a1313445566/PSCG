@@ -97,8 +97,10 @@ export const useQuestionStore = defineStore('question', {
           this.subjects = data.subjects
           this.grades = data.grades
           this.classes = data.classes
-          // 后台更新缓存
-          this.updateCacheInBackground()
+          // 后台更新缓存 - 添加错误处理
+          this.updateCacheInBackground().catch(error => {
+            console.warn('后台更新缓存失败:', error)
+          })
           return
         }
 
@@ -106,7 +108,10 @@ export const useQuestionStore = defineStore('question', {
         await this.fetchAndCacheCoreData()
       } catch (error) {
         this.error = error.message
-
+        console.error('加载核心数据失败:', error)
+        // 清除可能损坏的缓存
+        localStorage.removeItem('coreData')
+        localStorage.removeItem('coreDataExpiry')
       } finally {
         this.isLoading = false
       }
@@ -316,9 +321,18 @@ export const useQuestionStore = defineStore('question', {
         
         // 只加载核心数据，不加载大量题目
         const [subjectsData, gradesData, classesData] = await Promise.all([
-          fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch(() => []),
-          fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch(() => []),
-          fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch(() => [])
+          fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch((error) => {
+            console.error('加载学科失败:', error)
+            return []
+          }),
+          fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch((error) => {
+            console.error('加载年级失败:', error)
+            return []
+          }),
+          fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch((error) => {
+            console.error('加载班级失败:', error)
+            return []
+          })
         ]);
         
         this.subjects = subjectsData
@@ -329,7 +343,8 @@ export const useQuestionStore = defineStore('question', {
         // 题目数据会在需要时通过 loadQuestions 或 loadQuestionsBySubcategory 重新加载
       } catch (error) {
         this.error = error.message
-
+        console.error('加载基础数据失败:', error)
+        throw error // 向上抛出错误，让调用者处理
       } finally {
         this.isLoading = false
       }
@@ -345,7 +360,8 @@ export const useQuestionStore = defineStore('question', {
       } catch (error) {
         this.error = error.message
         this.userStats = []
-
+        console.error('加载用户统计失败:', error)
+        throw error // 向上抛出错误
       } finally {
         this.isLoading = false
       }
@@ -369,7 +385,8 @@ export const useQuestionStore = defineStore('question', {
       } catch (error) {
         this.error = error.message
         this.recentRecords = []
-
+        console.error('加载最近记录失败:', error)
+        throw error // 向上抛出错误
       } finally {
         this.isLoading = false
       }
@@ -1079,6 +1096,7 @@ export const useSettingsStore = defineStore('settings', {
               const parsed = settings.subjectQuestionCounts.replace(/'/g, '')
               this.settings.subjectQuestionCounts = JSON.parse(parsed)
             } catch (e) {
+              console.warn('解析学科题目数量配置失败:', e)
               this.settings.subjectQuestionCounts = {}
             }
           } else {
@@ -1088,10 +1106,13 @@ export const useSettingsStore = defineStore('settings', {
           if (settings.interfaceName) {
             this.interfaceName = settings.interfaceName
           }
+        } else {
+          throw new Error(`加载设置失败: ${response.status}`)
         }
       } catch (error) {
         this.error = error.message
-
+        console.error('加载设置失败:', error)
+        throw error // 向上抛出错误
       } finally {
         this.isLoading = false
       }

@@ -1,8 +1,8 @@
 ---
-description: 
+description: PSCG 智能题库系统项目开发规范
 alwaysApply: true
 enabled: true
-updatedAt: 2026-03-23T15:56:11.693Z
+updatedAt: 2026-03-25T00:00:00.000Z
 provider: 
 ---
 
@@ -37,16 +37,31 @@ PSCG/
 │   ├── components/         # 通用组件
 │   │   ├── admin/          # 后台管理组件
 │   │   ├── quiz/           # 答题组件
-│   │   └── ...
+│   │   └── common/         # 公共组件
 │   ├── stores/             # Pinia 状态管理
 │   ├── utils/              # 工具函数
+│   │   ├── apiCache.js     # API 缓存工具
+│   │   ├── csrf.js         # CSRF 防护
+│   │   ├── xss-filter.js   # XSS 防护
+│   │   ├── dateUtils.js    # 日期处理
+│   │   ├── database.js     # 数据库配置
+│   │   ├── draftStorage.js # 草稿存储
+│   │   ├── imageUpload.js  # 图片上传
+│   │   └── lazyLoad.js     # 懒加载
 │   ├── router/             # 路由配置
 │   └── styles/             # 全局样式
+│       └── global.css      # 全局基础样式
 ├── routes/                 # 后端 API 路由
 ├── services/               # 后端服务层
 ├── middleware/             # Express 中间件
+│   ├── csrf.js             # CSRF 防护
+│   └── ...
 ├── config/                 # 配置文件
 ├── DOCS/                   # 项目文档
+│   ├── 需求文档/           # 需求相关
+│   ├── 技术文档/           # 技术文档
+│   ├── API文档/            # API 接口文档
+│   └── ...
 ├── audio/                  # 音频资源
 ├── images/                 # 图片资源
 ├── server.cjs              # 后端入口
@@ -66,6 +81,7 @@ PSCG/
 - Store 命名: `useXxxStore` (如 `useQuestionStore`)
 - 结构: `state`、`getters`、`actions`
 - 异步操作使用 `async/await`
+- 错误向上抛出，让调用者统一处理
 
 ### 后端代码
 - 使用 CommonJS (`require`/`module.exports`)
@@ -83,6 +99,13 @@ PSCG/
 - 全局样式: `src/styles/global.css`
 - 组件样式使用 `<style scoped>`
 - 使用 Element Plus 主题变量
+
+### 文档规范
+- **需求文档**: `DOCS/需求文档/`
+- **技术文档**: `DOCS/技术文档/`
+- **API 文档**: `DOCS/API文档/`
+- **命名**: 使用清晰的中文或英文命名
+- **避免重复**: 整合相关内容，删除过时文档
 
 ## 常用命令
 
@@ -117,9 +140,28 @@ pm2 restart 0
 - 生产环境: `.env.production`
 - API 地址通过 `VITE_API_URL` 配置
 
+## 安全措施
+- **XSS 防护**: `src/utils/xss-filter.js`
+- **CSRF 防护**: `middleware/csrf.js` + `src/utils/csrf.js`
+- **输入验证**: 前后端双重验证
+
 ## 注意事项
 - 后端文件使用 `.cjs` 扩展名 (CommonJS)
 - 前端使用 ES Modules (`import`/`export`)
 - 数据库连接使用连接池
 - 静态资源缓存已配置
 - 文件上传限制 10MB
+
+## 待实现功能
+
+以下功能在需求文档中已规划，但尚未实现：
+
+| 功能 | 状态 | 需求文档位置 |
+|------|------|--------------|
+| Composables (usePagination等) | 待实现 | `DOCS/需求文档/后台页面优化需求.md` |
+| API 封装工具 (api.js) | 待实现 | `DOCS/需求文档/后台页面优化需求.md` |
+| 公共样式 (common.css) | 待实现 | `DOCS/需求文档/后台页面优化需求.md` |
+| 消息封装 (message.js) | 待实现 | `DOCS/需求文档/后台页面优化需求.md` |
+| 格式化工具 (format.js) | 待实现 | `DOCS/需求文档/后台页面优化需求.md` |
+
+详见：`DOCS/需求文档/后台页面优化需求.md`

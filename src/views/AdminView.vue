@@ -10,6 +10,9 @@
       <h1 class="title">题库管理系统</h1>
       <div class="header-buttons">
         <span class="admin-username">{{ adminUsername }}</span>
+        <el-button type="info" @click="refreshPageData" :loading="pageLoading" :disabled="pageLoading">
+          <el-icon><Refresh /></el-icon> 刷新数据
+        </el-button>
         <el-button type="warning" @click="showChangePasswordDialog">修改密码</el-button>
         <el-button type="primary" @click="backToHome" class="action-btn">🏠 返回首页</el-button>
         <el-button type="danger" @click="logout">退出登录</el-button>
@@ -625,6 +628,7 @@ import QuestionDetailDialog from '../components/admin/common/QuestionDetailDialo
 import SubcategoryDialog from '../components/admin/common/SubcategoryDialog.vue'
 import UserManagement from '../components/admin/user-management/UserManagement.vue'
 import SecurityMonitor from '../components/admin/security/SecurityMonitor.vue'
+import { Refresh } from '@element-plus/icons-vue'
 
 // 动态导入AnalysisView，减少初始加载体积
 const AnalysisView = defineAsyncComponent(() => import('./AnalysisView.vue'))
@@ -642,6 +646,10 @@ const grades = computed(() => questionStore.grades)
 const classes = computed(() => questionStore.classes)
 const backupHistory = ref([])
 const allUsers = ref([])
+
+// 全局加载状态
+const pageLoading = ref(false)
+const loadErrors = ref([])
 
 // 排行榜筛选相关
 const filterStudentId = ref('')
@@ -1212,9 +1220,12 @@ const loadAllUsers = async () => {
       })
       
       allUsers.value = users
+    } else {
+      throw new Error(`加载用户失败: ${response.status}`)
     }
   } catch (error) {
     console.error('加载所有用户失败:', error)
+    throw error // 向上抛出错误
   }
 }
 
@@ -1494,7 +1505,7 @@ watch(
   }
 )
 
-// 初始化
+// 初始化 - 优化加载流程
 onMounted(async () => {
   // 检查sessionStorage中的登录状态
   if (sessionStorage.getItem('adminAuthenticated') === 'true') {
@@ -1506,23 +1517,67 @@ onMounted(async () => {
     if (sessionStorage.getItem('dataManagementAuthenticated') === 'true') {
       isDataManagementAuthenticated.value = true
     }
-    // 加载设置
-    await loadSettings()
-    // 加载题目和学科数据
-    await questionStore.loadData()
-    // 加载所有题目数据
-    await questionStore.loadQuestions({ excludeContent: true })
-    // 加载排行榜数据
-    await questionStore.loadUserStats()
-    await questionStore.loadRecentRecords()
-    // 加载所有用户数据
-    await loadAllUsers()
+    
+    // 开始加载页面数据
+    await loadPageData()
   } else {
     // 设置密码对话框为可见，确保登录框自动弹出
     passwordDialogVisible.value = true
     isAuthenticated.value = false
   }
-  
-
 })
+
+// 手动刷新页面数据
+const refreshPageData = async () => {
+  ElMessage.info('正在重新加载数据...')
+  
+  // 清除缓存,强制重新加载
+  localStorage.removeItem('coreData')
+  localStorage.removeItem('coreDataExpiry')
+  
+  // 重新加载
+  await loadPageData()
+  
+  if (loadErrors.value.length === 0) {
+    ElMessage.success('数据刷新成功')
+  }
+}
+
+// 统一加载页面数据 - 并行加载提高效率
+const loadPageData = async () => {
+  pageLoading.value = true
+  loadErrors.value = []
+  
+  const loadingInstance = ElLoading.service({
+    lock: true,
+    text: '正在加载后台数据...',
+    background: 'rgba(0, 0, 0, 0.7)'
+  })
+  
+  try {
+    // 并行加载所有必需数据,提高加载效率
+    const results = await Promise.allSettled([
+      loadSettings(),
+      questionStore.loadData(),
+      questionStore.loadQuestions({ excludeContent: true }),
+      questionStore.loadUserStats(),
+      questionStore.loadRecentRecords(),
+      loadAllUsers()
+    ])
+    
+    // 检查是否有失败的操作
+    const failedOperations = results.filter(r => r.status === 'rejected')
+    if (failedOperations.length > 0) {
+      const errorMessages = failedOperations.map(r => r.reason?.message || '未知错误')
+      loadErrors.value = errorMessages
+      ElMessage.warning(`部分数据加载失败,可能需要刷新页面: ${errorMessages.length} 项失败`)
+    }
+  } catch (error) {
+    console.error('加载页面数据失败:', error)
+    ElMessage.error('页面数据加载失败,请刷新页面重试')
+  } finally {
+    pageLoading.value = false
+    loadingInstance.close()
+  }
+}
 </script>

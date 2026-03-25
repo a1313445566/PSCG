@@ -1,8 +1,8 @@
 ---
-description: 
+description: Vue 3 组件开发规范和最佳实践
 alwaysApply: false
 enabled: true
-updatedAt: 2026-03-23T15:56:30.715Z
+updatedAt: 2026-03-25T00:00:00.000Z
 provider: 
 ---
 
@@ -83,6 +83,7 @@ export const useXxxStore = defineStore('xxx', {
         // API 调用
       } catch (error) {
         this.error = error.message
+        throw error // 向上抛出，让调用者处理
       } finally {
         this.loading = false
       }
@@ -91,10 +92,12 @@ export const useXxxStore = defineStore('xxx', {
 })
 ```
 
-## API 调用规范
+## API 调用
 
-### 使用 fetch
+### 当前方式 (使用 fetch)
 ```javascript
+import { getApiBaseUrl } from '@/config/api'
+
 // GET 请求
 const response = await fetch(`${getApiBaseUrl()}/subjects`)
 if (response.ok) {
@@ -114,14 +117,13 @@ const response = await fetch(`${getApiBaseUrl()}/questions`, {
 ### 错误处理
 ```javascript
 try {
-  this.loading = true
-  this.error = null
+  loading.value = true
   // 操作
 } catch (error) {
-  this.error = error.message
+  ElMessage.error(error.message || '操作失败')
   throw error // 如果需要上层处理
 } finally {
-  this.loading = false
+  loading.value = false
 }
 ```
 
@@ -134,7 +136,7 @@ try {
 | Store 文件 | camelCase | `questionStore.js` |
 | Store 名称 | camelCase + use前缀 | `useQuestionStore` |
 | 路由文件 | camelCase | `index.js` |
-| 工具函数 | camelCase | `database.js` |
+| 工具函数 | camelCase | `dateUtils.js` |
 | CSS 类名 | kebab-case | `.question-card` |
 
 ## Element Plus 使用
@@ -152,26 +154,120 @@ try {
 
 ## 性能优化
 
-1. **路由懒加载**
+### 1. 路由懒加载
 ```javascript
 const AdminView = () => import('@/views/AdminView.vue')
 ```
 
-2. **组件按需加载**
+### 2. 组件按需加载
 ```javascript
 const HeavyComponent = defineAsyncComponent(() => 
   import('@/components/HeavyComponent.vue')
 )
 ```
 
-3. **列表渲染使用 key**
+### 3. 列表渲染使用 key
 ```vue
 <div v-for="item in list" :key="item.id">
 ```
 
-4. **computed 缓存计算结果**
+### 4. computed 缓存计算结果
 ```javascript
 const expensiveValue = computed(() => {
   // 复杂计算
 })
 ```
+
+## 安全措施
+
+### XSS 防护
+```javascript
+import xssFilter from '@/utils/xss-filter'
+
+// 富文本内容过滤
+const safeContent = xssFilter.sanitize(userInput)
+```
+
+### CSRF 防护
+```javascript
+import { getCSRFToken } from '@/utils/csrf'
+
+// 在请求头中添加
+const token = await getCSRFToken()
+headers['X-CSRF-Token'] = token
+```
+
+## 现有工具函数
+
+| 文件 | 功能 | 用途 |
+|------|------|------|
+| `apiCache.js` | API 缓存 | 缓存 API 响应 |
+| `xss-filter.js` | XSS 过滤 | 富文本安全处理 |
+| `csrf.js` | CSRF 防护 | 获取和验证 CSRF Token |
+| `dateUtils.js` | 日期处理 | 日期格式化 |
+| `database.js` | 数据库配置 | MySQL 连接池 |
+| `draftStorage.js` | 草稿存储 | 本地草稿管理 |
+| `imageUpload.js` | 图片上传 | 图片处理上传 |
+| `lazyLoad.js` | 懒加载 | 组件懒加载工具 |
+
+## 待实现功能
+
+以下功能在需求文档中已规划，实现后更新此规范：
+
+### Composables (组合式函数)
+```javascript
+// 待实现: src/composables/usePagination.js
+export function usePagination(defaultPageSize = 10) {
+  const currentPage = ref(1)
+  const pageSize = ref(defaultPageSize)
+  
+  const paginate = (data) => {
+    const start = (currentPage.value - 1) * pageSize.value
+    return data.slice(start, start + pageSize.value)
+  }
+  
+  return { currentPage, pageSize, paginate, handleSizeChange, handleCurrentChange }
+}
+
+// 待实现: src/composables/useLoading.js
+export function useLoading() {
+  const loadingInstance = ref(null)
+  
+  const showLoading = (text = '加载中...') => {
+    loadingInstance.value = ElLoading.service({ lock: true, text })
+  }
+  
+  const hideLoading = () => {
+    loadingInstance.value?.close()
+    loadingInstance.value = null
+  }
+  
+  const withLoading = async (fn, text) => {
+    showLoading(text)
+    try { return await fn() }
+    finally { hideLoading() }
+  }
+  
+  return { showLoading, hideLoading, withLoading }
+}
+```
+
+### API 封装 (待实现)
+```javascript
+// 待实现: src/utils/api.js
+import { api } from '@/utils/api'
+
+// GET 请求
+const data = await api.get('/subjects')
+
+// POST 请求
+await api.post('/questions', questionData)
+
+// DELETE 请求
+await api.delete(`/questions/${id}`)
+```
+
+## 文档参考
+- 项目总体规范: `PSCG项目规则.mdc`
+- 后台优化需求: `DOCS/需求文档/后台页面优化需求.md`
+- API 接口文档: `DOCS/API文档/`
