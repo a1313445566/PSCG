@@ -128,7 +128,12 @@ export const useQuestionStore = defineStore('question', {
         const cachedData = getCacheSafely(dataKey)
         const cacheExpiry = localStorage.getItem(expiryKey)
 
-        if (cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)) {
+        // 检查缓存是否有效且包含统计数据（questionCount）
+        const hasValidCache = cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)
+        const hasQuestionCount = cachedData?.subjects?.length > 0 && 
+          cachedData.subjects[0].questionCount !== undefined
+
+        if (hasValidCache && hasQuestionCount) {
           // 检查应用是否仍然挂载
           if (!_isAppMounted) return
           
@@ -142,7 +147,7 @@ export const useQuestionStore = defineStore('question', {
           return
         }
 
-        // 无缓存或过期,加载数据
+        // 无缓存、过期或缺少统计数据,加载数据
         await this.fetchAndCacheCoreData()
       } catch (error) {
         this.error = error.message
@@ -365,8 +370,8 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         
-        // 只加载核心数据，不加载大量题目
-        const [subjectsData, gradesData, classesData] = await Promise.all([
+        // 并行加载数据和统计数据
+        const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] = await Promise.all([
           fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch((error) => {
             console.error('加载学科失败:', error)
             return []
@@ -378,13 +383,26 @@ export const useQuestionStore = defineStore('question', {
           fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch((error) => {
             console.error('加载班级失败:', error)
             return []
-          })
+          }),
+          fetch(`${getApiBaseUrl()}/subjects/stats`).then(res => res.json()).catch(() => []),
+          fetch(`${getApiBaseUrl()}/questions/subcategories/stats`).then(res => res.json()).catch(() => ({}))
         ]);
         
         // 检查应用是否仍然挂载
         if (!_isAppMounted) return
         
-        this.subjects = subjectsData
+        // 合并题目数量统计（学科和子分类）
+        this.subjects = subjectsData.map(subject => {
+          const stat = subjectStatsData.find(s => s.id === subject.id)
+          return {
+            ...subject,
+            questionCount: stat ? stat.questionCount : 0,
+            subcategories: (subject.subcategories || []).map(sub => ({
+              ...sub,
+              questionCount: subcategoryStatsData[sub.id]?.questionCount || 0
+            }))
+          }
+        })
         this.grades = gradesData
         this.classes = classesData
         

@@ -69,7 +69,6 @@
             :props="treeProps"
             node-key="id"
             highlight-current
-            default-expand-all
             @node-click="handleTreeNodeClick"
           >
             <template #default="{ node, data }">
