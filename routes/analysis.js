@@ -246,14 +246,16 @@ router.get('/', async (req, res) => {
     
     // 执行错误率较高的题目查询
     let errorProneQuery = `
-      SELECT q.id, q.subject_id, q.content, q.type, q.options, q.correct_answer,
+      SELECT q.id, q.subject_id, q.content, q.type, q.options, q.correct_answer, q.explanation, q.image_url, q.audio_url,
              COUNT(qa.id) as total_attempts,
              SUM(qa.is_correct) as correct_count,
-             s.name as subject_name
+             s.name as subject_name,
+             sc.name as subcategory_name
       FROM questions q
       LEFT JOIN question_attempts qa ON q.id = qa.question_id
       LEFT JOIN users u ON qa.user_id = u.id
       LEFT JOIN subjects s ON q.subject_id = s.id
+      LEFT JOIN subcategories sc ON q.subcategory_id = sc.id
       WHERE 1=1
     `;
     

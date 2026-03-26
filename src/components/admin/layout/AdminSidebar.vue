@@ -86,7 +86,8 @@ import { useAdminLayout } from '../../../composables/useAdminLayout'
 import {
   DataLine, Document, Reading, School,
   UserFilled, User, Tools, Coin, Lock,
-  ArrowLeft, ArrowRight, Grid, FolderOpened, Histogram, Clock
+  ArrowLeft, ArrowRight, Grid, FolderOpened, Histogram, Clock,
+  TrendCharts
 } from '@element-plus/icons-vue'
 
 const {
@@ -123,7 +124,8 @@ const iconMap = {
   Grid,
   FolderOpened,
   Histogram,
-  Clock
+  Clock,
+  TrendCharts
 }
 
 // 获取图标组件
@@ -139,6 +141,7 @@ const topLevelNodes = computed(() => [
   { key: 'grades-classes', label: '年级班级', icon: 'School' },
   { key: 'user-data', label: '答题数据', icon: 'UserFilled' },
   { key: 'user-management', label: '用户管理', icon: 'User' },
+  { key: 'data-analysis', label: '数据分析', icon: 'TrendCharts' },
   { key: 'basic-settings', label: '基础设置', icon: 'Tools' },
   { key: 'database', label: '数据库管理', icon: 'Coin' },
   { key: 'security', label: '安全中心', icon: 'Lock' }
@@ -257,6 +260,12 @@ const menuTreeData = computed(() => {
       id: 'user-management',
       label: '用户管理',
       icon: 'User',
+      isMenu: true
+    },
+    {
+      id: 'data-analysis',
+      label: '数据分析',
+      icon: 'TrendCharts',
       isMenu: true
     },
     {

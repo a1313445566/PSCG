@@ -52,6 +52,7 @@
           :type="item.dateType || 'date'"
           :placeholder="item.placeholder || `请选择${item.label}`"
           :clearable="item.clearable !== false"
+          :value-format="item.valueFormat || 'YYYY-MM-DD'"
           @change="handleChange(item)"
         />
         
@@ -64,6 +65,7 @@
           start-placeholder="开始日期"
           end-placeholder="结束日期"
           :clearable="item.clearable !== false"
+          value-format="YYYY-MM-DD"
           @change="handleChange(item)"
         />
       </div>

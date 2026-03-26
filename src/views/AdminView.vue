@@ -90,6 +90,9 @@
     <!-- 安全中心 -->
     <SecurityMonitor v-else-if="activeMenu === 'security'" />
     
+    <!-- 数据分析 -->
+    <DataAnalysis v-else-if="activeMenu === 'data-analysis'" />
+    
     <!-- 默认显示数据概览 -->
     <DashboardView v-else />
 
@@ -149,6 +152,7 @@ const DashboardView = defineAsyncComponent(() => import('./admin/DashboardView.v
 const QuestionForm = defineAsyncComponent(() => import('../components/admin/question-management/QuestionForm.vue'))
 const BatchAddQuestion = defineAsyncComponent(() => import('../components/admin/question-management/BatchAddQuestion.vue'))
 const SubcategoryDialog = defineAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
+const DataAnalysis = defineAsyncComponent(() => import('../components/admin/analysis/DataAnalysis.vue'))
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
