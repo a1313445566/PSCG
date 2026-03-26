@@ -30,84 +30,11 @@
       <GradeClassManagement />
     </div>
     
-    <!-- 用户数据 -->
-    <div v-else-if="activeMenu === 'user-data'" class="user-data-view">
-      <el-card class="filter-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <span>筛选条件</span>
-          </div>
-        </template>
-        <div class="filter-section">
-          <div class="filter-row">
-            <div class="filter-item">
-              <label class="filter-label">学号</label>
-              <el-input v-model="filterStudentId" placeholder="输入学号" @input="filterStudentId = (filterStudentId || '').replace(/[^0-9]/g, '')"></el-input>
-            </div>
-            <div class="filter-item">
-              <label class="filter-label">年级</label>
-              <el-select v-model="filterGrade" placeholder="选择年级">
-                <el-option label="全部" value=""></el-option>
-                <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
-              </el-select>
-            </div>
-            <div class="filter-item">
-              <label class="filter-label">班级</label>
-              <el-select v-model="filterClass" placeholder="选择班级">
-                <el-option label="全部" value=""></el-option>
-                <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.name || classNum"></el-option>
-              </el-select>
-            </div>
-            <div class="filter-item">
-              <label class="filter-label">学科</label>
-              <el-select v-model="filterSubject" placeholder="选择学科">
-                <el-option label="全部" value=""></el-option>
-                <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
-              </el-select>
-            </div>
-            <div class="filter-item">
-              <label class="filter-label">时间范围</label>
-              <el-select v-model="filterTimeRange" placeholder="选择时间">
-                <el-option label="全部" value=""></el-option>
-                <el-option label="今日" value="today"></el-option>
-                <el-option label="近一周" value="week"></el-option>
-                <el-option label="近一月" value="month"></el-option>
-              </el-select>
-            </div>
-          </div>
-          <div class="filter-actions">
-            <el-button type="primary" @click="applyFilters">应用筛选</el-button>
-            <el-button @click="resetFilters">重置</el-button>
-          </div>
-        </div>
-      </el-card>
-      
-      <div class="data-display">
-        <el-card class="data-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>用户答题统计</span>
-            </div>
-          </template>
-          <UserStats 
-            :user-stats="userStats"
-            @open-user-detail="openUserDetailDialog"
-          />
-        </el-card>
-        
-        <el-card class="data-card" shadow="hover">
-          <template #header>
-            <div class="card-header">
-              <span>最近答题记录</span>
-            </div>
-          </template>
-          <RecentRecords 
-            :recent-records="recentRecords"
-            @open-user-detail="openUserDetailDialog"
-          />
-        </el-card>
-      </div>
-    </div>
+    <!-- 用户答题统计 -->
+    <UserStatsView v-else-if="activeMenu === 'user-stats'" />
+    
+    <!-- 最近答题记录 -->
+    <RecentRecordsView v-else-if="activeMenu === 'recent-records'" />
     
     <!-- 用户管理 -->
     <div v-else-if="activeMenu === 'user-management'" class="user-management-view">
@@ -141,10 +68,9 @@
     
     <!-- 数据库管理 -->
     <div v-else-if="activeMenu === 'database'" class="data-management">
-      <BackupRestore 
+      <BackupRestore
         :backup-history="backupHistory"
         @backup-data="backupData"
-        @restore-data="restoreData"
         @export-data="exportData"
         @upload-backup="uploadBackup"
         @download-backup="downloadBackup"
@@ -166,12 +92,6 @@
     
     <!-- 默认显示数据概览 -->
     <DashboardView v-else />
-    
-    <!-- 题目详情对话框 -->
-    <QuestionDetailDialog
-      v-model:dialogVisible="questionDetailDialogVisible"
-      :selectedQuestionDetail="selectedQuestionDetail"
-    />
 
     <!-- 学科题库管理对话框 -->
     <SubcategoryDialog
@@ -197,21 +117,10 @@
       @save-question="saveQuestion"
     />
   </AdminLayout>
-  
-  <!-- 用户详情对话框 -->
-  <UserDetailDialog
-    v-model:dialogVisible="userDetailDialogVisible"
-    :selectedUser="selectedUser"
-    :currentAnswerRecordId="currentAnswerRecordId"
-    :dialogSource="dialogSource"
-    :selectedUserRecords="selectedUserRecords"
-    :selectedUserQuestionAttempts="selectedUserQuestionAttempts"
-    @show-question-detail="showQuestionDetail"
-  />
 </template>
 
 <script setup>
-import { ref, computed, onUnmounted, defineAsyncComponent } from 'vue'
+import { ref, computed, onUnmounted, defineAsyncComponent, provide } from 'vue'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
 import { useAdminLayout } from '../composables/useAdminLayout'
 import message from '../utils/message'
@@ -227,37 +136,38 @@ import InterfaceNameSetting from '../components/admin/basic-settings/InterfaceNa
 import AnswerSetting from '../components/admin/basic-settings/AnswerSetting.vue'
 import SubjectManagement from '../components/admin/basic-settings/SubjectManagement.vue'
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
-import UserStats from '../components/admin/leaderboard-management/UserStats.vue'
-import RecentRecords from '../components/admin/leaderboard-management/RecentRecords.vue'
 
 // 异步组件
 const QuestionList = defineAsyncComponent(() => import('../components/admin/question-management/QuestionList.vue'))
 const UserManagement = defineAsyncComponent(() => import('../components/admin/user-management/UserManagement.vue'))
+const UserStatsView = defineAsyncComponent(() => import('../components/admin/user-data/UserStatsView.vue'))
+const RecentRecordsView = defineAsyncComponent(() => import('../components/admin/user-data/RecentRecordsView.vue'))
 const SecurityMonitor = defineAsyncComponent(() => import('../components/admin/security/SecurityMonitor.vue'))
 const BackupRestore = defineAsyncComponent(() => import('../components/admin/data-management/BackupRestore.vue'))
 const DataCleanup = defineAsyncComponent(() => import('../components/admin/data-management/DataCleanup.vue'))
 const DashboardView = defineAsyncComponent(() => import('./admin/DashboardView.vue'))
 const QuestionForm = defineAsyncComponent(() => import('../components/admin/question-management/QuestionForm.vue'))
 const BatchAddQuestion = defineAsyncComponent(() => import('../components/admin/question-management/BatchAddQuestion.vue'))
-const UserDetailDialog = defineAsyncComponent(() => import('../components/admin/common/UserDetailDialog.vue'))
-const QuestionDetailDialog = defineAsyncComponent(() => import('../components/admin/common/QuestionDetailDialog.vue'))
 const SubcategoryDialog = defineAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
 const { activeMenu, setActiveMenu } = useAdminLayout()
-const { withLoading, cleanup: cleanupLoading } = useLoading()
+const { cleanup: cleanupLoading } = useLoading()
 
 // 系统标题
 const systemTitle = computed(() => settingsStore.interfaceName || '题库管理系统')
 
 // Store 数据
 const subjects = computed(() => questionStore.subjects)
-const userStats = computed(() => questionStore.userStats)
-const recentRecords = computed(() => questionStore.recentRecords)
 const grades = computed(() => questionStore.grades)
 const classes = computed(() => questionStore.classes)
 const backupHistory = ref([])
+
+// 提供数据给子组件
+provide('grades', grades)
+provide('classes', classes)
+provide('subjects', subjects)
 
 // 组件引用
 const questionListRef = ref(null)
@@ -281,8 +191,6 @@ const questionFormDialogVisible = ref(false)
 const batchAddDialogVisible = ref(false)
 const isEditing = ref(false)
 const selectedQuestion = ref(null)
-const questionDetailDialogVisible = ref(false)
-const selectedQuestionDetail = ref(null)
 
 const showAddQuestionDialog = () => {
   isEditing.value = false
@@ -343,11 +251,6 @@ const handleBatchAddQuestions = async (questions) => {
   }
 }
 
-const showQuestionDetail = (row) => {
-  selectedQuestionDetail.value = row
-  questionDetailDialogVisible.value = true
-}
-
 // ==================== 学科管理 ====================
 const subcategoryDialogVisible = ref(false)
 const currentSubjectForSubcategory = ref(null)
@@ -400,198 +303,13 @@ const deleteSubcategory = async (subjectId, subcategoryId) => {
   }
 }
 
-// ==================== 用户数据 ====================
-const filterStudentId = ref('')
-const filterGrade = ref('')
-const filterClass = ref('')
-const filterSubject = ref('')
-const filterTimeRange = ref('')
-
-const userDetailDialogVisible = ref(false)
-const selectedUser = ref(null)
-const dialogSource = ref('')
-const currentAnswerRecordId = ref(null)
-const selectedUserRecords = ref([])
-const selectedUserQuestionAttempts = ref([])
-
-const applyFilters = async () => {
-  if (!isComponentMounted) return
-  
-  await withLoading(async () => {
-    if (!isComponentMounted) return
-    
-    try {
-      const userStatsParams = new URLSearchParams()
-      const recentRecordsParams = new URLSearchParams()
-      
-      if (filterStudentId.value) {
-        userStatsParams.append('student_id', filterStudentId.value)
-        recentRecordsParams.append('student_id', filterStudentId.value)
-      }
-      
-      if (filterGrade.value) {
-        userStatsParams.append('grade', filterGrade.value)
-        recentRecordsParams.append('grade', filterGrade.value)
-      }
-      
-      if (filterClass.value) {
-        userStatsParams.append('class', filterClass.value)
-        recentRecordsParams.append('class', filterClass.value)
-      }
-      
-      if (filterSubject.value) {
-        userStatsParams.append('subjectId', filterSubject.value)
-        recentRecordsParams.append('subjectId', filterSubject.value)
-      }
-      
-      if (filterTimeRange.value) {
-        const now = new Date()
-        let startDate, endDate
-        
-        switch (filterTimeRange.value) {
-          case 'today':
-            startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-            endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59)
-            break
-          case 'week':
-            startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
-            endDate = new Date()
-            break
-          case 'month':
-            startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000)
-            endDate = new Date()
-            break
-          default:
-            startDate = null
-            endDate = null
-        }
-        
-        if (startDate && endDate) {
-          recentRecordsParams.append('startDate', startDate.toISOString())
-          recentRecordsParams.append('endDate', endDate.toISOString())
-        }
-      }
-      
-      const [userStatsData, recentRecordsData] = await Promise.all([
-        api.get(`/leaderboard/global?limit=0${userStatsParams.toString() ? '&' + userStatsParams.toString() : ''}`),
-        api.get(`/answer-records/all?limit=0${recentRecordsParams.toString() ? '&' + recentRecordsParams.toString() : ''}`)
-      ])
-      
-      if (!isComponentMounted) return
-      
-      questionStore.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
-      questionStore.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
-      
-      if (isComponentMounted) {
-        message.success('筛选成功')
-      }
-    } catch (error) {
-      console.error('筛选数据失败:', error)
-      if (isComponentMounted) {
-        message.error('筛选数据失败，请稍后重试')
-      }
-    }
-  }, '正在筛选数据...')
-}
-
-const resetFilters = async () => {
-  if (!isComponentMounted) return
-  
-  await withLoading(async () => {
-    if (!isComponentMounted) return
-    
-    try {
-      filterStudentId.value = ''
-      filterGrade.value = ''
-      filterClass.value = ''
-      filterSubject.value = ''
-      filterTimeRange.value = ''
-      
-      await Promise.all([
-        questionStore.loadUserStats(),
-        questionStore.loadRecentRecords()
-      ])
-      
-      if (isComponentMounted) {
-        message.success('重置筛选成功')
-      }
-    } catch (error) {
-      console.error('重置筛选失败:', error)
-      if (isComponentMounted) {
-        message.error('重置筛选失败，请稍后重试')
-      }
-    }
-  }, '正在重置筛选...')
-}
-
-const openUserDetailDialog = async (user, source = 'userStats', answerRecordId = null) => {
-  if (!isComponentMounted) return
-  
-  const userId = user.user_id || user.id
-  
-  try {
-    const statsData = await api.get(`/leaderboard/global?limit=1000&id=${userId}`)
-    if (!isComponentMounted) return
-    if (statsData && statsData.length > 0) {
-      selectedUser.value = statsData[0]
-    } else {
-      selectedUser.value = user
-    }
-  } catch (error) {
-    console.error('加载用户统计数据失败:', error)
-    if (isComponentMounted) {
-      selectedUser.value = user
-    }
-  }
-  
-  if (!isComponentMounted) return
-  
-  dialogSource.value = source
-  currentAnswerRecordId.value = answerRecordId
-  
-  try {
-    if (source === 'userStats' && userId) {
-      const recordsData = await api.get(`/answer-records/${userId}`)
-      if (recordsData && isComponentMounted) {
-        selectedUserRecords.value = recordsData
-      }
-    } else if (source === 'recentRecords' && answerRecordId && userId) {
-      const attemptsData = await api.get(`/answer-records/question-attempts/${userId}?answerRecordId=${answerRecordId}`)
-      if (attemptsData && isComponentMounted) {
-        selectedUserQuestionAttempts.value = attemptsData
-      } else if (isComponentMounted) {
-        const allAttemptsData = await api.get(`/answer-records/question-attempts/${userId}`)
-        if (allAttemptsData && isComponentMounted) {
-          selectedUserQuestionAttempts.value = allAttemptsData.filter(attempt => {
-            return String(attempt.answer_record_id) === String(answerRecordId)
-          })
-        }
-      }
-    }
-  } catch (error) {
-    console.error('加载用户记录失败:', error)
-  }
-  
-  if (isComponentMounted) {
-    userDetailDialogVisible.value = true
-  }
-}
-
 // ==================== 用户管理 ====================
 const updateUserList = async () => {
   if (!isComponentMounted) return
-  
-  try {
-    await questionStore.loadUserStats()
-    if (isComponentMounted) {
-      userManagementRef.value?.refresh()
-      message.success('用户列表已更新')
-    }
-  } catch (error) {
-    console.error('更新用户列表失败:', error)
-    if (isComponentMounted) {
-      message.error('更新用户列表失败，请稍后重试')
-    }
+
+  if (isComponentMounted) {
+    userManagementRef.value?.refresh()
+    message.success('用户列表已更新')
   }
 }
 
@@ -603,23 +321,21 @@ const clearAllData = async () => {
     await api.post('/data/clear-all')
     const results = await Promise.allSettled([
       questionStore.loadData(),
-      questionStore.loadQuestions({ excludeContent: true }),
-      questionStore.loadUserStats(),
-      questionStore.loadRecentRecords()
+      questionStore.loadQuestions({ excludeContent: true })
     ])
-    
+
     if (!isComponentMounted) return
-    
+
     const failedOperations = results
       .map((r, i) => {
         if (r.status === 'rejected') {
-          const names = ['学科数据', '题目数据', '用户统计', '最近记录']
+          const names = ['学科数据', '题目数据']
           return `${names[i]}: ${r.reason?.message || '未知错误'}`
         }
         return null
       })
       .filter(Boolean)
-    
+
     questionListRef.value?.refresh()
     userManagementRef.value?.refresh()
     
@@ -638,10 +354,9 @@ const clearAllData = async () => {
 
 const clearUserRecords = async () => {
   if (!isComponentMounted) return
-  
+
   try {
     await api.post('/data/clear-records')
-    await questionStore.loadUserStats()
     if (isComponentMounted) {
       userManagementRef.value?.refresh()
       message.success('用户答题记录已清空')
@@ -656,11 +371,9 @@ const clearUserRecords = async () => {
 
 const clearLeaderboard = async () => {
   if (!isComponentMounted) return
-  
+
   try {
     await api.post('/data/clear-leaderboard')
-    await questionStore.loadUserStats()
-    await questionStore.loadRecentRecords()
     if (isComponentMounted) {
       message.success('排行榜数据已清空')
     }
@@ -740,10 +453,6 @@ const backupData = async (backupParams = {}) => {
   }
 }
 
-const restoreData = async () => {
-  // 恢复数据的逻辑现在由 BackupRestore 组件处理
-}
-
 const exportData = async () => {
   if (!isComponentMounted) return
   
@@ -782,23 +491,21 @@ const uploadBackup = async (file) => {
     if (response.ok) {
       const results = await Promise.allSettled([
         questionStore.loadData(),
-        questionStore.loadQuestions({ excludeContent: true }),
-        questionStore.loadUserStats(),
-        questionStore.loadRecentRecords()
+        questionStore.loadQuestions({ excludeContent: true })
       ])
-      
+
       if (!isComponentMounted) return
-      
+
       const failedOperations = results
         .map((r, i) => {
           if (r.status === 'rejected') {
-            const names = ['学科数据', '题目数据', '用户统计', '最近记录']
+            const names = ['学科数据', '题目数据']
             return `${names[i]}: ${r.reason?.message || '未知错误'}`
           }
           return null
         })
         .filter(Boolean)
-      
+
       questionListRef.value?.refresh()
       userManagementRef.value?.refresh()
       
@@ -1012,7 +719,6 @@ onUnmounted(() => {
 .question-management,
 .subject-management,
 .grades-classes-management,
-.user-data-view,
 .user-management-view,
 .data-management {
   height: 100%;
@@ -1058,29 +764,5 @@ onUnmounted(() => {
 
 .filter-card :deep(.el-card__body) {
   padding: 20px !important;
-}
-
-/* 数据卡片 */
-.data-card {
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-}
-
-.data-card :deep(.el-card__header) {
-  padding: 16px 20px !important;
-  border-bottom: 1px solid #ebeef5 !important;
-  background-color: #f5f7fa !important;
-}
-
-.data-card :deep(.el-card__body) {
-  padding: 20px !important;
-}
-
-/* 数据展示区域 */
-.data-display {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
 }
 </style>

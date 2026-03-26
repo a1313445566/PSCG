@@ -9,7 +9,6 @@ import { ref, computed } from 'vue'
 const isCollapse = ref(false)
 const sidebarWidth = ref(220)
 const activeMenu = ref('dashboard')
-const activeTreeNode = ref(null)
 
 // 学科筛选状态
 const filterSubjectId = ref('')
@@ -84,6 +83,8 @@ export function useAdminLayout() {
       'subjects': '学科管理',
       'grades-classes': '年级班级',
       'user-data': '用户数据',
+      'user-stats': '用户答题统计',
+      'recent-records': '最近答题记录',
       'user-management': '用户管理',
       'basic-settings': '基础设置',
       'database': '数据库管理',
@@ -96,7 +97,6 @@ export function useAdminLayout() {
     isCollapse,
     sidebarWidth,
     activeMenu,
-    activeTreeNode,
     toggleCollapse,
     setActiveMenu,
     setSidebarWidth,

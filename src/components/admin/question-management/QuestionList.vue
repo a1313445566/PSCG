@@ -1,5 +1,5 @@
 <template>
-  <div class="question-management">
+  <div class="question-management scroll-self-managed">
     <!-- 顶部工具栏 -->
     <div class="toolbar">
       <div class="toolbar-left">
@@ -404,13 +404,13 @@
         <!-- 分页 -->
         <div class="pagination-container">
           <el-pagination
-            v-model:current-page="pagination.page"
-            v-model:page-size="pagination.limit"
+            :current-page="paginationPage"
+            :page-size="paginationLimit"
             :page-sizes="[20, 50, 100]"
-            :total="pagination.total"
+            :total="paginationTotal"
             layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
-            @current-change="handlePageChange"
+            @size-change="onSizeChange"
+            @current-change="onPageChange"
           />
         </div>
         </div>
@@ -542,6 +542,7 @@ import {
 } from '@element-plus/icons-vue';
 import { useQuestionStore } from '../../../stores/questionStore';
 import { useAdminLayout } from '../../../composables/useAdminLayout';
+import { usePagination } from '../../../composables/usePagination';
 import { formatDate } from '../../../utils/dateUtils';
 import { getApiBaseUrl } from '../../../utils/database';
 import EditableContent from '../../common/EditableContent.vue';
@@ -574,12 +575,16 @@ const loading = ref(false);
 // 选中的题目
 const selectedQuestions = ref([]);
 
-// 分页
-const pagination = ref({
-  page: 1,
-  limit: 50,
-  total: 0
-});
+// 使用分页 Hook（服务端分页）
+const paginationTotal = ref(0);
+const { currentPage: paginationPage, pageSize: paginationLimit, handleSizeChange, handleCurrentChange, reset: resetPagination } = usePagination(50, paginationTotal);
+
+// 分页对象（为了兼容现有代码，使用计算属性）
+const pagination = computed(() => ({
+  page: paginationPage.value,
+  limit: paginationLimit.value,
+  total: paginationTotal.value
+}));
 
 // 服务端数据
 const serverQuestions = ref([]);
@@ -676,7 +681,7 @@ const loadQuestions = async (resetPage = false) => {
   try {
     loading.value = true;
     if (resetPage) {
-      pagination.value.page = 1;
+      resetPagination();
     }
 
     const result = await questionStore.loadQuestions({
@@ -684,13 +689,13 @@ const loadQuestions = async (resetPage = false) => {
       subcategoryId: filterSubcategoryId.value || null,
       type: filterType.value || null,
       keyword: searchKeyword.value || null,
-      page: pagination.value.page,
-      limit: pagination.value.limit,
+      page: paginationPage.value,
+      limit: paginationLimit.value,
       excludeContent: true
     });
 
     serverQuestions.value = formatQuestions(result?.data || []);
-    pagination.value.total = result?.total || 0;
+    paginationTotal.value = result?.total || 0;
   } catch (error) {
     console.error('加载题目失败:', error);
     ElMessage.error('加载题目失败');
@@ -761,16 +766,18 @@ watch(searchKeyword, () => {
   debouncedSearch();
 });
 
-// 分页变化
-const handlePageChange = (page) => {
-  pagination.value.page = page;
+// 监听分页变化
+watch([paginationPage, paginationLimit], () => {
   loadQuestions();
+});
+
+// 分页变化处理
+const onSizeChange = (size) => {
+  handleSizeChange(size);
 };
 
-const handleSizeChange = (size) => {
-  pagination.value.limit = size;
-  pagination.value.page = 1;
-  loadQuestions();
+const onPageChange = (page) => {
+  handleCurrentChange(page);
 };
 
 // 清除筛选
@@ -863,7 +870,7 @@ const deleteQuestionWithUndo = (row) => {
   const index = serverQuestions.value.findIndex(q => q.id === row.id);
   const removed = { ...serverQuestions.value[index] };
   serverQuestions.value.splice(index, 1);
-  pagination.value.total -= 1;
+  paginationTotal.value -= 1;
 
   // 存储待删除项
   pendingDeletes.value.set(row.id, {
@@ -896,7 +903,7 @@ const undoDelete = (questionId) => {
   if (pending) {
     // 恢复数据
     serverQuestions.value.splice(pending.index, 0, pending.data);
-    pagination.value.total += 1;
+    paginationTotal.value += 1;
     pendingDeletes.value.delete(questionId);
     ElMessage.success('已撤销删除');
   }

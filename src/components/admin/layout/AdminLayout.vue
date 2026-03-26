@@ -40,8 +40,6 @@
 
 <script setup>
 import { ref, computed, watch, onMounted, onUnmounted, nextTick, onErrorCaptured, provide } from 'vue'
-import { useRouter } from 'vue-router'
-import { useAdminLayout } from '../../../composables/useAdminLayout'
 import { useQuestionStore, useSettingsStore } from '../../../stores/questionStore'
 import message from '../../../utils/message'
 import { useLoading } from '../../../composables/useLoading'
@@ -49,11 +47,9 @@ import AdminSidebar from './AdminSidebar.vue'
 import AdminHeader from './AdminHeader.vue'
 import PasswordDialog from '../auth/PasswordDialog.vue'
 
-const router = useRouter()
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
-const { activeMenu, setActiveMenu } = useAdminLayout()
-const { showLoading, hideLoading, withLoading, cleanup: cleanupLoading } = useLoading()
+const { cleanup: cleanupLoading } = useLoading()
 
 // Props
 const props = defineProps({
@@ -181,12 +177,6 @@ const loadPageData = async () => {
     await loadSingleData('题目数据', () => questionStore.loadQuestions({ excludeContent: true }))
     if (!isComponentMounted) return
     
-    await loadSingleData('用户统计', () => questionStore.loadUserStats())
-    if (!isComponentMounted) return
-    
-    await loadSingleData('最近记录', () => questionStore.loadRecentRecords())
-    if (!isComponentMounted) return
-    
     await nextTick()
     await new Promise(resolve => {
       const timeoutId = setTimeout(() => {
@@ -247,14 +237,18 @@ onErrorCaptured((err) => {
     errorMessage.includes("Cannot destructure property 'row' of 'undefined'") ||
     errorMessage.includes("Cannot destructure property 'bum' of") ||
     errorMessage.includes('emitsOptions') ||
-    errorMessage.includes('Cannot read properties of undefined')
+    errorMessage.includes('Cannot read properties of undefined') ||
+    errorMessage.includes('Cannot destructure property') ||
+    errorMessage.includes('is null')
   
   // 忽略这些错误，不阻止渲染
   if (isIgnorableError) {
-    console.warn('[AdminLayout] 捕获到可忽略的错误:', errorMessage)
+    // 静默忽略，不输出日志
     return false
   }
   
+  // 其他错误正常抛出
+  console.error('[AdminLayout] 未捕获的错误:', err)
   return true
 })
 </script>
@@ -278,10 +272,18 @@ onErrorCaptured((err) => {
 
 .layout-content {
   flex: 1;
-  overflow: hidden;
+  overflow: auto;
   padding: 16px;
   background-color: #f5f7fa;
   min-width: 0;
+}
+
+/* 需要自己管理滚动的组件使用此类 */
+.layout-content :deep(.scroll-self-managed) {
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
 }
 
 .loading-container {

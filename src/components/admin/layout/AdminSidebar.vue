@@ -86,7 +86,7 @@ import { useAdminLayout } from '../../../composables/useAdminLayout'
 import {
   DataLine, Document, Reading, School,
   UserFilled, User, Tools, Coin, Lock,
-  ArrowLeft, ArrowRight, Grid, FolderOpened
+  ArrowLeft, ArrowRight, Grid, FolderOpened, Histogram, Clock
 } from '@element-plus/icons-vue'
 
 const {
@@ -121,7 +121,9 @@ const iconMap = {
   Coin,
   Lock,
   Grid,
-  FolderOpened
+  FolderOpened,
+  Histogram,
+  Clock
 }
 
 // 获取图标组件
@@ -135,7 +137,7 @@ const topLevelNodes = computed(() => [
   { key: 'questions', label: '题目管理', icon: 'Document' },
   { key: 'subjects', label: '学科管理', icon: 'Reading' },
   { key: 'grades-classes', label: '年级班级', icon: 'School' },
-  { key: 'user-data', label: '用户数据', icon: 'UserFilled' },
+  { key: 'user-data', label: '答题数据', icon: 'UserFilled' },
   { key: 'user-management', label: '用户管理', icon: 'User' },
   { key: 'basic-settings', label: '基础设置', icon: 'Tools' },
   { key: 'database', label: '数据库管理', icon: 'Coin' },
@@ -235,7 +237,21 @@ const menuTreeData = computed(() => {
       id: 'user-data',
       label: '用户数据',
       icon: 'UserFilled',
-      isMenu: true
+      isMenu: true,
+      children: [
+        {
+          id: 'user-stats',
+          label: '用户答题统计',
+          icon: 'Histogram',
+          isMenu: true
+        },
+        {
+          id: 'recent-records',
+          label: '最近答题记录',
+          icon: 'Clock',
+          isMenu: true
+        }
+      ]
     },
     {
       id: 'user-management',
@@ -271,6 +287,11 @@ const handleNodeClick = (data, node) => {
     setActiveMenu('questions')
     emit('menu-select', 'questions')
     clearFilter()
+  }
+  // 如果是"用户数据"父节点，默认跳转到用户答题统计
+  else if (data.id === 'user-data') {
+    setActiveMenu('user-stats')
+    emit('menu-select', 'user-stats')
   }
   // 如果是菜单项，切换到对应页面
   else if (data.isMenu) {

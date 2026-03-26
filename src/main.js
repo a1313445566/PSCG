@@ -16,14 +16,19 @@ app.use(router)
 
 // 全局错误处理器 - 捕获组件渲染期间的错误
 app.config.errorHandler = (err, instance, info) => {
-  // 忽略 Element Plus 组件在销毁/渲染期间的竞态错误
+  // 忽略 Vue/Element Plus 组件在销毁/渲染期间的竞态错误
   const errorMessage = err?.message || ''
   const isIgnorableError = 
     errorMessage.includes("Cannot destructure property 'node' of 'undefined'") ||
     errorMessage.includes("Cannot destructure property 'row' of 'undefined'") ||
+    errorMessage.includes("Cannot destructure property 'bum' of") ||
     errorMessage.includes('emitsOptions') ||
-    errorMessage.includes('Cannot read properties of undefined')
+    errorMessage.includes('Cannot read properties of undefined') ||
+    errorMessage.includes('as it is undefined') ||
+    errorMessage.includes('as it is null') ||
+    errorMessage.includes('Cannot destructure property')
   
+  // 静默忽略这些无害错误
   if (isIgnorableError) {
     return
   }

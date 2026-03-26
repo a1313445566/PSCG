@@ -51,8 +51,6 @@ export const useQuestionStore = defineStore('question', {
     questions: [],
     grades: [],
     classes: [],
-    userStats: [],
-    recentRecords: [],
     errorCollections: {}, // 错题巩固题库，格式: { subjectId: [questions] }
     errorCollectionStats: {}, // 错题巩固统计，格式: { questionId: { correctCount: number } }
     subcategoryStats: {}, // 子分类统计，格式: { subcategoryId: { questionCount, avgDifficulty } }
@@ -416,53 +414,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
-    // 加载用户统计数据
-    async loadUserStats() {
-      try {
-        this.isLoading = true
-        this.error = null
-        const userStatsData = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0`).then(res => res.json())
-        // 检查应用是否仍然挂载
-        if (!_isAppMounted) return
-        this.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
-      } catch (error) {
-        this.error = error.message
-        this.userStats = []
-        console.error('加载用户统计失败:', error)
-        throw error // 向上抛出错误
-      } finally {
-        this.isLoading = false
-      }
-    },
-    
-    // 加载最近答题记录
-    async loadRecentRecords() {
-      try {
-        this.isLoading = true
-        this.error = null
-        // 获取所有用户的最近答题记录
-        const response = await fetch(`${getApiBaseUrl()}/answer-records/all?limit=0`)
-        if (response.ok) {
-          const recentRecordsData = await response.json()
-          // 检查应用是否仍然挂载
-          if (!_isAppMounted) return
-          this.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
-        } else {
-          // 如果没有专门的all端点，尝试获取所有用户的记录
-          // 这里可以根据实际情况调整
-          this.recentRecords = []
-        }
-      } catch (error) {
-        this.error = error.message
-        this.recentRecords = []
-        console.error('加载最近记录失败:', error)
-        throw error // 向上抛出错误
-      } finally {
-        this.isLoading = false
-      }
-    },
-    
+
     // 添加题目
     async addQuestion(questionData) {
       try {

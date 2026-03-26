@@ -1,47 +1,31 @@
 <template>
-  <div class="user-management">
-    <h3>用户管理</h3>
-    
-    <!-- 操作按钮区域 -->
-    <div class="action-buttons" style="margin-bottom: 20px;">
-      <el-button type="primary" @click="showAddUserDialog">添加用户</el-button>
-      <el-button type="danger" @click="batchDeleteUsers" :disabled="selectedUsers.length === 0">批量删除</el-button>
-    </div>
-    
-    <!-- 搜索和筛选 -->
-    <div class="filter-section" style="margin-bottom: 20px; padding: 16px; background-color: #f8f9fa; border-radius: 8px;">
-      <div style="display: flex; align-items: center; gap: 15px; flex-wrap: wrap;">
-        <div style="display: flex; align-items: center; gap: 5px;">
-          <label style="font-weight: 500; width: 60px;">学号</label>
-          <el-input v-model="searchStudentId" placeholder="输入学号" style="width: 180px;" @input="searchStudentId = searchStudentId.replace(/[^0-9]/g, '')"></el-input>
-        </div>
-        <div style="display: flex; align-items: center; gap: 5px;">
-          <label style="font-weight: 500; width: 60px;">姓名</label>
-          <el-input v-model="searchName" placeholder="输入姓名" style="width: 180px;"></el-input>
-        </div>
-        <div style="display: flex; align-items: center; gap: 5px;">
-          <label style="font-weight: 500; width: 60px;">年级</label>
-          <el-select v-model="searchGrade" placeholder="选择年级" style="width: 120px;">
-            <el-option label="全部" value=""></el-option>
-            <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
-          </el-select>
-        </div>
-        <div style="display: flex; align-items: center; gap: 5px;">
-          <label style="font-weight: 500; width: 60px;">班级</label>
-          <el-select v-model="searchClass" placeholder="选择班级" style="width: 120px;">
-            <el-option label="全部" value=""></el-option>
-            <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.name || classNum"></el-option>
-          </el-select>
-        </div>
-        <div style="display: flex; gap: 10px;">
-          <el-button type="primary" @click="applyFilters">搜索</el-button>
-          <el-button @click="resetFilters">重置</el-button>
-        </div>
+  <div class="user-management scroll-self-managed">
+    <!-- 顶部工具栏 -->
+    <div class="toolbar">
+      <div class="toolbar-left">
+        <h3 style="margin: 0;">用户管理</h3>
+      </div>
+      <div class="toolbar-right">
+        <el-button type="primary" @click="showAddUserDialog">
+          <el-icon><Plus /></el-icon> 添加用户
+        </el-button>
+        <el-button type="danger" @click="batchDeleteUsers" :disabled="selectedUsers.length === 0">
+          <el-icon><Delete /></el-icon> 批量删除
+        </el-button>
       </div>
     </div>
     
+    <!-- 搜索和筛选 -->
+    <AdminFilter
+      :filter-items="filterItems"
+      v-model="filters"
+      :show-tags="true"
+      @search="applyFilters"
+      @reset="resetFilters"
+    />
+    
     <!-- 用户列表 -->
-    <div class="table-container" style="margin-top: 20px; background: #fff; border-radius: 12px; box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08); padding: 24px; overflow: hidden;">
+    <div class="table-wrapper">
       <el-table 
         :data="users" 
         stripe 
@@ -89,19 +73,19 @@
           </template>
         </el-table-column>
       </el-table>
-      
-      <!-- 分页 -->
-      <div class="pagination" style="margin-top: 20px; text-align: right;">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[10, 20, 50, 100]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
-      </div>
+    </div>
+    
+    <!-- 分页 -->
+    <div class="pagination-container">
+      <el-pagination
+        v-model:current-page="currentPage"
+        v-model:page-size="pageSize"
+        :page-sizes="[10, 20, 50, 100]"
+        layout="total, sizes, prev, pager, next, jumper"
+        :total="total"
+        @size-change="handleSizeChange"
+        @current-change="handleCurrentChange"
+      />
     </div>
     
     <!-- 用户表单对话框 -->
@@ -116,10 +100,13 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted } from 'vue';
+import { ref, computed, watch, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
+import { Plus, Delete } from '@element-plus/icons-vue';
 import { getApiBaseUrl } from '../../../utils/database';
+import AdminFilter from '../common/AdminFilter.vue';
 import UserForm from './UserForm.vue';
+import { usePagination } from '../../../composables/usePagination';
 
 // 定义属性和事件
 const props = defineProps({
@@ -135,23 +122,66 @@ const props = defineProps({
 
 const emit = defineEmits(['update-users']);
 
+// 筛选配置
+const filterItems = computed(() => [
+  {
+    key: 'studentId',
+    label: '学号',
+    type: 'number',
+    placeholder: '输入学号',
+    width: '140px'
+  },
+  {
+    key: 'name',
+    label: '姓名',
+    type: 'input',
+    placeholder: '输入姓名',
+    width: '140px'
+  },
+  {
+    key: 'grade',
+    label: '年级',
+    type: 'select',
+    placeholder: '选择年级',
+    width: '120px',
+    options: [
+      { label: '全部', value: '' },
+      ...props.grades.map(g => ({ label: `${g.name || g}年级`, value: g.name || g }))
+    ]
+  },
+  {
+    key: 'class',
+    label: '班级',
+    type: 'select',
+    placeholder: '选择班级',
+    width: '120px',
+    options: [
+      { label: '全部', value: '' },
+      ...props.classes.map(c => ({ label: `${c.name || c}班`, value: c.name || c }))
+    ]
+  }
+]);
+
+// 筛选值
+const filters = ref({
+  studentId: '',
+  name: '',
+  grade: '',
+  class: ''
+});
+
 // 状态管理
 const userFormVisible = ref(false);
 const selectedUser = ref(null);
 const selectedUsers = ref([]);
-const currentPage = ref(1);
-const pageSize = ref(20);
 const loading = ref(false);
+
+// 使用分页 Hook（服务端分页）
+const total = ref(0);
+const { currentPage, pageSize, handleSizeChange, handleCurrentChange, reset: resetPagination } = usePagination(20, total);
 
 // 服务端分页数据
 const users = ref([]);
-const total = ref(0);
-
-// 搜索和筛选
-const searchStudentId = ref('');
-const searchName = ref('');
-const searchGrade = ref('');
-const searchClass = ref('');
 
 // 加载用户数据（服务端分页）
 const loadUsers = async () => {
@@ -161,29 +191,29 @@ const loadUsers = async () => {
     params.append('page', currentPage.value);
     params.append('limit', pageSize.value);
     params.append('withStats', 'true');
-    
+
     // 添加筛选条件
-    if (searchStudentId.value) {
-      params.append('student_id', searchStudentId.value);
+    if (filters.value.studentId) {
+      params.append('student_id', filters.value.studentId);
     }
-    if (searchName.value) {
-      params.append('name', searchName.value);
+    if (filters.value.name) {
+      params.append('name', filters.value.name);
     }
-    if (searchGrade.value) {
-      params.append('grade', searchGrade.value);
+    if (filters.value.grade) {
+      params.append('grade', filters.value.grade);
     }
-    if (searchClass.value) {
-      params.append('class', searchClass.value);
+    if (filters.value.class) {
+      params.append('class', filters.value.class);
     }
-    
+
     const response = await fetch(`${getApiBaseUrl()}/users?${params.toString()}`);
-    
+
     if (!response.ok) {
       throw new Error(`HTTP error! status: ${response.status}`);
     }
-    
+
     const result = await response.json();
-    
+
     // 检查返回格式（向后兼容）
     if (Array.isArray(result)) {
       // 旧格式：直接返回数组
@@ -351,28 +381,20 @@ const saveUser = async (userData) => {
 
 // 应用筛选
 const applyFilters = () => {
-  currentPage.value = 1;
+  resetPagination();
   loadUsers();
 };
 
 // 重置筛选
 const resetFilters = () => {
-  searchStudentId.value = '';
-  searchName.value = '';
-  searchGrade.value = '';
-  searchClass.value = '';
-  currentPage.value = 1;
+  filters.value = {
+    studentId: '',
+    name: '',
+    grade: '',
+    class: ''
+  };
+  resetPagination();
   loadUsers();
-};
-
-// 分页处理
-const handleSizeChange = (size) => {
-  pageSize.value = size;
-  currentPage.value = 1;
-};
-
-const handleCurrentChange = (current) => {
-  currentPage.value = current;
 };
 
 // 暴露刷新方法
@@ -388,26 +410,51 @@ onMounted(() => {
 
 <style scoped>
 .user-management {
-  padding: 20px;
-}
-
-.action-buttons {
+  height: 100%;
   display: flex;
-  gap: 10px;
-  margin-bottom: 20px;
-}
-
-.table-container {
-  margin-top: 20px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 24px;
+  flex-direction: column;
   overflow: hidden;
 }
 
-.pagination {
-  margin-top: 20px;
-  text-align: right;
+.toolbar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: #fff;
+  border-bottom: 1px solid #e4e7ed;
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  border-radius: 8px;
+}
+
+.toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.table-wrapper {
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pagination-container {
+  margin-top: 12px;
+  display: flex;
+  justify-content: center;
+  padding: 12px;
+  background: #fff;
+  border-radius: 8px;
+  flex-shrink: 0;
 }
 </style>

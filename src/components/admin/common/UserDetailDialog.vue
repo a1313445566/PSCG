@@ -3,8 +3,11 @@
     :model-value="dialogVisible"
     @update:model-value="(value) => emit('update:dialogVisible', value)"
     :title="selectedUser?.name ? `${selectedUser.name}的记录 (ID: ${currentAnswerRecordId || '未知'})` : `${selectedUser?.grade || '-'}年级${selectedUser?.class || '-'}班的${selectedUser?.student_id || selectedUser?.user_id || '未知'}的记录 (ID: ${currentAnswerRecordId || '未知'})`"
-    width="1400px"
+    width="900px"
+    top="5vh"
+    :destroy-on-close="true"
   >
+    <div class="dialog-content">
     <div v-if="selectedUser" class="user-detail-info" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px;">
       <div style="display: flex; gap: 20px; flex-wrap: wrap;">
         <div><strong>学号:</strong> {{ selectedUser.student_id || selectedUser.user_id || '未知' }}</div>
@@ -141,6 +144,7 @@
         </div>
       </el-tab-pane>
     </el-tabs>
+    </div>
   </el-dialog>
 </template>
 
@@ -241,6 +245,11 @@ const showQuestionDetail = (row) => {
 </script>
 
 <style scoped>
+.dialog-content {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
 .correct-answer {
   color: #67c23a;
   font-weight: bold;
