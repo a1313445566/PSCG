@@ -64,6 +64,9 @@
         :subject-question-counts="subjectQuestionCounts"
         @update-settings="updateAnswerSettings"
       />
+      
+      <!-- AI 配置 -->
+      <AIConfigSetting />
     </div>
     
     <!-- 数据库管理 -->
@@ -92,7 +95,10 @@
     
     <!-- 数据分析 -->
     <DataAnalysis v-else-if="activeMenu === 'data-analysis'" />
-    
+
+    <!-- AI 智能分析 -->
+    <AIAnalysisView v-else-if="activeMenu === 'ai-analysis'" />
+
     <!-- 默认显示数据概览 -->
     <DashboardView v-else />
 
@@ -137,6 +143,7 @@ import AdminLayout from '../components/admin/layout/AdminLayout.vue'
 // 核心组件 - 同步导入
 import InterfaceNameSetting from '../components/admin/basic-settings/InterfaceNameSetting.vue'
 import AnswerSetting from '../components/admin/basic-settings/AnswerSetting.vue'
+import AIConfigSetting from '../components/admin/basic-settings/AIConfigSetting.vue'
 import SubjectManagement from '../components/admin/basic-settings/SubjectManagement.vue'
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
 
@@ -153,6 +160,7 @@ const QuestionForm = defineAsyncComponent(() => import('../components/admin/ques
 const BatchAddQuestion = defineAsyncComponent(() => import('../components/admin/question-management/BatchAddQuestion.vue'))
 const SubcategoryDialog = defineAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
 const DataAnalysis = defineAsyncComponent(() => import('../components/admin/analysis/DataAnalysis.vue'))
+const AIAnalysisView = defineAsyncComponent(() => import('./AIAnalysisView.vue'))
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()

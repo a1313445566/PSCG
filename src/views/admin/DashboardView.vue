@@ -155,7 +155,7 @@ import {
   Document, UserFilled, EditPen, TrendCharts,
   Top, Bottom, Minus, ArrowRight
 } from '@element-plus/icons-vue'
-import * as echarts from 'echarts'
+import VChart from '@visactor/vchart'
 
 const router = useRouter()
 const { setActiveMenu } = useAdminLayout()
@@ -252,130 +252,143 @@ const loadRecentActivities = async () => {
 const renderTrendChart = (data) => {
   if (!trendChartRef.value) return
   
-  if (!trendChart) {
-    trendChart = echarts.init(trendChartRef.value)
+  // 先释放旧图表
+  if (trendChart) {
+    trendChart.release()
+    trendChart = null
   }
   
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'cross'
-      }
-    },
-    legend: {
-      data: ['答题次数', '正确率']
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: data.map(item => item.date)
-    },
-    yAxis: [
+  // 转换数据为 VChart 需要的格式
+  const attemptsData = data.map(item => ({
+    date: item.date,
+    type: '答题次数',
+    value: item.attempts
+  }))
+  
+  const accuracyData = data.map(item => ({
+    date: item.date,
+    type: '正确率 (%)',
+    value: item.accuracy
+  }))
+  
+  const spec = {
+    type: 'line',
+    data: [
       {
-        type: 'value',
-        name: '答题次数',
-        position: 'left'
-      },
-      {
-        type: 'value',
-        name: '正确率 (%)',
-        position: 'right',
-        min: 0,
-        max: 100
+        id: 'data',
+        values: [...attemptsData, ...accuracyData]
       }
     ],
-    series: [
-      {
-        name: '答题次数',
-        type: 'line',
-        smooth: true,
-        data: data.map(item => item.attempts),
-        itemStyle: {
-          color: '#409EFF'
-        },
-        areaStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-            { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
-          ])
-        }
-      },
-      {
-        name: '正确率',
-        type: 'line',
-        smooth: true,
-        yAxisIndex: 1,
-        data: data.map(item => item.accuracy),
-        itemStyle: {
-          color: '#67C23A'
-        }
+    xField: 'date',
+    yField: 'value',
+    seriesField: 'type',
+    axes: [
+      { 
+        orient: 'left',
+        title: { visible: true, text: '答题次数 / 正确率' }
       }
-    ]
+    ],
+    line: {
+      style: {
+        lineWidth: 2
+      }
+    },
+    point: {
+      style: {
+        size: 6
+      }
+    },
+    color: ['#409EFF', '#67C23A'],
+    smooth: true,
+    legends: {
+      visible: true,
+      orient: 'top'
+    },
+    tooltip: {
+      visible: true,
+      mark: {
+        content: [
+          { key: (d) => d.type, value: (d) => d.value }
+        ]
+      }
+    }
   }
   
-  trendChart.setOption(option)
+  trendChart = new VChart(spec, {
+    dom: trendChartRef.value,
+    mode: 'desktop-browser'
+  })
+  trendChart.renderAsync()
 }
 
 // 渲染学科分布图表
 const renderSubjectChart = (data) => {
   if (!subjectChartRef.value) return
   
-  if (!subjectChart) {
-    subjectChart = echarts.init(subjectChartRef.value)
+  // 先释放旧图表
+  if (subjectChart) {
+    subjectChart.release()
+    subjectChart = null
   }
   
-  const option = {
-    tooltip: {
-      trigger: 'item',
-      formatter: '{b}: {c} ({d}%)'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      top: 'center'
-    },
-    series: [
+  // 过滤掉没有数据的学科
+  const validData = data.filter(item => item.count > 0)
+  
+  const spec = {
+    type: 'pie',
+    data: [
       {
-        name: '答题分布',
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['60%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: 16,
-            fontWeight: 'bold'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: data.map(item => ({
-          value: item.count,
-          name: item.name
+        id: 'data',
+        values: validData.map(item => ({
+          name: item.name,
+          value: item.count
         }))
       }
-    ]
+    ],
+    valueField: 'value',
+    categoryField: 'name',
+    outerRadius: 0.75,
+    innerRadius: 0.5,
+    pie: {
+      style: {
+        cornerRadius: 4,
+        stroke: '#fff',
+        lineWidth: 2
+      }
+    },
+    legends: {
+      visible: true,
+      orient: 'right',
+      position: 'middle'
+    },
+    label: {
+      visible: true,
+      position: 'outside',
+      style: {
+        fontSize: 12
+      },
+      formatMethod: (text, datum) => {
+        const total = validData.reduce((sum, item) => sum + item.count, 0)
+        const percent = total > 0 ? ((datum.value / total) * 100).toFixed(1) : 0
+        return `${datum.name}\n${percent}%`
+      }
+    },
+    tooltip: {
+      visible: true,
+      mark: {
+        content: [
+          { key: '学科', value: (d) => d.name },
+          { key: '答题次数', value: (d) => d.value }
+        ]
+      }
+    }
   }
   
-  subjectChart.setOption(option)
+  subjectChart = new VChart(spec, {
+    dom: subjectChartRef.value,
+    mode: 'desktop-browser'
+  })
+  subjectChart.renderAsync()
 }
 
 // 查看全部记录
@@ -388,6 +401,14 @@ const viewAllRecords = () => {
 const handleResize = () => {
   trendChart?.resize()
   subjectChart?.resize()
+}
+
+// 释放图表实例
+const releaseCharts = () => {
+  trendChart?.release()
+  subjectChart?.release()
+  trendChart = null
+  subjectChart = null
 }
 
 // 初始化
@@ -409,8 +430,7 @@ onMounted(async () => {
 // 清理
 onUnmounted(() => {
   window.removeEventListener('resize', handleResize)
-  trendChart?.dispose()
-  subjectChart?.dispose()
+  releaseCharts()
   cleanup()
 })
 </script>

@@ -140,7 +140,9 @@ router.get('/', async (req, res) => {
     // 按班级分析查询
     const classAnalysisQuery = `
       SELECT
+        u.grade,
         u.class as class_num,
+        CONCAT(u.grade, '年级', u.class, '班') as class_name,
         COUNT(DISTINCT u.id) as users,
         COUNT(DISTINCT ar.id) as sessions,
         SUM(ar.total_questions) as questions,
@@ -151,8 +153,8 @@ router.get('/', async (req, res) => {
       FROM answer_records ar
       INNER JOIN users u ON ar.user_id = u.id
       ${whereClause}
-      GROUP BY u.class
-      ORDER BY u.class
+      GROUP BY u.grade, u.class
+      ORDER BY u.grade, u.class
     `;
     
     // 按子分类分析查询

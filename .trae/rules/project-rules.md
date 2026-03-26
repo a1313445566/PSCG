@@ -9,6 +9,8 @@
 - **路由**: Vue Router 4.6.4
 - **UI 组件库**: Element Plus 2.13.3
 - **图表库**: ECharts 5.4.3
+- **智能可视化**: VisActor (VChart 2.0.20, VMind 2.0.10)
+- **Markdown 渲染**: marked 17.0.5
 - **富文本编辑器**: Quill 2.0.3
 - **HTTP 客户端**: Axios 1.13.6
 
@@ -20,6 +22,9 @@
 - **文件上传**: Multer 2.1.1
 - **缓存**: Memory Cache 0.2.0
 - **环境变量**: Dotenv 17.3.1
+- **HTTP 客户端**: node-fetch 3.3.2
+- **图像处理**: sharp 0.34.5
+- **Excel 处理**: xlsx 0.18.5
 - **其他**: Compression 1.8.1, CORS 2.8.5
 
 ## 📁 项目结构
@@ -29,15 +34,24 @@
 src/
 ├── components/        # 可复用组件
 │   ├── admin/         # 后台管理组件
+│   │   ├── ai/        # AI 相关组件
+│   │   ├── analysis/  # 数据分析组件
+│   │   └── ...        # 其他后台组件
 │   ├── common/        # 通用组件
 │   ├── quiz/          # 答题相关组件
 │   └── ...            # 其他功能组件
 ├── views/             # 页面组件
+│   ├── AIAnalysisView.vue  # AI 智能分析页面
+│   └── ...            # 其他页面组件
 ├── stores/            # Pinia 状态管理
 ├── router/            # 路由配置
 ├── utils/             # 工具函数
+│   ├── markdown.js    # Markdown 渲染工具
+│   └── chartGenerator.js  # 图表生成工具
 ├── composables/       # 自定义 Hook
 ├── styles/            # 样式文件
+│   ├── markdown.css   # Markdown 样式
+│   └── ...            # 其他样式文件
 ├── App.vue            # 根组件
 └── main.js            # 入口文件
 ```
@@ -50,10 +64,12 @@ routes/                # 后端路由
 ├── questions.js      # 题目管理
 ├── quiz.js           # 答题相关
 ├── subjects.js       # 学科管理
+├── ai.js             # AI 分析相关
 └── ...               # 其他路由
 
 services/              # 后端服务
 ├── database.js       # 数据库服务
+├── aiService.js      # AI 服务
 └── ...               # 其他服务
 
 middleware/            # 中间件
@@ -69,6 +85,8 @@ DOCS/
 ├── API文档/           # API接口文档
 ├── 使用指南/          # 用户使用指南
 ├── 需求文档/          # 项目需求和功能规划
+│   ├── 豆包AI自然语言分析集成需求.md
+│   └── AI分析功能增强需求.md
 ├── 部署文档/          # 部署和运维文档
 └── 开发文档/          # 开发相关文档
 ```
@@ -180,6 +198,11 @@ module.exports = router
 - 图片优化
 - 减少不必要的重渲染
 
+#### VisActor 最佳实践
+- **VChart**: 使用声明式图表配置，确保图表容器有明确的高度
+- **VMind**: 合理使用智能图表生成，设置适当的超时和降级策略
+- **性能优化**: 图表实例在组件卸载时释放，避免内存泄漏
+
 ### 后端最佳实践
 
 #### 路由设计
@@ -199,6 +222,12 @@ module.exports = router
 - 输入验证
 - XSS防护
 - CSRF防护
+
+#### AI服务最佳实践
+- **API调用**: 设置合理的超时和重试机制
+- **缓存策略**: 实现分析结果缓存，减少API调用
+- **错误处理**: 完善的错误处理和降级策略
+- **限流措施**: 合理控制API调用频率，避免滥用
 
 ## 🚀 构建与部署
 
@@ -238,6 +267,8 @@ module.exports = router
 4. **文档更新**: 代码变更后及时更新相关文档
 5. **错误处理**: 所有异步操作必须使用 try-catch
 6. **资源清理**: 定时器、事件监听、网络请求必须在组件卸载时清理
+7. **AI服务**: 合理使用AI服务，设置适当的超时和缓存策略
+8. **VisActor**: 确保图表容器有明确的高度，避免渲染问题
 
 ## 🤖 AI 辅助开发指南
 
@@ -291,6 +322,10 @@ module.exports = router
 #### 图标导入
 - ✅ 导入: `import { Delete } from '@element-plus/icons-vue'`
 - ❌ 遗漏: 模板中使用但未导入
+
+#### VisActor 使用
+- ✅ 正确: 图表容器设置明确高度，组件卸载时释放实例
+- ❌ 错误: 无高度容器，未释放实例导致内存泄漏
 
 ### 快速参考
 
@@ -369,15 +404,62 @@ import { Delete, Edit, View } from '@element-plus/icons-vue'
 </template>
 ```
 
+#### VisActor VChart 使用
+```vue
+<template>
+  <div ref="chartRef" class="chart-container"></div>
+</template>
+
+<script setup>
+import { ref, onMounted, onUnmounted } from 'vue'
+import { VChart } from '@visactor/vchart'
+
+const chartRef = ref(null)
+let chartInstance = null
+
+onMounted(() => {
+  if (chartRef.value) {
+    chartInstance = new VChart({
+      type: 'bar',
+      data: [{
+        id: 'data',
+        values: [
+          { category: 'A', value: 10 },
+          { category: 'B', value: 20 }
+        ]
+      }],
+      xField: 'category',
+      yField: 'value'
+    }, {
+      dom: chartRef.value
+    })
+    chartInstance.renderAsync()
+  }
+})
+
+onUnmounted(() => {
+  chartInstance?.release()
+})
+</script>
+
+<style scoped>
+.chart-container {
+  width: 100%;
+  height: 400px; /* 必须设置高度 */
+}
+</style>
+```
+
 ## 📚 参考资料
 
 - **Vue 3 文档**: https://cn.vuejs.org/
 - **Element Plus 文档**: https://element-plus.org/
 - **Express 文档**: https://expressjs.com/
 - **MySQL 文档**: https://dev.mysql.com/doc/
+- **VisActor 文档**: https://visactor.io/
 - **项目文档**: `DOCS/` 目录
 
 ---
 
 **最后更新**: 2026年3月26日
-**版本**: v1.0.0
+**版本**: v1.1.0

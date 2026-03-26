@@ -9,6 +9,8 @@
     "server": "node server.cjs"
   },
   "dependencies": {
+    "@visactor/vchart": "^2.0.20",
+    "@visactor/vmind": "^2.0.10",
     "axios": "^1.13.6",
     "compression": "^1.8.1",
     "cors": "^2.8.5",

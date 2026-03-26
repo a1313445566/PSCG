@@ -78,7 +78,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
-import * as echarts from 'echarts'
+import VChart from '@visactor/vchart'
 import { formatPercent } from '../../../utils/format'
 
 const props = defineProps({
@@ -108,367 +108,324 @@ let subcategoryChart = null
 const initSubjectChart = () => {
   if (!subjectChartRef.value) return
   
-  if (!subjectChart) {
-    subjectChart = echarts.init(subjectChartRef.value)
+  // 先销毁旧图表
+  if (subjectChart) {
+    subjectChart.release()
+    subjectChart = null
   }
   
   const data = props.analysisData.subjectAnalysisList || []
+  if (data.length === 0) return
   
-  const option = {
+  const spec = {
+    type: 'bar',
+    data: [
+      {
+        id: 'data',
+        values: data.map(item => ({
+          subject: item.subject,
+          accuracy: item.accuracy || 0
+        }))
+      }
+    ],
+    xField: 'subject',
+    yField: 'accuracy',
+    axes: [
+      { orient: 'bottom', label: { autoRotate: true, autoHide: false } },
+      { orient: 'left', max: 100, label: { formatMethod: (val) => `${val}%` } }
+    ],
+    bar: {
+      style: {
+        fill: '#409EFF'
+      }
+    },
     tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      },
-      formatter: (params) => {
-        const item = params[0]
-        return `${item.name}<br/>正确率: ${formatPercent(item.value)}`
+      visible: true,
+      mark: {
+        title: (d) => d.subject,
+        content: [
+          { key: '正确率', value: (d) => formatPercent(d.accuracy) }
+        ]
       }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: data.map(item => item.subject),
-      axisLabel: {
-        interval: 0,
-        rotate: 30
-      }
-    },
-    yAxis: {
-      type: 'value',
-      max: 100,
-      axisLabel: {
-        formatter: '{value}%'
-      }
-    },
-    series: [{
-      name: '正确率',
-      type: 'bar',
-      data: data.map(item => item.accuracy),
-      itemStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: '#83bff6' },
-          { offset: 0.5, color: '#188df0' },
-          { offset: 1, color: '#188df0' }
-        ])
-      },
-      emphasis: {
-        itemStyle: {
-          color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-            { offset: 0, color: '#2378f7' },
-            { offset: 0.7, color: '#2378f7' },
-            { offset: 1, color: '#83bff6' }
-          ])
-        }
-      }
-    }]
+    }
   }
   
-  subjectChart.setOption(option)
+  subjectChart = new VChart(spec, {
+    dom: subjectChartRef.value,
+    mode: 'desktop-browser'
+  })
+  subjectChart.renderAsync()
 }
 
 // 初始化年级图表
 const initGradeChart = () => {
   if (!gradeChartRef.value) return
   
-  if (!gradeChart) {
-    gradeChart = echarts.init(gradeChartRef.value)
+  // 先销毁旧图表
+  if (gradeChart) {
+    gradeChart.release()
+    gradeChart = null
   }
   
   const data = props.analysisData.gradeAnalysisList || []
+  if (data.length === 0) return
   
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
+  // 将数据转换为长格式
+  const values = []
+  data.forEach(item => {
+    values.push({
+      grade: `${item.grade}年级`,
+      type: '用户数',
+      value: item.users || 0
+    })
+    values.push({
+      grade: `${item.grade}年级`,
+      type: '答题次数',
+      value: item.sessions || 0
+    })
+  })
+  
+  const spec = {
+    type: 'bar',
+    data: [{ id: 'data', values }],
+    xField: 'grade',
+    yField: 'value',
+    seriesField: 'type',
+    color: ['#5470c6', '#91cc75'],
+    bar: {
+      style: {
+        cornerRadius: [4, 4, 0, 0]
       }
     },
-    legend: {
-      data: ['用户数', '答题次数', '正确率']
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: data.map(item => `${item.grade}年级`)
-    },
-    yAxis: [
-      {
-        type: 'value',
-        name: '数量',
-        position: 'left'
-      },
-      {
-        type: 'value',
-        name: '正确率',
-        position: 'right',
-        max: 100,
-        axisLabel: {
-          formatter: '{value}%'
-        }
-      }
+    axes: [
+      { orient: 'bottom', label: { autoRotate: true } },
+      { orient: 'left', title: { visible: true, text: '数量' } }
     ],
-    series: [
-      {
-        name: '用户数',
-        type: 'bar',
-        data: data.map(item => item.users)
-      },
-      {
-        name: '答题次数',
-        type: 'bar',
-        data: data.map(item => item.sessions)
-      },
-      {
-        name: '正确率',
-        type: 'line',
-        yAxisIndex: 1,
-        data: data.map(item => item.accuracy),
-        smooth: true
-      }
-    ]
+    legends: { visible: true },
+    tooltip: { visible: true }
   }
   
-  gradeChart.setOption(option)
+  gradeChart = new VChart(spec, {
+    dom: gradeChartRef.value,
+    mode: 'desktop-browser'
+  })
+  gradeChart.renderAsync()
 }
 
 // 初始化时间趋势图表
 const initTimeChart = () => {
   if (!timeChartRef.value) return
   
-  if (!timeChart) {
-    timeChart = echarts.init(timeChartRef.value)
+  // 先销毁旧图表
+  if (timeChart) {
+    timeChart.release()
+    timeChart = null
   }
   
   const data = props.analysisData.timeAnalysisList || []
+  if (data.length === 0) return
   
-  const option = {
+  const spec = {
+    type: 'line',
+    data: [
+      {
+        id: 'data',
+        values: data.map(item => ({
+          date: item.date && typeof item.date === 'string' 
+            ? item.date.split('T')[0].split(' ')[0] 
+            : item.date,
+          accuracy: item.accuracy || 0
+        }))
+      }
+    ],
+    xField: 'date',
+    yField: 'accuracy',
+    axes: [
+      { orient: 'bottom' },
+      { orient: 'left', max: 100, label: { formatMethod: (val) => `${val}%` } }
+    ],
+    line: {
+      style: {
+        stroke: '#409EFF',
+        lineWidth: 2
+      }
+    },
+    point: {
+      style: {
+        fill: '#409EFF'
+      }
+    },
+    area: {
+      style: {
+        fill: 'rgba(64, 158, 255, 0.2)'
+      }
+    },
+    smooth: true,
     tooltip: {
-      trigger: 'axis',
-      formatter: (params) => {
-        const item = params[0]
-        return `${item.name}<br/>正确率: ${formatPercent(item.value)}`
+      visible: true,
+      mark: {
+        title: (d) => d.date,
+        content: [
+          { key: '正确率', value: (d) => formatPercent(d.accuracy) }
+        ]
       }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      boundaryGap: false,
-      data: data.map(item => {
-        // 格式化日期显示
-        if (item.date && typeof item.date === 'string') {
-          // 提取 YYYY-MM-DD 部分
-          return item.date.split('T')[0].split(' ')[0]
-        }
-        return item.date
-      })
-    },
-    yAxis: {
-      type: 'value',
-      max: 100,
-      axisLabel: {
-        formatter: '{value}%'
-      }
-    },
-    series: [{
-      name: '正确率',
-      type: 'line',
-      data: data.map(item => item.accuracy),
-      smooth: true,
-      areaStyle: {
-        color: new echarts.graphic.LinearGradient(0, 0, 0, 1, [
-          { offset: 0, color: 'rgba(64, 158, 255, 0.3)' },
-          { offset: 1, color: 'rgba(64, 158, 255, 0.05)' }
-        ])
-      },
-      lineStyle: {
-        color: '#409EFF',
-        width: 2
-      },
-      itemStyle: {
-        color: '#409EFF'
-      }
-    }]
+    }
   }
   
-  timeChart.setOption(option)
+  timeChart = new VChart(spec, {
+    dom: timeChartRef.value,
+    mode: 'desktop-browser'
+  })
+  timeChart.renderAsync()
 }
 
 // 初始化班级图表
 const initClassChart = () => {
   if (!classChartRef.value) return
   
-  if (!classChart) {
-    classChart = echarts.init(classChartRef.value)
+  // 先销毁旧图表
+  if (classChart) {
+    classChart.release()
+    classChart = null
   }
   
   const data = props.analysisData.classAnalysisList || []
+  if (data.length === 0) return
   
-  const option = {
-    tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
+  const spec = {
+    type: 'bar',
+    data: [
+      {
+        id: 'data',
+        values: data.map(item => ({
+          classNum: item.class_name || (item.class_num ? `${item.class_num}班` : '未知'),
+          accuracy: item.accuracy || 0
+        }))
+      }
+    ],
+    xField: 'classNum',
+    yField: 'accuracy',
+    axes: [
+      { orient: 'bottom', label: { autoRotate: true } },
+      { orient: 'left', max: 100, label: { formatMethod: (val) => `${val}%` } }
+    ],
+    bar: {
+      style: {
+        fill: '#67C23A'
       }
     },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'category',
-      data: data.map(item => `${item.class_num}班`),
-      axisLabel: {
-        interval: 0,
-        rotate: 30
-      }
-    },
-    yAxis: {
-      type: 'value',
-      max: 100,
-      axisLabel: {
-        formatter: '{value}%'
-      }
-    },
-    series: [{
-      name: '正确率',
-      type: 'bar',
-      data: data.map(item => item.accuracy),
-      itemStyle: {
-        color: '#67C23A'
-      }
-    }]
+    tooltip: { visible: true }
   }
   
-  classChart.setOption(option)
+  classChart = new VChart(spec, {
+    dom: classChartRef.value,
+    mode: 'desktop-browser'
+  })
+  classChart.renderAsync()
 }
 
 // 初始化答题时长分布图表
 const initTimeSpentChart = () => {
   if (!timeSpentChartRef.value) return
   
-  if (!timeSpentChart) {
-    timeSpentChart = echarts.init(timeSpentChartRef.value)
+  // 先销毁旧图表
+  if (timeSpentChart) {
+    timeSpentChart.release()
+    timeSpentChart = null
   }
   
   const data = props.analysisData.timeSpentAnalysisList || []
+  if (data.length === 0) return
   
-  const option = {
-    tooltip: {
-      trigger: 'item',
-      formatter: '{a} <br/>{b}: {c} ({d}%)'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left',
-      top: 'center'
-    },
-    series: [
+  const spec = {
+    type: 'pie',
+    data: [
       {
-        name: '答题时长',
-        type: 'pie',
-        radius: ['40%', '70%'],
-        center: ['60%', '50%'],
-        avoidLabelOverlap: false,
-        itemStyle: {
-          borderRadius: 10,
-          borderColor: '#fff',
-          borderWidth: 2
-        },
-        label: {
-          show: false,
-          position: 'center'
-        },
-        emphasis: {
-          label: {
-            show: true,
-            fontSize: '20',
-            fontWeight: 'bold'
-          }
-        },
-        labelLine: {
-          show: false
-        },
-        data: data.map(item => ({
-          value: item.count,
-          name: item.time_range
+        id: 'data',
+        values: data.map(item => ({
+          timeRange: item.time_range || '未知',
+          count: item.sessions || item.count || 0
         }))
       }
-    ]
+    ],
+    valueField: 'count',
+    categoryField: 'timeRange',
+    outerRadius: 0.7,
+    innerRadius: 0.4,
+    pie: {
+      style: {
+        cornerRadius: 10,
+        stroke: '#fff',
+        lineWidth: 2
+      }
+    },
+    legends: {
+      visible: true,
+      orient: 'left'
+    },
+    label: { visible: false },
+    tooltip: { visible: true }
   }
   
-  timeSpentChart.setOption(option)
+  timeSpentChart = new VChart(spec, {
+    dom: timeSpentChartRef.value,
+    mode: 'desktop-browser'
+  })
+  timeSpentChart.renderAsync()
 }
 
 // 初始化知识点图表
 const initSubcategoryChart = () => {
   if (!subcategoryChartRef.value) return
   
-  if (!subcategoryChart) {
-    subcategoryChart = echarts.init(subcategoryChartRef.value)
+  // 先销毁旧图表
+  if (subcategoryChart) {
+    subcategoryChart.release()
+    subcategoryChart = null
   }
   
   const data = props.analysisData.subcategoryAnalysisList || []
+  if (data.length === 0) return
   
-  const option = {
+  const spec = {
+    type: 'bar',
+    data: [
+      {
+        id: 'data',
+        values: data.map(item => ({
+          name: item.subcategory ? `${item.subject} - ${item.subcategory}` : (item.subject || '未分类'),
+          accuracy: item.accuracy || 0
+        })).reverse()
+      }
+    ],
+    xField: 'accuracy',
+    yField: 'name',
+    direction: 'horizontal',
+    axes: [
+      { orient: 'left', label: { autoHide: false } },
+      { orient: 'bottom', max: 100, label: { formatMethod: (val) => `${val}%` } }
+    ],
+    bar: {
+      style: {
+        fill: '#E6A23C'
+      }
+    },
     tooltip: {
-      trigger: 'axis',
-      axisPointer: {
-        type: 'shadow'
-      },
-      formatter: (params) => {
-        const item = params[0]
-        return `${item.name}<br/>正确率: ${formatPercent(item.value)}`
+      visible: true,
+      mark: {
+        title: (d) => d.name,
+        content: [
+          { key: '正确率', value: (d) => formatPercent(d.accuracy) }
+        ]
       }
-    },
-    grid: {
-      left: '3%',
-      right: '4%',
-      bottom: '3%',
-      containLabel: true
-    },
-    xAxis: {
-      type: 'value',
-      max: 100,
-      axisLabel: {
-        formatter: '{value}%'
-      }
-    },
-    yAxis: {
-      type: 'category',
-      data: data.map(item => item.subcategory ? `${item.subject} - ${item.subcategory}` : '未分类').reverse(),
-      axisLabel: {
-        interval: 0
-      }
-    },
-    series: [{
-      name: '正确率',
-      type: 'bar',
-      data: data.map(item => item.accuracy).reverse(),
-      itemStyle: {
-        color: '#E6A23C'
-      }
-    }]
+    }
   }
   
-  subcategoryChart.setOption(option)
+  subcategoryChart = new VChart(spec, {
+    dom: subcategoryChartRef.value,
+    mode: 'desktop-browser'
+  })
+  subcategoryChart.renderAsync()
 }
 
 // 初始化所有图表
@@ -493,12 +450,12 @@ const resizeCharts = () => {
 
 // 销毁所有图表
 const disposeCharts = () => {
-  subjectChart?.dispose()
-  gradeChart?.dispose()
-  timeChart?.dispose()
-  classChart?.dispose()
-  timeSpentChart?.dispose()
-  subcategoryChart?.dispose()
+  subjectChart?.release()
+  gradeChart?.release()
+  timeChart?.release()
+  classChart?.release()
+  timeSpentChart?.release()
+  subcategoryChart?.release()
   
   subjectChart = null
   gradeChart = null

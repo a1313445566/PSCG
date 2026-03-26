@@ -1,11 +1,17 @@
 import { defineConfig } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import docsGenerator from './vite-plugins/docsGenerator.js'
+import path from 'path'
 
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [vue(), docsGenerator()],
   base: './',
+  resolve: {
+    alias: {
+      '@': path.resolve(__dirname, 'src')
+    }
+  },
   build: {
     chunkSizeWarningLimit: 1000,
     minify: 'esbuild',

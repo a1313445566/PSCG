@@ -3,6 +3,40 @@ const router = express.Router();
 const db = require('../services/database');
 const xssFilter = require('../utils/xss-filter');
 
+// 获取子分类列表（供筛选器使用）
+router.get('/subcategories', async (req, res) => {
+  try {
+    const { subjectId } = req.query;
+    
+    let query = `
+      SELECT 
+        sub.id,
+        sub.name,
+        sub.subject_id as subjectId,
+        s.name as subjectName,
+        COUNT(q.id) as questionCount
+      FROM subcategories sub
+      LEFT JOIN subjects s ON sub.subject_id = s.id
+      LEFT JOIN questions q ON sub.id = q.subcategory_id
+    `;
+    const params = [];
+    
+    if (subjectId) {
+      query += ' WHERE sub.subject_id = ?';
+      params.push(Number(subjectId));
+    }
+    
+    query += ' GROUP BY sub.id, sub.name, sub.subject_id, s.name ORDER BY sub.id';
+    
+    const list = await db.all(query, params);
+    
+    res.json(list);
+  } catch (error) {
+    console.error('获取子分类列表失败:', error);
+    res.status(500).json({ error: '获取数据失败' });
+  }
+});
+
 // 获取子分类统计数据（题目数量和平均难度）
 router.get('/subcategories/stats', async (req, res) => {
   try {
@@ -46,42 +80,62 @@ router.get('/subcategories/stats', async (req, res) => {
 // 获取题目列表（支持分页和筛选）
 router.get('/', async (req, res) => {
   try {
-    const { subjectId, subcategoryId, type, keyword, page = 1, limit = 20, excludeContent = 'false' } = req.query;
-
-    // 根据是否排除内容字段，选择不同的查询字段
-    const selectFields = excludeContent === 'true'
-      ? 'id, subject_id as subjectId, subcategory_id as subcategoryId, type, correct_answer as answer, difficulty, created_at as createdAt, content, image_url as image, audio_url as audio'
-      : '*';
+    const { subjectId, subcategoryId, type, difficulty, keyword, page = 1, limit = 20, excludeContent = 'false' } = req.query;
 
     // 构建基础查询条件
-    let countQuery = 'SELECT COUNT(*) as total FROM questions WHERE 1=1';
-    let dataQuery = `SELECT ${selectFields} FROM questions WHERE 1=1`;
+    let countQuery = 'SELECT COUNT(*) as total FROM questions q WHERE 1=1';
+    let dataQuery = `
+      SELECT 
+        q.id, 
+        q.subject_id as subjectId, 
+        q.subcategory_id as subcategoryId, 
+        q.type, 
+        q.correct_answer as answer, 
+        q.difficulty, 
+        q.created_at as createdAt, 
+        q.content, 
+        q.image_url as image, 
+        q.audio_url as audio,
+        s.name as subjectName,
+        sub.name as subcategoryName
+      FROM questions q
+      LEFT JOIN subjects s ON q.subject_id = s.id
+      LEFT JOIN subcategories sub ON q.subcategory_id = sub.id
+      WHERE 1=1
+    `;
     const params = [];
 
     if (subjectId) {
-      const condition = ' AND subject_id = ?';
+      const condition = ' AND q.subject_id = ?';
       countQuery += condition;
       dataQuery += condition;
       params.push(Number(subjectId));
     }
 
     if (subcategoryId) {
-      const condition = ' AND subcategory_id = ?';
+      const condition = ' AND q.subcategory_id = ?';
       countQuery += condition;
       dataQuery += condition;
       params.push(Number(subcategoryId));
     }
 
     if (type) {
-      const condition = ' AND type = ?';
+      const condition = ' AND q.type = ?';
       countQuery += condition;
       dataQuery += condition;
       params.push(type);
     }
 
+    if (difficulty) {
+      const condition = ' AND q.difficulty = ?';
+      countQuery += condition;
+      dataQuery += condition;
+      params.push(Number(difficulty));
+    }
+
     // 新增：关键词搜索
     if (keyword && keyword.trim()) {
-      const condition = ' AND content LIKE ?';
+      const condition = ' AND q.content LIKE ?';
       countQuery += condition;
       dataQuery += condition;
       // 转义 LIKE 通配符，防止通配符注入
@@ -101,7 +155,7 @@ router.get('/', async (req, res) => {
 
     // MySQL prepared statement 不支持 LIMIT/OFFSET 参数化
     // 使用验证后的整数值进行拼接是安全的
-    dataQuery += ` ORDER BY created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
+    dataQuery += ` ORDER BY q.created_at DESC LIMIT ${limitNum} OFFSET ${offset}`;
 
     const questions = await db.all(dataQuery, params);
 
@@ -113,7 +167,9 @@ router.get('/', async (req, res) => {
           id: question.id,
           subjectId: question.subjectId || question.subject_id,
           subcategoryId: question.subcategoryId || question.subcategory_id,
-          content: question.content || '', // 只包含前200个字符
+          subjectName: question.subjectName,
+          subcategoryName: question.subcategoryName,
+          content: question.content || '',
           type: question.type,
           answer: question.answer,
           difficulty: question.difficulty,
@@ -145,6 +201,8 @@ router.get('/', async (req, res) => {
         id: question.id,
         subjectId: question.subject_id,
         subcategoryId: question.subcategory_id,
+        subjectName: question.subjectName,
+        subcategoryName: question.subcategoryName,
         content: question.content,
         type: question.type,
         options: options,
