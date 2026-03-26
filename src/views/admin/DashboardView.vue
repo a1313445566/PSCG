@@ -91,8 +91,8 @@
           <div class="card-header">
             <span class="card-title">答题趋势</span>
             <el-radio-group v-model="trendRange" size="small" @change="loadTrendData">
-              <el-radio-button label="7">近7天</el-radio-button>
-              <el-radio-button label="30">近30天</el-radio-button>
+              <el-radio-button value="7">近7天</el-radio-button>
+              <el-radio-button value="30">近30天</el-radio-button>
             </el-radio-group>
           </div>
         </template>

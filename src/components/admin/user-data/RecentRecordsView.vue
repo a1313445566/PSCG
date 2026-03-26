@@ -12,7 +12,7 @@
     <!-- 数据表格 -->
     <div class="table-wrapper">
       <el-table
-        :data="paginatedData"
+        :data="tableData"
         stripe
         v-loading="loading"
         :header-cell-style="{ backgroundColor: '#f5f7fa', color: '#606266', fontWeight: '600' }"
@@ -101,7 +101,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject, watch } from 'vue'
 import AdminFilter from '../common/AdminFilter.vue'
 import UserDetailDialog from '../common/UserDetailDialog.vue'
 import api from '../../../utils/api'
@@ -181,11 +181,11 @@ const filters = ref({
 
 // 数据状态
 const loading = ref(false)
-const rawData = ref([])
+const tableData = ref([])
 const total = ref(0)
 
-// 使用分页 Hook（前端分页）
-const { currentPage, pageSize, paginate, handleSizeChange, handleCurrentChange, reset: resetPagination } = usePagination(20, total)
+// 使用分页 Hook（服务端分页）
+const { currentPage, pageSize, getServerParams, handleSizeChange, handleCurrentChange, reset: resetPagination } = usePagination(20, total)
 
 // 排序状态
 const sortProp = ref('')
@@ -225,11 +225,15 @@ const formatTime = (time) => {
   })
 }
 
-// 加载数据
+// 加载数据（服务端分页）
 const loadData = async () => {
   loading.value = true
   try {
     const params = new URLSearchParams()
+    const { page, limit } = getServerParams()
+    
+    params.append('page', page)
+    params.append('limit', limit)
     
     if (filters.value.studentId) {
       params.append('student_id', filters.value.studentId)
@@ -265,14 +269,20 @@ const loadData = async () => {
       }
       
       if (startDate && endDate) {
-        params.append('startDate', startDate.toISOString())
-        params.append('endDate', endDate.toISOString())
+        params.append('startDate', startDate.toISOString().slice(0, 10))
+        params.append('endDate', endDate.toISOString().slice(0, 10))
       }
     }
     
+    // 排序参数
+    if (sortProp.value) {
+      params.append('sortBy', sortProp.value)
+      params.append('sortOrder', sortOrder.value || 'DESC')
+    }
+    
     const response = await api.get(`/answer-records/all?${params.toString()}`)
-    rawData.value = Array.isArray(response) ? response : (response.data || [])
-    total.value = rawData.value.length
+    tableData.value = response.data || []
+    total.value = response.total || 0
   } catch (error) {
     console.error('加载答题记录失败:', error)
     message.error('加载数据失败')
@@ -281,39 +291,10 @@ const loadData = async () => {
   }
 }
 
-// 排序后的数据
-const sortedData = computed(() => {
-  if (!sortProp.value || !sortOrder.value) {
-    return rawData.value
-  }
-  
-  const data = [...rawData.value]
-  data.sort((a, b) => {
-    let aVal, bVal
-    
-    // 正确率需要特殊计算
-    if (sortProp.value === 'accuracy') {
-      const aTotal = a.total_questions || 0
-      const bTotal = b.total_questions || 0
-      aVal = aTotal > 0 ? (a.correct_count || 0) / aTotal : 0
-      bVal = bTotal > 0 ? (b.correct_count || 0) / bTotal : 0
-    } else {
-      aVal = a[sortProp.value] ?? 0
-      bVal = b[sortProp.value] ?? 0
-    }
-    
-    if (sortOrder.value === 'ascending') {
-      return aVal > bVal ? 1 : -1
-    } else {
-      return aVal < bVal ? 1 : -1
-    }
-  })
-  
-  return data
+// 监听分页变化重新加载
+watch([currentPage, pageSize], () => {
+  loadData()
 })
-
-// 分页后的数据
-const paginatedData = computed(() => paginate(sortedData.value))
 
 // 应用筛选
 const applyFilters = () => {
@@ -330,6 +311,8 @@ const resetFilters = () => {
     subject: '',
     timeRange: ''
   }
+  sortProp.value = ''
+  sortOrder.value = ''
   resetPagination()
   loadData()
 }
@@ -337,7 +320,8 @@ const resetFilters = () => {
 // 排序变化
 const handleSortChange = ({ prop, order }) => {
   sortProp.value = prop
-  sortOrder.value = order
+  sortOrder.value = order === 'ascending' ? 'ASC' : order === 'descending' ? 'DESC' : ''
+  loadData()
 }
 
 // 打开用户详情
@@ -419,7 +403,7 @@ onMounted(() => {
   min-height: 0;
   background: #fff;
   border-radius: 8px;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .pagination-container {

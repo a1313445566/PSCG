@@ -168,48 +168,45 @@ const processQuestionData = (question) => {
   return question;
 };
 
-// 获取所有答题记录（支持筛选）
+// 获取所有答题记录（支持筛选和分页）
 router.get('/all', async (req, res) => {
   try {
-    const { limit = 50, grade, class: className, subjectId, startDate, endDate, student_id, userId } = req.query;
+    const { page = 1, limit = 20, grade, class: className, subjectId, startDate, endDate, student_id, userId, sortBy = 'created_at', sortOrder = 'DESC' } = req.query;
     
-    let query = 'SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.`class`, s.name as subject_name, sc.name as subcategory_name FROM answer_records ar LEFT JOIN users u ON ar.user_id = u.id LEFT JOIN subjects s ON ar.subject_id = s.id LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id WHERE 1=1';
-    
+    // 构建查询条件
+    let whereClause = 'WHERE 1=1';
     const params = [];
     
+    // 筛选条件
     if (student_id) {
-      query += ' AND u.student_id = ?';
+      whereClause += ' AND u.student_id = ?';
       params.push(student_id);
-      // 当使用student_id查询时，确保同时使用grade和class进行过滤
       if (grade) {
-        query += ' AND u.grade = ?';
+        whereClause += ' AND u.grade = ?';
         params.push(grade);
       }
       if (className) {
-        query += ' AND u.`class` = ?';
+        whereClause += ' AND u.`class` = ?';
         params.push(className);
       }
     } else if (userId) {
-      // 当使用userId查询时，根据用户ID筛选
-      query += ' AND ar.user_id = ?';
+      whereClause += ' AND ar.user_id = ?';
       params.push(parseInt(userId));
-      // 同时可以使用grade和class进行过滤
       if (grade) {
-        query += ' AND u.grade = ?';
+        whereClause += ' AND u.grade = ?';
         params.push(grade);
       }
       if (className) {
-        query += ' AND u.`class` = ?';
+        whereClause += ' AND u.`class` = ?';
         params.push(className);
       }
     } else {
-      // 当不使用student_id和userId查询时，可以单独使用grade或class进行过滤
       if (grade) {
-        query += ' AND u.grade = ?';
+        whereClause += ' AND u.grade = ?';
         params.push(grade);
       }
       if (className) {
-        query += ' AND u.`class` = ?';
+        whereClause += ' AND u.`class` = ?';
         params.push(className);
       }
     }
@@ -218,32 +215,67 @@ router.get('/all', async (req, res) => {
       if (!validateSubjectId(subjectId)) {
         return res.status(400).json({ error: '学科ID格式错误' });
       }
-      query += ' AND ar.subject_id = ?';
+      whereClause += ' AND ar.subject_id = ?';
       params.push(parseInt(subjectId));
     }
     
     if (startDate) {
-      query += ' AND ar.created_at >= ?';
+      whereClause += ' AND ar.created_at >= ?';
       params.push(startDate);
     }
     
     if (endDate) {
-      query += ' AND ar.created_at <= ?';
+      whereClause += ' AND ar.created_at <= ?';
       params.push(endDate);
     }
     
-    query += ' ORDER BY ar.created_at DESC';
+    // 获取总数
+    const countQuery = `SELECT COUNT(*) as total FROM answer_records ar LEFT JOIN users u ON ar.user_id = u.id LEFT JOIN subjects s ON ar.subject_id = s.id LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id ${whereClause}`;
+    const countResult = await db.get(countQuery, params);
+    const total = countResult?.total || 0;
     
-    // 如果limit不为0，添加LIMIT子句
-    const limitNum = Number(limit);
-    if (limitNum > 0) {
-      query += ` LIMIT ${limitNum}`;
+    // 验证排序字段
+    const allowedSortFields = ['created_at', 'student_id', 'name', 'grade', 'class', 'total_questions', 'correct_count'];
+    const validSortBy = allowedSortFields.includes(sortBy) ? sortBy : 'created_at';
+    const validSortOrder = sortOrder.toUpperCase() === 'ASC' ? 'ASC' : 'DESC';
+    
+    // 排序字段映射
+    const sortFieldMap = {
+      'student_id': 'u.student_id',
+      'name': 'u.name',
+      'grade': 'u.grade',
+      'class': 'u.`class`',
+      'total_questions': 'ar.total_questions',
+      'correct_count': 'ar.correct_count',
+      'created_at': 'ar.created_at'
+    };
+    const orderField = sortFieldMap[validSortBy] || 'ar.created_at';
+    
+    // 分页查询
+    // 注意：MySQL prepared statements 对 LIMIT/OFFSET 参数化支持有限
+    // 使用严格验证的整数值直接拼接是安全的替代方案
+    const pageNum = Math.max(1, parseInt(page) || 1);
+    const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 20)); // 限制最大100条
+    const offset = (pageNum - 1) * limitNum;
+    
+    // 安全验证：确保分页参数是有效整数
+    if (!Number.isInteger(pageNum) || !Number.isInteger(limitNum) || !Number.isInteger(offset)) {
+      return res.status(400).json({ error: '分页参数无效' });
     }
     
-    const records = await db.all(query, params);
-    res.json(records);
+    const dataQuery = `SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.\`class\`, s.name as subject_name, sc.name as subcategory_name FROM answer_records ar LEFT JOIN users u ON ar.user_id = u.id LEFT JOIN subjects s ON ar.subject_id = s.id LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id ${whereClause} ORDER BY ${orderField} ${validSortOrder} LIMIT ${limitNum} OFFSET ${offset}`;
+    
+    const records = await db.all(dataQuery, params);
+    
+    res.json({
+      data: records,
+      total: total,
+      page: pageNum,
+      limit: limitNum,
+      totalPages: Math.ceil(total / limitNum)
+    });
   } catch (error) {
-    // console.error('获取答题记录失败:', error);
+    console.error('获取答题记录失败:', error.message);
     res.status(500).json({ error: '获取答题记录失败' });
   }
 });

@@ -250,7 +250,7 @@ const menuTreeData = computed(() => {
         },
         {
           id: 'recent-records',
-          label: '最近答题记录',
+          label: '答题记录',
           icon: 'Clock',
           isMenu: true
         }
