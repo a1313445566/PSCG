@@ -1,293 +1,177 @@
 <template>
-  <div class="admin-container">
-    <!-- 密码验证对话框 -->
-    <PasswordDialog
-      v-if="!isAuthenticated"
-      :visible="passwordDialogVisible"
-      @close="passwordDialogVisible = false"
-      @login-success="handlePasswordVerify"
-    />
+  <AdminLayout
+    :system-title="systemTitle"
+    :subjects="subjects"
+    @menu-change="handleMenuChange"
+    @authenticated="handleAuthenticated"
+  >
+    <!-- 数据概览 -->
+    <DashboardView v-if="activeMenu === 'dashboard'" />
     
-    <div class="admin-header" v-if="isAuthenticated">
-      <h1 class="title">题库管理系统</h1>
-      <div class="header-buttons">
-        <span class="admin-username">{{ adminUsername }}</span>
-        <el-button type="info" @click="refreshPageData" :loading="pageLoading" :disabled="pageLoading">
-          <el-icon><Refresh /></el-icon> 刷新数据
-        </el-button>
-        <el-button type="warning" @click="showChangePasswordDialog">修改密码</el-button>
-        <el-button type="primary" @click="backToHome" class="action-btn">🏠 返回首页</el-button>
-        <el-button type="danger" @click="logout">退出登录</el-button>
-      </div>
+    <!-- 题目管理 -->
+    <div v-else-if="activeMenu === 'questions'" class="question-management">
+      <QuestionList
+        ref="questionListRef"
+        :subjects="subjects"
+        @edit-question="editQuestion"
+        @delete-question="deleteQuestion"
+        @show-add-dialog="showAddQuestionDialog"
+        @show-batch-add-dialog="batchAddDialogVisible = true"
+      />
     </div>
     
-    <!-- 数据加载中提示 -->
-    <div v-if="isAuthenticated && !isDataReady" class="loading-container">
-      <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
-      <p>正在加载数据，请稍候...</p>
+    <!-- 学科管理 -->
+    <div v-else-if="activeMenu === 'subjects'" class="subject-management">
+      <SubjectManagement @manage-subcategories="manageSubcategories" />
     </div>
     
-    <el-tabs v-model="activeTab" v-if="isAuthenticated && isDataReady">
-      <!-- 基础设置 -->
-      <el-tab-pane label="基础设置" name="basic-settings">
-        <div class="basic-settings">
-          <!-- 界面名称设置 -->
-          <InterfaceNameSetting 
-            :interface-name="interfaceName"
-            @update-interface-name="updateInterfaceName"
-          />
-          
-          <!-- 答题设置 -->
-          <AnswerSetting 
-            :randomize-answers="randomizeAnswers"
-            :randomize-error-collection-answers="randomizeErrorCollectionAnswers"
-            :fixed-question-count="fixedQuestionCount"
-            :min-question-count="minQuestionCount"
-            :max-question-count="maxQuestionCount"
-            :fixed-question-count-value="fixedQuestionCountValue"
-            :subjects="subjects"
-            :subject-question-counts="subjectQuestionCounts"
-            @update-settings="updateAnswerSettings"
-          />
-          
-          <!-- 学科管理 -->
-          <SubjectManagement 
-            @manage-subcategories="manageSubcategories"
-          />
-          
-          <!-- 年级班级管理 -->
-          <GradeClassManagement />
-        </div>
-      </el-tab-pane>
-      
-      <!-- 题目管理 -->
-      <el-tab-pane label="题目管理" name="questions">
-        <div class="question-management">
-          <QuestionList
-            ref="questionListRef"
-            :subjects="subjects"
-            @edit-question="editQuestion"
-            @delete-question="deleteQuestion"
-            @show-add-dialog="showAddQuestionDialog"
-            @show-batch-add-dialog="batchAddDialogVisible = true"
-          />
-        </div>
-      </el-tab-pane> 
-      
-      <!-- 用户做题数据 -->
-      <el-tab-pane label="用户做题数据" name="leaderboard">
-        <div class="leaderboard-management">
-          <!-- 筛选区域 -->
-          <el-card class="filter-card" shadow="hover">
-            <template #header>
-              <div class="card-header">
-                <span>筛选条件</span>
-              </div>
-            </template>
-            <div class="filter-section">
-              <div class="filter-row">
-                <div class="filter-item">
-                  <label class="filter-label">学号</label>
-                  <el-input v-model="filterStudentId" placeholder="输入学号" @input="filterStudentId = (filterStudentId || '').replace(/[^0-9]/g, '')"></el-input>
-                </div>
-                <div class="filter-item">
-                  <label class="filter-label">年级</label>
-                  <el-select v-model="filterGrade" placeholder="选择年级">
-                    <el-option label="全部" value=""></el-option>
-                    <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
-                  </el-select>
-                </div>
-                <div class="filter-item">
-                  <label class="filter-label">班级</label>
-                  <el-select v-model="filterClass" placeholder="选择班级">
-                    <el-option label="全部" value=""></el-option>
-                    <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.name || classNum"></el-option>
-                  </el-select>
-                </div>
-                <div class="filter-item">
-                  <label class="filter-label">学科</label>
-                  <el-select v-model="filterSubject" placeholder="选择学科">
-                    <el-option label="全部" value=""></el-option>
-                    <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
-                  </el-select>
-                </div>
-                <div class="filter-item">
-                  <label class="filter-label">时间范围</label>
-                  <el-select v-model="filterTimeRange" placeholder="选择时间">
-                    <el-option label="全部" value=""></el-option>
-                    <el-option label="今日" value="today"></el-option>
-                    <el-option label="近一周" value="week"></el-option>
-                    <el-option label="近一月" value="month"></el-option>
-                  </el-select>
-                </div>
-              </div>
-              <div class="filter-actions">
-                <el-button type="primary" @click="applyFilters">应用筛选</el-button>
-                <el-button @click="resetFilters">重置</el-button>
-              </div>
+    <!-- 年级班级 -->
+    <div v-else-if="activeMenu === 'grades-classes'" class="grades-classes-management">
+      <GradeClassManagement />
+    </div>
+    
+    <!-- 用户数据 -->
+    <div v-else-if="activeMenu === 'user-data'" class="user-data-view">
+      <el-card class="filter-card" shadow="hover">
+        <template #header>
+          <div class="card-header">
+            <span>筛选条件</span>
+          </div>
+        </template>
+        <div class="filter-section">
+          <div class="filter-row">
+            <div class="filter-item">
+              <label class="filter-label">学号</label>
+              <el-input v-model="filterStudentId" placeholder="输入学号" @input="filterStudentId = (filterStudentId || '').replace(/[^0-9]/g, '')"></el-input>
             </div>
-          </el-card>
-          
-          <!-- 数据展示区域 -->
-          <div class="data-display">
-            <el-card class="data-card" shadow="hover">
-              <template #header>
-                <div class="card-header">
-                  <span>用户答题统计</span>
-                </div>
-              </template>
-              <UserStats 
-                :user-stats="userStats"
-                @open-user-detail="openUserDetailDialog"
-              />
-            </el-card>
-            
-            <el-card class="data-card" shadow="hover">
-              <template #header>
-                <div class="card-header">
-                  <span>最近答题记录</span>
-                </div>
-              </template>
-              <RecentRecords 
-                :recent-records="recentRecords"
-                @open-user-detail="openUserDetailDialog"
-              />
-            </el-card>
+            <div class="filter-item">
+              <label class="filter-label">年级</label>
+              <el-select v-model="filterGrade" placeholder="选择年级">
+                <el-option label="全部" value=""></el-option>
+                <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <label class="filter-label">班级</label>
+              <el-select v-model="filterClass" placeholder="选择班级">
+                <el-option label="全部" value=""></el-option>
+                <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.name || classNum"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <label class="filter-label">学科</label>
+              <el-select v-model="filterSubject" placeholder="选择学科">
+                <el-option label="全部" value=""></el-option>
+                <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <label class="filter-label">时间范围</label>
+              <el-select v-model="filterTimeRange" placeholder="选择时间">
+                <el-option label="全部" value=""></el-option>
+                <el-option label="今日" value="today"></el-option>
+                <el-option label="近一周" value="week"></el-option>
+                <el-option label="近一月" value="month"></el-option>
+              </el-select>
+            </div>
+          </div>
+          <div class="filter-actions">
+            <el-button type="primary" @click="applyFilters">应用筛选</el-button>
+            <el-button @click="resetFilters">重置</el-button>
           </div>
         </div>
-      </el-tab-pane>
+      </el-card>
       
-      <!-- 数据分析 -->
-      <el-tab-pane label="数据分析" name="analysis">
-        <AnalysisView />
-      </el-tab-pane>
-      
-      <!-- 用户管理 -->
-      <el-tab-pane label="用户管理" name="user-management" @tab-click="handleUserManagementTabClick">
-        <div class="user-management-tab">
-          <UserManagement 
-            ref="userManagementRef"
-            :grades="grades"
-            :classes="classes"
-            @update-users="updateUserList"
+      <div class="data-display">
+        <el-card class="data-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span>用户答题统计</span>
+            </div>
+          </template>
+          <UserStats 
+            :user-stats="userStats"
+            @open-user-detail="openUserDetailDialog"
           />
-        </div>
-      </el-tab-pane>
-      
-      <!-- 数据库管理 -->
-      <el-tab-pane label="数据库管理" name="data-management">
-        <div class="data-management">
-          <BackupRestore 
-            :backup-history="backupHistory"
-            @backup-data="backupData"
-            @restore-data="restoreData"
-            @export-data="exportData"
-            @upload-backup="uploadBackup"
-            @download-backup="downloadBackup"
-            @delete-backup="deleteBackup"
-            @get-backup-history="getBackupHistory"
-            @verify-backup="verifyBackup"
+        </el-card>
+        
+        <el-card class="data-card" shadow="hover">
+          <template #header>
+            <div class="card-header">
+              <span>最近答题记录</span>
+            </div>
+          </template>
+          <RecentRecords 
+            :recent-records="recentRecords"
+            @open-user-detail="openUserDetailDialog"
           />
-          <DataCleanup 
-            @clear-all-data="clearAllData"
-            @clear-user-records="clearUserRecords"
-            @clear-leaderboard="clearLeaderboard"
-            @clear-grades="clearGrades"
-            @clear-classes="clearClasses"
-          />
-        </div>
-      </el-tab-pane>
-      
-      <!-- 安全监控 -->
-      <el-tab-pane label="安全监控" name="security">
-        <SecurityMonitor />
-      </el-tab-pane>
-    </el-tabs>
-    
-    <!-- 数据库管理密码验证对话框 - 已禁用
-    <el-dialog
-      v-if="isAuthenticated"
-      v-model="dataManagementPasswordDialogVisible"
-      title="🔐 数据库管理验证"
-      width="480px"
-      :close-on-click-modal="false"
-      :close-on-press-escape="false"
-      @open="focusDataManagementPasswordInput"
-      custom-class="database-management-dialog"
-    >
-      <div class="dialog-content">
-        <div class="dialog-icon">
-          <el-icon class="lock-icon"><i class="el-icon-lock"></i></el-icon>
-        </div>
-        <h3 class="dialog-title">数据库管理验证</h3>
-        <p class="dialog-description">为了保护系统安全，请输入管理员密码解锁数据库管理功能</p>
-        <el-form :model="dataManagementPasswordForm" label-width="100px" @submit.prevent="verifyDataManagementPassword" class="password-form">
-          <el-form-item label="管理员密码" class="password-input-item">
-            <el-input
-              ref="dataManagementPasswordInputRef"
-              v-model="dataManagementPasswordForm.password"
-              type="password"
-              placeholder="请输入管理员密码"
-              show-password
-              @keyup="handleDataManagementKeyUp"
-              class="password-input"
-            ></el-input>
-          </el-form-item>
-        </el-form>
+        </el-card>
       </div>
-      <template #footer>
-        <span class="dialog-footer">
-          <el-button class="cancel-button" @click="dataManagementPasswordDialogVisible = false">取消</el-button>
-          <el-button type="primary" class="verify-button" @click="verifyDataManagementPassword">验证</el-button>
-        </span>
-      </template>
-    </el-dialog>
-    -->
-
+    </div>
+    
+    <!-- 用户管理 -->
+    <div v-else-if="activeMenu === 'user-management'" class="user-management-view">
+      <UserManagement 
+        ref="userManagementRef"
+        :grades="grades"
+        :classes="classes"
+        @update-users="updateUserList"
+      />
+    </div>
+    
+    <!-- 基础设置 -->
+    <div v-else-if="activeMenu === 'basic-settings'" class="basic-settings">
+      <InterfaceNameSetting 
+        :interface-name="interfaceName"
+        @update-interface-name="updateInterfaceName"
+      />
+      
+      <AnswerSetting 
+        :randomize-answers="randomizeAnswers"
+        :randomize-error-collection-answers="randomizeErrorCollectionAnswers"
+        :fixed-question-count="fixedQuestionCount"
+        :min-question-count="minQuestionCount"
+        :max-question-count="maxQuestionCount"
+        :fixed-question-count-value="fixedQuestionCountValue"
+        :subjects="subjects"
+        :subject-question-counts="subjectQuestionCounts"
+        @update-settings="updateAnswerSettings"
+      />
+    </div>
+    
+    <!-- 数据库管理 -->
+    <div v-else-if="activeMenu === 'database'" class="data-management">
+      <BackupRestore 
+        :backup-history="backupHistory"
+        @backup-data="backupData"
+        @restore-data="restoreData"
+        @export-data="exportData"
+        @upload-backup="uploadBackup"
+        @download-backup="downloadBackup"
+        @delete-backup="deleteBackup"
+        @get-backup-history="getBackupHistory"
+        @verify-backup="verifyBackup"
+      />
+      <DataCleanup 
+        @clear-all-data="clearAllData"
+        @clear-user-records="clearUserRecords"
+        @clear-leaderboard="clearLeaderboard"
+        @clear-grades="clearGrades"
+        @clear-classes="clearClasses"
+      />
+    </div>
+    
+    <!-- 安全中心 -->
+    <SecurityMonitor v-else-if="activeMenu === 'security'" />
+    
+    <!-- 默认显示数据概览 -->
+    <DashboardView v-else />
+    
     <!-- 题目详情对话框 -->
     <QuestionDetailDialog
       v-model:dialogVisible="questionDetailDialogVisible"
       :selectedQuestionDetail="selectedQuestionDetail"
     />
-
-    <!-- 修改密码对话框 -->
-    <el-dialog
-      v-model="changePasswordDialogVisible"
-      title="修改密码"
-      width="400px"
-      :close-on-click-modal="false"
-    >
-      <el-form :model="changePasswordForm" label-width="100px" @submit.prevent="handleChangePassword">
-        <el-form-item label="旧密码">
-          <el-input 
-            v-model="changePasswordForm.oldPassword" 
-            type="password" 
-            placeholder="请输入旧密码" 
-            show-password
-          />
-        </el-form-item>
-        <el-form-item label="新密码">
-          <el-input 
-            v-model="changePasswordForm.newPassword" 
-            type="password" 
-            placeholder="请输入新密码（至少6位）" 
-            show-password
-          />
-        </el-form-item>
-        <el-form-item label="确认密码">
-          <el-input 
-            v-model="changePasswordForm.confirmPassword" 
-            type="password" 
-            placeholder="请再次输入新密码" 
-            show-password
-          />
-        </el-form-item>
-      </el-form>
-      <template #footer>
-        <el-button @click="changePasswordDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handleChangePassword" :loading="changePasswordLoading">确认修改</el-button>
-      </template>
-    </el-dialog>
 
     <!-- 学科题库管理对话框 -->
     <SubcategoryDialog
@@ -307,12 +191,12 @@
     
     <!-- 添加/编辑题目对话框 -->
     <QuestionForm
-      v-model:visible="dialogVisible"
+      v-model:visible="questionFormDialogVisible"
       :question="selectedQuestion"
       :subjects="subjects"
       @save-question="saveQuestion"
     />
-  </div>
+  </AdminLayout>
   
   <!-- 用户详情对话框 -->
   <UserDetailDialog
@@ -326,433 +210,48 @@
   />
 </template>
 
-<style scoped>
-/* 基础样式 */
-.admin-container {
-  width: 100%;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
-  background-repeat: repeat;
-}
-
-.admin-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 20px;
-  background-color: #f5f7fa;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.admin-header .title {
-  margin: 0;
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-}
-
-.header-buttons {
-  display: flex;
-  gap: 10px;
-}
-
-.admin-header .action-btn {
-  margin-right: 10px;
-}
-
-.admin-username {
-  color: #409eff;
-  font-weight: 500;
-  margin-right: 16px;
-  padding: 0 12px;
-  border-right: 1px solid #dcdfe6;
-}
-
-.el-tabs {
-  padding: 20px;
-  background-color: #fff;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-
-/* Tab 面板高度限制 */
-:deep(.el-tabs__content) {
-  flex: 1;
-  overflow: auto;
-  min-height: 0;
-}
-
-:deep(.el-tab-pane) {
-  height: 100%;
-}
-
-/* 题目管理容器 */
-.question-management {
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-.correct-answer {
-  color: #67c23a;
-  font-weight: bold;
-}
-
-.incorrect-answer {
-  color: #f56c6c;
-  font-weight: bold;
-}
-
-/* 基础设置样式 */
-.basic-settings {
-  padding: 20px;
-}
-
-.setting-card {
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
-  margin-bottom: 20px;
-  overflow: hidden;
-}
-
-.setting-title {
-  background-color: #f5f7fa;
-  padding: 15px 20px;
-  margin: 0;
-  font-size: 18px;
-  font-weight: bold;
-  color: #303133;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.sub-setting-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: #409eff;
-  margin-bottom: 15px;
-  margin-top: 0;
-}
-
-/* 表格样式 */
-.table-container {
-  margin-top: 20px;
-  background: #fff;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-  padding: 24px;
-  overflow: hidden;
-}
-
-/* 筛选区域 */
-.filter-section {
-  margin-bottom: 0 !important;
-  padding: 0 !important;
-  background-color: transparent !important;
-  box-shadow: none !important;
-}
-
-/* 筛选卡片 */
-.filter-card {
-  margin-bottom: 24px !important;
-  border-radius: 12px !important;
-  overflow: hidden !important;
-}
-
-/* 卡片头部 */
-.card-header {
-  display: flex !important;
-  justify-content: space-between !important;
-  align-items: center !important;
-  font-size: 16px !important;
-  font-weight: 600 !important;
-  color: #303133 !important;
-}
-
-/* 筛选行 */
-.filter-row {
-  display: flex !important;
-  flex-wrap: wrap !important;
-  gap: 16px !important;
-  margin-bottom: 16px !important;
-}
-
-/* 筛选项 */
-.filter-item {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 4px !important;
-  min-width: 150px !important;
-  flex: 1 !important;
-  max-width: 220px !important;
-}
-
-/* 筛选标签 */
-.filter-label {
-  font-weight: 500 !important;
-  color: #606266 !important;
-  font-size: 14px !important;
-}
-
-/* 筛选操作 */
-.filter-actions {
-  display: flex !important;
-  gap: 10px !important;
-  justify-content: flex-end !important;
-  padding-top: 16px !important;
-  border-top: 1px solid #ebeef5 !important;
-}
-
-/* 数据展示区域 */
-.data-display {
-  display: flex !important;
-  flex-direction: column !important;
-  gap: 24px !important;
-}
-
-/* 数据卡片 */
-.data-card {
-  border-radius: 12px !important;
-  overflow: hidden !important;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
-}
-
-/* 数据卡片头部 */
-.data-card .card-header {
-  padding: 16px 20px !important;
-  border-bottom: 1px solid #ebeef5 !important;
-  background-color: #f5f7fa !important;
-}
-
-/* 数据卡片内容 */
-.data-card .el-card__body {
-  padding: 20px !important;
-}
-
-/* 按钮样式 */
-.el-button {
-  border-radius: 6px !important;
-  transition: all 0.3s ease !important;
-}
-
-.el-button:hover {
-  transform: translateY(-1px) !important;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* 输入框和选择器 */
-.el-input,
-.el-select {
-  border-radius: 6px !important;
-  transition: all 0.3s ease !important;
-}
-
-.el-input:focus-within,
-.el-select:focus-within {
-  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2) !important;
-}
-
-/* 分页 */
-.pagination {
-  margin-top: 24px !important;
-  text-align: right !important;
-}
-
-/* 响应式设计 */
-@media screen and (max-width: 1200px) {
-  .table-container {
-    padding: 16px !important;
-  }
-  
-  .el-table__cell {
-    padding: 12px 8px !important;
-  }
-}
-
-@media screen and (max-width: 768px) {
-  .table-container {
-    padding: 12px !important;
-  }
-  
-  .el-table__cell {
-    padding: 8px 4px !important;
-  }
-}
-
-/* 数据管理锁定状态 */
-.data-management-locked {
-  padding: 60px;
-  text-align: center;
-}
-
-.lock-icon {
-  font-size: 48px;
-  color: #909399;
-  margin-bottom: 20px;
-}
-
-.data-management-locked h3 {
-  margin-bottom: 10px;
-  color: #606266;
-}
-
-.data-management-locked p {
-  color: #909399;
-  margin-bottom: 30px;
-}
-
-/* 加载中提示样式 */
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 400px;
-  background: white;
-  margin: 20px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
-}
-
-.loading-container .loading-icon {
-  font-size: 48px;
-  color: #409eff;
-  margin-bottom: 16px;
-  animation: spin 1s linear infinite;
-}
-
-.loading-container p {
-  font-size: 16px;
-  color: #606266;
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
-}
-
-/* 异步组件加载状态 */
-.async-loading {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  padding: 40px;
-  color: #606266;
-}
-
-.async-loading .loading-icon {
-  font-size: 32px;
-  color: #409eff;
-  margin-bottom: 12px;
-  animation: spin 1s linear infinite;
-}
-
-/* 异步组件错误状态 */
-.async-error {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 200px;
-  padding: 40px;
-  color: #f56c6c;
-}
-
-.async-error .error-icon {
-  font-size: 32px;
-  margin-bottom: 12px;
-}
-
-.async-error span {
-  margin-bottom: 16px;
-}
-</style>
-
 <script setup>
-import { ref, computed, onMounted, onUnmounted, defineAsyncComponent, watch, h, nextTick, onErrorCaptured } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, computed, onUnmounted, defineAsyncComponent } from 'vue'
 import { useQuestionStore, useSettingsStore } from '../stores/questionStore'
-import { ElMessage, ElMessageBox } from 'element-plus'
-import { getApiBaseUrl } from '../utils/database'
+import { useAdminLayout } from '../composables/useAdminLayout'
+import message from '../utils/message'
 import { useLoading } from '../composables/useLoading'
+import { api } from '../utils/api'
+import { getApiBaseUrl } from '../utils/database'
 
-// 核心组件 - 同步导入（首屏必需）
-import PasswordDialog from '../components/admin/auth/PasswordDialog.vue'
+// 布局组件
+import AdminLayout from '../components/admin/layout/AdminLayout.vue'
+
+// 核心组件 - 同步导入
 import InterfaceNameSetting from '../components/admin/basic-settings/InterfaceNameSetting.vue'
 import AnswerSetting from '../components/admin/basic-settings/AnswerSetting.vue'
 import SubjectManagement from '../components/admin/basic-settings/SubjectManagement.vue'
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
 import UserStats from '../components/admin/leaderboard-management/UserStats.vue'
 import RecentRecords from '../components/admin/leaderboard-management/RecentRecords.vue'
-import { Refresh } from '@element-plus/icons-vue'
 
-// 加载中组件
-const LoadingComponent = {
-  template: `
-    <div class="async-loading">
-      <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
-      <span>加载中...</span>
-    </div>
-  `
-}
-
-// 错误组件
-const ErrorComponent = {
-  template: `
-    <div class="async-error">
-      <el-icon class="error-icon"><i class="el-icon-warning"></i></el-icon>
-      <span>组件加载失败</span>
-      <el-button size="small" @click="retry">重试</el-button>
-    </div>
-  `,
-  methods: {
-    retry() {
-      // 触发页面刷新重新加载
-      window.location.reload()
-    }
-  }
-}
-
-// 异步组件配置工厂函数
-const createAsyncComponent = (loader) => {
-  return defineAsyncComponent({
-    loader,
-    loadingComponent: LoadingComponent,
-    errorComponent: ErrorComponent,
-    delay: 200,        // 延迟 200ms 显示 loading
-    timeout: 10000     // 10 秒超时
-  })
-}
-
-// Tab 面板组件 - 异步导入（按需加载）
-const QuestionList = createAsyncComponent(() => import('../components/admin/question-management/QuestionList.vue'))
-const UserManagement = createAsyncComponent(() => import('../components/admin/user-management/UserManagement.vue'))
-const SecurityMonitor = createAsyncComponent(() => import('../components/admin/security/SecurityMonitor.vue'))
-const BackupRestore = createAsyncComponent(() => import('../components/admin/data-management/BackupRestore.vue'))
-const DataCleanup = createAsyncComponent(() => import('../components/admin/data-management/DataCleanup.vue'))
-const AnalysisView = createAsyncComponent(() => import('./AnalysisView.vue'))
-
-// 对话框组件 - 异步导入（交互时才加载）
-const QuestionForm = createAsyncComponent(() => import('../components/admin/question-management/QuestionForm.vue'))
-const BatchAddQuestion = createAsyncComponent(() => import('../components/admin/question-management/BatchAddQuestion.vue'))
-const UserDetailDialog = createAsyncComponent(() => import('../components/admin/common/UserDetailDialog.vue'))
-const QuestionDetailDialog = createAsyncComponent(() => import('../components/admin/common/QuestionDetailDialog.vue'))
-const SubcategoryDialog = createAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
+// 异步组件
+const QuestionList = defineAsyncComponent(() => import('../components/admin/question-management/QuestionList.vue'))
+const UserManagement = defineAsyncComponent(() => import('../components/admin/user-management/UserManagement.vue'))
+const SecurityMonitor = defineAsyncComponent(() => import('../components/admin/security/SecurityMonitor.vue'))
+const BackupRestore = defineAsyncComponent(() => import('../components/admin/data-management/BackupRestore.vue'))
+const DataCleanup = defineAsyncComponent(() => import('../components/admin/data-management/DataCleanup.vue'))
+const DashboardView = defineAsyncComponent(() => import('./admin/DashboardView.vue'))
+const QuestionForm = defineAsyncComponent(() => import('../components/admin/question-management/QuestionForm.vue'))
+const BatchAddQuestion = defineAsyncComponent(() => import('../components/admin/question-management/BatchAddQuestion.vue'))
+const UserDetailDialog = defineAsyncComponent(() => import('../components/admin/common/UserDetailDialog.vue'))
+const QuestionDetailDialog = defineAsyncComponent(() => import('../components/admin/common/QuestionDetailDialog.vue'))
+const SubcategoryDialog = defineAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
-const router = useRouter()
-const { showLoading, hideLoading, withLoading, cleanup: cleanupLoading } = useLoading()
+const { activeMenu, setActiveMenu } = useAdminLayout()
+const { withLoading, cleanup: cleanupLoading } = useLoading()
 
-// 状态管理
-const activeTab = ref('basic-settings')
+// 系统标题
+const systemTitle = computed(() => settingsStore.interfaceName || '题库管理系统')
+
+// Store 数据
 const subjects = computed(() => questionStore.subjects)
 const userStats = computed(() => questionStore.userStats)
 const recentRecords = computed(() => questionStore.recentRecords)
@@ -761,336 +260,44 @@ const classes = computed(() => questionStore.classes)
 const backupHistory = ref([])
 
 // 组件引用
+const questionListRef = ref(null)
 const userManagementRef = ref(null)
 
-// 全局加载状态
-const pageLoading = ref(false)
+// 菜单变化处理
+const handleMenuChange = (key) => {
+  setActiveMenu(key)
+}
 
-// 组件挂载状态（用于防止异步操作完成时组件已卸载导致的错误）
+// 认证成功处理
+const handleAuthenticated = () => {
+  // 可以在这里做一些认证后的初始化
+}
+
+// 组件挂载状态
 let isComponentMounted = true
-const timeoutIds = []
-const loadErrors = ref([])
-const isDataReady = ref(false) // 数据是否加载完成
 
-// 数据加载锁 - 防止重复加载
-let isLoadingData = false
-
-// 排行榜筛选相关
-const filterStudentId = ref('')
-const filterGrade = ref('')
-const filterClass = ref('')
-const filterSubject = ref('')
-const filterTimeRange = ref('')
-
-// 界面名称设置
-const interfaceName = computed({
-  get: () => settingsStore.interfaceName,
-  set: () => {}
-})
-
-// 答题设置
-const randomizeAnswers = computed({
-  get: () => settingsStore.settings.randomizeAnswers,
-  set: (value) => { settingsStore.settings.randomizeAnswers = value }
-})
-const randomizeErrorCollectionAnswers = computed({
-  get: () => settingsStore.settings.randomizeErrorCollectionAnswers,
-  set: (value) => { settingsStore.settings.randomizeErrorCollectionAnswers = value }
-})
-const fixedQuestionCount = computed({
-  get: () => settingsStore.settings.fixedQuestionCount,
-  set: (value) => { settingsStore.settings.fixedQuestionCount = value }
-})
-const minQuestionCount = computed({
-  get: () => settingsStore.settings.minQuestionCount,
-  set: (value) => { settingsStore.settings.minQuestionCount = value }
-})
-const maxQuestionCount = computed({
-  get: () => settingsStore.settings.maxQuestionCount,
-  set: (value) => { settingsStore.settings.maxQuestionCount = value }
-})
-const fixedQuestionCountValue = computed({
-  get: () => settingsStore.settings.fixedQuestionCountValue,
-  set: (value) => { settingsStore.settings.fixedQuestionCountValue = value }
-})
-const subjectQuestionCounts = computed({
-  get: () => settingsStore.settings.subjectQuestionCounts,
-  set: (value) => { settingsStore.settings.subjectQuestionCounts = value }
-})
-
-// 题目管理相关
-const dialogVisible = ref(false)
-const isEditing = ref(false)
+// ==================== 题目管理 ====================
+const questionFormDialogVisible = ref(false)
 const batchAddDialogVisible = ref(false)
+const isEditing = ref(false)
 const selectedQuestion = ref(null)
-const questionListRef = ref(null)
-
-// 子分类管理相关
-const subcategoryDialogVisible = ref(false)
-const currentSubjectForSubcategory = ref(null)
-
-// 密码验证相关
-const isAuthenticated = ref(false)
-const passwordDialogVisible = ref(true)
-const adminUsername = ref('')
-
-// 修改密码相关
-const changePasswordDialogVisible = ref(false)
-const changePasswordLoading = ref(false)
-const changePasswordForm = ref({
-  oldPassword: '',
-  newPassword: '',
-  confirmPassword: ''
-})
-
-// 数据库管理验证相关
-const isDataManagementAuthenticated = ref(false)
-const dataManagementPasswordDialogVisible = ref(false)
-const dataManagementPasswordForm = ref({
-  password: ''
-})
-const dataManagementPasswordInputRef = ref(null)
-
-// 用户详情相关
-const userDetailDialogVisible = ref(false)
-const selectedUser = ref(null)
-const dialogSource = ref('')
-const currentAnswerRecordId = ref(null)
-const selectedUserRecords = ref([])
-const selectedUserQuestionAttempts = ref([])
 const questionDetailDialogVisible = ref(false)
 const selectedQuestionDetail = ref(null)
-
-// 方法
-const handlePasswordVerify = (isVerified) => {
-  if (isVerified && isComponentMounted) {
-    // 设置用户名
-    adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
-    
-    // 直接设置认证状态
-    isAuthenticated.value = true
-    
-    // 关闭对话框
-    passwordDialogVisible.value = false
-    
-    // 强制刷新页面，确保所有状态都被正确重置
-    setTimeout(() => {
-      window.location.reload();
-    }, 500);
-  }
-}
-
-// 监听认证状态变化，安全地加载数据
-watch(isAuthenticated, (newValue, oldValue) => {
-  // 只在认证状态从 false 变为 true 且数据未准备好时加载
-  if (newValue && !oldValue && !isDataReady.value && isComponentMounted) {
-    // 等待Vue完成当前渲染周期
-    setTimeout(() => {
-      if (!isComponentMounted) return;
-      loadPageData().catch(error => {
-        console.error('[AdminView] 加载数据失败:', error)
-      })
-    }, 100)
-  }
-})
-
-const logout = () => {
-  isAuthenticated.value = false
-  isDataManagementAuthenticated.value = false
-  isDataReady.value = false  // 重置数据就绪状态
-  passwordDialogVisible.value = true
-  adminUsername.value = ''
-  sessionStorage.removeItem('adminAuthenticated')
-  sessionStorage.removeItem('adminToken')
-  sessionStorage.removeItem('adminUsername')
-  sessionStorage.removeItem('dataManagementAuthenticated')
-}
-
-const backToHome = () => {
-  router.push('/')
-}
-
-const handleDataManagementClick = () => {
-  // 检查sessionStorage中的数据库管理认证状态
-  if (sessionStorage.getItem('dataManagementAuthenticated') === 'true') {
-    isDataManagementAuthenticated.value = true
-  } else {
-    showDataManagementPasswordDialog()
-  }
-}
-
-const showDataManagementPasswordDialog = () => {
-  dataManagementPasswordDialogVisible.value = true
-}
-
-// 显示题目详情
-const showQuestionDetail = (row) => {
-  selectedQuestionDetail.value = row
-  questionDetailDialogVisible.value = true
-}
-
-const verifyDataManagementPassword = async () => {
-  if (!isComponentMounted) return
-  
-  const token = sessionStorage.getItem('adminToken')
-  if (!token) {
-    if (isComponentMounted) {
-      ElMessage.error('请先登录')
-    }
-    return
-  }
-
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/admin/verify-data-management`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({
-        password: dataManagementPasswordForm.value.password
-      })
-    })
-
-    const data = await response.json()
-
-    if (!isComponentMounted) return
-    
-    if (response.ok && data.valid) {
-      isDataManagementAuthenticated.value = true
-      dataManagementPasswordDialogVisible.value = false
-      sessionStorage.setItem('dataManagementAuthenticated', 'true')
-      ElMessage.success('数据库管理功能已解锁！')
-      dataManagementPasswordForm.value.password = ''
-    } else {
-      ElMessage.error(data.error || '密码错误')
-      dataManagementPasswordForm.value.password = ''
-    }
-  } catch (error) {
-    console.error('验证失败:', error)
-    if (isComponentMounted) {
-      ElMessage.error('验证失败，请重试')
-    }
-  }
-}
-
-const focusDataManagementPasswordInput = () => {
-  const timeoutId = setTimeout(() => {
-    if (isComponentMounted && dataManagementPasswordInputRef.value && dataManagementPasswordInputRef.value.$el) {
-      const inputElement = dataManagementPasswordInputRef.value.$el.querySelector('input')
-      if (inputElement) {
-        inputElement.focus()
-      }
-    }
-  }, 100)
-  timeoutIds.push(timeoutId)
-}
-
-const handleDataManagementKeyUp = (event) => {
-  if (event.key === 'Enter' || event.keyCode === 13) {
-    verifyDataManagementPassword()
-  }
-}
-
-// 显示修改密码对话框
-const showChangePasswordDialog = () => {
-  changePasswordForm.value = {
-    oldPassword: '',
-    newPassword: '',
-    confirmPassword: ''
-  }
-  changePasswordDialogVisible.value = true
-}
-
-// 修改密码
-const handleChangePassword = async () => {
-  if (!isComponentMounted) return
-  
-  const { oldPassword, newPassword, confirmPassword } = changePasswordForm.value
-
-  if (!oldPassword || !newPassword || !confirmPassword) {
-    if (isComponentMounted) {
-      ElMessage.warning('请填写所有字段')
-    }
-    return
-  }
-
-  if (newPassword.length < 6) {
-    if (isComponentMounted) {
-      ElMessage.warning('新密码长度不能少于6位')
-    }
-    return
-  }
-
-  if (newPassword !== confirmPassword) {
-    if (isComponentMounted) {
-      ElMessage.warning('两次输入的新密码不一致')
-    }
-    return
-  }
-
-  const token = sessionStorage.getItem('adminToken')
-  if (!token) {
-    if (isComponentMounted) {
-      ElMessage.error('请重新登录')
-      logout()
-    }
-    return
-  }
-
-  changePasswordLoading.value = true
-
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/admin/change-password`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ oldPassword, newPassword })
-    })
-
-    const data = await response.json()
-
-    if (!isComponentMounted) return
-    
-    if (response.ok && data.success) {
-      ElMessage.success('密码修改成功')
-      changePasswordDialogVisible.value = false
-    } else {
-      ElMessage.error(data.error || '修改失败')
-    }
-  } catch (error) {
-    console.error('修改密码失败:', error)
-    if (isComponentMounted) {
-      ElMessage.error('修改密码失败')
-    }
-  } finally {
-    if (isComponentMounted) {
-      changePasswordLoading.value = false
-    }
-  }
-}
 
 const showAddQuestionDialog = () => {
   isEditing.value = false
   selectedQuestion.value = null
-  dialogVisible.value = true
+  questionFormDialogVisible.value = true
 }
 
 const editQuestion = (question) => {
   isEditing.value = true
-  
-  // 直接设置selectedQuestion，让QuestionForm组件处理数据转换
   selectedQuestion.value = question
-  
-  dialogVisible.value = true
+  questionFormDialogVisible.value = true
 }
 
-// 删除题目
 const deleteQuestion = (questionId) => {
   questionStore.deleteQuestion(questionId)
-  // 刷新题目列表
   questionListRef.value?.refresh()
 }
 
@@ -1099,154 +306,114 @@ const saveQuestion = async (formData) => {
     if (isEditing.value) {
       await questionStore.updateQuestion(formData)
       if (isComponentMounted) {
-        ElMessage.success('题目更新成功！')
+        message.success('题目更新成功！')
       }
     } else {
       await questionStore.addQuestion(formData)
       if (isComponentMounted) {
-        ElMessage.success('题目添加成功！')
+        message.success('题目添加成功！')
       }
     }
-
-    dialogVisible.value = false
-    // 刷新题目列表
+    questionFormDialogVisible.value = false
     questionListRef.value?.refresh()
   } catch (error) {
-
     if (isComponentMounted) {
-      ElMessage.error('保存题目失败，请稍后重试！')
+      message.error('保存题目失败，请稍后重试！')
     }
   }
 }
+
+const handleBatchAddQuestions = async (questions) => {
+  if (!isComponentMounted) return
+  
+  try {
+    for (const question of questions) {
+      if (!isComponentMounted) return
+      await questionStore.addQuestion(question)
+    }
+    if (isComponentMounted) {
+      message.success(`成功添加 ${questions.length} 道题目`)
+      questionListRef.value?.refresh()
+    }
+  } catch (error) {
+    console.error('批量添加题目失败:', error)
+    if (isComponentMounted) {
+      message.error('批量添加题目失败，请稍后重试')
+    }
+  }
+}
+
+const showQuestionDetail = (row) => {
+  selectedQuestionDetail.value = row
+  questionDetailDialogVisible.value = true
+}
+
+// ==================== 学科管理 ====================
+const subcategoryDialogVisible = ref(false)
+const currentSubjectForSubcategory = ref(null)
 
 const manageSubcategories = (subject) => {
   currentSubjectForSubcategory.value = subject
   subcategoryDialogVisible.value = true
 }
 
-// 添加学科题库
 const addSubcategory = async (subjectId, subcategory) => {
   try {
     await questionStore.addSubcategory(subjectId, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
     if (isComponentMounted) {
-      ElMessage.success('学科题库添加成功！')
+      message.success('学科题库添加成功！')
     }
-    // 刷新学科数据
     await questionStore.loadData()
   } catch (error) {
-
     if (isComponentMounted) {
-      ElMessage.error('添加学科题库失败，请稍后重试！')
+      message.error('添加学科题库失败，请稍后重试！')
     }
   }
 }
 
-// 更新学科题库
 const updateSubcategory = async (subjectId, subcategory) => {
   try {
     await questionStore.updateSubcategory(subjectId, subcategory.id, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
     if (isComponentMounted) {
-      ElMessage.success('学科题库更新成功！')
+      message.success('学科题库更新成功！')
     }
-    // 刷新学科数据
     await questionStore.loadData()
   } catch (error) {
-
     if (isComponentMounted) {
-      ElMessage.error('更新学科题库失败，请稍后重试！')
+      message.error('更新学科题库失败，请稍后重试！')
     }
   }
 }
 
-// 删除学科题库
 const deleteSubcategory = async (subjectId, subcategoryId) => {
   try {
     await questionStore.deleteSubcategory(subjectId, subcategoryId)
     if (isComponentMounted) {
-      ElMessage.success('学科题库删除成功！')
+      message.success('学科题库删除成功！')
     }
-    // 刷新学科数据和题目列表
     await questionStore.loadData()
     questionListRef.value?.refresh()
   } catch (error) {
-
     if (isComponentMounted) {
-      ElMessage.error('删除学科题库失败，请稍后重试！')
+      message.error('删除学科题库失败，请稍后重试！')
     }
   }
 }
 
-const openUserDetailDialog = async (user, source = 'userStats', answerRecordId = null) => {
-  if (!isComponentMounted) return
-  
-  // 确定用户ID，优先使用user_id字段，特别是在从recentRecords点击时
-  const userId = user.user_id || user.id
-  
-  // 加载用户的统计数据
-  try {
-    const statsResponse = await fetch(`${getApiBaseUrl()}/leaderboard/global?limit=1000&id=${userId}`)
-    if (statsResponse.ok) {
-      const statsData = await statsResponse.json()
-      if (!isComponentMounted) return
-      if (statsData && statsData.length > 0) {
-        selectedUser.value = statsData[0]
-      } else {
-        // 如果没有统计数据，使用传入的用户对象
-        selectedUser.value = user
-      }
-    } else {
-      // 如果获取统计数据失败，使用传入的用户对象
-      selectedUser.value = user
-    }
-  } catch (error) {
-    console.error('加载用户统计数据失败:', error)
-    if (isComponentMounted) {
-      selectedUser.value = user
-    }
-  }
-  
-  if (!isComponentMounted) return
-  
-  dialogSource.value = source
-  currentAnswerRecordId.value = answerRecordId
-  
-  // 加载用户的答题记录和做题记录
-  try {
-    if (source === 'userStats' && userId) {
-      // 加载用户的答题记录
-      const recordsResponse = await fetch(`${getApiBaseUrl()}/answer-records/${userId}`)
-      if (recordsResponse.ok && isComponentMounted) {
-        selectedUserRecords.value = await recordsResponse.json()
-      }
-    } else if (source === 'recentRecords' && answerRecordId && userId) {
-      // 加载用户的做题记录
-      // 使用正确的接口路径格式
-      const attemptsResponse = await fetch(`${getApiBaseUrl()}/answer-records/question-attempts/${userId}?answerRecordId=${answerRecordId}`)
-      if (attemptsResponse.ok && isComponentMounted) {
-        const attemptsData = await attemptsResponse.json()
-        selectedUserQuestionAttempts.value = attemptsData
-      } else if (isComponentMounted) {
-        // 尝试使用备用接口获取用户的所有做题记录
-        const allAttemptsResponse = await fetch(`${getApiBaseUrl()}/answer-records/question-attempts/${userId}`)
-        if (allAttemptsResponse.ok && isComponentMounted) {
-          const allAttemptsData = await allAttemptsResponse.json()
-          // 过滤出与当前answerRecordId相关的记录，确保类型一致
-          selectedUserQuestionAttempts.value = allAttemptsData.filter(attempt => {
-            return String(attempt.answer_record_id) === String(answerRecordId)
-          })
-        }
-      }
-    }
-  } catch (error) {
-    console.error('加载用户记录失败:', error)
-  }
-  
-  if (isComponentMounted) {
-    userDetailDialogVisible.value = true
-  }
-}
+// ==================== 用户数据 ====================
+const filterStudentId = ref('')
+const filterGrade = ref('')
+const filterClass = ref('')
+const filterSubject = ref('')
+const filterTimeRange = ref('')
 
-// 排行榜筛选相关方法
+const userDetailDialogVisible = ref(false)
+const selectedUser = ref(null)
+const dialogSource = ref('')
+const currentAnswerRecordId = ref(null)
+const selectedUserRecords = ref([])
+const selectedUserQuestionAttempts = ref([])
+
 const applyFilters = async () => {
   if (!isComponentMounted) return
   
@@ -1254,35 +421,29 @@ const applyFilters = async () => {
     if (!isComponentMounted) return
     
     try {
-      // 构建筛选参数
       const userStatsParams = new URLSearchParams()
       const recentRecordsParams = new URLSearchParams()
       
-      // 处理学号筛选
       if (filterStudentId.value) {
         userStatsParams.append('student_id', filterStudentId.value)
         recentRecordsParams.append('student_id', filterStudentId.value)
       }
       
-      // 处理年级筛选
       if (filterGrade.value) {
         userStatsParams.append('grade', filterGrade.value)
         recentRecordsParams.append('grade', filterGrade.value)
       }
       
-      // 处理班级筛选
       if (filterClass.value) {
         userStatsParams.append('class', filterClass.value)
         recentRecordsParams.append('class', filterClass.value)
       }
       
-      // 处理学科筛选
       if (filterSubject.value) {
         userStatsParams.append('subjectId', filterSubject.value)
         recentRecordsParams.append('subjectId', filterSubject.value)
       }
       
-      // 处理时间范围筛选
       if (filterTimeRange.value) {
         const now = new Date()
         let startDate, endDate
@@ -1311,48 +472,23 @@ const applyFilters = async () => {
         }
       }
       
-      // 加载筛选后的数据
       const [userStatsData, recentRecordsData] = await Promise.all([
-        // 获取用户统计数据
-        fetch(`${getApiBaseUrl()}/leaderboard/global?limit=0${userStatsParams.toString() ? '&' + userStatsParams.toString() : ''}`)
-          .then(res => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`)
-            }
-            return res.json()
-          })
-          .catch(error => {
-            console.error('获取用户统计数据失败:', error)
-            return { data: [] }
-          }),
-        // 获取最近答题记录
-        fetch(`${getApiBaseUrl()}/answer-records/all?limit=0${recentRecordsParams.toString() ? '&' + recentRecordsParams.toString() : ''}`)
-          .then(res => {
-            if (!res.ok) {
-              throw new Error(`HTTP error! status: ${res.status}`)
-            }
-            return res.json()
-          })
-          .catch(error => {
-            console.error('获取最近答题记录失败:', error)
-            return []
-          })
+        api.get(`/leaderboard/global?limit=0${userStatsParams.toString() ? '&' + userStatsParams.toString() : ''}`),
+        api.get(`/answer-records/all?limit=0${recentRecordsParams.toString() ? '&' + recentRecordsParams.toString() : ''}`)
       ])
       
       if (!isComponentMounted) return
       
-      // 更新数据
       questionStore.userStats = Array.isArray(userStatsData.data) ? userStatsData.data : []
       questionStore.recentRecords = Array.isArray(recentRecordsData) ? recentRecordsData : []
       
-      // 显示成功消息
       if (isComponentMounted) {
-        ElMessage.success('筛选成功')
+        message.success('筛选成功')
       }
     } catch (error) {
       console.error('筛选数据失败:', error)
       if (isComponentMounted) {
-        ElMessage.error('筛选数据失败，请稍后重试')
+        message.error('筛选数据失败，请稍后重试')
       }
     }
   }, '正在筛选数据...')
@@ -1365,80 +501,106 @@ const resetFilters = async () => {
     if (!isComponentMounted) return
     
     try {
-      // 重置筛选条件
       filterStudentId.value = ''
       filterGrade.value = ''
       filterClass.value = ''
       filterSubject.value = ''
       filterTimeRange.value = ''
       
-      // 重新加载所有数据
       await Promise.all([
         questionStore.loadUserStats(),
         questionStore.loadRecentRecords()
       ])
       
-      // 显示成功消息
       if (isComponentMounted) {
-        ElMessage.success('重置筛选成功')
+        message.success('重置筛选成功')
       }
     } catch (error) {
       console.error('重置筛选失败:', error)
       if (isComponentMounted) {
-        ElMessage.error('重置筛选失败，请稍后重试')
+        message.error('重置筛选失败，请稍后重试')
       }
     }
   }, '正在重置筛选...')
 }
 
-// 处理批量添加题目
-const handleBatchAddQuestions = async (questions) => {
+const openUserDetailDialog = async (user, source = 'userStats', answerRecordId = null) => {
   if (!isComponentMounted) return
   
+  const userId = user.user_id || user.id
+  
   try {
-    for (const question of questions) {
-      if (!isComponentMounted) return
-      await questionStore.addQuestion(question)
-    }
-    if (isComponentMounted) {
-      ElMessage.success(`成功添加 ${questions.length} 道题目`)
-      // 刷新题目列表
-      questionListRef.value?.refresh()
+    const statsData = await api.get(`/leaderboard/global?limit=1000&id=${userId}`)
+    if (!isComponentMounted) return
+    if (statsData && statsData.length > 0) {
+      selectedUser.value = statsData[0]
+    } else {
+      selectedUser.value = user
     }
   } catch (error) {
-    console.error('批量添加题目失败:', error)
+    console.error('加载用户统计数据失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('批量添加题目失败，请稍后重试')
+      selectedUser.value = user
     }
+  }
+  
+  if (!isComponentMounted) return
+  
+  dialogSource.value = source
+  currentAnswerRecordId.value = answerRecordId
+  
+  try {
+    if (source === 'userStats' && userId) {
+      const recordsData = await api.get(`/answer-records/${userId}`)
+      if (recordsData && isComponentMounted) {
+        selectedUserRecords.value = recordsData
+      }
+    } else if (source === 'recentRecords' && answerRecordId && userId) {
+      const attemptsData = await api.get(`/answer-records/question-attempts/${userId}?answerRecordId=${answerRecordId}`)
+      if (attemptsData && isComponentMounted) {
+        selectedUserQuestionAttempts.value = attemptsData
+      } else if (isComponentMounted) {
+        const allAttemptsData = await api.get(`/answer-records/question-attempts/${userId}`)
+        if (allAttemptsData && isComponentMounted) {
+          selectedUserQuestionAttempts.value = allAttemptsData.filter(attempt => {
+            return String(attempt.answer_record_id) === String(answerRecordId)
+          })
+        }
+      }
+    }
+  } catch (error) {
+    console.error('加载用户记录失败:', error)
+  }
+  
+  if (isComponentMounted) {
+    userDetailDialogVisible.value = true
   }
 }
 
-// 更新用户列表
+// ==================== 用户管理 ====================
 const updateUserList = async () => {
   if (!isComponentMounted) return
   
   try {
     await questionStore.loadUserStats()
     if (isComponentMounted) {
-      // 刷新用户管理组件
       userManagementRef.value?.refresh()
-      ElMessage.success('用户列表已更新')
+      message.success('用户列表已更新')
     }
   } catch (error) {
     console.error('更新用户列表失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('更新用户列表失败，请稍后重试')
+      message.error('更新用户列表失败，请稍后重试')
     }
   }
 }
 
-// 数据管理相关方法
+// ==================== 数据库管理 ====================
 const clearAllData = async () => {
   if (!isComponentMounted) return
   
   try {
-    await fetch(`${getApiBaseUrl()}/data/clear-all`, { method: 'POST' })
-    // 刷新所有数据（使用 allSettled 确保所有操作都尝试执行）
+    await api.post('/data/clear-all')
     const results = await Promise.allSettled([
       questionStore.loadData(),
       questionStore.loadQuestions({ excludeContent: true }),
@@ -1446,10 +608,8 @@ const clearAllData = async () => {
       questionStore.loadRecentRecords()
     ])
     
-    // 检查组件是否仍然挂载
     if (!isComponentMounted) return
     
-    // 收集失败的操作
     const failedOperations = results
       .map((r, i) => {
         if (r.status === 'rejected') {
@@ -1464,14 +624,14 @@ const clearAllData = async () => {
     userManagementRef.value?.refresh()
     
     if (failedOperations.length > 0) {
-      ElMessage.warning(`数据已清空，但部分数据刷新失败: ${failedOperations.join(', ')}`)
+      message.warning(`数据已清空，但部分数据刷新失败: ${failedOperations.join(', ')}`)
     } else {
-      ElMessage.success('所有数据已清空')
+      message.success('所有数据已清空')
     }
   } catch (error) {
     console.error('[clearAllData] 清空数据失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('清空数据失败，请稍后重试')
+      message.error('清空数据失败，请稍后重试')
     }
   }
 }
@@ -1480,17 +640,16 @@ const clearUserRecords = async () => {
   if (!isComponentMounted) return
   
   try {
-    await fetch(`${getApiBaseUrl()}/data/clear-records`, { method: 'POST' })
-    // 刷新用户统计数据
+    await api.post('/data/clear-records')
     await questionStore.loadUserStats()
     if (isComponentMounted) {
       userManagementRef.value?.refresh()
-      ElMessage.success('用户答题记录已清空')
+      message.success('用户答题记录已清空')
     }
   } catch (error) {
     console.error('清空用户答题记录失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('清空用户答题记录失败，请稍后重试')
+      message.error('清空用户答题记录失败，请稍后重试')
     }
   }
 }
@@ -1499,17 +658,16 @@ const clearLeaderboard = async () => {
   if (!isComponentMounted) return
   
   try {
-    await fetch(`${getApiBaseUrl()}/data/clear-leaderboard`, { method: 'POST' })
-    // 刷新排行榜数据
+    await api.post('/data/clear-leaderboard')
     await questionStore.loadUserStats()
     await questionStore.loadRecentRecords()
     if (isComponentMounted) {
-      ElMessage.success('排行榜数据已清空')
+      message.success('排行榜数据已清空')
     }
   } catch (error) {
     console.error('清空排行榜数据失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('清空排行榜数据失败，请稍后重试')
+      message.error('清空排行榜数据失败，请稍后重试')
     }
   }
 }
@@ -1518,16 +676,16 @@ const clearGrades = async () => {
   if (!isComponentMounted) return
   
   try {
-    await fetch(`${getApiBaseUrl()}/data/clear-grades`, { method: 'POST' })
+    await api.post('/data/clear-grades')
     await questionStore.loadData()
     if (isComponentMounted) {
       userManagementRef.value?.refresh()
-      ElMessage.success('年级数据已清空')
+      message.success('年级数据已清空')
     }
   } catch (error) {
     console.error('清空年级数据失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('清空年级数据失败，请稍后重试')
+      message.error('清空年级数据失败，请稍后重试')
     }
   }
 }
@@ -1536,16 +694,16 @@ const clearClasses = async () => {
   if (!isComponentMounted) return
   
   try {
-    await fetch(`${getApiBaseUrl()}/data/clear-classes`, { method: 'POST' })
+    await api.post('/data/clear-classes')
     await questionStore.loadData()
     if (isComponentMounted) {
       userManagementRef.value?.refresh()
-      ElMessage.success('班级数据已清空')
+      message.success('班级数据已清空')
     }
   } catch (error) {
     console.error('清空班级数据失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('清空班级数据失败，请稍后重试')
+      message.error('清空班级数据失败，请稍后重试')
     }
   }
 }
@@ -1554,62 +712,57 @@ const backupData = async (backupParams = {}) => {
   if (!isComponentMounted) return
   
   try {
-    // 构建API请求URL
-    const baseUrl = `${getApiBaseUrl()}/backup`;
-    const params = new URLSearchParams();
-    params.append('type', backupParams.type || 'full');
-    params.append('format', backupParams.format || 'json');
+    const params = new URLSearchParams()
+    params.append('type', backupParams.type || 'full')
+    params.append('format', backupParams.format || 'json')
     if (backupParams.dataTypes && backupParams.dataTypes.length > 0) {
-      params.append('dataTypes', backupParams.dataTypes.join(','));
+      params.append('dataTypes', backupParams.dataTypes.join(','))
     }
     
-    const url = `${baseUrl}?${params.toString()}`;
-    const response = await fetch(url);
-    const blob = await response.blob();
-    const downloadUrl = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = downloadUrl;
-    
-    // 根据格式设置下载文件名
-    const format = backupParams.format || 'json';
-    const extension = format === 'json' ? 'json' : 'db';
-    a.download = `backup-${new Date().toISOString().slice(0, 10)}-${backupParams.type || 'full'}.${extension}`;
-    a.click();
-    URL.revokeObjectURL(downloadUrl);
+    const response = await fetch(`${getApiBaseUrl()}/backup?${params.toString()}`)
+    const blob = await response.blob()
+    const downloadUrl = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = downloadUrl
+    const format = backupParams.format || 'json'
+    const extension = format === 'json' ? 'json' : 'db'
+    a.download = `backup-${new Date().toISOString().slice(0, 10)}-${backupParams.type || 'full'}.${extension}`
+    a.click()
+    URL.revokeObjectURL(downloadUrl)
     if (isComponentMounted) {
-      ElMessage.success('数据备份成功');
+      message.success('数据备份成功')
     }
   } catch (error) {
-    console.error('备份数据失败:', error);
+    console.error('备份数据失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('备份数据失败，请稍后重试');
+      message.error('备份数据失败，请稍后重试')
     }
   }
 }
 
 const restoreData = async () => {
-  // 恢复数据的逻辑现在由BackupRestore组件处理
+  // 恢复数据的逻辑现在由 BackupRestore 组件处理
 }
 
 const exportData = async () => {
   if (!isComponentMounted) return
   
   try {
-    const response = await fetch(`${getApiBaseUrl()}/export`);
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `export-${new Date().toISOString().slice(0, 10)}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const response = await fetch(`${getApiBaseUrl()}/export`)
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `export-${new Date().toISOString().slice(0, 10)}.json`
+    a.click()
+    URL.revokeObjectURL(url)
     if (isComponentMounted) {
-      ElMessage.success('数据导出成功');
+      message.success('数据导出成功')
     }
   } catch (error) {
-    console.error('导出数据失败:', error);
+    console.error('导出数据失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('导出数据失败，请稍后重试');
+      message.error('导出数据失败，请稍后重试')
     }
   }
 }
@@ -1627,7 +780,6 @@ const uploadBackup = async (file) => {
     })
     
     if (response.ok) {
-      // 刷新所有数据（使用 allSettled 确保所有操作都尝试执行）
       const results = await Promise.allSettled([
         questionStore.loadData(),
         questionStore.loadQuestions({ excludeContent: true }),
@@ -1635,10 +787,8 @@ const uploadBackup = async (file) => {
         questionStore.loadRecentRecords()
       ])
       
-      // 检查组件是否仍然挂载
       if (!isComponentMounted) return
       
-      // 收集失败的操作
       const failedOperations = results
         .map((r, i) => {
           if (r.status === 'rejected') {
@@ -1649,15 +799,13 @@ const uploadBackup = async (file) => {
         })
         .filter(Boolean)
       
-      // 刷新题目列表
       questionListRef.value?.refresh()
-      // 刷新用户管理组件
       userManagementRef.value?.refresh()
       
       if (failedOperations.length > 0) {
-        ElMessage.warning(`数据已恢复，但部分数据刷新失败: ${failedOperations.join(', ')}`)
+        message.warning(`数据已恢复，但部分数据刷新失败: ${failedOperations.join(', ')}`)
       } else {
-        ElMessage.success('数据恢复成功')
+        message.success('数据恢复成功')
       }
     } else {
       throw new Error('恢复数据失败')
@@ -1665,92 +813,87 @@ const uploadBackup = async (file) => {
   } catch (error) {
     console.error('上传备份文件失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('上传备份文件失败，请稍后重试')
+      message.error('上传备份文件失败，请稍后重试')
     }
   }
 }
 
-// 获取备份历史
 const getBackupHistory = async () => {
   if (!isComponentMounted) return []
   
   try {
-    const response = await fetch(`${getApiBaseUrl()}/backup/history`);
-    const history = await response.json();
-    // 将历史数据存储到变量中
+    const history = await api.get('/backup/history')
     if (isComponentMounted) {
-      backupHistory.value = history;
+      backupHistory.value = history
     }
-    return history;
+    return history
   } catch (error) {
-    console.error('获取备份历史失败:', error);
+    console.error('获取备份历史失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('获取备份历史失败，请稍后重试');
-      backupHistory.value = [];
+      message.error('获取备份历史失败，请稍后重试')
+      backupHistory.value = []
     }
-    return [];
+    return []
   }
 }
 
-// 下载备份
 const downloadBackup = async (backupId) => {
   if (!isComponentMounted) return
   
   try {
-    const response = await fetch(`${getApiBaseUrl()}/backup/${backupId}`);
-    const blob = await response.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `backup-${backupId}.db`;
-    a.click();
-    URL.revokeObjectURL(url);
+    const response = await fetch(`${getApiBaseUrl()}/backup/${backupId}`)
+    const blob = await response.blob()
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `backup-${backupId}.db`
+    a.click()
+    URL.revokeObjectURL(url)
     if (isComponentMounted) {
-      ElMessage.success('备份文件下载成功');
+      message.success('备份文件下载成功')
     }
   } catch (error) {
-    console.error('下载备份失败:', error);
+    console.error('下载备份失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('下载备份失败，请稍后重试');
+      message.error('下载备份失败，请稍后重试')
     }
   }
 }
 
-// 删除备份
 const deleteBackup = async (backupId) => {
   if (!isComponentMounted) return
   
   try {
-    await fetch(`${getApiBaseUrl()}/backup/${backupId}`, { method: 'DELETE' });
+    await api.delete(`/backup/${backupId}`)
     if (isComponentMounted) {
-      ElMessage.success('备份文件删除成功');
+      message.success('备份文件删除成功')
     }
   } catch (error) {
-    console.error('删除备份失败:', error);
+    console.error('删除备份失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('删除备份失败，请稍后重试');
+      message.error('删除备份失败，请稍后重试')
     }
   }
 }
 
-// 验证备份文件
 const verifyBackup = async (file) => {
   if (!isComponentMounted) return
   
   try {
-    const formData = new FormData();
-    formData.append('backup', file.raw);
+    const formData = new FormData()
+    formData.append('backup', file.raw)
     
     const response = await fetch(`${getApiBaseUrl()}/backup/verify`, {
       method: 'POST',
       body: formData
-    });
+    })
     
     if (response.ok) {
-      const result = await response.json();
+      const result = await response.json()
       if (!isComponentMounted) return
       
       if (result.valid) {
+        const { ElMessageBox } = await import('element-plus')
         ElMessageBox.alert(
           `<div style="text-align: left;">
             <p><strong>验证结果:</strong> 备份文件有效</p>
@@ -1764,46 +907,77 @@ const verifyBackup = async (file) => {
             dangerouslyUseHTMLString: true,
             confirmButtonText: '确定'
           }
-        );
+        )
       } else {
-        ElMessage.error(`备份文件验证失败: ${result.message}`);
+        message.error(`备份文件验证失败: ${result.message}`)
       }
     } else {
-      throw new Error('验证失败');
+      throw new Error('验证失败')
     }
   } catch (error) {
-    console.error('验证备份文件失败:', error);
+    console.error('验证备份文件失败:', error)
     if (isComponentMounted) {
-      ElMessage.error('验证备份文件失败，请稍后重试');
+      message.error('验证备份文件失败，请稍后重试')
     }
   }
 }
 
+// ==================== 基础设置 ====================
+const interfaceName = computed({
+  get: () => settingsStore.interfaceName,
+  set: () => {}
+})
 
+const randomizeAnswers = computed({
+  get: () => settingsStore.settings.randomizeAnswers,
+  set: (value) => { settingsStore.settings.randomizeAnswers = value }
+})
 
-// 加载设置
-const loadSettings = async () => {
-  if (!isComponentMounted) return
-  await settingsStore.loadSettings()
-}
+const randomizeErrorCollectionAnswers = computed({
+  get: () => settingsStore.settings.randomizeErrorCollectionAnswers,
+  set: (value) => { settingsStore.settings.randomizeErrorCollectionAnswers = value }
+})
 
-// 更新界面名称
+const fixedQuestionCount = computed({
+  get: () => settingsStore.settings.fixedQuestionCount,
+  set: (value) => { settingsStore.settings.fixedQuestionCount = value }
+})
+
+const minQuestionCount = computed({
+  get: () => settingsStore.settings.minQuestionCount,
+  set: (value) => { settingsStore.settings.minQuestionCount = value }
+})
+
+const maxQuestionCount = computed({
+  get: () => settingsStore.settings.maxQuestionCount,
+  set: (value) => { settingsStore.settings.maxQuestionCount = value }
+})
+
+const fixedQuestionCountValue = computed({
+  get: () => settingsStore.settings.fixedQuestionCountValue,
+  set: (value) => { settingsStore.settings.fixedQuestionCountValue = value }
+})
+
+const subjectQuestionCounts = computed({
+  get: () => settingsStore.settings.subjectQuestionCounts,
+  set: (value) => { settingsStore.settings.subjectQuestionCounts = value }
+})
+
 const updateInterfaceName = async (value) => {
   if (!isComponentMounted) return
   
   if (value) {
     await settingsStore.updateInterfaceName(value)
     if (isComponentMounted) {
-      ElMessage.success('界面名称更新成功！')
+      message.success('界面名称更新成功！')
     }
   } else {
     if (isComponentMounted) {
-      ElMessage.error('请输入界面名称')
+      message.error('请输入界面名称')
     }
   }
 }
 
-// 更新答题设置
 const updateAnswerSettings = async (settings) => {
   if (!isComponentMounted) return
   
@@ -1818,172 +992,95 @@ const updateAnswerSettings = async (settings) => {
   })
   if (isComponentMounted) {
     if (success) {
-      ElMessage.success('答题设置更新成功！')
+      message.success('答题设置更新成功！')
     } else {
-      ElMessage.error('答题设置更新失败')
+      message.error('答题设置更新失败')
     }
   }
 }
 
-// 处理用户管理标签点击
-const handleUserManagementTabClick = () => {
-  // 组件内部自动加载数据
-}
-
-// 监听标签变化
-watch(
-  () => activeTab.value,
-  async (newTab) => {
-    // 用户管理标签切换时刷新数据
-    if (newTab === 'user-management') {
-      userManagementRef.value?.refresh()
-    }
-  }
-)
-
-// 初始化
-onMounted(async () => {
-  // 检查sessionStorage中的登录状态
-  if (sessionStorage.getItem('adminAuthenticated') === 'true') {
-    isAuthenticated.value = true
-    passwordDialogVisible.value = false
-    // 恢复用户名
-    adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
-    // 检查数据库管理认证状态
-    if (sessionStorage.getItem('dataManagementAuthenticated') === 'true') {
-      isDataManagementAuthenticated.value = true
-    }
-    
-    // 等待DOM完全更新
-    await nextTick()
-    await nextTick()
-    
-    // 开始加载页面数据
-    if (isComponentMounted) {
-      await loadPageData()
-    }
-  } else {
-    // 设置密码对话框为可见
-    passwordDialogVisible.value = true
-    isAuthenticated.value = false
-  }
-})
-
-// 组件卸载时设置标志并清理定时器
+// 清理
 onUnmounted(() => {
   isComponentMounted = false
   cleanupLoading()
-  timeoutIds.forEach(id => clearTimeout(id))
-  timeoutIds.length = 0
 })
-
-// 错误捕获 - 处理子组件渲染竞态错误
-onErrorCaptured((err, instance, info) => {
-  const errorMessage = err?.message || ''
-  const isIgnorableError = 
-    errorMessage.includes("Cannot destructure property 'node' of 'undefined'") ||
-    errorMessage.includes("Cannot destructure property 'row' of 'undefined'") ||
-    errorMessage.includes('emitsOptions') ||
-    errorMessage.includes('Cannot read properties of undefined')
-  
-  if (isIgnorableError) {
-    return false // 阻止错误继续传播
-  }
-  
-  // 其他错误正常抛出
-  return true
-})
-
-// 手动刷新页面数据
-const refreshPageData = async () => {
-  if (isComponentMounted) {
-    ElMessage.info('正在重新加载数据...')
-  }
-  
-  // 清除缓存,强制重新加载
-  localStorage.removeItem('coreData')
-  localStorage.removeItem('coreDataExpiry')
-  
-  // 重新加载
-  await loadPageData()
-  
-  if (loadErrors.value.length === 0 && isComponentMounted) {
-    ElMessage.success('数据刷新成功')
-  }
-}
-
-// 统一加载页面数据 - 串行加载避免状态竞争
-const loadPageData = async () => {
-  // 防止重复加载
-  if (isLoadingData) return
-  if (!isComponentMounted) return
-  
-  isLoadingData = true
-  pageLoading.value = true
-  loadErrors.value = []
-  isDataReady.value = false
-  
-  const loadSingleData = async (name, loader) => {
-    if (!isComponentMounted) throw new Error('组件已卸载')
-    try {
-      await loader()
-      // 每个数据加载后等待 Vue 状态稳定
-      await nextTick()
-      await new Promise(resolve => {
-        const timeoutId = setTimeout(() => {
-          if (isComponentMounted) resolve()
-        }, 50)
-        timeoutIds.push(timeoutId)
-      })
-    } catch (error) {
-      loadErrors.value.push(`${name}: ${error.message}`)
-    }
-  }
-  
-  try {
-    // 1. 先加载核心数据（学科、年级、班级）
-    await loadSingleData('核心数据', () => questionStore.loadData())
-    if (!isComponentMounted) return
-    
-    // 2. 加载设置
-    await loadSingleData('系统设置', () => loadSettings())
-    if (!isComponentMounted) return
-    
-    // 3. 加载题目列表
-    await loadSingleData('题目数据', () => questionStore.loadQuestions({ excludeContent: true }))
-    if (!isComponentMounted) return
-    
-    // 4. 加载用户统计
-    await loadSingleData('用户统计', () => questionStore.loadUserStats())
-    if (!isComponentMounted) return
-    
-    // 5. 加载最近记录
-    await loadSingleData('最近记录', () => questionStore.loadRecentRecords())
-    if (!isComponentMounted) return
-    
-    // 最终稳定等待
-    await nextTick()
-    await new Promise(resolve => {
-      const timeoutId = setTimeout(() => {
-        if (isComponentMounted) resolve()
-      }, 100)
-      timeoutIds.push(timeoutId)
-    })
-    
-    if (!isComponentMounted) return
-    
-    if (loadErrors.value.length > 0 && isComponentMounted) {
-      ElMessage.warning(`部分数据加载失败: ${loadErrors.value.length} 项`)
-    }
-    
-    isDataReady.value = true
-  } catch (error) {
-    if (isComponentMounted) {
-      ElMessage.error('页面数据加载失败,请刷新页面重试')
-    }
-  } finally {
-    pageLoading.value = false
-    isLoadingData = false
-  }
-}
 </script>
+
+<style scoped>
+@import '../styles/common.css';
+
+.question-management,
+.subject-management,
+.grades-classes-management,
+.user-data-view,
+.user-management-view,
+.data-management {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.basic-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.basic-settings .setting-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  overflow: hidden;
+}
+
+.basic-settings .setting-title {
+  background-color: #f5f7fa;
+  padding: 16px 20px;
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  border-bottom: 1px solid #ebeef5;
+}
+
+/* 筛选卡片 */
+.filter-card {
+  margin-bottom: 24px !important;
+  border-radius: 12px !important;
+  overflow: hidden !important;
+}
+
+.filter-card :deep(.el-card__header) {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid #ebeef5 !important;
+  background-color: #f5f7fa !important;
+}
+
+.filter-card :deep(.el-card__body) {
+  padding: 20px !important;
+}
+
+/* 数据卡片 */
+.data-card {
+  border-radius: 12px !important;
+  overflow: hidden !important;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08) !important;
+}
+
+.data-card :deep(.el-card__header) {
+  padding: 16px 20px !important;
+  border-bottom: 1px solid #ebeef5 !important;
+  background-color: #f5f7fa !important;
+}
+
+.data-card :deep(.el-card__body) {
+  padding: 20px !important;
+}
+
+/* 数据展示区域 */
+.data-display {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+</style>

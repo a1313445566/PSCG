@@ -2,18 +2,18 @@
   <div class="app">
     <!-- 加载指示器 -->
     <div v-if="isLoading" class="loading-indicator"></div>
-    
+
     <router-view v-slot="{ Component }">
       <component :is="Component" :key="route.fullPath" />
     </router-view>
-    
-    <!-- 页脚组件 -->
-    <AppFooter />
+
+    <!-- 页脚组件（后台管理页面不显示） -->
+    <AppFooter v-if="!isAdminPage" />
   </div>
 </template>
 
 <script setup>
-import { ref, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppFooter from './components/common/AppFooter.vue'
 import { useQuestionStore, setAppMountedState } from './stores/questionStore'
@@ -22,16 +22,19 @@ const route = useRoute()
 const isLoading = ref(false)
 const questionStore = useQuestionStore()
 
+// 判断是否为后台管理页面
+const isAdminPage = computed(() => route.path === '/admin')
+
 // 监听路由变化，显示/隐藏加载指示器
 watch(() => route.path, async (newPath, oldPath) => {
   if (newPath !== oldPath) {
     isLoading.value = true
-    
+
     // 如果从admin页面导航到任何其他页面，重新加载数据
     if (oldPath === '/admin' && newPath !== '/admin') {
       await questionStore.loadData()
     }
-    
+
     isLoading.value = false
   }
 })

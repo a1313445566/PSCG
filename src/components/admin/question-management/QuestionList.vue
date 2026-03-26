@@ -54,38 +54,9 @@
       </div>
     </div>
 
-    <!-- 主内容区：左侧树 + 右侧表格 -->
+    <!-- 主内容区 -->
     <div class="main-content">
-      <!-- 左侧学科树 -->
-      <div class="sidebar" :style="{ width: sidebarWidth + 'px' }">
-        <div class="sidebar-header">
-          <el-icon><Folder /></el-icon>
-          <span>学科导航</span>
-        </div>
-        <div class="tree-container">
-          <el-tree
-            ref="treeRef"
-            :data="treeData"
-            :props="treeProps"
-            node-key="id"
-            highlight-current
-            @node-click="handleTreeNodeClick"
-          >
-            <template #default="{ node, data }">
-              <span v-if="node && data" class="tree-node">
-                <el-icon v-if="data.type === 'subject'"><Reading /></el-icon>
-                <el-icon v-else><Notebook /></el-icon>
-                <span class="tree-node-label">{{ node.label }}</span>
-                <span class="tree-node-count" v-if="data.questionCount !== undefined">({{ data.questionCount }})</span>
-              </span>
-            </template>
-          </el-tree>
-        </div>
-        <!-- 拖拽调整宽度 -->
-        <div class="resize-handle" @mousedown="startResize"></div>
-      </div>
-
-      <!-- 右侧内容区 -->
+      <!-- 内容区 -->
       <div class="content-wrapper" :class="{ 'has-edit-panel': splitEditMode }">
         <!-- 编辑面板（移到顶部） -->
         <div v-if="splitEditMode" class="edit-panel" :style="{ height: editPanelHeight + 'px' }">
@@ -328,35 +299,36 @@
         </div>
 
         <!-- 题目表格 -->
-        <el-table
-          ref="tableRef"
-          :data="displayQuestions"
-          @selection-change="handleSelectionChange"
-          stripe
-          border
-          :row-class-name="getRowClassName"
-          v-loading="loading"
-          element-loading-text="加载中..."
-          height="calc(100vh - 320px)"
-        >
-          <el-table-column type="selection" width="45" />
-          <el-table-column prop="id" label="ID" width="55" align="center" />
-          <el-table-column prop="subjectName" label="学科" width="85" align="center">
+        <div class="table-wrapper">
+          <el-table
+            ref="tableRef"
+            :data="displayQuestions"
+            @selection-change="handleSelectionChange"
+            stripe
+            border
+            :row-class-name="getRowClassName"
+            v-loading="loading"
+            element-loading-text="加载中..."
+            height="100%"
+          >
+          <el-table-column type="selection" width="40" />
+          <el-table-column prop="id" label="ID" width="50" align="center" />
+          <el-table-column prop="subjectName" label="学科" width="70" align="center">
             <template #default="{ row }">
               <el-tag size="small" type="primary" effect="light">{{ row.subjectName }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="subcategoryName" label="题库" width="95" align="center" show-overflow-tooltip>
+          <el-table-column prop="subcategoryName" label="题库" width="80" align="center" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="subcategory-text">{{ row.subcategoryName || '-' }}</span>
             </template>
           </el-table-column>
-          <el-table-column prop="typeName" label="类型" width="80" align="center">
+          <el-table-column prop="typeName" label="类型" width="70" align="center">
             <template #default="{ row }">
               <el-tag size="small" :type="getTypeTagType(row.type)">{{ row.typeName }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="content" label="题目内容" min-width="300" align="left">
+          <el-table-column prop="content" label="题目内容" min-width="200" align="left">
             <template #default="{ row }">
               <div class="question-content-wrapper">
                 <!-- 行内编辑模式 -->
@@ -401,17 +373,17 @@
               </div>
             </template>
           </el-table-column>
-          <el-table-column prop="answer" label="答案" width="55" align="center">
+          <el-table-column prop="answer" label="答案" width="50" align="center">
             <template #default="{ row }">
               <el-tag size="small" type="danger" effect="dark">{{ row.answer || '-' }}</el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="100" align="center" show-overflow-tooltip>
+          <el-table-column prop="createdAt" label="创建时间" width="90" align="center" show-overflow-tooltip>
             <template #default="{ row }">
               <span class="time-text">{{ row.createdAt || '未知' }}</span>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="180" fixed="right" align="center">
+          <el-table-column label="操作" width="160" fixed="right" align="center">
             <template #default="{ row }">
               <div class="row-operations">
                 <el-button type="primary" size="small" link @click.stop="previewQuestion(row)">
@@ -426,7 +398,8 @@
               </div>
             </template>
           </el-table-column>
-        </el-table>
+          </el-table>
+        </div>
 
         <!-- 分页 -->
         <div class="pagination-container">
@@ -560,7 +533,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, nextTick } from 'vue';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import {
   Search, Plus, Upload, ArrowDown, Delete, Star, Document, FolderOpened,
@@ -568,6 +541,7 @@ import {
   VideoPlay, VideoPause, DArrowLeft, DArrowRight
 } from '@element-plus/icons-vue';
 import { useQuestionStore } from '../../../stores/questionStore';
+import { useAdminLayout } from '../../../composables/useAdminLayout';
 import { formatDate } from '../../../utils/dateUtils';
 import { getApiBaseUrl } from '../../../utils/database';
 import EditableContent from '../../common/EditableContent.vue';
@@ -587,10 +561,11 @@ const emit = defineEmits(['edit-question', 'delete-question', 'show-add-dialog',
 // Store
 const questionStore = useQuestionStore();
 
+// 使用全局布局状态
+const { filterSubjectId, filterSubcategoryId, clearFilter: clearGlobalFilter } = useAdminLayout();
+
 // 筛选条件
 const searchKeyword = ref('');
-const filterSubjectId = ref('');
-const filterSubcategoryId = ref('');
 const filterType = ref('');
 
 // 加载状态
@@ -605,9 +580,6 @@ const pagination = ref({
   limit: 50,
   total: 0
 });
-
-// 侧边栏宽度
-const sidebarWidth = ref(220);
 
 // 服务端数据
 const serverQuestions = ref([]);
@@ -660,31 +632,6 @@ const audioUploadProgress = ref(0);
 
 // 防抖定时器
 let searchTimer = null;
-
-// Tree 配置
-const treeProps = {
-  children: 'children',
-  label: 'name'
-};
-
-// 计算 Tree 数据
-const treeData = computed(() => {
-  return props.subjects.map(subject => ({
-    id: `subject-${subject.id}`,
-    name: subject.name,
-    type: 'subject',
-    subjectId: subject.id,
-    questionCount: subject.questionCount || 0,
-    children: (subject.subcategories || []).map(sub => ({
-      id: `subcategory-${sub.id}`,
-      name: sub.name,
-      type: 'subcategory',
-      subjectId: subject.id,
-      subcategoryId: sub.id,
-      questionCount: sub.questionCount || 0
-    }))
-  }));
-});
 
 // 当前学科名称
 const currentSubjectName = computed(() => {
@@ -826,26 +773,12 @@ const handleSizeChange = (size) => {
   loadQuestions();
 };
 
-// Tree 节点点击
-const handleTreeNodeClick = (data) => {
-  if (data.type === 'subject') {
-    filterSubjectId.value = data.subjectId;
-    filterSubcategoryId.value = '';
-  } else if (data.type === 'subcategory') {
-    filterSubjectId.value = data.subjectId;
-    filterSubcategoryId.value = data.subcategoryId;
-  }
-};
-
 // 清除筛选
 const clearFilter = (type) => {
   switch (type) {
     case 'subject':
-      filterSubjectId.value = '';
-      filterSubcategoryId.value = '';
-      break;
     case 'subcategory':
-      filterSubcategoryId.value = '';
+      clearGlobalFilter();
       break;
     case 'type':
       filterType.value = '';
@@ -1717,6 +1650,19 @@ onMounted(() => {
   loadQuestions();
 });
 
+// 组件卸载时清理
+onUnmounted(() => {
+  // 清理搜索定时器
+  if (searchTimer) {
+    clearTimeout(searchTimer);
+    searchTimer = null;
+  }
+  // 清理预览缓存
+  previewCache.clear();
+  // 清理待删除队列
+  pendingDeletes.value.clear();
+});
+
 // 暴露方法给父组件
 defineExpose({
   refresh: loadQuestions
@@ -1728,98 +1674,44 @@ defineExpose({
   height: 100%;
   display: flex;
   flex-direction: column;
-  background: #f5f7fa;
+  background: transparent;
+  overflow: hidden;
 }
 
 .toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 16px 20px;
+  padding: 12px 16px;
   background: #fff;
   border-bottom: 1px solid #e4e7ed;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
+  margin-bottom: 12px;
+  border-radius: 8px;
 }
 
 .toolbar-left {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .toolbar-right {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 8px;
+}
+
+.toolbar-right .el-button {
+  padding: 8px 12px;
 }
 
 .main-content {
   flex: 1;
   display: flex;
-  overflow: hidden;
-}
-
-.sidebar {
-  background: #fff;
-  border-right: 1px solid #e4e7ed;
-  display: flex;
-  flex-direction: column;
-  position: relative;
-  flex-shrink: 0;
-}
-
-.sidebar-header {
-  padding: 16px;
-  border-bottom: 1px solid #e4e7ed;
-  font-weight: 600;
-  color: #303133;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.tree-container {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-}
-
-.tree-node {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.tree-node-label {
-  flex: 1;
-}
-
-.tree-node-count {
-  color: #909399;
-  font-size: 12px;
-}
-
-.resize-handle {
-  position: absolute;
-  right: 0;
-  top: 0;
-  bottom: 0;
-  width: 4px;
-  cursor: col-resize;
-  background: transparent;
-  transition: background 0.2s;
-}
-
-.resize-handle:hover {
-  background: #409eff;
-}
-
-.content-area {
-  flex: 1;
-  display: flex;
   flex-direction: column;
   overflow: hidden;
-  padding: 20px;
-  background: #f5f7fa;
+  min-height: 0;
 }
 
 .content-wrapper {
@@ -1830,9 +1722,27 @@ defineExpose({
   min-height: 0;
 }
 
+.content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0;
+  background: transparent;
+  min-height: 0;
+}
+
 .content-wrapper.has-edit-panel .content-area {
   flex: 1;
   min-height: 0;
+}
+
+.table-wrapper {
+  flex: 1;
+  min-height: 0;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 /* 分屏编辑面板（顶部） */
@@ -2106,11 +2016,12 @@ defineExpose({
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 16px;
-  padding: 12px 16px;
+  margin-bottom: 12px;
+  padding: 10px 14px;
   background: #fff;
   border-radius: 8px;
   box-shadow: 0 2px 4px rgba(0, 0, 0, 0.04);
+  flex-shrink: 0;
 }
 
 .total-count {
@@ -2122,11 +2033,29 @@ defineExpose({
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-bottom: 16px;
-  padding: 10px 16px;
+  margin-bottom: 12px;
+  padding: 8px 14px;
   background: #fff;
   border-radius: 8px;
   flex-wrap: wrap;
+  flex-shrink: 0;
+}
+
+.total-count {
+  color: #606266;
+  font-size: 14px;
+}
+
+.filter-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding: 8px 14px;
+  background: #fff;
+  border-radius: 8px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
 }
 
 .filter-label {
@@ -2255,12 +2184,13 @@ defineExpose({
 }
 
 .pagination-container {
-  margin-top: 16px;
+  margin-top: 12px;
   display: flex;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
   background: #fff;
   border-radius: 8px;
+  flex-shrink: 0;
 }
 
 /* 预览弹窗样式 */

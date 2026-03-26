@@ -79,6 +79,7 @@ const backupRoutes = require('./routes/backup');
 const errorCollectionRoutes = require('./routes/error-collection');
 const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
+const dashboardRoutes = require('./routes/dashboard');
 
 const db = require('./services/database');
 const cacheService = require('./services/cache');
@@ -186,6 +187,7 @@ app.use('/api', backupRoutes);
 app.use('/api/error-collection', errorCollectionRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/dashboard', dashboardRoutes);
 
 // CSRF Token 接口
 app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {
