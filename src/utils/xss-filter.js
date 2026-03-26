@@ -184,6 +184,23 @@ class XSSFilter {
   }
 }
 
+/**
+ * 转义 HTML 特殊字符（用于纯文本输入）
+ * @param {string} text - 原始文本
+ * @returns {string} 转义后的文本
+ */
+export const escapeHtml = (text) => {
+  if (!text) return ''
+  const map = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#039;'
+  }
+  return String(text).replace(/[&<>"']/g, char => map[char])
+}
+
 // 导出单例
 const xssFilter = new XSSFilter();
 export default xssFilter;

@@ -218,53 +218,307 @@ app.get('/api/security/signature-cache', adminAuth, (req, res) => {
 });
 
 // 【防护】手动封禁 IP - 需要管理员权限
-app.post('/api/security/block-ip', adminAuth, (req, res) => {
-  const { ip, duration } = req.body;
-  if (!ip) {
-    return res.status(400).json({ error: '缺少 IP 参数' });
+app.post('/api/security/block-ip', adminAuth, async (req, res) => {
+  try {
+    const { ip, duration, reason } = req.body;
+    
+    // 输入验证
+    if (!ip) {
+      return res.status(400).json({ error: '缺少 IP 参数' });
+    }
+    if (!isValidIP(ip)) {
+      return res.status(400).json({ error: 'IP 地址格式不正确' });
+    }
+    
+    // 执行封禁
+    await globalLimiter.manualBlock(ip, duration || 3600000);
+    
+    // 记录操作日志
+    await logSecurityOperation({
+      type: 'block',
+      ip,
+      duration: duration || 3600000,
+      reason: reason || '未填写',
+      operator: req.admin.username
+    });
+    
+    res.json({ success: true, message: `IP ${ip} 已被封禁` });
+  } catch (error) {
+    console.error('[安全监控] 封禁 IP 失败:', error);
+    res.status(500).json({ error: '封禁失败，请稍后重试' });
   }
-  globalLimiter.manualBlock(ip, duration || 3600000);
-  res.json({ success: true, message: `IP ${ip} 已被封禁` });
 });
 
 // 【防护】手动解封 IP - 需要管理员权限
-app.post('/api/security/unblock-ip', adminAuth, (req, res) => {
-  const { ip } = req.body;
-  if (!ip) {
-    return res.status(400).json({ error: '缺少 IP 参数' });
+app.post('/api/security/unblock-ip', adminAuth, async (req, res) => {
+  try {
+    const { ip, reason } = req.body;
+    
+    if (!ip) {
+      return res.status(400).json({ error: '缺少 IP 参数' });
+    }
+    
+    // 执行解封
+    await globalLimiter.unblock(ip);
+    await apiLimiter.unblock(ip);
+    await submitLimiter.unblock(ip);
+    
+    // 记录操作日志
+    await logSecurityOperation({
+      type: 'unblock',
+      ip,
+      reason: reason || '手动解封',
+      operator: req.admin.username
+    });
+    
+    res.json({ success: true, message: `IP ${ip} 已解除封禁` });
+  } catch (error) {
+    console.error('[安全监控] 解封 IP 失败:', error);
+    res.status(500).json({ error: '解封失败，请稍后重试' });
   }
-  globalLimiter.unblock(ip);
-  apiLimiter.unblock(ip);
-  submitLimiter.unblock(ip);
-  res.json({ success: true, message: `IP ${ip} 已解除封禁` });
 });
 
 // 【防护】解除所有封禁 - 需要管理员权限
-app.post('/api/security/unblock-all', adminAuth, (req, res) => {
-  // 使用限流器标准方法清空数据
-  const globalResult = globalLimiter.unblockAll();
-  const apiResult = apiLimiter.unblockAll();
-  const submitResult = submitLimiter.unblockAll();
-  
-  // 记录操作日志（包含操作者信息）
-  const operator = req.admin?.username || 'unknown';
-  console.log(`🟢 [安全] 管理员 "${operator}" 已解除所有 IP 封禁`, {
-    global: globalResult,
-    api: apiResult,
-    submit: submitResult,
-    operator,
-    timestamp: new Date().toISOString()
-  });
-  
-  res.json({ 
-    success: true, 
-    message: '所有 IP 封禁已解除',
-    details: {
+app.post('/api/security/unblock-all', adminAuth, async (req, res) => {
+  try {
+    // 使用限流器标准方法清空数据
+    const globalResult = await globalLimiter.unblockAll();
+    const apiResult = await apiLimiter.unblockAll();
+    const submitResult = await submitLimiter.unblockAll();
+    
+    // 记录操作日志
+    const operator = req.admin?.username || 'unknown';
+    await logSecurityOperation({
+      type: 'unblock_all',
+      ip: 'ALL',
+      reason: '批量解封',
+      operator,
+      metadata: { 
+        global: globalResult,
+        api: apiResult,
+        submit: submitResult
+      }
+    });
+    
+    console.log(`🟢 [安全] 管理员 "${operator}" 已解除所有 IP 封禁`, {
       global: globalResult,
       api: apiResult,
-      submit: submitResult
+      submit: submitResult,
+      operator,
+      timestamp: new Date().toISOString()
+    });
+    
+    res.json({ 
+      success: true, 
+      message: '已解除所有封禁',
+      details: {
+        global: globalResult,
+        api: apiResult,
+        submit: submitResult
+      }
+    });
+  } catch (error) {
+    console.error('[安全监控] 解除所有封禁失败:', error);
+    res.status(500).json({ error: '解除所有封禁失败' });
+  }
+});
+
+// ==================== 安全监控增强功能 ====================
+
+/**
+ * 创建安全监控操作日志表
+ */
+const createSecurityLogsTable = async () => {
+  const createTableSQL = `
+    CREATE TABLE IF NOT EXISTS security_logs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      type VARCHAR(50) NOT NULL COMMENT '操作类型: block, unblock, batch_block, unblock_all',
+      ip VARCHAR(100) NOT NULL COMMENT 'IP 地址',
+      duration INT COMMENT '封禁时长（毫秒）',
+      reason TEXT COMMENT '封禁/解封原因',
+      operator VARCHAR(100) NOT NULL COMMENT '操作人（管理员用户名）',
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
+      metadata TEXT COMMENT '其他元数据（JSON 格式）',
+      INDEX idx_timestamp (timestamp),
+      INDEX idx_ip (ip),
+      INDEX idx_operator (operator),
+      INDEX idx_type (type)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='安全监控操作日志'
+  `;
+  
+  try {
+    await db.run(createTableSQL);
+    console.log('✅ 安全监控操作日志表已准备就绪');
+  } catch (error) {
+    console.error('❌ 创建安全监控操作日志表失败:', error);
+  }
+};
+
+/**
+ * 记录安全监控操作日志
+ * @param {Object} logData - 日志数据
+ * @returns {Promise<void>}
+ */
+const logSecurityOperation = async (logData) => {
+  const { type, ip, duration, reason, operator, metadata } = logData;
+  
+  const sql = `
+    INSERT INTO security_logs (type, ip, duration, reason, operator, metadata)
+    VALUES (?, ?, ?, ?, ?, ?)
+  `;
+  
+  try {
+    await db.run(sql, [
+      type,
+      ip,
+      duration || null,
+      reason || null,
+      operator,
+      metadata ? JSON.stringify(metadata) : null
+    ]);
+  } catch (error) {
+    console.error('[安全监控] 记录操作日志失败:', error);
+  }
+};
+
+/**
+ * IP 地址格式验证
+ * @param {string} ip - IP 地址
+ * @returns {boolean} 是否有效
+ */
+const isValidIP = (ip) => {
+  if (!ip || typeof ip !== 'string') return false;
+
+  // IPv4 验证 - 检查格式并验证每个数字在 0-255 范围内
+  const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/;
+  const ipv4Match = ip.match(ipv4Regex);
+  if (ipv4Match) {
+    const nums = ipv4Match.slice(1, 5).map(Number);
+    return nums.every(n => n >= 0 && n <= 255);
+  }
+
+  // IPv6 验证 - 支持完整格式和简写格式
+  // 完整格式: 8组4位十六进制
+  // 简写格式: :: 压缩连续的零组
+  const ipv6FullRegex = /^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}$/;
+  const ipv6CompressedRegex = /^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/;
+
+  return ipv6FullRegex.test(ip) || ipv6CompressedRegex.test(ip);
+};
+
+/**
+ * 获取操作日志（分页）
+ * GET /api/security/logs
+ */
+app.get('/api/security/logs', adminAuth, async (req, res) => {
+  try {
+    const { page = 1, limit = 20, type, ip, operator } = req.query;
+    
+    // 构建查询条件
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    
+    if (type) {
+      whereClause += ' AND type = ?';
+      params.push(type);
     }
-  });
+    if (ip) {
+      whereClause += ' AND ip LIKE ?';
+      params.push(`%${ip}%`);
+    }
+    if (operator) {
+      whereClause += ' AND operator LIKE ?';
+      params.push(`%${operator}%`);
+    }
+    
+    // 查询总数
+    const countSQL = `SELECT COUNT(*) as total FROM security_logs ${whereClause}`;
+    const countResult = await db.get(countSQL, params);
+    
+    // 分页查询
+    const limitNum = Number(limit);
+    const offsetNum = (Number(page) - 1) * limitNum;
+    const logsSQL = `
+      SELECT * FROM security_logs 
+      ${whereClause}
+      ORDER BY timestamp DESC
+      LIMIT ${limitNum} OFFSET ${offsetNum}
+    `;
+    const logs = await db.query(logsSQL, params);
+    
+    res.json({
+      logs: logs || [],
+      total: countResult.total,
+      page: parseInt(page),
+      limit: parseInt(limit)
+    });
+  } catch (error) {
+    console.error('[安全监控] 获取操作日志失败:', error);
+    res.status(500).json({ error: '获取操作日志失败' });
+  }
+});
+
+/**
+ * 批量封禁 IP
+ * POST /api/security/batch-block
+ */
+app.post('/api/security/batch-block', adminAuth, async (req, res) => {
+  try {
+    const { ips, duration, reason } = req.body;
+    
+    // 输入验证
+    if (!Array.isArray(ips) || ips.length === 0) {
+      return res.status(400).json({ error: 'IP 列表不能为空' });
+    }
+    if (ips.length > 100) {
+      return res.status(400).json({ error: '单次最多封禁 100 个 IP' });
+    }
+    if (!reason || reason.trim() === '') {
+      return res.status(400).json({ error: '封禁原因不能为空' });
+    }
+    
+    // 验证每个 IP 格式
+    const invalidIPs = ips.filter(ip => !isValidIP(ip));
+    if (invalidIPs.length > 0) {
+      return res.status(400).json({ 
+        error: `以下 IP 格式不正确: ${invalidIPs.join(', ')}` 
+      });
+    }
+    
+    // 批量封禁
+    let successCount = 0;
+    for (const ip of ips) {
+      try {
+        await globalLimiter.manualBlock(ip, duration);
+        successCount++;
+      } catch (e) {
+        console.error(`[安全监控] 封禁 IP ${ip} 失败:`, e);
+      }
+    }
+    
+    // 记录操作日志
+    await logSecurityOperation({
+      type: 'batch_block',
+      ip: ips.join(','),
+      duration,
+      reason,
+      operator: req.admin.username,
+      metadata: { 
+        total: ips.length,
+        success: successCount
+      }
+    });
+    
+    res.json({ 
+      success: true, 
+      message: `成功封禁 ${successCount}/${ips.length} 个 IP`,
+      successCount,
+      totalCount: ips.length
+    });
+  } catch (error) {
+    console.error('[安全监控] 批量封禁失败:', error);
+    res.status(500).json({ error: '批量封禁失败，请稍后重试' });
+  }
 });
 
 process.on('uncaughtException', (err) => {
@@ -281,6 +535,19 @@ process.on('unhandledRejection', (reason, promise) => {
 async function startServer() {
   try {
     await db.connect();
+
+    // 创建安全监控操作日志表
+    await createSecurityLogsTable();
+
+    // 初始化限流器（设置数据库实例并加载持久化数据）
+    globalLimiter.setDatabase(db);
+    apiLimiter.setDatabase(db);
+    submitLimiter.setDatabase(db);
+    await Promise.all([
+      globalLimiter.loadBlocksFromDB(),
+      apiLimiter.loadBlocksFromDB(),
+      submitLimiter.loadBlocksFromDB()
+    ]);
 
     // 启用数据库性能监控
     dbPerformanceMonitor.monitorQuery(db);

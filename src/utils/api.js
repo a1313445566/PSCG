@@ -112,11 +112,17 @@ class ApiClient {
       // 获取 CSRF Token
       const csrfToken = await getCSRFToken()
       
+      // 获取认证 Token (管理员或用户)
+      const adminToken = sessionStorage.getItem('adminToken')
+      const userToken = localStorage.getItem('token')
+      const authToken = adminToken || userToken
+      
       // 发起请求
       const response = await fetch(`${this.baseUrl}${endpoint}`, {
         headers: { 
           'Content-Type': 'application/json',
           ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          ...(authToken ? { 'Authorization': `Bearer ${authToken}` } : {}),
           ...options.headers 
         },
         signal: controller.signal,

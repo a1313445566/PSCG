@@ -1,12 +1,13 @@
 /**
  * IP/用户限流中间件
  * 防止恶意高频请求
- * 
+ *
  * 支持：
  * - 用户 ID 限流（登录用户独立配额，适配学校 NAT 环境）
  * - IP 限流（未登录用户，防止匿名攻击）
  * - IP 白名单
  * - JWT Token 验证（优先从 token 解析用户 ID）
+ * - 封禁持久化（数据库存储，服务重启后恢复）
  */
 
 const jwt = require('jsonwebtoken');
@@ -20,13 +21,58 @@ class RateLimiter {
     this.blockDuration = options.blockDuration || 300000; // 封禁时长（默认5分钟）
     this.whitelist = options.whitelist || ['127.0.0.1', '::1', '::ffff:127.0.0.1'];
     this.keyGenerator = options.keyGenerator || null; // 自定义 key 生成器
-    
+    this.db = null; // 数据库实例（用于持久化）
+
     // 存储结构：Map<key, { count, firstRequestTime, blocked, type }>
     this.requests = new Map();
     this.blockedKeys = new Map();
-    
+
     // 定期清理过期数据
     this.cleanupInterval = setInterval(() => this.cleanup(), 60000);
+  }
+
+  // 设置数据库实例
+  setDatabase(db) {
+    this.db = db;
+  }
+
+  // 从数据库加载封禁数据（服务启动时调用）
+  async loadBlocksFromDB() {
+    if (!this.db) return;
+
+    try {
+      // 先检查表是否存在
+      const tables = await this.db.query("SHOW TABLES LIKE 'ip_blocks'");
+      if (!tables || tables.length === 0) {
+        console.log('[限流] ip_blocks 表不存在，跳过加载');
+        return;
+      }
+
+      const now = Date.now();
+      // 只加载未过期的封禁
+      const blocks = await this.db.query(
+        'SELECT ip, expires_at, reason FROM ip_blocks WHERE expires_at > ?',
+        [now]
+      );
+
+      if (blocks && blocks.length > 0) {
+        for (const block of blocks) {
+          const key = `ip:${block.ip}`;
+          this.blockedKeys.set(key, {
+            expiresAt: block.expires_at,
+            reason: block.reason || 'manual_block',
+            type: 'ip'
+          });
+        }
+        console.log(`✅ [限流] 从数据库恢复了 ${blocks.length} 个封禁记录`);
+      }
+
+      // 清理已过期的封禁记录
+      await this.db.run('DELETE FROM ip_blocks WHERE expires_at <= ?', [now]);
+
+    } catch (error) {
+      console.error('[限流] 加载封禁数据失败:', error);
+    }
   }
 
   // 销毁实例，清理定时器（防止内存泄漏）
@@ -173,31 +219,69 @@ class RateLimiter {
     console.warn(`🚫 [限流] ${type} ${key} 已被封禁 ${this.blockDuration / 1000} 秒`);
   }
 
-  // 手动封禁 IP
-  manualBlock(ip, duration = 3600000) {
+  // 手动封禁 IP（支持持久化）
+  async manualBlock(ip, duration = 3600000) {
     const key = `ip:${ip}`;
+    const expiresAt = Date.now() + duration;
+
+    // 内存存储
     this.blockedKeys.set(key, {
-      expiresAt: Date.now() + duration,
+      expiresAt,
       reason: 'manual_block',
       type: 'ip'
     });
+
+    // 数据库持久化
+    if (this.db) {
+      try {
+        await this.db.run(
+          `INSERT INTO ip_blocks (ip, expires_at, reason)
+           VALUES (?, ?, 'manual_block')
+           ON DUPLICATE KEY UPDATE expires_at = ?, reason = 'manual_block'`,
+          [ip, expiresAt, expiresAt]
+        );
+      } catch (error) {
+        console.error('[限流] 持久化封禁失败:', error);
+      }
+    }
   }
 
-  // 解除封禁
-  unblock(ip) {
+  // 解除封禁（支持持久化）
+  async unblock(ip) {
     const key = `ip:${ip}`;
+
+    // 内存删除
     this.blockedKeys.delete(key);
     this.requests.delete(key);
+
+    // 数据库删除
+    if (this.db) {
+      try {
+        await this.db.run('DELETE FROM ip_blocks WHERE ip = ?', [ip]);
+      } catch (error) {
+        console.error('[限流] 删除封禁记录失败:', error);
+      }
+    }
   }
 
-  // 解除所有封禁（标准方法）
-  unblockAll() {
+  // 解除所有封禁（标准方法，支持持久化）
+  async unblockAll() {
     const blockedCount = this.blockedKeys.size;
     const requestCount = this.requests.size;
-    
+
+    // 内存清空
     this.blockedKeys.clear();
     this.requests.clear();
-    
+
+    // 数据库清空
+    if (this.db) {
+      try {
+        await this.db.run('DELETE FROM ip_blocks');
+      } catch (error) {
+        console.error('[限流] 清空封禁记录失败:', error);
+      }
+    }
+
     return {
       blockedCount,
       requestCount,

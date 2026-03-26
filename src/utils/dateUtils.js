@@ -11,35 +11,16 @@
 export const formatDate = (dateString, defaultStr = '') => {
   if (!dateString) return defaultStr;
   try {
-    // 处理数据库返回的时间字符串，确保正确解析时区
-    let date;
-    if (typeof dateString === 'string') {
-      // 直接解析，然后转换为北京时间
-      date = new Date(dateString);
-    } else {
-      date = new Date(dateString);
-    }
+    const date = new Date(dateString);
     
     // 确保日期有效
     if (isNaN(date.getTime())) {
       return defaultStr;
     }
     
-    // 手动调整时区，确保显示北京时间
-    const beijingTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-    
-    // 调试：查看时间解析（仅在开发环境）
-    if (import.meta.env.DEV) {
-      console.log('Date parsing:', {
-        original: dateString,
-        utcDate: date,
-        beijingTime: beijingTime,
-        timestamp: date.getTime()
-      });
-    }
-    
-    // 格式化日期为北京时间
-    return beijingTime.toLocaleString('zh-CN', {
+    // 使用 timeZone 选项直接显示北京时间
+    return date.toLocaleString('zh-CN', {
+      timeZone: 'Asia/Shanghai',
       year: 'numeric',
       month: '2-digit',
       day: '2-digit',

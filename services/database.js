@@ -16,11 +16,9 @@ class Database {
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME || 'pscg',
         charset: 'utf8mb4',
-        collation: 'utf8mb4_unicode_ci',
         waitForConnections: true,
         connectionLimit: 20,
-        queueLimit: 100,
-        acquireTimeout: 30000
+        queueLimit: 100
       };
 
       this.pool = mysql.createPool(config);
