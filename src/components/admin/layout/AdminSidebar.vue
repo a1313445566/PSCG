@@ -87,7 +87,7 @@ import {
   DataLine, Document, Reading, School,
   UserFilled, User, Tools, Coin, Lock,
   ArrowLeft, ArrowRight, Grid, FolderOpened, Histogram, Clock,
-  TrendCharts, ChatDotRound
+  TrendCharts, ChatDotRound, MagicStick, DataAnalysis
 } from '@element-plus/icons-vue'
 
 const {
@@ -126,7 +126,9 @@ const iconMap = {
   Histogram,
   Clock,
   TrendCharts,
-  ChatDotRound
+  ChatDotRound,
+  MagicStick,
+  DataAnalysis
 }
 
 // 获取图标组件
@@ -144,6 +146,8 @@ const topLevelNodes = computed(() => [
   { key: 'user-management', label: '用户管理', icon: 'User' },
   { key: 'data-analysis', label: '数据分析', icon: 'TrendCharts' },
   { key: 'ai-analysis', label: 'AI 智能分析', icon: 'ChatDotRound' },
+  { key: 'learning-style', label: '学习风格', icon: 'MagicStick' },
+  { key: 'semantic-analysis', label: '语义分析', icon: 'DataAnalysis' },
   { key: 'basic-settings', label: '基础设置', icon: 'Tools' },
   { key: 'database', label: '数据库管理', icon: 'Coin' },
   { key: 'security', label: '安全中心', icon: 'Lock' }
@@ -274,6 +278,18 @@ const menuTreeData = computed(() => {
       id: 'ai-analysis',
       label: 'AI 智能分析',
       icon: 'ChatDotRound',
+      isMenu: true
+    },
+    {
+      id: 'learning-style',
+      label: '学习风格',
+      icon: 'MagicStick',
+      isMenu: true
+    },
+    {
+      id: 'semantic-analysis',
+      label: '语义分析',
+      icon: 'DataAnalysis',
       isMenu: true
     },
     {

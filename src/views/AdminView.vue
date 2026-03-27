@@ -99,6 +99,12 @@
     <!-- AI 智能分析 -->
     <AIAnalysisView v-else-if="activeMenu === 'ai-analysis'" />
 
+    <!-- 学习风格 -->
+    <UserLearningStyle v-else-if="activeMenu === 'learning-style'" />
+
+    <!-- 语义分析 -->
+    <QuestionSemanticAnalysis v-else-if="activeMenu === 'semantic-analysis'" />
+
     <!-- 默认显示数据概览 -->
     <DashboardView v-else />
 
@@ -161,6 +167,8 @@ const BatchAddQuestion = defineAsyncComponent(() => import('../components/admin/
 const SubcategoryDialog = defineAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
 const DataAnalysis = defineAsyncComponent(() => import('../components/admin/analysis/DataAnalysis.vue'))
 const AIAnalysisView = defineAsyncComponent(() => import('./AIAnalysisView.vue'))
+const UserLearningStyle = defineAsyncComponent(() => import('../components/admin/learning/UserLearningStyle.vue'))
+const QuestionSemanticAnalysis = defineAsyncComponent(() => import('../components/admin/question/QuestionSemanticAnalysis.vue'))
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()

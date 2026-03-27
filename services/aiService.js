@@ -5,6 +5,7 @@
 
 const crypto = require('crypto');
 const db = require('./database');
+const monitor = require('../utils/aiPerformanceMonitor');
 
 class AIService {
   constructor() {
@@ -15,7 +16,11 @@ class AIService {
       enabled: true,
       cacheEnabled: true,
       timeout: 60000,
-      cacheExpiry: 3600
+      cacheExpiry: 3600,
+      maxConcurrent: 5,
+      retryAttempts: 3,
+      retryDelay: 1000,
+      rateLimitWait: 60000
     };
     
     this.configLoaded = false;
@@ -50,6 +55,21 @@ class AIService {
           case 'aiTimeout':
             this.config.timeout = parseInt(setting.value) * 1000;
             break;
+          case 'aiMaxConcurrent':
+            this.config.maxConcurrent = parseInt(setting.value);
+            break;
+          case 'aiRetryAttempts':
+            this.config.retryAttempts = parseInt(setting.value);
+            break;
+          case 'aiRetryDelay':
+            this.config.retryDelay = parseInt(setting.value);
+            break;
+          case 'aiRateLimitWait':
+            this.config.rateLimitWait = parseInt(setting.value);
+            break;
+          case 'aiCacheTTL':
+            this.config.cacheExpiry = parseInt(setting.value);
+            break;
         }
       });
       
@@ -80,7 +100,14 @@ class AIService {
         'SELECT result_text FROM ai_analysis_cache WHERE query_hash = ? AND expires_at > NOW()',
         [hash]
       );
-      return row ? row.result_text : null;
+      
+      if (row) {
+        monitor.recordCacheHit();
+        return row.result_text;
+      } else {
+        monitor.recordCacheMiss();
+        return null;
+      }
     } catch (error) {
       console.error('[AI缓存] 读取失败:', error);
       return null;
@@ -191,6 +218,8 @@ class AIService {
 
   async _callAPI(prompt, context = {}) {
     const { apiKey, apiUrl, model, timeout } = this.config;
+    
+    monitor.recordApiCall();
 
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), timeout);
@@ -238,26 +267,104 @@ class AIService {
   }
 
   /**
-   * 获取数据库完整上下文（非敏感数据）
+   * 获取数据库完整上下文（扩展版 - 包含所有高级表）
    */
   async getDatabaseContext() {
     try {
       const context = {
         schema: {
-          users: { fields: 'id, student_id, name, grade, class', description: '学生信息（name字段用于查询学生）' },
-          subjects: { fields: 'id, name', description: '学科' },
-          questions: { fields: 'id, subject_id, subcategory_id, type, difficulty, content, options, correct_answer', description: '题目' },
-          subcategories: { fields: 'id, subject_id, name', description: '知识点' },
-          answer_records: { fields: 'id, user_id, subject_id, subcategory_id, total_questions, correct_count, created_at', description: '答题记录' },
-          question_attempts: { fields: 'id, question_id, user_id, subject_id, is_correct, selected_answer, created_at', description: '题目尝试' },
-          error_collection: { fields: 'id, user_id, question_id, created_at', description: '错题收藏' }
+          // ===== 基础表（已使用）=====
+          users: { 
+            fields: 'id, student_id, name, grade, class', 
+            description: '学生信息（name字段用于查询学生）' 
+          },
+          subjects: { 
+            fields: 'id, name', 
+            description: '学科列表' 
+          },
+          questions: { 
+            fields: 'id, subject_id, subcategory_id, type, difficulty, content, options, correct_answer', 
+            description: '题目库' 
+          },
+          subcategories: { 
+            fields: 'id, subject_id, name', 
+            description: '知识点分类' 
+          },
+          answer_records: { 
+            fields: 'id, user_id, subject_id, subcategory_id, total_questions, correct_count, created_at', 
+            description: '答题记录（汇总数据：总题数、正确数）' 
+          },
+          question_attempts: { 
+            fields: 'id, question_id, user_id, subject_id, is_correct, selected_answer, created_at', 
+            description: '题目尝试记录' 
+          },
+          error_collection: { 
+            fields: 'id, user_id, question_id, created_at', 
+            description: '错题收藏' 
+          },
+          
+          // ===== 语义分析表（新增 - 高价值）=====
+          question_semantic_analysis: { 
+            fields: 'id, question_id, keywords, auto_tags, knowledge_points, difficulty_factors, similar_questions, content_quality_score, ai_analysis', 
+            description: '题目语义分析结果（AI分析的题目特征：关键词、自动标签、知识点、难度因素、质量分数）。用于智能搜索题目、推荐相似题目、分析题目质量。' 
+          },
+          question_tags: { 
+            fields: 'id, tag_name, tag_category, usage_count', 
+            description: '题目标签库（题型、难度、考点、易错点等分类标签）。用于题目分类和标签统计。' 
+          },
+          question_tag_relations: { 
+            fields: 'question_id, tag_id', 
+            description: '题目与标签的关联关系' 
+          },
+          
+          // ===== 行为分析表（新增 - 高价值）=====
+          answer_behavior: { 
+            fields: 'id, user_id, question_id, answer_time, answer_modifications, is_first_answer_correct, hesitation_time, skipped_and_returned, session_id', 
+            description: '答题行为详情（答题时间、修改次数、犹豫时间、是否跳题等）。用于分析学生学习行为模式、答题习惯、注意力集中程度。' 
+          },
+          user_learning_style: { 
+            fields: 'id, user_id, avg_answer_time, answer_time_stability, avg_modifications, skip_rate, preferred_difficulty, error_patterns, learning_style_tags, ai_suggestion', 
+            description: '用户学习风格分析（AI生成的风格标签、错误模式、个性化建议）。用于了解学生学习特点、提供个性化建议。' 
+          },
+          error_patterns: { 
+            fields: 'id, user_id, question_id, error_type, error_reason, improvement_suggestion, related_knowledge_points', 
+            description: '错题模式分析（错误类型、原因、改进建议）。用于分析学生常见错误类型和薄弱知识点。' 
+          },
+          
+          // ===== 学习进度表（新增 - 高价值）=====
+          learning_progress: { 
+            fields: 'id, user_id, subject_id, subcategory_id, mastery_level, progress_percentage, recent_accuracy, accuracy_trend, ai_suggestion', 
+            description: '学习进度追踪（知识点掌握程度、正确率趋势、AI建议）。用于分析知识点掌握情况、学习进度变化、生成学习建议。' 
+          },
+          
+          // ===== AI 辅助表（新增 - 中等价值）=====
+          ai_analysis_history: { 
+            fields: 'id, user_id, question, result, filters, created_at', 
+            description: 'AI分析历史记录。可用于查看用户的分析历史、分析热点问题。' 
+          },
+          ai_analysis_queue: { 
+            fields: 'id, task_type, target_id, priority, status, retry_count, result', 
+            description: 'AI任务队列（任务类型、状态、优先级）。用于监控AI任务执行情况。' 
+          },
+          
+          // ===== 答题会话表（新增 - 高价值）=====
+          quiz_sessions: { 
+            fields: 'id, user_id, subject_id, subcategory_id, questions, created_at, expires_at', 
+            description: '答题会话（一组题目的答题记录）。用于分析答题连续性、答题时段偏好。' 
+          },
+          quiz_attempts: { 
+            fields: 'id, quiz_session_id, question_id, user_answer, is_correct, created_at', 
+            description: '答题尝试详情（属于某个会话的具体答题记录）。用于分析答题过程、答案分布。' 
+          }
         },
         data: {}
       };
       
+      // ===== 获取基础数据 =====
+      
       // 获取所有学生姓名和ID映射
       const students = await db.query('SELECT id, student_id, name, grade, class FROM users ORDER BY name');
-      context.data.students = students; // 完整列表，不限制
+      context.data.students = students;
       
       // 获取学科列表
       const subjects = await db.query('SELECT id, name FROM subjects ORDER BY id');
@@ -275,7 +382,7 @@ class AIService {
       const subcategories = await db.query('SELECT id, subject_id, name FROM subcategories ORDER BY name');
       context.data.subcategories = subcategories;
       
-      // 获取统计信息
+      // 获取基础统计信息
       const stats = await db.get(`
         SELECT 
           (SELECT COUNT(*) FROM users) as totalStudents,
@@ -284,6 +391,89 @@ class AIService {
           (SELECT COUNT(*) FROM error_collection) as totalErrors
       `);
       context.data.stats = stats;
+      
+      // ===== 获取高级数据（如果存在）=====
+      
+      // 获取题目语义分析示例（前5条）
+      try {
+        const semanticExamples = await db.query(`
+          SELECT qsa.question_id, q.content, qsa.keywords, qsa.auto_tags, 
+                 qsa.knowledge_points, qsa.content_quality_score
+          FROM question_semantic_analysis qsa
+          INNER JOIN questions q ON qsa.question_id = q.id
+          LIMIT 5
+        `);
+        if (semanticExamples.length > 0) {
+          context.data.semanticAnalysisExamples = semanticExamples;
+          context.data.stats.semanticAnalyzed = await db.get('SELECT COUNT(*) as count FROM question_semantic_analysis').then(r => r.count);
+        }
+      } catch (e) {
+        // 表可能不存在或为空，忽略
+      }
+      
+      // 获取热门标签（前20个）
+      try {
+        const popularTags = await db.query(`
+          SELECT tag_name, tag_category, usage_count 
+          FROM question_tags 
+          ORDER BY usage_count DESC 
+          LIMIT 20
+        `);
+        if (popularTags.length > 0) {
+          context.data.popularTags = popularTags;
+        }
+      } catch (e) {
+        // 表可能不存在或为空，忽略
+      }
+      
+      // 获取学习进度统计
+      try {
+        const progressStats = await db.get(`
+          SELECT 
+            COUNT(*) as totalProgressRecords,
+            AVG(progress_percentage) as avgProgress,
+            AVG(recent_accuracy) as avgAccuracy
+          FROM learning_progress
+        `);
+        if (progressStats && progressStats.totalProgressRecords > 0) {
+          context.data.progressStats = progressStats;
+        }
+      } catch (e) {
+        // 表可能不存在或为空，忽略
+      }
+      
+      // 获取学习风格统计
+      try {
+        const learningStyleStats = await db.get(`
+          SELECT 
+            COUNT(*) as totalAnalyzed,
+            AVG(avg_answer_time) as avgAnswerTime,
+            AVG(skip_rate) as avgSkipRate
+          FROM user_learning_style
+        `);
+        if (learningStyleStats && learningStyleStats.totalAnalyzed > 0) {
+          context.data.learningStyleStats = learningStyleStats;
+        }
+      } catch (e) {
+        // 表可能不存在或为空，忽略
+      }
+      
+      // 获取答题行为统计
+      try {
+        const behaviorStats = await db.get(`
+          SELECT 
+            COUNT(*) as totalBehaviors,
+            AVG(answer_time) as avgAnswerTime,
+            AVG(answer_modifications) as avgModifications,
+            AVG(hesitation_time) as avgHesitationTime
+          FROM answer_behavior
+        `);
+        if (behaviorStats && behaviorStats.totalBehaviors > 0) {
+          context.data.behaviorStats = behaviorStats;
+        }
+      } catch (e) {
+        // 表可能不存在或为空，忽略
+      }
       
       return context;
     } catch (error) {
@@ -433,18 +623,19 @@ ${JSON.stringify(dbContext, null, 2)}
           LIMIT 20
         `, [userInfo.id]);
         
-        // 查询知识点薄弱点
+        // 查询知识点薄弱点（使用实际的答题记录）
         results.userWeakPoints = await db.query(`
           SELECT sub.name as subcategory, s.name as subject,
             COUNT(DISTINCT ar.id) as sessions,
-            SUM(ar.total_questions) as questions,
-            SUM(ar.correct_count) as correct,
-            CASE WHEN SUM(ar.total_questions) > 0 
-              THEN (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions) 
+            COUNT(DISTINCT qa.id) as questions,
+            SUM(qa.is_correct) as correct,
+            CASE WHEN COUNT(DISTINCT qa.id) > 0 
+              THEN (SUM(qa.is_correct) * 100.0) / COUNT(DISTINCT qa.id) 
               ELSE 0 END as accuracy
           FROM answer_records ar
           INNER JOIN subcategories sub ON ar.subcategory_id = sub.id
           INNER JOIN subjects s ON ar.subject_id = s.id
+          LEFT JOIN question_attempts qa ON qa.answer_record_id = ar.id
           WHERE ar.user_id = ?
           GROUP BY ar.subcategory_id, sub.name, s.name
           HAVING sessions >= 1
@@ -560,13 +751,14 @@ ${JSON.stringify(dbContext, null, 2)}
     if (plan.focusAreas?.includes('question') || plan.focusAreas?.includes('knowledge')) {
       results.subcategoryAnalysis = await db.query(`
         SELECT s.name as subject, sub.name as subcategory,
-          COUNT(DISTINCT ar.id) as sessions, SUM(ar.total_questions) as questions,
-          SUM(ar.correct_count) as correct,
-          CASE WHEN SUM(ar.total_questions) > 0 THEN (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions) ELSE 0 END as accuracy
+          COUNT(DISTINCT ar.id) as sessions, COUNT(DISTINCT qa.id) as questions,
+          SUM(qa.is_correct) as correct,
+          CASE WHEN COUNT(DISTINCT qa.id) > 0 THEN (SUM(qa.is_correct) * 100.0) / COUNT(DISTINCT qa.id) ELSE 0 END as accuracy
         FROM answer_records ar
         INNER JOIN users u ON ar.user_id = u.id
         INNER JOIN subjects s ON ar.subject_id = s.id
         INNER JOIN subcategories sub ON ar.subcategory_id = sub.id
+        LEFT JOIN question_attempts qa ON qa.answer_record_id = ar.id
         ${whereClause}
         GROUP BY ar.subject_id, ar.subcategory_id, s.name, sub.name
         ORDER BY accuracy ASC LIMIT ${limit}
@@ -836,6 +1028,304 @@ ${imageUrls.length > 0 ? `注意：选项中包含图片，请评估图片的清
 你可以自由决定输出格式。`;
 
     return await this.callAI(prompt, { imageUrls });
+  }
+
+  /**
+   * 带重试机制的 AI 调用
+   */
+  async callWithRetry(fn, options = {}) {
+    const { maxRetries = this.config.retryAttempts, retryDelay = this.config.retryDelay, backoffMultiplier = 2 } = options;
+    
+    let lastError;
+    
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        return await fn();
+      } catch (error) {
+        lastError = error;
+        
+        // 检查是否为速率限制错误
+        if (error.message && error.message.includes('rate_limit')) {
+          const waitTime = this.extractRetryAfter(error) || this.config.rateLimitWait;
+          console.log(`[AI重试] 速率限制，等待 ${waitTime}ms`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+          continue;
+        }
+        
+        // 检查是否为可重试错误
+        if (!this.isRetryableError(error)) {
+          throw error;
+        }
+        
+        // 计算延迟时间（指数退避）
+        const delay = retryDelay * Math.pow(backoffMultiplier, attempt);
+        console.log(`[AI重试] 第 ${attempt + 1}/${maxRetries} 次重试，等待 ${delay}ms`);
+        
+        await new Promise(resolve => setTimeout(resolve, delay));
+      }
+    }
+    
+    throw lastError;
+  }
+
+  /**
+   * 判断是否为可重试错误
+   */
+  isRetryableError(error) {
+    const retryableMessages = [
+      'network',
+      'timeout',
+      'ECONNRESET',
+      'ETIMEDOUT',
+      'rate_limit',
+      '429',
+      '503',
+      '502'
+    ];
+    
+    return retryableMessages.some(msg => 
+      error.message && error.message.toLowerCase().includes(msg.toLowerCase())
+    );
+  }
+
+  /**
+   * 从错误中提取重试等待时间
+   */
+  extractRetryAfter(error) {
+    const match = error.message && error.message.match(/retry.?after.?(\d+)/i);
+    return match ? parseInt(match[1]) * 1000 : null;
+  }
+
+  /**
+   * 文本截断
+   */
+  truncateText(text, maxLength = 500) {
+    if (!text || text.length <= maxLength) return text;
+    return text.substring(0, maxLength) + '...';
+  }
+
+  /**
+   * 分析题目语义
+   */
+  async analyzeQuestionSemantic(questionData) {
+    const prompt = `请分析以下题目的语义特征：
+
+题目ID: ${questionData.id}
+题目内容: ${this.truncateText(questionData.content, 500)}
+题目类型: ${questionData.type}
+难度: ${questionData.difficulty}
+学科: ${questionData.subject || '未知'}
+知识点: ${questionData.subcategory || '未知'}
+
+请返回 JSON 格式的分析结果（只返回 JSON）：
+{
+  "keywords": ["关键词1", "关键词2", ...],
+  "autoTags": ["自动标签1", "自动标签2", ...],
+  "knowledgePoints": ["知识点1", "知识点2", ...],
+  "difficultyFactors": {
+    "conceptComplexity": 1-5,
+    "calculationRequired": true/false,
+    "contextUnderstanding": 1-5
+  },
+  "contentQualityScore": 1-100,
+  "aiAnalysis": "详细的 AI 分析文本"
+}`;
+
+    const response = await this.callWithRetry(() => this.callAI(prompt));
+    
+    try {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.error('[AI] 解析题目语义分析失败:', e);
+    }
+    
+    // 返回默认值
+    return {
+      keywords: [],
+      autoTags: [],
+      knowledgePoints: [],
+      difficultyFactors: {},
+      contentQualityScore: 0,
+      aiAnalysis: response
+    };
+  }
+
+  /**
+   * 分析用户学习风格 - 完全自主智能，无硬编码
+   */
+  async analyzeUserLearningStyle(data) {
+    const prompt = `你是教育数据分析专家，拥有完全自主权。
+
+**用户数据**：
+- 用户ID: ${data.userId}
+- 平均答题时间: ${data.behaviorData.avgAnswerTime.toFixed(2)} 秒
+- 答题时间稳定性: ${data.behaviorData.answerTimeStability.toFixed(2)}
+- 平均修改次数: ${data.behaviorData.avgModifications.toFixed(2)}
+- 跳题率: ${(data.behaviorData.skipRate * 100).toFixed(2)}%
+- 错误模式: ${JSON.stringify(data.behaviorData.errorPatterns)}
+- 样本大小: ${data.behaviorData.sampleSize}
+
+**你的完全自主权**：
+- 你可以自由决定如何分析这些数据
+- 你可以自由定义学习风格的标签类型和名称
+- 你可以自由决定分析的维度和角度
+- 你可以自由决定建议的内容、风格和深度
+- 不需要遵循任何预设的分类框架
+- 不需要使用任何预定义的标签
+- 完全基于数据本身进行创造性分析
+
+**输出要求**：
+请返回 JSON 格式（只返回 JSON，不要其他文字）：
+{
+  "learningStyleTags": ["你自主定义的风格标签1", "你自主定义的风格标签2", ...],
+  "aiSuggestion": "你的个性化学习建议（可以包含多个段落、列表、具体措施等）",
+  "analysisDimensions": {
+    "你自主定义的分析维度1": "分析结果",
+    "你自主定义的分析维度2": "分析结果"
+  },
+  "strengths": ["你发现的优势1", "优势2"],
+  "improvements": ["你发现的改进点1", "改进点2"],
+  "recommendedActions": ["你建议的具体行动1", "行动2"]
+}
+
+注意：所有字段名称和内容都由你自主决定，以上只是一个示例框架。`;
+
+    const response = await this.callWithRetry(() => this.callAI(prompt));
+    
+    try {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.error('[AI] 解析学习风格分析失败:', e);
+    }
+    
+    // 返回 AI 的原始输出，不预设默认值
+    return {
+      learningStyleTags: [],
+      aiSuggestion: response,
+      rawOutput: response  // 保留原始输出供前端展示
+    };
+  }
+
+  /**
+   * 分析错题原因
+   */
+  async analyzeErrorReason(errorData) {
+    const prompt = `请分析以下错题的原因：
+
+题目内容: ${this.truncateText(errorData.questionContent, 300)}
+题目类型: ${errorData.questionType}
+难度: ${errorData.difficulty}
+用户答案: ${errorData.userAnswer}
+正确答案: ${errorData.correctAnswer}
+
+请返回 JSON 格式的分析结果（只返回 JSON）：
+{
+  "errorType": "概念理解错误/计算错误/审题错误/知识点缺失",
+  "errorReason": "详细的错误原因分析",
+  "improvementSuggestion": "改进建议",
+  "relatedKnowledgePoints": ["相关知识点1", "相关知识点2", ...]
+}`;
+
+    const response = await this.callWithRetry(() => this.callAI(prompt));
+    
+    try {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.error('[AI] 解析错题分析失败:', e);
+    }
+    
+    // 返回默认值
+    return {
+      errorType: '未知',
+      errorReason: response,
+      improvementSuggestion: '',
+      relatedKnowledgePoints: []
+    };
+  }
+
+  /**
+   * 生成学习建议
+   */
+  async generateLearningSuggestion(progressData) {
+    const prompt = `请根据以下学习进度数据生成个性化学习建议：
+
+用户ID: ${progressData.userId}
+学科: ${progressData.subject}
+知识点: ${progressData.subcategory}
+总体进度: ${progressData.progressPercentage}%
+最近正确率: ${progressData.recentAccuracy}%
+趋势: ${progressData.accuracyTrend}
+已完成题目数: ${progressData.completedQuestions}
+
+请返回 JSON 格式的建议（只返回 JSON）：
+{
+  "suggestionType": "review/practice/challenge",
+  "suggestion": "具体的学习建议",
+  "recommendedQuestions": 建议练习的题目数量,
+  "focusAreas": ["重点关注的领域1", "重点关注领域2"]
+}`;
+
+    const response = await this.callWithRetry(() => this.callAI(prompt));
+    
+    try {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.error('[AI] 解析学习建议失败:', e);
+    }
+    
+    // 返回默认值
+    return {
+      suggestionType: 'practice',
+      suggestion: response,
+      recommendedQuestions: 5,
+      focusAreas: []
+    };
+  }
+
+  /**
+   * 查找相似题目
+   */
+  async findSimilarQuestions(questionId, analysis, limit = 5) {
+    const prompt = `基于以下题目的语义分析结果，推荐相似题目：
+
+题目ID: ${questionId}
+关键词: ${JSON.stringify(analysis.keywords)}
+自动标签: ${JSON.stringify(analysis.autoTags)}
+知识点: ${JSON.stringify(analysis.knowledgePoints)}
+
+请返回 JSON 格式的推荐（只返回 JSON）：
+{
+  "similarQuestionIds": [题目ID1, 题目ID2, ...],
+  "reasoning": "推荐理由"
+}`;
+
+    const response = await this.callWithRetry(() => this.callAI(prompt));
+    
+    try {
+      const jsonMatch = response.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        return JSON.parse(jsonMatch[0]);
+      }
+    } catch (e) {
+      console.error('[AI] 解析相似题目失败:', e);
+    }
+    
+    return {
+      similarQuestionIds: [],
+      reasoning: response
+    };
   }
 
   /**

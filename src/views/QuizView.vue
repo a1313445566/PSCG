@@ -2,6 +2,9 @@
   <div class="quiz-view">
     <AppHeader />
     
+    <!-- 答题行为追踪组件（无UI，纯逻辑） -->
+    <AnswerBehaviorTracker ref="behaviorTracker" />
+    
     <div class="quiz-content">
       <div class="quiz-header">
         <div class="quiz-info">
@@ -48,6 +51,8 @@
             :user-answer="userAnswers[question.id]"
             :show-result="false"
             @select-option="(option) => selectOption(question.id, option, question.type)"
+            @mouseenter="handleQuestionHover(question.id, true)"
+            @mouseleave="handleQuestionHover(question.id, false)"
           />
         </div>
         <div v-else class="questions-skeleton">
@@ -78,6 +83,7 @@ import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
 import SkeletonLoader from '../components/common/SkeletonLoader.vue'
+import AnswerBehaviorTracker from '../components/quiz/AnswerBehaviorTracker.vue'
 import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
 import { ElMessage } from 'element-plus'
@@ -88,6 +94,12 @@ const route = useRoute()
 const questionStore = useQuestionStore()
 const quizStore = useQuizStore()
 const settingsStore = useSettingsStore()
+
+// 答题行为追踪组件引用
+const behaviorTracker = ref(null)
+
+// 当前正在答题的题目ID（用于追踪）
+const currentTrackingQuestionId = ref(null)
 
 // 获取学科和题库ID
 const subjectId = computed(() => parseInt(route.params.subjectId))
@@ -170,7 +182,31 @@ const formatTime = (seconds) => {
 
 // 选择选项
 const selectOption = (questionId, option, questionType = 'single') => {
+  // 如果是新题目，开始追踪
+  if (currentTrackingQuestionId.value !== questionId) {
+    behaviorTracker.value?.startTracking(questionId)
+    currentTrackingQuestionId.value = questionId
+  }
+  
+  // 追踪首次答案
+  const currentAnswer = userAnswers.value[questionId]
+  if (!currentAnswer || (questionType === 'multiple' && currentAnswer.length === 0)) {
+    behaviorTracker.value?.trackFirstAnswer(option)
+  } else {
+    // 如果已有答案，说明是修改
+    behaviorTracker.value?.trackModification()
+  }
+  
   quizStore.submitAnswer(questionId, option, questionType)
+}
+
+// 处理题目悬停（犹豫追踪）
+const handleQuestionHover = (questionId, isEnter) => {
+  if (isEnter) {
+    behaviorTracker.value?.trackHoverStart()
+  } else {
+    behaviorTracker.value?.trackHoverEnd()
+  }
 }
 
 // 判断答案是否正确
@@ -353,9 +389,31 @@ const submitAnswers = async () => {
   lastSubmitTime.value = currentTime
   
   try {
+    // 🔥 提交答题行为数据
+    const userId = localStorage.getItem('userId')
+    if (userId && behaviorTracker.value) {
+      // 为每个题目提交行为数据
+      for (const question of currentQuestions.value) {
+        const userAnswer = userAnswers.value[question.id]
+        if (userAnswer) {
+          const isCorrect = isAnswerCorrect(question, userAnswer)
+          const finalAnswer = Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
+          
+          await behaviorTracker.value.submitBehavior(
+            parseInt(userId),
+            question.id,
+            finalAnswer,
+            isCorrect
+          )
+        }
+      }
+      
+      // 刷新缓冲区，确保所有数据已提交
+      await behaviorTracker.value.flushBuffer()
+    }
+    
     // 生成时间戳和签名
     const timestamp = Date.now()
-    const userId = localStorage.getItem('userId') || 'unknown'
     
     logSignatureDebug('准备提交答案', {
       quizId: quizStore.quizId,

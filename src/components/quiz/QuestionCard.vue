@@ -1,5 +1,9 @@
 <template>
-  <div class="question-card">
+  <div 
+    class="question-card"
+    @mouseenter="handleMouseEnter"
+    @mouseleave="handleMouseLeave"
+  >
     <div class="question-header">
       <div class="question-number">问题 {{ questionNumber }}</div>
       <div class="question-type" :class="`type-${question.type}`">
@@ -248,7 +252,7 @@ const props = defineProps({
   }
 })
 
-const emit = defineEmits(['select-option'])
+const emit = defineEmits(['select-option', 'mouseenter', 'mouseleave'])
 
 // XSS 过滤后的题目内容
 const safeContent = computed(() => {
@@ -426,6 +430,19 @@ const isOptionWrong = (option) => {
 const selectOption = (option) => {
   if (!props.showResult) {
     emit('select-option', option);
+  }
+}
+
+// 处理鼠标悬停事件（用于追踪犹豫时间）
+const handleMouseEnter = () => {
+  if (!props.showResult) {
+    emit('mouseenter')
+  }
+}
+
+const handleMouseLeave = () => {
+  if (!props.showResult) {
+    emit('mouseleave')
   }
 }
 

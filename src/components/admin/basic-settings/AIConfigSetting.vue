@@ -103,6 +103,78 @@
         <span class="unit-label">秒</span>
       </el-form-item>
 
+      <el-divider content-position="left">
+        <el-icon><Operation /></el-icon>
+        高级配置
+      </el-divider>
+
+      <!-- 最大并发请求数 -->
+      <el-form-item label="最大并发数">
+        <el-input-number 
+          v-model="formData.maxConcurrent"
+          :min="1"
+          :max="10"
+        />
+        <div class="form-tip">
+          <el-icon><InfoFilled /></el-icon>
+          AI 并发调用限制，建议 3-5
+        </div>
+      </el-form-item>
+
+      <!-- 重试次数 -->
+      <el-form-item label="重试次数">
+        <el-input-number 
+          v-model="formData.retryAttempts"
+          :min="1"
+          :max="5"
+        />
+        <div class="form-tip">
+          <el-icon><InfoFilled /></el-icon>
+          API 调用失败时的重试次数
+        </div>
+      </el-form-item>
+
+      <!-- 重试延迟 -->
+      <el-form-item label="重试延迟">
+        <el-input-number 
+          v-model="formData.retryDelay"
+          :min="500"
+          :max="5000"
+          :step="500"
+        />
+        <span class="unit-label">毫秒</span>
+      </el-form-item>
+
+      <!-- 速率限制等待时间 -->
+      <el-form-item label="速率限制等待">
+        <el-input-number 
+          v-model="formData.rateLimitWait"
+          :min="10000"
+          :max="300000"
+          :step="10000"
+        />
+        <span class="unit-label">毫秒</span>
+        <div class="form-tip">
+          <el-icon><InfoFilled /></el-icon>
+          遇到 API 速率限制时的等待时间
+        </div>
+      </el-form-item>
+
+      <!-- 缓存有效期 -->
+      <el-form-item label="缓存有效期">
+        <el-input-number 
+          v-model="formData.cacheTTL"
+          :min="300"
+          :max="86400"
+          :step="300"
+        />
+        <span class="unit-label">秒</span>
+        <div class="form-tip">
+          <el-icon><InfoFilled /></el-icon>
+          AI 分析结果的缓存时间（300-86400秒）
+        </div>
+      </el-form-item>
+
       <!-- 操作按钮 -->
       <el-form-item>
         <el-button type="primary" @click="handleSave" :loading="saving">
@@ -140,7 +212,7 @@ import { api } from '@/utils/api'
 import message from '@/utils/message'
 import { 
   Setting, Key, Link, Cpu, InfoFilled, 
-  Check, RefreshRight, Connection 
+  Check, RefreshRight, Connection, Operation 
 } from '@element-plus/icons-vue'
 
 // 响应式数据
@@ -156,7 +228,12 @@ const formData = reactive({
   model: '',
   enabled: true,
   cacheEnabled: true,
-  timeout: 60
+  timeout: 60,
+  maxConcurrent: 5,
+  retryAttempts: 3,
+  retryDelay: 1000,
+  rateLimitWait: 60000,
+  cacheTTL: 3600
 })
 
 // 表单验证规则
@@ -189,6 +266,11 @@ const loadConfig = async () => {
     if (result.aiEnabled !== undefined) formData.enabled = result.aiEnabled === 'true'
     if (result.aiCacheEnabled !== undefined) formData.cacheEnabled = result.aiCacheEnabled === 'true'
     if (result.aiTimeout) formData.timeout = parseInt(result.aiTimeout)
+    if (result.aiMaxConcurrent) formData.maxConcurrent = parseInt(result.aiMaxConcurrent)
+    if (result.aiRetryAttempts) formData.retryAttempts = parseInt(result.aiRetryAttempts)
+    if (result.aiRetryDelay) formData.retryDelay = parseInt(result.aiRetryDelay)
+    if (result.aiRateLimitWait) formData.rateLimitWait = parseInt(result.aiRateLimitWait)
+    if (result.aiCacheTTL) formData.cacheTTL = parseInt(result.aiCacheTTL)
   } catch (error) {
     console.error('[AI配置] 加载失败:', error)
   } finally {
@@ -211,7 +293,12 @@ const handleSave = async () => {
       aiModel: formData.model,
       aiEnabled: formData.enabled.toString(),
       aiCacheEnabled: formData.cacheEnabled.toString(),
-      aiTimeout: formData.timeout.toString()
+      aiTimeout: formData.timeout.toString(),
+      aiMaxConcurrent: formData.maxConcurrent.toString(),
+      aiRetryAttempts: formData.retryAttempts.toString(),
+      aiRetryDelay: formData.retryDelay.toString(),
+      aiRateLimitWait: formData.rateLimitWait.toString(),
+      aiCacheTTL: formData.cacheTTL.toString()
     })
     
     // 重新加载 AI 服务配置

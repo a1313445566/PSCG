@@ -81,6 +81,8 @@ const adminRoutes = require('./routes/admin');
 const uploadRoutes = require('./routes/upload');
 const dashboardRoutes = require('./routes/dashboard');
 const aiRoutes = require('./routes/ai');
+const questionSemanticRoutes = require('./routes/question-semantic');
+const answerBehaviorRoutes = require('./routes/answer-behavior');
 
 const db = require('./services/database');
 const cacheService = require('./services/cache');
@@ -190,6 +192,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/upload', uploadRoutes);
 app.use('/api/dashboard', dashboardRoutes);
 app.use('/api/ai', aiRoutes);
+app.use('/api/question-semantic', questionSemanticRoutes);
+app.use('/api/answer-behavior', answerBehaviorRoutes);
 
 // CSRF Token 接口
 app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {
