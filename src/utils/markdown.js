@@ -9,7 +9,7 @@ marked.setOptions({
 })
 
 /**
- * 渲染 Markdown 为 HTML
+ * 渲染 Markdown 为 HTML，并将图表代码块转为占位符
  * @param {string} markdown - Markdown 文本
  * @returns {string} HTML 字符串
  */
@@ -17,12 +17,21 @@ export function renderMarkdown(markdown) {
   if (!markdown) return ''
   
   try {
-    // 移除 vchart 和 chart 代码块（已在前端提取并渲染）
-    let cleanedMarkdown = markdown
-      .replace(/```vchart\s*[\s\S]*?```/g, '')
-      .replace(/```chart\s*[\s\S]*?```/g, '')
+    // 将 vchart 代码块转为占位符（用于后续渲染图表）
+    let processedMarkdown = markdown.replace(
+      /```vchart\s*[\s\S]*?```/g, 
+      (match, offset) => {
+        // 计算这是第几个图表
+        const beforeText = markdown.substring(0, offset)
+        const chartIndex = (beforeText.match(/```vchart/g) || []).length
+        return `<div class="chart-placeholder" data-chart-index="${chartIndex}"></div>`
+      }
+    )
     
-    return marked.parse(cleanedMarkdown)
+    // 移除旧的 chart 代码块格式
+    processedMarkdown = processedMarkdown.replace(/```chart\s*[\s\S]*?```/g, '')
+    
+    return marked.parse(processedMarkdown)
   } catch (error) {
     console.error('[Markdown] 渲染失败:', error)
     return markdown // 降级：返回原文

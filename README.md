@@ -18,7 +18,7 @@ PSCG (Primary School Comprehensive Quiz) 是一个基于现代Web技术构建的
 - Element Plus
 - Pinia
 - Vue Router
-- ECharts
+- VisActor (VChart, VMind)
 - Vite
 
 ### 后端

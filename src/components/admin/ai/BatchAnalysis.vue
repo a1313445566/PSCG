@@ -151,7 +151,7 @@
           </el-col>
           <el-col :span="6">
             <div class="stat-item">
-              <div class="stat-value">{{ summaryStats.avgAccuracy?.toFixed(1) || 0 }}%</div>
+              <div class="stat-value">{{ Number(summaryStats.avgAccuracy || 0).toFixed(1) }}%</div>
               <div class="stat-label">平均正确率</div>
             </div>
           </el-col>
@@ -201,7 +201,7 @@
                   size="small"
                   style="margin-left: 5px"
                 >
-                  正确率 {{ result.accuracy?.toFixed(1) }}%
+                  正确率 {{ Number(result.accuracy || 0).toFixed(1) }}%
                 </el-tag>
                 <el-tag 
                   v-if="result.attempts !== undefined"
@@ -227,7 +227,7 @@
             {{ result.error }}
           </div>
           
-          <div v-else class="markdown-body" v-html="renderMarkdown(result.analysis)"></div>
+          <div v-else :ref="el => setResultRef(el, index)" class="markdown-body" v-html="renderMarkdown(result.analysis)"></div>
         </el-collapse-item>
       </el-collapse>
     </div>
@@ -235,11 +235,12 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, inject } from 'vue'
+import { ref, computed, onMounted, inject, nextTick, watch } from 'vue'
 import { api } from '@/utils/api'
 import message from '@/utils/message'
 import { renderMarkdown } from '@/utils/markdown'
 import { usePagination } from '@/composables/usePagination'
+import { useChartRenderer } from '@/composables/useChartRenderer'
 import AdminFilter from '../common/AdminFilter.vue'
 import '@/styles/markdown.css'
 import { Document, Check, DocumentChecked, Download, DataAnalysis } from '@element-plus/icons-vue'
@@ -247,6 +248,15 @@ import { Document, Check, DocumentChecked, Download, DataAnalysis } from '@eleme
 // 从父组件注入数据
 const grades = inject('grades', ref([]))
 const subjects = inject('subjects', ref([]))
+
+// 图表渲染
+const { renderCharts, clearCharts } = useChartRenderer()
+const resultRefs = ref(new Map())
+
+// 设置结果容器的 ref
+const setResultRef = (el, index) => {
+  if (el) resultRefs.value.set(index, el)
+}
 
 // 响应式数据
 const questionList = ref([])
@@ -257,8 +267,8 @@ const batchResults = ref([])
 const activeResult = ref(0)
 const tableRef = ref(null)
 const subcategories = ref([])
-const analysisType = ref('deep') // 分析类型
-const summaryStats = ref(null) // 汇总统计
+const analysisType = ref('deep')
+const summaryStats = ref(null)
 
 // 分页 Hook
 const total = ref(0)
@@ -274,81 +284,31 @@ const filters = ref({
 
 // 筛选配置
 const filterItems = computed(() => [
-  {
-    key: 'subjectId',
-    label: '学科',
-    type: 'select',
-    placeholder: '选择学科',
-    width: '140px',
-    options: [
-      { label: '全部', value: '' },
-      ...subjects.value.map(s => ({ label: s.name, value: s.id }))
-    ]
-  },
-  {
-    key: 'subcategoryId',
-    label: '题库',
-    type: 'select',
-    placeholder: '选择题库',
-    width: '140px',
-    options: [
-      { label: '全部', value: '' },
-      ...subcategories.value.map(s => ({ label: s.name, value: s.id }))
-    ]
-  },
-  {
-    key: 'difficulty',
-    label: '难度',
-    type: 'select',
-    placeholder: '选择难度',
-    width: '120px',
-    options: [
-      { label: '全部', value: '' },
-      { label: '简单', value: '1' },
-      { label: '中等', value: '2' },
-      { label: '困难', value: '3' }
-    ]
-  },
-  {
-    key: 'keyword',
-    label: '关键词',
-    type: 'input',
-    placeholder: '搜索题目',
-    width: '200px'
-  }
+  { key: 'subjectId', label: '学科', type: 'select', placeholder: '选择学科', width: '140px',
+    options: [{ label: '全部', value: '' }, ...subjects.value.map(s => ({ label: s.name, value: s.id }))] },
+  { key: 'subcategoryId', label: '题库', type: 'select', placeholder: '选择题库', width: '140px',
+    options: [{ label: '全部', value: '' }, ...subcategories.value.map(s => ({ label: s.name, value: s.id }))] },
+  { key: 'difficulty', label: '难度', type: 'select', placeholder: '选择难度', width: '120px',
+    options: [{ label: '全部', value: '' }, { label: '简单', value: '1' }, { label: '中等', value: '2' }, { label: '困难', value: '3' }] },
+  { key: 'keyword', label: '关键词', type: 'input', placeholder: '搜索题目', width: '200px' }
 ])
 
-// 加载题库列表
 const loadSubcategories = async () => {
   try {
-    const data = await api.get('/questions/subcategories')
-    subcategories.value = data || []
+    subcategories.value = await api.get('/questions/subcategories') || []
   } catch (error) {
     console.error('[批量分析] 加载题库失败:', error)
   }
 }
 
-// 加载题目列表
 const loadQuestions = async () => {
   loading.value = true
   try {
-    const params = {
-      ...getServerParams()
-    }
-    
-    // 添加筛选条件
-    if (filters.value.subjectId) {
-      params.subjectId = filters.value.subjectId
-    }
-    if (filters.value.subcategoryId) {
-      params.subcategoryId = filters.value.subcategoryId
-    }
-    if (filters.value.difficulty) {
-      params.difficulty = filters.value.difficulty
-    }
-    if (filters.value.keyword) {
-      params.keyword = filters.value.keyword
-    }
+    const params = { ...getServerParams() }
+    if (filters.value.subjectId) params.subjectId = filters.value.subjectId
+    if (filters.value.subcategoryId) params.subcategoryId = filters.value.subcategoryId
+    if (filters.value.difficulty) params.difficulty = filters.value.difficulty
+    if (filters.value.keyword) params.keyword = filters.value.keyword
     
     const data = await api.get('/questions', params)
     questionList.value = data.data || []
@@ -361,47 +321,22 @@ const loadQuestions = async () => {
   }
 }
 
-// 处理搜索
-const handleSearch = () => {
-  resetPagination()
-  loadQuestions()
-}
-
-// 处理重置
-const handleReset = () => {
-  filters.value = {
-    subjectId: '',
-    subcategoryId: '',
-    difficulty: '',
-    keyword: ''
-  }
-  resetPagination()
-  loadQuestions()
-}
-
-// 处理选择变化
-const handleSelectionChange = (selection) => {
-  selectedQuestions.value = selection
-}
+const handleSearch = () => { resetPagination(); loadQuestions() }
+const handleReset = () => { filters.value = { subjectId: '', subcategoryId: '', difficulty: '', keyword: '' }; resetPagination(); loadQuestions() }
+const handleSelectionChange = (selection) => { selectedQuestions.value = selection }
 
 // 批量分析
 const handleBatchAnalyze = async () => {
-  if (selectedQuestions.value.length === 0) {
-    message.warning('请选择要分析的题目')
-    return
-  }
-  
-  if (selectedQuestions.value.length > 50) {
-    message.warning('单次最多分析50道题目')
-    return
-  }
+  if (selectedQuestions.value.length === 0) return message.warning('请选择要分析的题目')
+  if (selectedQuestions.value.length > 50) return message.warning('单次最多分析50道题目')
   
   processing.value = true
   batchResults.value = []
   summaryStats.value = null
+  clearCharts()
+  resultRefs.value.clear()
   
   try {
-    // 创建批量分析任务
     const questionIds = selectedQuestions.value.map(q => q.id)
     const result = await api.post('/ai/batch', {
       questionIds,
@@ -410,8 +345,6 @@ const handleBatchAnalyze = async () => {
     })
     
     message.success('批量分析任务已创建，正在处理中...')
-    
-    // 轮询获取结果
     await pollBatchResult(result.batchId)
   } catch (error) {
     console.error('[批量分析] 创建失败:', error)
@@ -423,7 +356,7 @@ const handleBatchAnalyze = async () => {
 
 // 轮询获取批量分析结果
 const pollBatchResult = async (batchId) => {
-  const maxPolls = 120 // 最多轮询120次（20分钟）
+  const maxPolls = 120
   let pollCount = 0
   
   const poll = async () => {
@@ -432,25 +365,19 @@ const pollBatchResult = async (batchId) => {
       
       if (batch.status === 'completed') {
         batchResults.value = batch.results || []
-        
-        // 提取汇总统计
         const summaryResult = batchResults.value.find(r => r.isSummary)
-        if (summaryResult && summaryResult.summaryStats) {
-          summaryStats.value = summaryResult.summaryStats
-        }
-        
-        // 默认展开第一个结果
+        if (summaryResult?.summaryStats) summaryStats.value = summaryResult.summaryStats
         activeResult.value = 0
-        
         message.success(`批量分析完成，共 ${batchResults.value.length} 条结果`)
+        
+        // 渲染图表
+        nextTick(() => setTimeout(renderAllCharts, 100))
         return
       } else if (batch.status === 'failed') {
-        message.error('批量分析失败')
-        return
+        return message.error('批量分析失败')
       } else if (pollCount < maxPolls) {
-        // 继续轮询
         pollCount++
-        setTimeout(poll, 10000) // 10秒后再次轮询
+        setTimeout(poll, 10000)
       } else {
         message.warning('批量分析超时，请稍后查看结果')
       }
@@ -462,20 +389,30 @@ const pollBatchResult = async (batchId) => {
   await poll()
 }
 
-// 根据正确率获取标签类型
+// 渲染所有结果的图表
+const renderAllCharts = () => {
+  batchResults.value.forEach((result, index) => {
+    if (result.error || !result.analysis) return
+    const container = resultRefs.value.get(index)
+    if (container) renderCharts(container, result.analysis)
+  })
+}
+
+// 监听展开变化，渲染当前展开项的图表
+watch(activeResult, () => {
+  nextTick(() => setTimeout(renderAllCharts, 50))
+})
+
 const getAccuracyTagType = (accuracy) => {
   if (accuracy >= 80) return 'success'
   if (accuracy >= 60) return 'warning'
   return 'danger'
 }
 
-// 导出全部结果
 const handleExportAll = () => {
-  const content = batchResults.value
-    .map((result, index) => {
-      return `${index + 1}. ${result.questionTitle}\n\n${result.analysis}\n\n${'='.repeat(50)}\n`
-    })
-    .join('\n')
+  const content = batchResults.value.map((result, index) => 
+    `${index + 1}. ${result.questionTitle}\n\n${result.analysis}\n\n${'='.repeat(50)}\n`
+  ).join('\n')
   
   const blob = new Blob([content], { type: 'text/plain;charset=utf-8' })
   const url = URL.createObjectURL(blob)
@@ -484,65 +421,39 @@ const handleExportAll = () => {
   link.download = `批量分析报告_${new Date().toISOString().slice(0, 10)}.txt`
   link.click()
   URL.revokeObjectURL(url)
-  
   message.success('报告导出成功')
 }
 
-// 获取题目预览（截取指定长度字符）
 const getQuestionPreview = (content, maxLength = 50) => {
   if (!content) return ''
-  // 移除HTML标签
   const text = content.replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').trim()
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 
-// 获取选项预览
 const getOptionsPreview = (options) => {
   if (!options) return ''
-  
-  // 如果是字符串，尝试解析
   let opts = options
   if (typeof options === 'string') {
-    try {
-      opts = JSON.parse(options)
-    } catch (e) {
-      return ''
-    }
+    try { opts = JSON.parse(options) } catch (e) { return '' }
   }
-  
   if (!Array.isArray(opts) || opts.length === 0) return ''
-  
-  // 提取选项内容（前20字符）
-  const previewItems = opts.slice(0, 4).map((opt, index) => {
-    const label = String.fromCharCode(65 + index) // A, B, C, D
-    const text = (typeof opt === 'string' ? opt : (opt.text || opt.content || ''))
-      .replace(/<[^>]+>/g, '')
-      .substring(0, 15)
+  return opts.slice(0, 4).map((opt, index) => {
+    const label = String.fromCharCode(65 + index)
+    const text = (typeof opt === 'string' ? opt : (opt.text || opt.content || '')).replace(/<[^>]+>/g, '').substring(0, 15)
     return `${label}.${text}${text.length >= 15 ? '...' : ''}`
-  })
-  
-  return previewItems.join('  ')
+  }).join('  ')
 }
 
-// 获取题目类型标签
 const getQuestionTypeLabel = (type) => {
-  const labels = { 
-    single: '单选题', 
-    multiple: '多选题', 
-    true_false: '判断题',
-    fill: '填空题',
-    short: '简答题'
-  }
+  const labels = { single: '单选题', multiple: '多选题', true_false: '判断题', fill: '填空题', short: '简答题' }
   return labels[type] || '其他'
 }
 
-// 获取难度标签
 const getDifficultyLabel = (difficulty) => {
   const labels = { 1: '简单', 2: '中等', 3: '困难' }
   return labels[difficulty] || '未知'
 }
 
-// 初始化
 onMounted(() => {
   loadSubcategories()
   loadQuestions()

@@ -16,8 +16,24 @@ const JWT_EXPIRES_IN = '24h';
 /**
  * 初始化管理员表
  */
+let retryCount = 0;
+const MAX_RETRIES = 10;
+
 async function initAdminTable() {
   try {
+    // 等待数据库连接
+    if (!db.pool) {
+      if (retryCount < MAX_RETRIES) {
+        retryCount++;
+        console.log(`⏳ 等待数据库连接后再初始化管理员表... (${retryCount}/${MAX_RETRIES})`);
+        setTimeout(initAdminTable, 500);
+        return;
+      } else {
+        console.error('❌ 数据库连接重试次数超限，无法初始化管理员表');
+        return;
+      }
+    }
+    
     // 检查表是否存在
     const tableExists = await db.get(
       `SELECT TABLE_NAME FROM information_schema.TABLES 
@@ -42,8 +58,8 @@ async function initAdminTable() {
   }
 }
 
-// 初始化表
-initAdminTable();
+// 延迟初始化表（等待数据库连接）
+setTimeout(initAdminTable, 1000);
 
 /**
  * 检查是否已初始化管理员

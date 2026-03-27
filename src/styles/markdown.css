@@ -119,3 +119,35 @@
 .markdown-body a:hover {
   text-decoration: underline;
 }
+
+/* 图表占位符样式 */
+.markdown-body .chart-placeholder {
+  width: 100%;
+  min-height: 350px;
+  margin: 20px 0;
+}
+
+/* 内联图表容器 */
+.inline-chart-container {
+  width: 100%;
+  height: 350px;
+  margin: 20px 0;
+  background: #fafafa;
+  border-radius: 8px;
+  border: 1px solid #ebeef5;
+  overflow: hidden;
+}
+
+.inline-chart-container canvas,
+.inline-chart-container svg {
+  display: block !important;
+}
+
+.chart-error {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #909399;
+  font-size: 14px;
+}

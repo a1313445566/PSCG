@@ -795,11 +795,11 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
         // 获取各选项选择分布
         const optionDistribution = await db.query(`
           SELECT 
-            selected_answer as selected_option,
+            user_answer as selected_option,
             COUNT(*) as count
           FROM question_attempts
           WHERE question_id = ?
-          GROUP BY selected_answer
+          GROUP BY user_answer
           ORDER BY count DESC
         `, [questionId]);
         
@@ -842,7 +842,7 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
           errorUserCount: errorStats?.errorUserCount || 0,
           // 高频错误选项（非正确答案中选择最多的）
           errorOptions: optionDistribution
-            .filter(o => o.selected_option !== question.correct_answer)
+            .filter(o => o.selected_option && o.selected_option !== question.correct_answer)
             .slice(0, 2)
             .map(o => o.selected_option)
         };

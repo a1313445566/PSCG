@@ -20,7 +20,6 @@ export default defineConfig({
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
           'element-plus': ['element-plus'],
-          'echarts': ['echarts'],
           'quill': ['quill']
         },
         chunkFileNames: 'assets/[name]-[hash].js',
@@ -40,10 +39,9 @@ export default defineConfig({
   // 禁用大型库的预加载
   modulePreload: {
     resolveDependencies: (url, deps) => {
-      // 只预加载核心库，不预加载 element-plus 和 echarts
+      // 只预加载核心库，不预加载 element-plus
       return deps.filter(dep => 
-        !dep.includes('element-plus') && 
-        !dep.includes('echarts')
+        !dep.includes('element-plus')
       )
     }
   }

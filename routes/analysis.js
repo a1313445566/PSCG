@@ -69,12 +69,12 @@ router.get('/', async (req, res) => {
       params.push(endDate);
     }
     
-    // 基础统计查询
+    // 基础统计查询 - 与数据看板保持一致
     const basicStatsQuery = `
       SELECT
-        COUNT(DISTINCT u.id) as totalUsers,
+        (SELECT COUNT(*) FROM users) as totalUsers,
         COUNT(DISTINCT ar.id) as totalSessions,
-        SUM(ar.total_questions) as totalQuestions,
+        (SELECT COUNT(*) FROM questions) as totalQuestions,
         SUM(ar.correct_count) as totalCorrect,
         CASE WHEN SUM(ar.total_questions) > 0 THEN
           (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
