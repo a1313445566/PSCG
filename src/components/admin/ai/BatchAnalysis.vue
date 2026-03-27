@@ -370,6 +370,14 @@ const pollBatchResult = async (batchId) => {
         activeResult.value = 0
         message.success(`批量分析完成，共 ${batchResults.value.length} 条结果`)
         
+        // 保存批量分析结果到历史记录
+        const batchAnalysisResult = batchResults.value.map(r => r.analysis).join('\n\n' + '='.repeat(50) + '\n\n')
+        api.post('/ai/history', {
+          question: `${analysisType.value === 'deep' ? '深度分析' : '简单解析'} - ${selectedQuestions.value.length} 道题目`,
+          result: batchAnalysisResult,
+          filters: filters.value
+        }).catch(e => console.error('[AI历史] 批量分析保存失败:', e))
+        
         // 渲染图表
         nextTick(() => setTimeout(renderAllCharts, 100))
         return

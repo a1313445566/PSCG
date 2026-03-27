@@ -1149,11 +1149,11 @@ router.post('/question-quality', adminAuth, async (req, res) => {
       // 选项分布
       const optionDist = await db.query(`
         SELECT 
-          selected_answer as option,
+          user_answer as option,
           COUNT(*) as count
         FROM question_attempts
         WHERE question_id = ?
-        GROUP BY selected_answer
+        GROUP BY user_answer
         ORDER BY count DESC
       `, [questionId]);
       
