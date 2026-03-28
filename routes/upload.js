@@ -299,6 +299,8 @@ async function validateImageSecurity(filePath) {
       'image/gif': [0x47, 0x49, 0x46],
       'image/webp': [0x52, 0x49, 0x46, 0x46]
     }
+    // magicNumbers 用于验证文件头，暂保留供将来扩展使用
+    void magicNumbers
 
     // 获取文件类型
     const fileType = await detectFileType(buffer)
@@ -427,7 +429,8 @@ async function detectFileType(buffer) {
 async function validateAudioSecurity(filePath) {
   try {
     const buffer = fs.readFileSync(filePath)
-    const stat = fs.statSync(filePath)
+    // stat 用于验证文件，暂保留供将来扩展使用
+    void fs.statSync(filePath)
 
     // 检查文件头（扩展支持更多格式）
     const header = buffer.slice(0, 12).toString('hex').toLowerCase()
@@ -473,7 +476,7 @@ async function validateAudioSecurity(filePath) {
 }
 
 // Multer 错误处理中间件
-router.use((err, req, res, next) => {
+router.use((err, req, res, _next) => {
   console.error('[上传错误]', err.code, err.message)
 
   if (err.code === 'LIMIT_FILE_SIZE') {
@@ -501,6 +504,208 @@ router.use((err, req, res, next) => {
     success: false,
     error: '上传失败: ' + (err.message || '未知错误')
   })
+})
+
+/**
+ * 取消编辑时清理上传的文件
+ * 用于前端在取消编辑时清理已上传但未保存的文件
+ * @body {string[]} fileUrls - 需要清理的文件 URL 列表
+ */
+router.post('/cancel-upload', async (req, res) => {
+  try {
+    const { fileUrls } = req.body
+
+    if (!fileUrls || !Array.isArray(fileUrls) || fileUrls.length === 0) {
+      return res.json({ success: true, message: '没有需要清理的文件' })
+    }
+
+    let deletedCount = 0
+
+    for (const fileUrl of fileUrls) {
+      // 验证文件路径格式
+      if (!fileUrl.startsWith('/images/') && !fileUrl.startsWith('/audio/')) {
+        continue
+      }
+
+      // 获取文件记录
+      const record = await db.get('SELECT id, ref_count FROM file_hashes WHERE file_path = ?', [
+        fileUrl
+      ])
+
+      if (record) {
+        // 减少引用计数
+        if (record.ref_count <= 1) {
+          // 删除物理文件
+          const physicalPath = path.join(__dirname, '..', fileUrl)
+          if (fs.existsSync(physicalPath)) {
+            fs.unlinkSync(physicalPath)
+          }
+          // 删除数据库记录
+          await db.run('DELETE FROM file_hashes WHERE id = ?', [record.id])
+          deletedCount++
+        } else {
+          await db.run('UPDATE file_hashes SET ref_count = ref_count - 1 WHERE id = ?', [record.id])
+        }
+      }
+    }
+
+    res.json({
+      success: true,
+      deletedCount,
+      message: `已清理 ${deletedCount} 个未保存的文件`
+    })
+  } catch (error) {
+    console.error('取消上传清理失败:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+/**
+ * 获取孤儿文件统计
+ * 返回孤儿文件的数量和总大小
+ */
+router.get('/orphan-stats', async (req, res) => {
+  try {
+    // 获取数据库中所有被引用的文件
+    const referencedFiles = new Set()
+
+    // 从题目表收集
+    const questions = await db.all('SELECT content, options, image_url, audio_url FROM questions')
+    for (const q of questions) {
+      if (q.image_url) referencedFiles.add(q.image_url)
+      if (q.audio_url) referencedFiles.add(q.audio_url)
+
+      if (q.content) {
+        const imgMatches = q.content.match(/\/images\/[^"'\s]+/g) || []
+        const audioMatches = q.content.match(/\/audio\/[^"'\s]+/g) || []
+        imgMatches.forEach(f => referencedFiles.add(f))
+        audioMatches.forEach(f => referencedFiles.add(f))
+      }
+
+      if (q.options) {
+        try {
+          const options = JSON.parse(q.options)
+          if (Array.isArray(options)) {
+            for (const opt of options) {
+              if (typeof opt === 'string') {
+                const imgMatches = opt.match(/\/images\/[^"'\s]+/g) || []
+                imgMatches.forEach(f => referencedFiles.add(f))
+              }
+            }
+          }
+        } catch (e) {
+          // 忽略解析错误
+        }
+      }
+    }
+
+    // 获取 file_hashes 表中的所有记录
+    const fileRecords = await db.all('SELECT * FROM file_hashes')
+
+    let count = 0
+    let size = 0
+
+    for (const record of fileRecords) {
+      const isReferenced = referencedFiles.has(record.file_path)
+
+      if (!isReferenced) {
+        count++
+        size += record.file_size
+      }
+    }
+
+    res.json({
+      success: true,
+      count,
+      size: Math.round(size / 1024) // 返回 KB
+    })
+  } catch (error) {
+    console.error('获取孤儿文件统计失败:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
+})
+
+/**
+ * 清理孤儿文件 API
+ * 用于手动触发孤儿文件清理
+ */
+router.post('/cleanup-orphans', async (req, res) => {
+  try {
+    const { days = 0 } = req.body // days = 0 表示清理所有孤儿文件
+    const cutoffTime = days > 0 ? Date.now() - days * 24 * 60 * 60 * 1000 : 0
+
+    // 获取数据库中所有被引用的文件
+    const referencedFiles = new Set()
+
+    // 从题目表收集
+    const questions = await db.all('SELECT content, options, image_url, audio_url FROM questions')
+    for (const q of questions) {
+      if (q.image_url) referencedFiles.add(q.image_url)
+      if (q.audio_url) referencedFiles.add(q.audio_url)
+
+      if (q.content) {
+        const imgMatches = q.content.match(/\/images\/[^"'\s]+/g) || []
+        const audioMatches = q.content.match(/\/audio\/[^"'\s]+/g) || []
+        imgMatches.forEach(f => referencedFiles.add(f))
+        audioMatches.forEach(f => referencedFiles.add(f))
+      }
+
+      if (q.options) {
+        try {
+          const options = JSON.parse(q.options)
+          if (Array.isArray(options)) {
+            for (const opt of options) {
+              if (typeof opt === 'string') {
+                const imgMatches = opt.match(/\/images\/[^"'\s]+/g) || []
+                imgMatches.forEach(f => referencedFiles.add(f))
+              }
+            }
+          }
+        } catch (e) {
+          // 忽略解析错误
+        }
+      }
+    }
+
+    // 获取 file_hashes 表中的所有记录
+    const fileRecords = await db.all('SELECT * FROM file_hashes')
+
+    let deletedCount = 0
+    let deletedSize = 0
+    const deletedFiles = []
+
+    for (const record of fileRecords) {
+      // 检查是否被引用
+      const isReferenced = referencedFiles.has(record.file_path)
+
+      // 检查时间阈值
+      const isOldEnough = cutoffTime === 0 || new Date(record.created_at).getTime() < cutoffTime
+
+      if (!isReferenced && isOldEnough) {
+        // 删除物理文件
+        const physicalPath = path.join(__dirname, '..', record.file_path)
+        if (fs.existsSync(physicalPath)) {
+          fs.unlinkSync(physicalPath)
+          deletedSize += record.file_size
+          deletedFiles.push(record.file_path)
+        }
+
+        // 删除数据库记录
+        await db.run('DELETE FROM file_hashes WHERE id = ?', [record.id])
+        deletedCount++
+      }
+    }
+
+    res.json({
+      success: true,
+      deletedCount,
+      deletedSize: Math.round(deletedSize / 1024),
+      deletedFiles
+    })
+  } catch (error) {
+    console.error('清理孤儿文件失败:', error)
+    res.status(500).json({ success: false, error: error.message })
+  }
 })
 
 module.exports = router

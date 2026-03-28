@@ -3,6 +3,7 @@ const router = express.Router()
 const db = require('../services/database')
 const xssFilter = require('../utils/xss-filter')
 const { getPaginationParams } = require('../utils/pagination')
+const fileRefService = require('../services/fileReferenceService')
 
 // 获取子分类列表（供筛选器使用）
 router.get('/subcategories', async (req, res) => {
@@ -304,7 +305,7 @@ router.post('/', async (req, res) => {
       explanation = '',
       audio = null,
       image = null
-    } = req.body
+    } = req.body // eslint-disable-line prefer-const
 
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })
@@ -354,6 +355,9 @@ router.post('/', async (req, res) => {
       throw new Error('获取新添加的题目失败')
     }
 
+    // 更新文件引用计数
+    await fileRefService.updateQuestionFileReferences(newQuestion)
+
     // 格式化题目数据
     let formattedOptions = []
     let correctAnswer = newQuestion.correct_answer
@@ -400,7 +404,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     let { subjectId, subcategoryId, content, type, options, answer, explanation, audio, image } =
-      req.body
+      req.body // eslint-disable-line prefer-const
 
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })
@@ -429,6 +433,9 @@ router.put('/:id', async (req, res) => {
       return opt
     })
 
+    // 获取旧题目数据（用于对比文件引用）
+    const oldQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [id])
+
     await db.run(
       'UPDATE questions SET subject_id = ?, subcategory_id = ?, content = ?, type = ?, options = ?, correct_answer = ?, explanation = ?, audio_url = ?, image_url = ? WHERE id = ?',
       [
@@ -447,6 +454,9 @@ router.put('/:id', async (req, res) => {
 
     // 返回更新后的题目
     const updatedQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [id])
+
+    // 更新文件引用计数（对比新旧内容）
+    await fileRefService.updateQuestionFileReferences(updatedQuestion, oldQuestion)
 
     // 格式化题目数据
     let formattedOptions = []
@@ -494,7 +504,17 @@ router.put('/:id', async (req, res) => {
 router.delete('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    await db.run('DELETE FROM questions WHERE id = ?', [id])
+
+    // 获取要删除的题目数据（用于清理文件引用）
+    const question = await db.get('SELECT * FROM questions WHERE id = ?', [id])
+
+    if (question) {
+      // 先清理文件引用
+      await fileRefService.deleteQuestionFileReferences(question)
+      // 再删除题目
+      await db.run('DELETE FROM questions WHERE id = ?', [id])
+    }
+
     res.json({ success: true })
   } catch (error) {
     // console.error('删除题目失败:', error);
@@ -532,10 +552,19 @@ router.post('/batch', async (req, res) => {
     const placeholders = validIds.map(() => '?').join(',')
 
     switch (action) {
-      case 'delete':
+      case 'delete': {
+        // 获取要删除的题目数据（用于清理文件引用）
+        const questionsToDelete = await db.all(
+          `SELECT * FROM questions WHERE id IN (${placeholders})`,
+          validIds
+        )
+        // 先清理文件引用
+        await fileRefService.batchDeleteQuestionFileReferences(questionsToDelete)
+        // 再删除题目
         await db.run(`DELETE FROM questions WHERE id IN (${placeholders})`, validIds)
         res.json({ success: true, affected: validIds.length })
         break
+      }
 
       case 'updateDifficulty':
         if (!data || data.difficulty === undefined) {

@@ -231,13 +231,14 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onUnmounted } from 'vue'
 import QuillEditor from '../../../components/common/QuillEditor.vue'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { Plus, Upload, Delete } from '@element-plus/icons-vue'
 import EditableContent from '../../common/EditableContent.vue'
 import draftStorage from '../../../utils/draftStorage.js'
 import { uploadImage } from '../../../utils/imageUpload.js'
+import { api } from '../../../utils/api'
 
 // 定义属性和事件
 const props = defineProps({
@@ -274,6 +275,9 @@ const form = ref({
 
 // 编辑器key，用于重置编辑器
 const editorKey = ref(0)
+
+// 跟踪本次编辑上传的文件（用于取消时清理）
+const uploadedFiles = ref([])
 
 // 自动保存定时器
 let autoSaveTimer = null
@@ -430,6 +434,8 @@ const editQuestion = question => {
 // 重置表单
 const resetForm = () => {
   isEditing.value = false
+  // 清除上传文件跟踪
+  uploadedFiles.value = []
   // 先设置表单数据
   form.value = {
     id: null,
@@ -510,11 +516,29 @@ const handleClose = async () => {
       saveDraft()
       ElMessage.success('草稿已保存')
     } catch {
-      // 用户选择不保存，清除草稿
+      // 用户选择不保存，清除草稿并清理上传的文件
       draftStorage.clear()
+      await cleanupUploadedFiles()
     }
+  } else {
+    // 没有未保存的更改，清理上传的文件
+    await cleanupUploadedFiles()
   }
   emit('update:visible', false)
+}
+
+// 清理未保存的上传文件
+const cleanupUploadedFiles = async () => {
+  if (uploadedFiles.value.length === 0) return
+
+  try {
+    await api.post('/upload/cancel-upload', { fileUrls: uploadedFiles.value })
+    console.log(`[文件清理] 已清理 ${uploadedFiles.value.length} 个未保存的文件`)
+  } catch (error) {
+    console.error('[文件清理] 清理失败:', error)
+  } finally {
+    uploadedFiles.value = []
+  }
 }
 
 // 检查是否有未保存的更改
@@ -668,8 +692,9 @@ const saveQuestion = async () => {
   // 发送保存事件
   emit('save-question', questionData)
 
-  // 清除草稿
+  // 清除草稿和上传文件跟踪（保存成功后不再需要清理）
   draftStorage.clear()
+  uploadedFiles.value = []
   stopAutoSave()
 
   emit('update:visible', false)
@@ -782,6 +807,10 @@ async function insertImageToEditor(quill, file) {
 
   try {
     const url = await uploadImage(file)
+    // 跟踪上传的文件
+    if (url && !uploadedFiles.value.includes(url)) {
+      uploadedFiles.value.push(url)
+    }
     const range = quill.getSelection(true)
     quill.insertEmbed(range.index, 'image', url)
     quill.setSelection(range.index + 1)
