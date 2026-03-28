@@ -76,7 +76,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
@@ -136,7 +136,7 @@ const currentSubcategory = computed(() => {
 // 题目数据
 const currentQuestions = computed(() => quizStore.currentQuestions)
 const userAnswers = computed(() => quizStore.userAnswers)
-const score = computed(() => quizStore.score)
+const _score = computed(() => quizStore.score)
 
 // 答题统计
 const totalQuestions = computed(() => currentQuestions.value.length)

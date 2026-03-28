@@ -9,7 +9,8 @@
     "server": "node server.cjs",
     "lint": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,ts,vue,css,scss,json}\" \"routes/**/*.js\" \"services/**/*.js\" \"middleware/**/*.js\" \"utils/**/*.js\"",
-    "lint:check": "eslint ."
+    "lint:check": "eslint .",
+    "prepare": "husky"
   },
   "dependencies": {
     "@visactor/vchart": "^2.0.20",
@@ -40,8 +41,19 @@
     "eslint-config-prettier": "^10.1.8",
     "eslint-plugin-prettier": "^5.5.5",
     "eslint-plugin-vue": "^9.33.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.4.0",
     "marked": "^17.0.5",
     "prettier": "^3.8.1",
     "vite": "^5.2.0"
+  },
+  "lint-staged": {
+    "*.{js,ts,vue}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{css,scss,json,md}": [
+      "prettier --write"
+    ]
   }
 }

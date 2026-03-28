@@ -596,7 +596,7 @@
         </div>
         <div class="preview-item">
           <label>正确答案：</label>
-          <el-tag type="danger" effect="dark" v-html="previewData.answer"></el-tag>
+          <el-tag type="danger" effect="dark">{{ previewData.answer }}</el-tag>
         </div>
         <div v-if="previewData.explanation" class="preview-item">
           <label>解析：</label>
@@ -605,12 +605,7 @@
       </div>
       <template #footer>
         <el-button @click="previewVisible = false">关闭</el-button>
-        <el-button
-          type="primary"
-          @click="handleEditFromPreview"
-        >
-          编辑
-        </el-button>
+        <el-button type="primary" @click="handleEditFromPreview">编辑</el-button>
       </template>
     </el-dialog>
 

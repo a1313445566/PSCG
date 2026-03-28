@@ -38,7 +38,6 @@ import AppHeader from '../components/common/AppHeader.vue'
 import ResultCard from '../components/quiz/ResultCard.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
 import { useQuestionStore } from '../stores/questionStore'
-import { MAX_CORRECT_COUNT, getProgressColor } from '../utils/errorCollectionUtils'
 
 const router = useRouter()
 const route = useRoute()
@@ -109,8 +108,8 @@ const getQuestionProgress = questionId => {
   return progress || { questionId: questionId, correctCount: 0, status: '开始巩固' }
 }
 
-// 错题列表
-const wrongQuestions = computed(() => {
+// 错题列表（可能未来会用到）
+const _wrongQuestions = computed(() => {
   return currentQuestions.value.filter(q => {
     const userAnswer = userAnswers.value[q.id]
     const correctAnswer = q.answer
