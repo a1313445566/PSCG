@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
 const jwt = require('jsonwebtoken');
+const { getPaginationParams, buildPaginationResponse } = require('../utils/pagination');
 
 // JWT密钥
 const JWT_SECRET = 'your-secret-key';
@@ -46,11 +47,8 @@ router.get('/', async (req, res) => {
     
     const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
     
-    const pageNum = parseInt(page) || 1;
-    let limitNum = limit === '0' ? 0 : parseInt(limit) || 20;
-    
     // 如果limit为0或负数，返回所有用户（向后兼容）
-    if (limitNum <= 0) {
+    if (limit === '0' || (limit && parseInt(limit) <= 0)) {
       const query = `SELECT * FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED)`;
       let users = await db.all(query, params);
       
@@ -60,33 +58,28 @@ router.get('/', async (req, res) => {
       }
       
       // 向后兼容：返回数组格式
-      res.json(users);
-    } else {
-      // 服务端分页模式
-      // 1. 获取总数
-      const countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`;
-      const countResult = await db.get(countQuery, params);
-      const total = countResult?.total || 0;
-      
-      // 2. 获取分页数据
-      const offset = (pageNum - 1) * limitNum;
-      const dataQuery = `SELECT * FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`;
-      let users = await db.all(dataQuery, params);
-      
-      // 3. 添加统计数据
-      if (withStats === 'true' && users.length > 0) {
-        await attachUserStats(users);
-      }
-      
-      // 返回分页格式
-      res.json({
-        data: users,
-        total,
-        page: pageNum,
-        limit: limitNum,
-        totalPages: Math.ceil(total / limitNum)
-      });
+      return res.json(users);
     }
+    
+    // 服务端分页模式 - 使用统一分页工具
+    const { pageNum, limitNum, offset } = getPaginationParams(page, limit);
+    
+    // 1. 获取总数
+    const countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`;
+    const countResult = await db.get(countQuery, params);
+    const total = countResult?.total || 0;
+    
+    // 2. 获取分页数据
+    const dataQuery = `SELECT * FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`;
+    let users = await db.all(dataQuery, params);
+    
+    // 3. 添加统计数据
+    if (withStats === 'true' && users.length > 0) {
+      await attachUserStats(users);
+    }
+    
+    // 返回分页格式 - 使用统一响应格式
+    res.json(buildPaginationResponse(users, total, pageNum, limitNum));
   } catch (error) {
     console.error('[getUsers] 获取用户失败:', error);
     res.status(500).json({ error: '获取用户失败' });

@@ -4,6 +4,7 @@ const db = require('../services/database');
 const cacheService = require('../services/cache');
 const difficultyService = require('../services/difficultyService');
 const { validateSubjectId } = require('../services/validationService');
+const { getPaginationParams } = require('../utils/pagination');
 
 const crypto = require('crypto');
 
@@ -252,16 +253,8 @@ router.get('/all', async (req, res) => {
     const orderField = sortFieldMap[validSortBy] || 'ar.created_at';
     
     // 分页查询
-    // 注意：MySQL prepared statements 对 LIMIT/OFFSET 参数化支持有限
-    // 使用严格验证的整数值直接拼接是安全的替代方案
-    const pageNum = Math.max(1, parseInt(page) || 1);
-    const limitNum = Math.max(1, Math.min(100, parseInt(limit) || 20)); // 限制最大100条
-    const offset = (pageNum - 1) * limitNum;
-    
-    // 安全验证：确保分页参数是有效整数
-    if (!Number.isInteger(pageNum) || !Number.isInteger(limitNum) || !Number.isInteger(offset)) {
-      return res.status(400).json({ error: '分页参数无效' });
-    }
+    // 使用统一分页工具（内置参数验证）
+    const { pageNum, limitNum, offset } = getPaginationParams(page, limit, { maxLimit: 100 });
     
     const dataQuery = `SELECT ar.*, u.id as user_id, u.student_id, u.name, u.grade, u.\`class\`, s.name as subject_name, sc.name as subcategory_name FROM answer_records ar LEFT JOIN users u ON ar.user_id = u.id LEFT JOIN subjects s ON ar.subject_id = s.id LEFT JOIN subcategories sc ON ar.subcategory_id = sc.id ${whereClause} ORDER BY ${orderField} ${validSortOrder} LIMIT ${limitNum} OFFSET ${offset}`;
     

@@ -146,7 +146,7 @@ class Database {
           correct_answer TEXT NOT NULL,
           is_correct TINYINT NOT NULL,
           answer_record_id INT,
-          shuffled_options TEXT,
+          shuffled_options LONGTEXT,
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           INDEX idx_user_id (user_id),
           INDEX idx_question_id (question_id),

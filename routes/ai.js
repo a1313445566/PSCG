@@ -8,6 +8,7 @@ const router = express.Router();
 const aiService = require('../services/aiService');
 const db = require('../services/database');
 const adminAuth = require('../middleware/adminAuth');
+const { getPaginationParams } = require('../utils/pagination');
 
 /**
  * POST /api/ai/analyze
@@ -619,10 +620,8 @@ router.post('/history', adminAuth, async (req, res) => {
  */
 router.get('/history', adminAuth, async (req, res) => {
   try {
-    const page = parseInt(req.query.page) || 1;
-    const limit = Math.min(parseInt(req.query.limit) || 20, 100); // 最大100
     const userId = req.admin.id;
-    const offset = (page - 1) * limit;
+    const { pageNum, limitNum, offset } = getPaginationParams(req.query.page, req.query.limit, { maxLimit: 100 });
     
     // 查询总数
     const countResult = await db.get(
@@ -636,15 +635,15 @@ router.get('/history', adminAuth, async (req, res) => {
        FROM ai_analysis_history
        WHERE user_id = ?
        ORDER BY created_at DESC
-       LIMIT ${limit} OFFSET ${offset}`,
+       LIMIT ${limitNum} OFFSET ${offset}`,
       [userId]
     );
     
     res.json({
       list,
       total: countResult?.total || 0,
-      page,
-      limit
+      page: pageNum,
+      limit: limitNum
     });
   } catch (error) {
     console.error('[AI历史] 查询失败:', error);
@@ -1000,9 +999,8 @@ router.get('/batch/:id', adminAuth, async (req, res) => {
  */
 router.get('/batch', adminAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 10 } = req.query;
     const userId = req.admin.id;
-    const offset = (page - 1) * limit;
+    const { pageNum, limitNum, offset } = getPaginationParams(req.query.page, req.query.limit);
     
     const countResult = await db.get(
       'SELECT COUNT(*) as total FROM ai_batch_analysis WHERE user_id = ?',
@@ -1015,14 +1013,14 @@ router.get('/batch', adminAuth, async (req, res) => {
        WHERE user_id = ?
        ORDER BY created_at DESC
        LIMIT ? OFFSET ?`,
-      [userId, parseInt(limit), offset]
+      [userId, limitNum, offset]
     );
     
     res.json({
       list,
       total: countResult.total,
-      page: parseInt(page),
-      limit: parseInt(limit)
+      page: pageNum,
+      limit: limitNum
     });
   } catch (error) {
     console.error('[AI批量分析] 列表查询失败:', error);

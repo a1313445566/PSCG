@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const db = require('../services/database');
 const xssFilter = require('../utils/xss-filter');
+const { getPaginationParams } = require('../utils/pagination');
 
 // 获取子分类列表（供筛选器使用）
 router.get('/subcategories', async (req, res) => {
@@ -149,9 +150,8 @@ router.get('/', async (req, res) => {
     const countResult = await db.get(countQuery, params);
     const total = countResult.total;
 
-    const pageNum = Math.max(1, parseInt(page) || 1); // 确保页码至少为1
-    const limitNum = Math.max(1, Math.min(parseInt(limit) || 20, 100)); // limit 范围 1-100
-    const offset = (pageNum - 1) * limitNum;
+    // 使用统一分页工具
+    const { pageNum, limitNum, offset } = getPaginationParams(page, limit, { maxLimit: 100 });
 
     // MySQL prepared statement 不支持 LIMIT/OFFSET 参数化
     // 使用验证后的整数值进行拼接是安全的
