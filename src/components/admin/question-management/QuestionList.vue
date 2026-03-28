@@ -607,10 +607,7 @@
         <el-button @click="previewVisible = false">关闭</el-button>
         <el-button
           type="primary"
-          @click="
-            editQuestion(previewData)
-            previewVisible = false
-          "
+          @click="handleEditFromPreview"
         >
           编辑
         </el-button>
@@ -1280,6 +1277,12 @@ const showImagePreview = row => {
 const editQuestion = row => {
   // 开启分屏编辑模式
   openSplitEdit(row)
+}
+
+// 从预览编辑
+const handleEditFromPreview = () => {
+  editQuestion(previewData.value)
+  previewVisible.value = false
 }
 
 // 打开添加面板
