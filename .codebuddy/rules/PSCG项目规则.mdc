@@ -2,7 +2,7 @@
 description: PSCG 智能题库系统项目开发规范
 alwaysApply: true
 enabled: true
-updatedAt: 2026-03-25T00:00:00.000Z
+updatedAt: 2026-03-28T00:00:00.000Z
 provider: 
 ---
 
@@ -39,29 +39,15 @@ PSCG/
 │   │   ├── quiz/           # 答题组件
 │   │   └── common/         # 公共组件
 │   ├── stores/             # Pinia 状态管理
+│   ├── composables/        # 组合式函数
 │   ├── utils/              # 工具函数
-│   │   ├── apiCache.js     # API 缓存工具
-│   │   ├── csrf.js         # CSRF 防护
-│   │   ├── xss-filter.js   # XSS 防护
-│   │   ├── dateUtils.js    # 日期处理
-│   │   ├── database.js     # 数据库配置
-│   │   ├── draftStorage.js # 草稿存储
-│   │   ├── imageUpload.js  # 图片上传
-│   │   └── lazyLoad.js     # 懒加载
 │   ├── router/             # 路由配置
 │   └── styles/             # 全局样式
-│       └── global.css      # 全局基础样式
 ├── routes/                 # 后端 API 路由
 ├── services/               # 后端服务层
 ├── middleware/             # Express 中间件
-│   ├── csrf.js             # CSRF 防护
-│   └── ...
 ├── config/                 # 配置文件
 ├── DOCS/                   # 项目文档
-│   ├── 需求文档/           # 需求相关
-│   ├── 技术文档/           # 技术文档
-│   ├── API文档/            # API 接口文档
-│   └── ...
 ├── audio/                  # 音频资源
 ├── images/                 # 图片资源
 ├── server.cjs              # 后端入口
@@ -97,6 +83,8 @@ PSCG/
 
 ### 样式规范
 - 全局样式: `src/styles/global.css`
+- 后台公共样式: `src/styles/common.css`
+- 富文本样式: `src/styles/rich-text.css`
 - 组件样式使用 `<style scoped>`
 - 使用 Element Plus 主题变量
 
@@ -144,6 +132,7 @@ pm2 restart 0
 - **XSS 防护**: `src/utils/xss-filter.js`
 - **CSRF 防护**: `middleware/csrf.js` + `src/utils/csrf.js`
 - **输入验证**: 前后端双重验证
+- **SQL 注入防护**: 使用参数化查询
 
 ## 注意事项
 - 后端文件使用 `.cjs` 扩展名 (CommonJS)
@@ -281,17 +270,17 @@ export function useXxx() {
 **公共组件分类**：
 ```
 src/components/
-├── common/              # 全局公共组件（5个）
+├── common/              # 全局公共组件
 │   ├── AppFooter.vue
 │   ├── AppHeader.vue
 │   ├── EditableContent.vue    # 可编辑内容
 │   ├── QuillEditor.vue        # 富文本编辑器
 │   └── SkeletonLoader.vue     # 骨架屏
-├── admin/common/        # 后台公共组件（3个）
+├── admin/common/        # 后台公共组件
 │   ├── AdminFilter.vue        # 筛选表单
 │   ├── QuestionDetailDialog.vue
 │   └── UserDetailDialog.vue
-└── quiz/                # 答题组件（5个）
+└── quiz/                # 答题组件
 ```
 
 ### 工具函数封装规则
@@ -312,6 +301,9 @@ src/components/
 | `xss-filter.js` | XSS 防护 | `sanitize()` |
 | `csrf.js` | CSRF 防护 | `getCSRFToken()` |
 | `imageUpload.js` | 图片上传 | `uploadImage()`, `uploadQueue` |
+| `markdown.js` | Markdown 渲染 | `renderMarkdown()` |
+| `chartGenerator.js` | 图表生成 | 图表配置生成 |
+| `shuffleOptions.js` | 选项打乱 | 随机排序 |
 
 **使用示例**：
 ```javascript
@@ -370,6 +362,21 @@ success('操作成功')
 | `rateLimit.js` | IP/用户限流 | 全局/API/提交 |
 | `dbPerformance.js` | 数据库性能监控 | 数据库操作 |
 | `signatureCache.js` | 签名缓存（防重放） | 答题提交 |
+| `aiInputValidation.js` | AI 输入验证 | AI 相关接口 |
+| `responseTime.js` | 响应时间记录 | 全局 |
+
+**已实现的服务层**：
+
+| 文件 | 功能 |
+|------|------|
+| `database.js` | 数据库连接和操作 |
+| `aiService.js` | AI 功能服务 |
+| `aiQueueService.js` | AI 任务队列 |
+| `difficultyService.js` | 难度计算服务 |
+| `fileReferenceService.js` | 文件引用管理 |
+| `validationService.js` | 输入验证服务 |
+| `cache.js` | 缓存服务 |
+| `passwordHash.js` | 密码哈希 |
 
 **路由层职责**：
 - 参数验证
@@ -385,6 +392,38 @@ success('操作成功')
 - 请求预处理
 - 权限验证
 - 日志记录
+
+## 文件管理规范
+
+### 文件上传
+
+**图片上传**：
+- 使用 `imageUpload.js` 的 `uploadImage()` 函数
+- 支持粘贴、拖拽、点击上传
+- 自动转换 base64 为文件上传
+- 文件大小限制：2MB
+- 支持格式：JPG、PNG、GIF、WebP
+
+**音频上传**：
+- 文件大小限制：10MB
+- 支持格式：MP3、WAV、OGG、M4A
+
+### 文件引用管理
+
+**自动维护引用计数**：
+- 保存题目时自动增加文件引用
+- 更新题目时对比新旧内容，增减引用
+- 删除题目时减少引用计数
+- 引用计数归零时自动删除物理文件
+
+**孤儿文件清理**：
+- API: `GET /upload/orphan-stats` - 获取统计
+- API: `POST /upload/cleanup-orphans` - 执行清理
+- 前端入口：后台管理 → 数据清理 → 清理孤儿文件
+
+**取消编辑清理**：
+- API: `POST /upload/cancel-upload` - 清理未保存的上传文件
+- 前端在取消编辑时自动调用
 
 ## 性能优化规范
 
@@ -534,6 +573,13 @@ if (!validateSubjectId(subjectId)) {
 - **日期处理** (`src/utils/dateUtils.js`) - 日期格式化
 - **XSS 防护** (`src/utils/xss-filter.js`) - XSS 过滤
 - **CSRF 防护** (`src/utils/csrf.js`) - CSRF Token 管理
+- **图片上传** (`src/utils/imageUpload.js`) - 图片上传和队列管理
+- **Markdown** (`src/utils/markdown.js`) - Markdown 渲染
+- **图表生成** (`src/utils/chartGenerator.js`) - 图表配置生成
 
 ### 公共样式
+- **global.css** (`src/styles/global.css`) - 全局基础样式
 - **common.css** (`src/styles/common.css`) - 后台管理公共样式（分页、卡片、表格等）
+- **rich-text.css** (`src/styles/rich-text.css`) - 富文本内容样式（对齐、缩进等）
+- **markdown.css** (`src/styles/markdown.css`) - Markdown 内容样式
+- **loading.css** (`src/styles/loading.css`) - 加载动画样式
