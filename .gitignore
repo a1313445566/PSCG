@@ -60,3 +60,7 @@ Dockerfile
 backups/backup*.json
 cloudflared-setup.md
 backups/*.json
+models.json
+
+# CodeBuddy data
+.codebuddy/
