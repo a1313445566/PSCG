@@ -20,7 +20,7 @@ import {
   updateClass,
   deleteClass
 } from '../utils/database'
-import { getApiBaseUrl } from '../utils/database'
+import { api } from '../utils/api'
 import { 
   getCacheKeys, 
   getCacheTTL, 
@@ -170,22 +170,12 @@ export const useQuestionStore = defineStore('question', {
     async fetchAndCacheCoreData() {
       // 并行请求核心数据
       const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] = await Promise.all([
-        fetch(`${getApiBaseUrl()}/subjects`)
-          .then(res => res.json())
-          .catch(() => []),
-        fetch(`${getApiBaseUrl()}/grades`)
-          .then(res => res.json())
-          .catch(() => []),
-        fetch(`${getApiBaseUrl()}/classes`)
-          .then(res => res.json())
-          .catch(() => []),
-        fetch(`${getApiBaseUrl()}/subjects/stats`)
-          .then(res => res.json())
-          .catch(() => []),
+        api.get('/subjects').catch(() => []),
+        api.get('/grades').catch(() => []),
+        api.get('/classes').catch(() => []),
+        api.get('/subjects/stats').catch(() => []),
         // 加载子分类统计
-        fetch(`${getApiBaseUrl()}/questions/subcategories/stats`)
-          .then(res => res.json())
-          .catch(() => ({}))
+        api.get('/questions/subcategories/stats').catch(() => ({}))
       ])
 
       // 检查应用是否仍然挂载
@@ -236,56 +226,39 @@ export const useQuestionStore = defineStore('question', {
           excludeContent = false
         } = params
 
-        let url = `${getApiBaseUrl()}/questions`
-        const queryParams = []
+        const queryParams = {}
+        if (subjectId) queryParams.subjectId = subjectId
+        if (subcategoryId) queryParams.subcategoryId = subcategoryId
+        if (type) queryParams.type = type
+        if (keyword) queryParams.keyword = keyword
+        queryParams.page = page
+        queryParams.limit = limit
+        if (excludeContent) queryParams.excludeContent = true
 
-        if (subjectId) {
-          queryParams.push(`subjectId=${subjectId}`)
-        }
-        if (subcategoryId) {
-          queryParams.push(`subcategoryId=${subcategoryId}`)
-        }
-        if (type) {
-          queryParams.push(`type=${type}`)
-        }
-        if (keyword) {
-          queryParams.push(`keyword=${encodeURIComponent(keyword)}`)
-        }
-        queryParams.push(`page=${page}`)
-        queryParams.push(`limit=${limit}`)
-        if (excludeContent) {
-          queryParams.push('excludeContent=true')
-        }
-
-        if (queryParams.length > 0) {
-          url += `?${queryParams.join('&')}`
-        }
-
-        const response = await fetch(url)
-        if (response.ok) {
-          const result = await response.json()
-          // 检查应用是否仍然挂载
-          if (!_isAppMounted) return
-          // 适配新的 API 返回格式 { data, total, page, limit }
-          if (result.data !== undefined) {
-            // 新格式
-            this.questions = Array.isArray(result.data) ? result.data : []
-            this.pagination = {
-              total: result.total || 0,
-              page: result.page || page,
-              limit: result.limit || limit
-            }
-            return result
-          } else {
-            // 兼容旧格式（数组）
-            this.questions = Array.isArray(result) ? result : (result.questions || [])
-            this.pagination = {
-              total: this.questions.length,
-              page: page,
-              limit: limit
-            }
-            return { data: this.questions, total: this.questions.length, page, limit }
+        const result = await api.get('/questions', queryParams)
+        
+        // 检查应用是否仍然挂载
+        if (!_isAppMounted) return
+        
+        // 适配新的 API 返回格式 { data, total, page, limit }
+        if (result.data !== undefined) {
+          // 新格式
+          this.questions = Array.isArray(result.data) ? result.data : []
+          this.pagination = {
+            total: result.total || 0,
+            page: result.page || page,
+            limit: result.limit || limit
           }
+          return result
+        } else {
+          // 兼容旧格式（数组）
+          this.questions = Array.isArray(result) ? result : (result.questions || [])
+          this.pagination = {
+            total: this.questions.length,
+            page: page,
+            limit: limit
+          }
+          return { data: this.questions, total: this.questions.length, page, limit }
         }
       } catch (error) {
         this.error = error.message
@@ -298,13 +271,9 @@ export const useQuestionStore = defineStore('question', {
     // 加载子分类统计数据
     async loadSubcategoryStats(subjectId) {
       try {
-        const response = await fetch(`${getApiBaseUrl()}/questions/subcategories/stats?subjectId=${subjectId}`)
-        if (response.ok) {
-          const stats = await response.json()
-          this.subcategoryStats = { ...this.subcategoryStats, ...stats }
-          return stats
-        }
-        return {}
+        const stats = await api.get('/questions/subcategories/stats', { subjectId })
+        this.subcategoryStats = { ...this.subcategoryStats, ...stats }
+        return stats
       } catch (error) {
         this.error = error.message
         return {}
@@ -317,16 +286,12 @@ export const useQuestionStore = defineStore('question', {
         const userId = localStorage.getItem('studentId')
         if (!userId) return null
         
-        const response = await fetch(`${getApiBaseUrl()}/answer-records/user-subcategory-stats/${userId}/${subcategoryId}`)
-        if (response.ok) {
-          const stats = await response.json()
-          this.userSubcategoryStats = { 
-            ...this.userSubcategoryStats, 
-            [subcategoryId]: stats 
-          }
-          return stats
+        const stats = await api.get(`/answer-records/user-subcategory-stats/${userId}/${subcategoryId}`)
+        this.userSubcategoryStats = { 
+          ...this.userSubcategoryStats, 
+          [subcategoryId]: stats 
         }
-        return null
+        return stats
       } catch (error) {
         this.error = error.message
         return null
@@ -339,21 +304,20 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = true
         this.error = null
         
-        const url = `${getApiBaseUrl()}/questions?subjectId=${subjectId}&subcategoryId=${subcategoryId}&limit=1000`
+        const data = await api.get('/questions', { 
+          subjectId, 
+          subcategoryId, 
+          limit: 1000 
+        })
         
-        const response = await fetch(url)
-        if (response.ok) {
-          const data = await response.json()
-          const questions = data.questions || data
-          
-          // 合并到现有题目列表（去重）
-          const existingIds = new Set(this.questions.map(q => q.id))
-          const newQuestions = questions.filter(q => !existingIds.has(q.id))
-          this.questions = [...this.questions, ...newQuestions]
-          
-          return questions
-        }
-        return []
+        const questions = data.questions || data
+        
+        // 合并到现有题目列表（去重）
+        const existingIds = new Set(this.questions.map(q => q.id))
+        const newQuestions = questions.filter(q => !existingIds.has(q.id))
+        this.questions = [...this.questions, ...newQuestions]
+        
+        return questions
       } catch (error) {
         this.error = error.message
         return []
@@ -370,20 +334,20 @@ export const useQuestionStore = defineStore('question', {
         
         // 并行加载数据和统计数据
         const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] = await Promise.all([
-          fetch(`${getApiBaseUrl()}/subjects`).then(res => res.json()).catch((error) => {
+          api.get('/subjects').catch((error) => {
             console.error('加载学科失败:', error)
             return []
           }),
-          fetch(`${getApiBaseUrl()}/grades`).then(res => res.json()).catch((error) => {
+          api.get('/grades').catch((error) => {
             console.error('加载年级失败:', error)
             return []
           }),
-          fetch(`${getApiBaseUrl()}/classes`).then(res => res.json()).catch((error) => {
+          api.get('/classes').catch((error) => {
             console.error('加载班级失败:', error)
             return []
           }),
-          fetch(`${getApiBaseUrl()}/subjects/stats`).then(res => res.json()).catch(() => []),
-          fetch(`${getApiBaseUrl()}/questions/subcategories/stats`).then(res => res.json()).catch(() => ({}))
+          api.get('/subjects/stats').catch(() => []),
+          api.get('/questions/subcategories/stats').catch(() => ({}))
         ]);
         
         // 检查应用是否仍然挂载
@@ -816,33 +780,31 @@ export const useQuestionStore = defineStore('question', {
         }
         
         // 这里需要调用后端API获取错题巩固题库
-        // 暂时使用模拟数据
-        const response = await fetch(`${getApiBaseUrl()}/error-collection/${subjectId}?studentId=${studentId}&grade=${userGrade}&class=${userClass}`)
-        if (response.ok) {
-          const data = await response.json()
-          // 处理题目数据，确保options和explanation字段正确
-          this.errorCollections[subjectId] = (data.questions || []).map(question => {
-            // 解析options字段
-            if (typeof question.options === 'string') {
-              try {
-                question.options = JSON.parse(question.options)
-              } catch (e) {
-                question.options = []
-              }
+        const data = await api.get(`/error-collection/${subjectId}`, {
+          studentId,
+          grade: userGrade,
+          class: userClass
+        })
+        
+        // 处理题目数据，确保options和explanation字段正确
+        this.errorCollections[subjectId] = (data.questions || []).map(question => {
+          // 解析options字段
+          if (typeof question.options === 'string') {
+            try {
+              question.options = JSON.parse(question.options)
+            } catch (e) {
+              question.options = []
             }
-            // 确保explanation字段存在
-            if (question.explanation === undefined) {
-              question.explanation = ''
-            }
-            return question
-          })
-          // 加载错题统计
-          if (data.stats) {
-            this.errorCollectionStats = { ...this.errorCollectionStats, ...data.stats }
           }
-        } else {
-          // 如果API返回错误，显示空数据
-          this.errorCollections[subjectId] = []
+          // 确保explanation字段存在
+          if (question.explanation === undefined) {
+            question.explanation = ''
+          }
+          return question
+        })
+        // 加载错题统计
+        if (data.stats) {
+          this.errorCollectionStats = { ...this.errorCollectionStats, ...data.stats }
         }
       } catch (error) {
         this.error = error.message
@@ -873,12 +835,12 @@ export const useQuestionStore = defineStore('question', {
         this.errorCollectionStats[questionId] = { correctCount: newCount }
         
         // 调用后端API更新正确次数
-        await fetch(`${getApiBaseUrl()}/error-collection/update`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ studentId, grade: parseInt(userGrade), class: parseInt(userClass), questionId, correctCount: newCount })
+        await api.post('/error-collection/update', {
+          studentId,
+          grade: userGrade,
+          class: userClass,
+          questionId,
+          correctCount: newCount
         })
         
         // 检查是否达到3次正确，若是则从所有错题巩固题库中移除
@@ -910,12 +872,12 @@ export const useQuestionStore = defineStore('question', {
         this.errorCollectionStats[questionId] = { correctCount: 0 }
         
         // 调用后端API添加到错题巩固题库
-        await fetch(`${getApiBaseUrl()}/error-collection/update`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ studentId, grade: parseInt(userGrade), class: parseInt(userClass), questionId, correctCount: 0 })
+        await api.post('/error-collection/update', {
+          studentId,
+          grade: userGrade,
+          class: userClass,
+          questionId,
+          correctCount: 0
         })
       } catch (error) {
         this.error = error.message
@@ -942,12 +904,11 @@ export const useQuestionStore = defineStore('question', {
         this.errorCollectionStats[questionId] = { correctCount: 0 }
         
         // 调用后端API重置正确次数
-        await fetch(`${getApiBaseUrl()}/error-collection/reset`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ studentId, grade: parseInt(userGrade), class: parseInt(userClass), questionId })
+        await api.post('/error-collection/reset', {
+          studentId,
+          grade: userGrade,
+          class: userClass,
+          questionId
         })
       } catch (error) {
         this.error = error.message
@@ -1104,33 +1065,28 @@ export const useSettingsStore = defineStore('settings', {
       try {
         this.isLoading = true
         this.error = null
-        const response = await fetch(`${getApiBaseUrl()}/settings`)
-        if (response.ok) {
-          const settings = await response.json()
-          this.settings.randomizeAnswers = settings.randomizeAnswers === 'true' || settings.randomizeAnswers === true
-          this.settings.randomizeErrorCollectionAnswers = settings.randomizeErrorCollectionAnswers === 'true' || settings.randomizeErrorCollectionAnswers === true
-          this.settings.fixedQuestionCount = settings.fixedQuestionCount === 'true'
-          this.settings.minQuestionCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
-          this.settings.maxQuestionCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
-          this.settings.fixedQuestionCountValue = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
-          // 加载学科独立题目数量配置
-          if (settings.subjectQuestionCounts) {
-            try {
-              const parsed = settings.subjectQuestionCounts.replace(/'/g, '')
-              this.settings.subjectQuestionCounts = JSON.parse(parsed)
-            } catch (e) {
-              console.warn('解析学科题目数量配置失败:', e)
-              this.settings.subjectQuestionCounts = {}
-            }
-          } else {
+        const settings = await api.get('/settings')
+        this.settings.randomizeAnswers = settings.randomizeAnswers === 'true' || settings.randomizeAnswers === true
+        this.settings.randomizeErrorCollectionAnswers = settings.randomizeErrorCollectionAnswers === 'true' || settings.randomizeErrorCollectionAnswers === true
+        this.settings.fixedQuestionCount = settings.fixedQuestionCount === 'true'
+        this.settings.minQuestionCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
+        this.settings.maxQuestionCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
+        this.settings.fixedQuestionCountValue = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+        // 加载学科独立题目数量配置
+        if (settings.subjectQuestionCounts) {
+          try {
+            const parsed = settings.subjectQuestionCounts.replace(/'/g, '')
+            this.settings.subjectQuestionCounts = JSON.parse(parsed)
+          } catch (e) {
+            console.warn('解析学科题目数量配置失败:', e)
             this.settings.subjectQuestionCounts = {}
           }
-          // 加载界面名称
-          if (settings.interfaceName) {
-            this.interfaceName = settings.interfaceName
-          }
         } else {
-          throw new Error(`加载设置失败: ${response.status}`)
+          this.settings.subjectQuestionCounts = {}
+        }
+        // 加载界面名称
+        if (settings.interfaceName) {
+          this.interfaceName = settings.interfaceName
         }
       } catch (error) {
         this.error = error.message
@@ -1146,38 +1102,28 @@ export const useSettingsStore = defineStore('settings', {
       try {
         this.isLoading = true
         this.error = null
-        const response = await fetch(`${getApiBaseUrl()}/settings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify(newSettings)
-        })
-        if (response.ok) {
-          // 更新本地状态
-          this.settings.randomizeAnswers = newSettings.randomizeAnswers === 'true' || newSettings.randomizeAnswers === true
-          this.settings.randomizeErrorCollectionAnswers = newSettings.randomizeErrorCollectionAnswers === 'true' || newSettings.randomizeErrorCollectionAnswers === true
-          this.settings.fixedQuestionCount = newSettings.fixedQuestionCount === 'true'
-          this.settings.minQuestionCount = parseInt(newSettings.minQuestionCount?.replace(/'/g, '')) || 3
-          this.settings.maxQuestionCount = parseInt(newSettings.maxQuestionCount?.replace(/'/g, '')) || 5
-          this.settings.fixedQuestionCountValue = parseInt(newSettings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
-          // 更新学科独立题目数量配置
-          if (newSettings.subjectQuestionCounts) {
-            try {
-              const parsed = typeof newSettings.subjectQuestionCounts === 'string' 
-                ? newSettings.subjectQuestionCounts.replace(/'/g, '')
-                : JSON.stringify(newSettings.subjectQuestionCounts)
-              this.settings.subjectQuestionCounts = JSON.parse(parsed)
-            } catch (e) {
-              this.settings.subjectQuestionCounts = {}
-            }
+        await api.post('/settings', newSettings)
+        // 更新本地状态
+        this.settings.randomizeAnswers = newSettings.randomizeAnswers === 'true' || newSettings.randomizeAnswers === true
+        this.settings.randomizeErrorCollectionAnswers = newSettings.randomizeErrorCollectionAnswers === 'true' || newSettings.randomizeErrorCollectionAnswers === true
+        this.settings.fixedQuestionCount = newSettings.fixedQuestionCount === 'true'
+        this.settings.minQuestionCount = parseInt(newSettings.minQuestionCount?.replace(/'/g, '')) || 3
+        this.settings.maxQuestionCount = parseInt(newSettings.maxQuestionCount?.replace(/'/g, '')) || 5
+        this.settings.fixedQuestionCountValue = parseInt(newSettings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+        // 更新学科独立题目数量配置
+        if (newSettings.subjectQuestionCounts) {
+          try {
+            const parsed = typeof newSettings.subjectQuestionCounts === 'string' 
+              ? newSettings.subjectQuestionCounts.replace(/'/g, '')
+              : JSON.stringify(newSettings.subjectQuestionCounts)
+            this.settings.subjectQuestionCounts = JSON.parse(parsed)
+          } catch (e) {
+            this.settings.subjectQuestionCounts = {}
           }
-          return true
         }
-        return false
+        return true
       } catch (error) {
         this.error = error.message
-
         return false
       } finally {
         this.isLoading = false
@@ -1191,16 +1137,9 @@ export const useSettingsStore = defineStore('settings', {
         this.error = null
         this.interfaceName = newName
         // 保存到数据库
-        await fetch(`${getApiBaseUrl()}/settings`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ interfaceName: newName })
-        })
+        await api.post('/settings', { interfaceName: newName })
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }

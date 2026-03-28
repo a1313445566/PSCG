@@ -13,7 +13,11 @@ router.get('/:subjectId', async (req, res) => {
     }
     
     // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
-    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [studentId, grade, className]);
+    // 支持数字或字符串形式的年级班级
+    const user = await db.get(
+      'SELECT id FROM users WHERE student_id = ? AND (grade = ? OR grade LIKE ?) AND (class = ? OR class LIKE ?)', 
+      [studentId, grade, `%${grade}%`, className, `%${className}%`]
+    );
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }
@@ -155,7 +159,11 @@ router.post('/reset', async (req, res) => {
     }
     
     // 查找用户ID（使用student_id、grade和class的组合来唯一标识用户）
-    const user = await db.get('SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?', [studentId, grade, className]);
+    // 支持数字或字符串形式的年级班级
+    const user = await db.get(
+      'SELECT id FROM users WHERE student_id = ? AND (grade = ? OR grade LIKE ?) AND (class = ? OR class LIKE ?)', 
+      [studentId, grade, `%${grade}%`, className, `%${className}%`]
+    );
     if (!user) {
       return res.status(404).json({ error: '用户不存在' });
     }

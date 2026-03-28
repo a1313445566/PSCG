@@ -42,7 +42,7 @@
 <script setup>
 import { ref, defineProps, defineEmits, watch, onMounted, onUnmounted, nextTick } from 'vue';
 import { ElMessage } from 'element-plus';
-import { getApiBaseUrl } from '../../../utils/database';
+import { api } from '../../../utils/api';
 
 // 定义属性
 const props = defineProps({
@@ -97,8 +97,7 @@ const passwordInputRef = ref(null);
 // 检查初始化状态
 const checkInitStatus = async () => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/admin/status`);
-    const data = await response.json();
+    const data = await api.get('/admin/status');
     isInitialized.value = data.initialized;
     
     if (data.username) {
@@ -154,17 +153,9 @@ const handleLogin = async () => {
   loading.value = true;
 
   try {
-    const response = await fetch(`${getApiBaseUrl()}/admin/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({ username, password })
-    });
+    const data = await api.post('/admin/login', { username, password });
 
-    const data = await response.json();
-
-    if (response.ok && data.success) {
+    if (data.success) {
       // 存储 Token 到 sessionStorage
       sessionStorage.setItem('adminToken', data.token);
       sessionStorage.setItem('adminUsername', data.username);
@@ -188,7 +179,7 @@ const handleLogin = async () => {
   } catch (error) {
     console.error('[PasswordDialog] 登录失败:', error);
     if (isComponentMounted) {
-      ElMessage.error('登录失败，请检查网络连接');
+      ElMessage.error(error.message || '登录失败，请检查网络连接');
     }
   } finally {
     loading.value = false;

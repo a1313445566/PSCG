@@ -103,7 +103,7 @@
 import { ref, computed, watch, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { Plus, Delete } from '@element-plus/icons-vue';
-import { getApiBaseUrl } from '../../../utils/database';
+import { api } from '../../../utils/api';
 import AdminFilter from '../common/AdminFilter.vue';
 import UserForm from './UserForm.vue';
 import { usePagination } from '../../../composables/usePagination';
@@ -187,32 +187,27 @@ const users = ref([]);
 const loadUsers = async () => {
   loading.value = true;
   try {
-    const params = new URLSearchParams();
-    params.append('page', currentPage.value);
-    params.append('limit', pageSize.value);
-    params.append('withStats', 'true');
+    const params = {
+      page: currentPage.value,
+      limit: pageSize.value,
+      withStats: true
+    };
 
     // 添加筛选条件
     if (filters.value.studentId) {
-      params.append('student_id', filters.value.studentId);
+      params.student_id = filters.value.studentId;
     }
     if (filters.value.name) {
-      params.append('name', filters.value.name);
+      params.name = filters.value.name;
     }
     if (filters.value.grade) {
-      params.append('grade', filters.value.grade);
+      params.grade = filters.value.grade;
     }
     if (filters.value.class) {
-      params.append('class', filters.value.class);
+      params.class = filters.value.class;
     }
 
-    const response = await fetch(`${getApiBaseUrl()}/users?${params.toString()}`);
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const result = await response.json();
+    const result = await api.get('/users', params);
 
     // 检查返回格式（向后兼容）
     if (Array.isArray(result)) {
@@ -267,15 +262,10 @@ const deleteUser = (user) => {
     try {
       const userId = user.id;
       if (userId) {
-        const response = await fetch(`${getApiBaseUrl()}/users/${userId}`, { method: 'DELETE' });
-        
-        if (response.ok) {
-          ElMessage.success('用户删除成功！');
-          loadUsers();
-          emit('update-users');
-        } else {
-          throw new Error('删除用户失败');
-        }
+        await api.delete(`/users/${userId}`);
+        ElMessage.success('用户删除成功！');
+        loadUsers();
+        emit('update-users');
       } else {
         ElMessage.error('用户ID不存在，无法删除');
       }
@@ -307,24 +297,11 @@ const batchDeleteUsers = () => {
         return;
       }
       
-      const response = await fetch(`${getApiBaseUrl()}/users/batch-delete`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({ userIds })
-      });
-      
-      if (response.ok) {
-        const result = await response.json();
-        ElMessage.success(result.message || '批量删除成功！');
-        loadUsers();
-        emit('update-users');
-        selectedUsers.value = [];
-      } else {
-        const errorData = await response.json().catch(() => ({}));
-        throw new Error(errorData.error || '批量删除失败');
-      }
+      const result = await api.post('/users/batch-delete', { userIds });
+      ElMessage.success(result.message || '批量删除成功！');
+      loadUsers();
+      emit('update-users');
+      selectedUsers.value = [];
     } catch (error) {
       console.error('批量删除用户失败:', error);
       ElMessage.error('批量删除用户失败，请稍后重试');
@@ -340,39 +317,21 @@ const saveUser = async (userData) => {
   try {
     const userToSave = {
       name: userData.name,
-      grade: parseInt(userData.grade),
-      class: parseInt(userData.class),
+      grade: userData.grade,
+      class: userData.class,
       student_id: userData.student_id
     };
     
-    let response;
     if (userData.id) {
-      response = await fetch(`${getApiBaseUrl()}/users/${userData.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userToSave)
-      });
+      await api.put(`/users/${userData.id}`, userToSave);
     } else {
-      response = await fetch(`${getApiBaseUrl()}/users`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(userToSave)
-      });
+      await api.post('/users', userToSave);
     }
     
-    if (response.ok) {
-      ElMessage.success('用户保存成功！');
-      userFormVisible.value = false;
-      loadUsers();
-      emit('update-users');
-    } else {
-      const errorData = await response.json().catch(() => ({}));
-      throw new Error(errorData.error || '保存用户失败');
-    }
+    ElMessage.success('用户保存成功！');
+    userFormVisible.value = false;
+    loadUsers();
+    emit('update-users');
   } catch (error) {
     console.error('保存用户失败:', error);
     ElMessage.error('保存用户失败，请稍后重试');

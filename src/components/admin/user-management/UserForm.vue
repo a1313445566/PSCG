@@ -16,13 +16,13 @@
       
       <el-form-item label="年级" prop="grade" :rules="[{ required: true, message: '请选择年级', trigger: 'change' }]">
         <el-select v-model="form.grade" placeholder="请选择年级">
-          <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.id || grade"></el-option>
+          <el-option v-for="grade in grades" :key="grade.id || grade" :label="grade.name || grade" :value="grade.name || grade"></el-option>
         </el-select>
       </el-form-item>
       
       <el-form-item label="班级" prop="class" :rules="[{ required: true, message: '请选择班级', trigger: 'change' }]">
         <el-select v-model="form.class" placeholder="请选择班级">
-          <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.id || classNum"></el-option>
+          <el-option v-for="classNum in classes" :key="classNum.id || classNum" :label="classNum.name || classNum" :value="classNum.name || classNum"></el-option>
         </el-select>
       </el-form-item>
     </el-form>

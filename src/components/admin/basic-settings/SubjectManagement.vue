@@ -205,7 +205,7 @@
 import { ref, computed, onMounted, onUnmounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
 import { useQuestionStore } from '../../../stores/questionStore';
-import { getApiBaseUrl } from '../../../utils/database';
+import { api } from '../../../utils/api';
 import { Plus, Refresh } from '@element-plus/icons-vue';
 
 // 定义属性和事件
@@ -580,16 +580,7 @@ const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
     // 保存学科顺序到数据库
       const subjectOrder = subjectsCopy.map(subject => subject.id);
       try {
-        const response = await fetch(`${getApiBaseUrl()}/subjects/sort`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ subjectOrder })
-        });
-        if (!response.ok) {
-          throw new Error('保存学科排序失败');
-        }
+        await api.put('/subjects/sort', { subjectOrder });
       } catch (error) {
         console.error('保存学科排序失败:', error);
         ElMessage.error('保存排序失败，请稍后重试');
@@ -617,16 +608,7 @@ const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
       // 保存题库顺序到数据库
       const subcategoryOrder = subcategoriesCopy.map(subcategory => subcategory.id);
       try {
-        const response = await fetch(`${getApiBaseUrl()}/subjects/${draggingData.subjectId}/subcategories/sort`, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ subcategoryOrder })
-        });
-        if (!response.ok) {
-          throw new Error('保存题库排序失败');
-        }
+        await api.put(`/subjects/${draggingData.subjectId}/subcategories/sort`, { subcategoryOrder });
       } catch (error) {
         console.error('保存题库排序失败:', error);
         ElMessage.error('保存排序失败，请稍后重试');

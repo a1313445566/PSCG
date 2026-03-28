@@ -545,6 +545,7 @@ import { useAdminLayout } from '../../../composables/useAdminLayout';
 import { usePagination } from '../../../composables/usePagination';
 import { formatDate } from '../../../utils/dateUtils';
 import { getApiBaseUrl } from '../../../utils/database';
+import { api } from '../../../utils/api';
 import EditableContent from '../../common/EditableContent.vue';
 import QuillEditor from '../../common/QuillEditor.vue';
 
@@ -831,26 +832,18 @@ const saveInlineEdit = async (row) => {
 
   try {
     // 获取完整题目数据
-    const fullQuestion = await fetch(`${getApiBaseUrl()}/questions/${row.id}`).then(r => r.json());
+    const fullQuestion = await api.get(`/questions/${row.id}`);
 
-    const response = await fetch(`${getApiBaseUrl()}/questions/${row.id}`, {
-      method: 'PUT',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        ...fullQuestion,
-        content: editingContent.value
-      })
+    await api.put(`/questions/${row.id}`, {
+      ...fullQuestion,
+      content: editingContent.value
     });
 
-    if (response.ok) {
-      ElMessage.success('修改成功');
-      // 更新本地数据
-      const index = serverQuestions.value.findIndex(q => q.id === row.id);
-      if (index !== -1) {
-        serverQuestions.value[index].content = editingContent.value;
-      }
-    } else {
-      ElMessage.error('修改失败');
+    ElMessage.success('修改成功');
+    // 更新本地数据
+    const index = serverQuestions.value.findIndex(q => q.id === row.id);
+    if (index !== -1) {
+      serverQuestions.value[index].content = editingContent.value;
     }
   } catch (error) {
     console.error('保存失败:', error);
@@ -914,7 +907,7 @@ const executeRealDelete = async (questionId) => {
   if (!pending) return; // 已被撤销
 
   try {
-    await fetch(`${getApiBaseUrl()}/questions/${questionId}`, { method: 'DELETE' });
+    await api.delete(`/questions/${questionId}`);
     pendingDeletes.value.delete(questionId);
     emit('delete-question', questionId);
   } catch (error) {
@@ -959,17 +952,10 @@ const batchDeleteQuestions = async () => {
     );
 
     const ids = selectedQuestions.value.map(q => q.id);
-    const response = await fetch(`${getApiBaseUrl()}/questions/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'delete', ids })
-    });
-
-    if (response.ok) {
-      ElMessage.success(`成功删除 ${ids.length} 道题目`);
-      selectedQuestions.value = [];
-      loadQuestions();
-    }
+    await api.post('/questions/batch', { action: 'delete', ids });
+    ElMessage.success(`成功删除 ${ids.length} 道题目`);
+    selectedQuestions.value = [];
+    loadQuestions();
   } catch (e) {
     if (e !== 'cancel') {
       ElMessage.error('删除失败');
@@ -981,22 +967,15 @@ const batchDeleteQuestions = async () => {
 const executeBatchDifficulty = async () => {
   const ids = selectedQuestions.value.map(q => q.id);
   try {
-    const response = await fetch(`${getApiBaseUrl()}/questions/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'updateDifficulty',
-        ids,
-        data: { difficulty: batchDifficulty.value }
-      })
+    await api.post('/questions/batch', {
+      action: 'updateDifficulty',
+      ids,
+      data: { difficulty: batchDifficulty.value }
     });
-
-    if (response.ok) {
-      ElMessage.success(`成功修改 ${ids.length} 道题目的难度`);
-      batchDifficultyVisible.value = false;
-      selectedQuestions.value = [];
-      loadQuestions();
-    }
+    ElMessage.success(`成功修改 ${ids.length} 道题目的难度`);
+    batchDifficultyVisible.value = false;
+    selectedQuestions.value = [];
+    loadQuestions();
   } catch (error) {
     ElMessage.error('修改失败');
   }
@@ -1011,22 +990,15 @@ const executeBatchType = async () => {
 
   const ids = selectedQuestions.value.map(q => q.id);
   try {
-    const response = await fetch(`${getApiBaseUrl()}/questions/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'updateType',
-        ids,
-        data: { type: batchType.value }
-      })
+    await api.post('/questions/batch', {
+      action: 'updateType',
+      ids,
+      data: { type: batchType.value }
     });
-
-    if (response.ok) {
-      ElMessage.success(`成功修改 ${ids.length} 道题目的类型`);
-      batchTypeVisible.value = false;
-      selectedQuestions.value = [];
-      loadQuestions();
-    }
+    ElMessage.success(`成功修改 ${ids.length} 道题目的类型`);
+    batchTypeVisible.value = false;
+    selectedQuestions.value = [];
+    loadQuestions();
   } catch (error) {
     ElMessage.error('修改失败');
   }
@@ -1040,25 +1012,18 @@ const handleBatchMoveSubjectChange = () => {
 const executeBatchMove = async () => {
   const ids = selectedQuestions.value.map(q => q.id);
   try {
-    const response = await fetch(`${getApiBaseUrl()}/questions/batch`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        action: 'move',
-        ids,
-        data: {
-          subjectId: batchMoveSubjectId.value,
-          subcategoryId: batchMoveSubcategoryId.value || null
-        }
-      })
+    await api.post('/questions/batch', {
+      action: 'move',
+      ids,
+      data: {
+        subjectId: batchMoveSubjectId.value,
+        subcategoryId: batchMoveSubcategoryId.value || null
+      }
     });
-
-    if (response.ok) {
-      ElMessage.success(`成功移动 ${ids.length} 道题目`);
-      batchMoveVisible.value = false;
-      selectedQuestions.value = [];
-      loadQuestions();
-    }
+    ElMessage.success(`成功移动 ${ids.length} 道题目`);
+    batchMoveVisible.value = false;
+    selectedQuestions.value = [];
+    loadQuestions();
   } catch (error) {
     ElMessage.error('移动失败');
   }
@@ -1078,8 +1043,7 @@ const previewQuestion = async (row) => {
   previewData.value = null;
 
   try {
-    const response = await fetch(`${getApiBaseUrl()}/questions/${row.id}`);
-    const data = await response.json();
+    const data = await api.get(`/questions/${row.id}`);
 
     const previewInfo = {
       ...data,
@@ -1153,8 +1117,7 @@ const openSplitEdit = async (row) => {
 
   try {
     // 获取完整题目数据
-    const response = await fetch(`${getApiBaseUrl()}/questions/${row.id}`);
-    const data = await response.json();
+    const data = await api.get(`/questions/${row.id}`);
 
     let options = data.options || [];
     if (typeof options === 'string') {
@@ -1254,35 +1217,22 @@ const saveSplitEdit = async () => {
     let response;
     if (editMode.value === 'add') {
       // 添加新题目
-      response = await fetch(`${getApiBaseUrl()}/questions`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
+      response = await api.post('/questions', requestBody);
     } else {
       // 编辑现有题目
-      response = await fetch(`${getApiBaseUrl()}/questions/${editingQuestionId.value}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(requestBody)
-      });
+      response = await api.put(`/questions/${editingQuestionId.value}`, requestBody);
     }
 
-    if (response.ok) {
-      ElMessage.success(editMode.value === 'add' ? '添加成功' : '保存成功');
-      // 刷新列表
-      loadQuestions();
-      // 添加成功后关闭面板
-      if (editMode.value === 'add') {
-        closeSplitEdit();
-      }
-    } else {
-      const error = await response.json();
-      ElMessage.error(error.error || '保存失败');
+    ElMessage.success(editMode.value === 'add' ? '添加成功' : '保存成功');
+    // 刷新列表
+    loadQuestions();
+    // 添加成功后关闭面板
+    if (editMode.value === 'add') {
+      closeSplitEdit();
     }
   } catch (error) {
     console.error('保存失败:', error);
-    ElMessage.error('保存失败');
+    ElMessage.error(error.message || '保存失败');
   } finally {
     splitEditSaving.value = false;
   }
