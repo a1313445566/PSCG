@@ -201,7 +201,6 @@ const isCorrectOption = (index) => {
 const isWrongOption = (index) => {
   const letter = String.fromCharCode(65 + index)
   const userAnswer = props.question?.userAnswer || props.question?.user_answer
-  const correctAnswer = props.question?.correctAnswer || props.question?.correct_answer
   
   // 用户选了这个选项，但这不是正确答案
   const isSelected = Array.isArray(userAnswer) ? userAnswer.includes(letter) : String(userAnswer) === letter

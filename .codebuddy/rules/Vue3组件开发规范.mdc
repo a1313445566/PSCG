@@ -197,74 +197,96 @@ const token = await getCSRFToken()
 headers['X-CSRF-Token'] = token
 ```
 
-## 现有工具函数
-
-| 文件 | 功能 | 用途 |
-|------|------|------|
-| `apiCache.js` | API 缓存 | 缓存 API 响应 |
-| `xss-filter.js` | XSS 过滤 | 富文本安全处理 |
-| `csrf.js` | CSRF 防护 | 获取和验证 CSRF Token |
-| `dateUtils.js` | 日期处理 | 日期格式化 |
-| `database.js` | 数据库配置 | MySQL 连接池 |
-| `draftStorage.js` | 草稿存储 | 本地草稿管理 |
-| `imageUpload.js` | 图片上传 | 图片处理上传 |
-| `lazyLoad.js` | 懒加载 | 组件懒加载工具 |
-
-## 待实现功能
-
-以下功能在需求文档中已规划，实现后更新此规范：
+## 已实现的公共工具
 
 ### Composables (组合式函数)
-```javascript
-// 待实现: src/composables/usePagination.js
-export function usePagination(defaultPageSize = 10) {
-  const currentPage = ref(1)
-  const pageSize = ref(defaultPageSize)
-  
-  const paginate = (data) => {
-    const start = (currentPage.value - 1) * pageSize.value
-    return data.slice(start, start + pageSize.value)
-  }
-  
-  return { currentPage, pageSize, paginate, handleSizeChange, handleCurrentChange }
-}
 
-// 待实现: src/composables/useLoading.js
-export function useLoading() {
-  const loadingInstance = ref(null)
-  
-  const showLoading = (text = '加载中...') => {
-    loadingInstance.value = ElLoading.service({ lock: true, text })
-  }
-  
-  const hideLoading = () => {
-    loadingInstance.value?.close()
-    loadingInstance.value = null
-  }
-  
-  const withLoading = async (fn, text) => {
-    showLoading(text)
-    try { return await fn() }
-    finally { hideLoading() }
-  }
-  
-  return { showLoading, hideLoading, withLoading }
-}
+项目已实现以下 Composables，可在组件中直接使用：
+
+| 文件 | 功能 | 典型用途 |
+|------|------|----------|
+| `usePagination.js` | 分页逻辑 | 列表分页、前后端分页切换 |
+| `useLoading.js` | 加载状态管理 | 异步操作加载提示 |
+| `useAdminLayout.js` | 后台布局工具 | 后台页面布局配置 |
+| `useChartRenderer.js` | 图表渲染 | ECharts 图表渲染与销毁 |
+| `useUserFilters.js` | 用户筛选 | 用户列表筛选逻辑 |
+
+#### 使用示例
+
+**usePagination - 分页**
+```javascript
+import { usePagination } from '@/composables/usePagination'
+
+const { 
+  currentPage, 
+  pageSize, 
+  paginatedData, 
+  handlePageChange,
+  handleSizeChange 
+} = usePagination(allData, { pageSize: 10 })
+
+// 模板中使用
+<el-pagination
+  :current-page="currentPage"
+  :page-size="pageSize"
+  @current-change="handlePageChange"
+  @size-change="handleSizeChange"
+/>
 ```
 
-### API 封装 (待实现)
+**useLoading - 加载状态**
 ```javascript
-// 待实现: src/utils/api.js
+import { useLoading } from '@/composables/useLoading'
+
+const { loading, withLoading } = useLoading()
+
+// 自动管理加载状态
+await withLoading(async () => {
+  await fetchData()
+})
+```
+
+### 工具函数
+
+| 文件 | 功能 | 主要方法 |
+|------|------|----------|
+| `api.js` | API 客户端封装 | `get()`, `post()`, `put()`, `delete()` |
+| `message.js` | 消息提示封装 | `success()`, `error()`, `warning()`, `info()` |
+| `format.js` | 数据格式化 | `formatPercent()`, `formatNumber()`, `formatTime()` |
+| `dateUtils.js` | 日期处理 | `formatDate()`, `parseDate()` |
+| `xss-filter.js` | XSS 过滤 | `sanitize()` |
+| `csrf.js` | CSRF 防护 | `getCSRFToken()` |
+| `apiCache.js` | API 缓存 | `getCache()`, `setCache()` |
+| `draftStorage.js` | 草稿存储 | `saveDraft()`, `loadDraft()` |
+| `imageUpload.js` | 图片上传 | `uploadImage()` |
+| `lazyLoad.js` | 懒加载 | 组件懒加载工具 |
+
+#### API 调用最佳实践
+
+**推荐方式 (使用 api.js)**
+```javascript
 import { api } from '@/utils/api'
 
-// GET 请求
+// 自动处理 CSRF、错误、重试
 const data = await api.get('/subjects')
-
-// POST 请求
 await api.post('/questions', questionData)
-
-// DELETE 请求
 await api.delete(`/questions/${id}`)
+
+// 支持配置
+await api.get('/data', { 
+  retry: 3,           // 重试次数
+  timeout: 5000,      // 超时时间
+  debounce: 300       // 防抖延迟
+})
+```
+
+**消息提示**
+```javascript
+import { success, error, warning } from '@/utils/message'
+
+success('操作成功')
+error('操作失败: ' + error.message)
+warning('请注意数据格式')
 ```
 
 ## 文档参考
