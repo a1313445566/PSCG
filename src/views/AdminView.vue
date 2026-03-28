@@ -7,7 +7,7 @@
   >
     <!-- 数据概览 -->
     <DashboardView v-if="activeMenu === 'dashboard'" />
-    
+
     <!-- 题目管理 -->
     <div v-else-if="activeMenu === 'questions'" class="question-management">
       <QuestionList
@@ -19,41 +19,41 @@
         @show-batch-add-dialog="batchAddDialogVisible = true"
       />
     </div>
-    
+
     <!-- 学科管理 -->
     <div v-else-if="activeMenu === 'subjects'" class="subject-management">
       <SubjectManagement @manage-subcategories="manageSubcategories" />
     </div>
-    
+
     <!-- 年级班级 -->
     <div v-else-if="activeMenu === 'grades-classes'" class="grades-classes-management">
       <GradeClassManagement />
     </div>
-    
+
     <!-- 用户答题统计 -->
     <UserStatsView v-else-if="activeMenu === 'user-stats'" />
-    
+
     <!-- 最近答题记录 -->
     <RecentRecordsView v-else-if="activeMenu === 'recent-records'" />
-    
+
     <!-- 用户管理 -->
     <div v-else-if="activeMenu === 'user-management'" class="user-management-view">
-      <UserManagement 
+      <UserManagement
         ref="userManagementRef"
         :grades="grades"
         :classes="classes"
         @update-users="updateUserList"
       />
     </div>
-    
+
     <!-- 基础设置 -->
     <div v-else-if="activeMenu === 'basic-settings'" class="basic-settings">
-      <InterfaceNameSetting 
+      <InterfaceNameSetting
         :interface-name="interfaceName"
         @update-interface-name="updateInterfaceName"
       />
-      
-      <AnswerSetting 
+
+      <AnswerSetting
         :randomize-answers="randomizeAnswers"
         :randomize-error-collection-answers="randomizeErrorCollectionAnswers"
         :fixed-question-count="fixedQuestionCount"
@@ -64,11 +64,11 @@
         :subject-question-counts="subjectQuestionCounts"
         @update-settings="updateAnswerSettings"
       />
-      
+
       <!-- AI 配置 -->
       <AIConfigSetting />
     </div>
-    
+
     <!-- 数据库管理 -->
     <div v-else-if="activeMenu === 'database'" class="data-management">
       <BackupRestore
@@ -81,7 +81,7 @@
         @get-backup-history="getBackupHistory"
         @verify-backup="verifyBackup"
       />
-      <DataCleanup 
+      <DataCleanup
         @clear-all-data="clearAllData"
         @clear-user-records="clearUserRecords"
         @clear-leaderboard="clearLeaderboard"
@@ -89,10 +89,10 @@
         @clear-classes="clearClasses"
       />
     </div>
-    
+
     <!-- 安全中心 -->
     <SecurityMonitor v-else-if="activeMenu === 'security'" />
-    
+
     <!-- 数据分析 -->
     <DataAnalysis v-else-if="activeMenu === 'data-analysis'" />
 
@@ -116,14 +116,14 @@
       @update-subcategory="updateSubcategory"
       @delete-subcategory="deleteSubcategory"
     />
-    
+
     <!-- 批量添加题目对话框 -->
     <BatchAddQuestion
       v-model:visible="batchAddDialogVisible"
       :subjects="subjects"
       @batch-add-questions="handleBatchAddQuestions"
     />
-    
+
     <!-- 添加/编辑题目对话框 -->
     <QuestionForm
       v-model:visible="questionFormDialogVisible"
@@ -154,21 +154,47 @@ import SubjectManagement from '../components/admin/basic-settings/SubjectManagem
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
 
 // 异步组件
-const QuestionList = defineAsyncComponent(() => import('../components/admin/question-management/QuestionList.vue'))
-const UserManagement = defineAsyncComponent(() => import('../components/admin/user-management/UserManagement.vue'))
-const UserStatsView = defineAsyncComponent(() => import('../components/admin/user-data/UserStatsView.vue'))
-const RecentRecordsView = defineAsyncComponent(() => import('../components/admin/user-data/RecentRecordsView.vue'))
-const SecurityMonitor = defineAsyncComponent(() => import('../components/admin/security/SecurityMonitor.vue'))
-const BackupRestore = defineAsyncComponent(() => import('../components/admin/data-management/BackupRestore.vue'))
-const DataCleanup = defineAsyncComponent(() => import('../components/admin/data-management/DataCleanup.vue'))
+const QuestionList = defineAsyncComponent(
+  () => import('../components/admin/question-management/QuestionList.vue')
+)
+const UserManagement = defineAsyncComponent(
+  () => import('../components/admin/user-management/UserManagement.vue')
+)
+const UserStatsView = defineAsyncComponent(
+  () => import('../components/admin/user-data/UserStatsView.vue')
+)
+const RecentRecordsView = defineAsyncComponent(
+  () => import('../components/admin/user-data/RecentRecordsView.vue')
+)
+const SecurityMonitor = defineAsyncComponent(
+  () => import('../components/admin/security/SecurityMonitor.vue')
+)
+const BackupRestore = defineAsyncComponent(
+  () => import('../components/admin/data-management/BackupRestore.vue')
+)
+const DataCleanup = defineAsyncComponent(
+  () => import('../components/admin/data-management/DataCleanup.vue')
+)
 const DashboardView = defineAsyncComponent(() => import('./admin/DashboardView.vue'))
-const QuestionForm = defineAsyncComponent(() => import('../components/admin/question-management/QuestionForm.vue'))
-const BatchAddQuestion = defineAsyncComponent(() => import('../components/admin/question-management/BatchAddQuestion.vue'))
-const SubcategoryDialog = defineAsyncComponent(() => import('../components/admin/common/SubcategoryDialog.vue'))
-const DataAnalysis = defineAsyncComponent(() => import('../components/admin/analysis/DataAnalysis.vue'))
+const QuestionForm = defineAsyncComponent(
+  () => import('../components/admin/question-management/QuestionForm.vue')
+)
+const BatchAddQuestion = defineAsyncComponent(
+  () => import('../components/admin/question-management/BatchAddQuestion.vue')
+)
+const SubcategoryDialog = defineAsyncComponent(
+  () => import('../components/admin/common/SubcategoryDialog.vue')
+)
+const DataAnalysis = defineAsyncComponent(
+  () => import('../components/admin/analysis/DataAnalysis.vue')
+)
 const AIAnalysisView = defineAsyncComponent(() => import('./AIAnalysisView.vue'))
-const UserLearningStyle = defineAsyncComponent(() => import('../components/admin/learning/UserLearningStyle.vue'))
-const QuestionSemanticAnalysis = defineAsyncComponent(() => import('../components/admin/question/QuestionSemanticAnalysis.vue'))
+const UserLearningStyle = defineAsyncComponent(
+  () => import('../components/admin/learning/UserLearningStyle.vue')
+)
+const QuestionSemanticAnalysis = defineAsyncComponent(
+  () => import('../components/admin/question/QuestionSemanticAnalysis.vue')
+)
 
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
@@ -194,7 +220,7 @@ const questionListRef = ref(null)
 const userManagementRef = ref(null)
 
 // 菜单变化处理
-const handleMenuChange = (key) => {
+const handleMenuChange = key => {
   setActiveMenu(key)
 }
 
@@ -218,18 +244,18 @@ const showAddQuestionDialog = () => {
   questionFormDialogVisible.value = true
 }
 
-const editQuestion = (question) => {
+const editQuestion = question => {
   isEditing.value = true
   selectedQuestion.value = question
   questionFormDialogVisible.value = true
 }
 
-const deleteQuestion = (questionId) => {
+const deleteQuestion = questionId => {
   questionStore.deleteQuestion(questionId)
   questionListRef.value?.refresh()
 }
 
-const saveQuestion = async (formData) => {
+const saveQuestion = async formData => {
   try {
     if (isEditing.value) {
       await questionStore.updateQuestion(formData)
@@ -251,9 +277,9 @@ const saveQuestion = async (formData) => {
   }
 }
 
-const handleBatchAddQuestions = async (questions) => {
+const handleBatchAddQuestions = async questions => {
   if (!isComponentMounted) return
-  
+
   try {
     for (const question of questions) {
       if (!isComponentMounted) return
@@ -275,14 +301,19 @@ const handleBatchAddQuestions = async (questions) => {
 const subcategoryDialogVisible = ref(false)
 const currentSubjectForSubcategory = ref(null)
 
-const manageSubcategories = (subject) => {
+const manageSubcategories = subject => {
   currentSubjectForSubcategory.value = subject
   subcategoryDialogVisible.value = true
 }
 
 const addSubcategory = async (subjectId, subcategory) => {
   try {
-    await questionStore.addSubcategory(subjectId, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
+    await questionStore.addSubcategory(
+      subjectId,
+      subcategory.name,
+      subcategory.iconIndex,
+      subcategory.difficulty
+    )
     if (isComponentMounted) {
       message.success('学科题库添加成功！')
     }
@@ -296,7 +327,13 @@ const addSubcategory = async (subjectId, subcategory) => {
 
 const updateSubcategory = async (subjectId, subcategory) => {
   try {
-    await questionStore.updateSubcategory(subjectId, subcategory.id, subcategory.name, subcategory.iconIndex, subcategory.difficulty)
+    await questionStore.updateSubcategory(
+      subjectId,
+      subcategory.id,
+      subcategory.name,
+      subcategory.iconIndex,
+      subcategory.difficulty
+    )
     if (isComponentMounted) {
       message.success('学科题库更新成功！')
     }
@@ -336,7 +373,7 @@ const updateUserList = async () => {
 // ==================== 数据库管理 ====================
 const clearAllData = async () => {
   if (!isComponentMounted) return
-  
+
   try {
     await api.post('/data/clear-all')
     const results = await Promise.allSettled([
@@ -358,7 +395,7 @@ const clearAllData = async () => {
 
     questionListRef.value?.refresh()
     userManagementRef.value?.refresh()
-    
+
     if (failedOperations.length > 0) {
       message.warning(`数据已清空，但部分数据刷新失败: ${failedOperations.join(', ')}`)
     } else {
@@ -407,7 +444,7 @@ const clearLeaderboard = async () => {
 
 const clearGrades = async () => {
   if (!isComponentMounted) return
-  
+
   try {
     await api.post('/data/clear-grades')
     await questionStore.loadData()
@@ -425,7 +462,7 @@ const clearGrades = async () => {
 
 const clearClasses = async () => {
   if (!isComponentMounted) return
-  
+
   try {
     await api.post('/data/clear-classes')
     await questionStore.loadData()
@@ -443,7 +480,7 @@ const clearClasses = async () => {
 
 const backupData = async (backupParams = {}) => {
   if (!isComponentMounted) return
-  
+
   try {
     const params = new URLSearchParams()
     params.append('type', backupParams.type || 'full')
@@ -451,7 +488,7 @@ const backupData = async (backupParams = {}) => {
     if (backupParams.dataTypes && backupParams.dataTypes.length > 0) {
       params.append('dataTypes', backupParams.dataTypes.join(','))
     }
-    
+
     const response = await fetch(`${getApiBaseUrl()}/backup?${params.toString()}`)
     const blob = await response.blob()
     const downloadUrl = URL.createObjectURL(blob)
@@ -475,7 +512,7 @@ const backupData = async (backupParams = {}) => {
 
 const exportData = async () => {
   if (!isComponentMounted) return
-  
+
   try {
     const response = await fetch(`${getApiBaseUrl()}/export`)
     const blob = await response.blob()
@@ -496,18 +533,18 @@ const exportData = async () => {
   }
 }
 
-const uploadBackup = async (file) => {
+const uploadBackup = async file => {
   if (!isComponentMounted) return
-  
+
   try {
     const formData = new FormData()
     formData.append('backup', file.raw)
-    
+
     const response = await fetch(`${getApiBaseUrl()}/restore`, {
       method: 'POST',
       body: formData
     })
-    
+
     if (response.ok) {
       const results = await Promise.allSettled([
         questionStore.loadData(),
@@ -528,7 +565,7 @@ const uploadBackup = async (file) => {
 
       questionListRef.value?.refresh()
       userManagementRef.value?.refresh()
-      
+
       if (failedOperations.length > 0) {
         message.warning(`数据已恢复，但部分数据刷新失败: ${failedOperations.join(', ')}`)
       } else {
@@ -547,7 +584,7 @@ const uploadBackup = async (file) => {
 
 const getBackupHistory = async () => {
   if (!isComponentMounted) return []
-  
+
   try {
     const history = await api.get('/backup/history')
     if (isComponentMounted) {
@@ -564,9 +601,9 @@ const getBackupHistory = async () => {
   }
 }
 
-const downloadBackup = async (backupId) => {
+const downloadBackup = async backupId => {
   if (!isComponentMounted) return
-  
+
   try {
     const response = await fetch(`${getApiBaseUrl()}/backup/${backupId}`)
     const blob = await response.blob()
@@ -587,9 +624,9 @@ const downloadBackup = async (backupId) => {
   }
 }
 
-const deleteBackup = async (backupId) => {
+const deleteBackup = async backupId => {
   if (!isComponentMounted) return
-  
+
   try {
     await api.delete(`/backup/${backupId}`)
     if (isComponentMounted) {
@@ -603,22 +640,22 @@ const deleteBackup = async (backupId) => {
   }
 }
 
-const verifyBackup = async (file) => {
+const verifyBackup = async file => {
   if (!isComponentMounted) return
-  
+
   try {
     const formData = new FormData()
     formData.append('backup', file.raw)
-    
+
     const response = await fetch(`${getApiBaseUrl()}/backup/verify`, {
       method: 'POST',
       body: formData
     })
-    
+
     if (response.ok) {
       const result = await response.json()
       if (!isComponentMounted) return
-      
+
       if (result.valid) {
         const { ElMessageBox } = await import('element-plus')
         ElMessageBox.alert(
@@ -657,42 +694,56 @@ const interfaceName = computed({
 
 const randomizeAnswers = computed({
   get: () => settingsStore.settings.randomizeAnswers,
-  set: (value) => { settingsStore.settings.randomizeAnswers = value }
+  set: value => {
+    settingsStore.settings.randomizeAnswers = value
+  }
 })
 
 const randomizeErrorCollectionAnswers = computed({
   get: () => settingsStore.settings.randomizeErrorCollectionAnswers,
-  set: (value) => { settingsStore.settings.randomizeErrorCollectionAnswers = value }
+  set: value => {
+    settingsStore.settings.randomizeErrorCollectionAnswers = value
+  }
 })
 
 const fixedQuestionCount = computed({
   get: () => settingsStore.settings.fixedQuestionCount,
-  set: (value) => { settingsStore.settings.fixedQuestionCount = value }
+  set: value => {
+    settingsStore.settings.fixedQuestionCount = value
+  }
 })
 
 const minQuestionCount = computed({
   get: () => settingsStore.settings.minQuestionCount,
-  set: (value) => { settingsStore.settings.minQuestionCount = value }
+  set: value => {
+    settingsStore.settings.minQuestionCount = value
+  }
 })
 
 const maxQuestionCount = computed({
   get: () => settingsStore.settings.maxQuestionCount,
-  set: (value) => { settingsStore.settings.maxQuestionCount = value }
+  set: value => {
+    settingsStore.settings.maxQuestionCount = value
+  }
 })
 
 const fixedQuestionCountValue = computed({
   get: () => settingsStore.settings.fixedQuestionCountValue,
-  set: (value) => { settingsStore.settings.fixedQuestionCountValue = value }
+  set: value => {
+    settingsStore.settings.fixedQuestionCountValue = value
+  }
 })
 
 const subjectQuestionCounts = computed({
   get: () => settingsStore.settings.subjectQuestionCounts,
-  set: (value) => { settingsStore.settings.subjectQuestionCounts = value }
+  set: value => {
+    settingsStore.settings.subjectQuestionCounts = value
+  }
 })
 
-const updateInterfaceName = async (value) => {
+const updateInterfaceName = async value => {
   if (!isComponentMounted) return
-  
+
   if (value) {
     await settingsStore.updateInterfaceName(value)
     if (isComponentMounted) {
@@ -705,9 +756,9 @@ const updateInterfaceName = async (value) => {
   }
 }
 
-const updateAnswerSettings = async (settings) => {
+const updateAnswerSettings = async settings => {
   if (!isComponentMounted) return
-  
+
   const success = await settingsStore.updateSettings({
     randomizeAnswers: settings.randomizeAnswers.toString(),
     randomizeErrorCollectionAnswers: settings.randomizeErrorCollectionAnswers.toString(),

@@ -4,7 +4,7 @@
     <div class="header-left">
       <h1 class="system-title">{{ systemTitle }}</h1>
     </div>
-    
+
     <!-- 中间：面包屑导航 -->
     <div class="header-center">
       <el-breadcrumb separator="/">
@@ -13,24 +13,18 @@
         </el-breadcrumb-item>
       </el-breadcrumb>
     </div>
-    
+
     <!-- 右侧：快捷操作 -->
     <div class="header-right">
-      <el-button 
-        type="primary" 
-        :icon="Refresh" 
-        @click="handleRefresh"
+      <el-button
+        type="primary"
+        :icon="Refresh"
         :loading="refreshing"
         circle
         title="刷新数据"
+        @click="handleRefresh"
       />
-      <el-button 
-        type="info" 
-        :icon="House" 
-        @click="handleBackHome"
-        circle
-        title="返回首页"
-      />
+      <el-button type="info" :icon="House" circle title="返回首页" @click="handleBackHome" />
       <el-dropdown trigger="click" @command="handleCommand">
         <el-button type="danger" :icon="SwitchButton" circle title="退出登录" />
         <template #dropdown>
@@ -51,7 +45,7 @@
         </template>
       </el-dropdown>
     </div>
-    
+
     <!-- 修改密码对话框 -->
     <el-dialog
       v-model="passwordDialogVisible"
@@ -61,33 +55,35 @@
     >
       <el-form :model="passwordForm" label-width="100px" @submit.prevent="handlePasswordSubmit">
         <el-form-item label="旧密码">
-          <el-input 
-            v-model="passwordForm.oldPassword" 
-            type="password" 
-            placeholder="请输入旧密码" 
+          <el-input
+            v-model="passwordForm.oldPassword"
+            type="password"
+            placeholder="请输入旧密码"
             show-password
           />
         </el-form-item>
         <el-form-item label="新密码">
-          <el-input 
-            v-model="passwordForm.newPassword" 
-            type="password" 
-            placeholder="请输入新密码（至少6位）" 
+          <el-input
+            v-model="passwordForm.newPassword"
+            type="password"
+            placeholder="请输入新密码（至少6位）"
             show-password
           />
         </el-form-item>
         <el-form-item label="确认密码">
-          <el-input 
-            v-model="passwordForm.confirmPassword" 
-            type="password" 
-            placeholder="请再次输入新密码" 
+          <el-input
+            v-model="passwordForm.confirmPassword"
+            type="password"
+            placeholder="请再次输入新密码"
             show-password
           />
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="passwordDialogVisible = false">取消</el-button>
-        <el-button type="primary" @click="handlePasswordSubmit" :loading="passwordLoading">确认修改</el-button>
+        <el-button type="primary" :loading="passwordLoading" @click="handlePasswordSubmit">
+          确认修改
+        </el-button>
       </template>
     </el-dialog>
   </div>
@@ -141,7 +137,7 @@ const handleBackHome = () => {
 }
 
 // 下拉菜单命令
-const handleCommand = (command) => {
+const handleCommand = command => {
   switch (command) {
     case 'profile':
       // TODO: 打开个人信息对话框
@@ -169,30 +165,30 @@ const showPasswordDialog = () => {
 // 提交修改密码
 const handlePasswordSubmit = async () => {
   const { oldPassword, newPassword, confirmPassword } = passwordForm.value
-  
+
   if (!oldPassword || !newPassword || !confirmPassword) {
     message.warning('请填写所有字段')
     return
   }
-  
+
   if (newPassword.length < 6) {
     message.warning('新密码长度不能少于6位')
     return
   }
-  
+
   if (newPassword !== confirmPassword) {
     message.warning('两次输入的新密码不一致')
     return
   }
-  
+
   passwordLoading.value = true
-  
+
   try {
     await api.post('/admin/change-password', {
       oldPassword,
       newPassword
     })
-    
+
     message.success('密码修改成功')
     passwordDialogVisible.value = false
   } catch (error) {
@@ -259,11 +255,11 @@ const handleLogout = () => {
   .admin-header {
     padding: 0 12px;
   }
-  
+
   .header-center {
     display: none;
   }
-  
+
   .system-title {
     font-size: 16px;
   }

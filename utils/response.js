@@ -1,6 +1,6 @@
 /**
  * 统一响应格式工具
- * 
+ *
  * 提供标准的 API 响应格式，减少重复代码
  */
 
@@ -24,9 +24,9 @@ function success(res, data, message) {
  * @param {number} status - HTTP 状态码，默认500
  */
 function error(res, message, status = 500) {
-  return res.status(status).json({ 
+  return res.status(status).json({
     error: message,
-    success: false 
+    success: false
   })
 }
 
@@ -62,7 +62,7 @@ function unauthorized(res, message = '未授权访问') {
  * 自动捕获错误并返回统一格式
  * @param {Function} fn - 异步路由处理函数
  * @returns {Function} 包装后的路由处理函数
- * 
+ *
  * @example
  * router.get('/users', wrapAsync(async (req, res) => {
  *   const users = await db.all('SELECT * FROM users')

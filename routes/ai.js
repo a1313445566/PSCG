@@ -3,12 +3,12 @@
  * 提供自然语言分析、智能推荐等接口
  */
 
-const express = require('express');
-const router = express.Router();
-const aiService = require('../services/aiService');
-const db = require('../services/database');
-const adminAuth = require('../middleware/adminAuth');
-const { getPaginationParams } = require('../utils/pagination');
+const express = require('express')
+const router = express.Router()
+const aiService = require('../services/aiService')
+const db = require('../services/database')
+const adminAuth = require('../middleware/adminAuth')
+const { getPaginationParams } = require('../utils/pagination')
 
 /**
  * POST /api/ai/analyze
@@ -20,32 +20,31 @@ const { getPaginationParams } = require('../utils/pagination');
  */
 router.post('/analyze', adminAuth, async (req, res) => {
   try {
-    const { question, filters } = req.body;
-    
+    const { question, filters } = req.body
+
     // 输入验证
     if (!question || question.trim() === '') {
-      return res.status(400).json({ error: '请输入分析问题' });
+      return res.status(400).json({ error: '请输入分析问题' })
     }
-    
+
     // 限制问题长度
     if (question.length > 500) {
-      return res.status(400).json({ error: '问题长度不能超过500字' });
+      return res.status(400).json({ error: '问题长度不能超过500字' })
     }
 
     // 使用智能分析：让 AI 自己理解问题并决定查询
-    const analysis = await aiService.smartAnalyze(question, filters || {});
-    
-    res.json({ 
-      success: true, 
+    const analysis = await aiService.smartAnalyze(question, filters || {})
+
+    res.json({
+      success: true,
       analysis,
       timestamp: new Date().toISOString()
-    });
-    
+    })
   } catch (error) {
-    console.error('[AI分析] 失败:', error);
-    res.status(500).json({ error: error.message || 'AI 分析失败' });
+    console.error('[AI分析] 失败:', error)
+    res.status(500).json({ error: error.message || 'AI 分析失败' })
   }
-});
+})
 
 /**
  * POST /api/ai/analyze-legacy
@@ -53,37 +52,38 @@ router.post('/analyze', adminAuth, async (req, res) => {
  */
 router.post('/analyze-legacy', adminAuth, async (req, res) => {
   try {
-    const { question, filters } = req.body;
-    
+    const { question, filters } = req.body
+
     // 输入验证
     if (!question || question.trim() === '') {
-      return res.status(400).json({ error: '请输入分析问题' });
+      return res.status(400).json({ error: '请输入分析问题' })
     }
-    
+
     // 限制问题长度
     if (question.length > 500) {
-      return res.status(400).json({ error: '问题长度不能超过500字' });
+      return res.status(400).json({ error: '问题长度不能超过500字' })
     }
 
     // 获取分析数据（复用现有分析逻辑）
-    let whereClause = 'WHERE 1=1';
-    const params = [];
-    
+    let whereClause = 'WHERE 1=1'
+    const params = []
+
     if (filters?.grade) {
-      whereClause += ' AND u.grade = ?';
-      params.push(filters.grade);
+      whereClause += ' AND u.grade = ?'
+      params.push(filters.grade)
     }
     if (filters?.class) {
-      whereClause += ' AND u.class = ?';
-      params.push(filters.class);
+      whereClause += ' AND u.class = ?'
+      params.push(filters.class)
     }
     if (filters?.subjectId) {
-      whereClause += ' AND ar.subject_id = ?';
-      params.push(filters.subjectId);
+      whereClause += ' AND ar.subject_id = ?'
+      params.push(filters.subjectId)
     }
 
     // 查询基础数据
-    const basicStats = await db.get(`
+    const basicStats = await db.get(
+      `
       SELECT 
         COUNT(DISTINCT u.id) as totalUsers,
         COUNT(DISTINCT ar.id) as totalSessions,
@@ -95,10 +95,13 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       FROM answer_records ar
       INNER JOIN users u ON ar.user_id = u.id
       ${whereClause}
-    `, params);
+    `,
+      params
+    )
 
     // 查询学科分析
-    const subjectAnalysis = await db.query(`
+    const subjectAnalysis = await db.query(
+      `
       SELECT 
         s.name as subject,
         COUNT(DISTINCT ar.id) as sessions,
@@ -113,10 +116,13 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       ${whereClause}
       GROUP BY ar.subject_id, s.name
       ORDER BY accuracy ASC
-    `, params);
+    `,
+      params
+    )
 
     // 查询年级分析
-    const gradeAnalysis = await db.query(`
+    const gradeAnalysis = await db.query(
+      `
       SELECT 
         u.grade,
         COUNT(DISTINCT ar.id) as sessions,
@@ -131,10 +137,13 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       ${whereClause}
       GROUP BY u.grade
       ORDER BY u.grade
-    `, params);
+    `,
+      params
+    )
 
     // 查询班级分析
-    const classAnalysis = await db.query(`
+    const classAnalysis = await db.query(
+      `
       SELECT 
         u.grade,
         u.class,
@@ -149,10 +158,13 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       GROUP BY u.grade, u.class
       ORDER BY accuracy ASC
       LIMIT 10
-    `, params);
+    `,
+      params
+    )
 
     // 查询知识点分析（薄弱知识点）
-    const subcategoryAnalysis = await db.query(`
+    const subcategoryAnalysis = await db.query(
+      `
       SELECT 
         s.name as subject,
         sub.name as subcategory,
@@ -170,10 +182,13 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       GROUP BY ar.subject_id, ar.subcategory_id, s.name, sub.name
       ORDER BY accuracy ASC
       LIMIT 10
-    `, params);
+    `,
+      params
+    )
 
     // 查询近7天趋势
-    const trendAnalysis = await db.query(`
+    const trendAnalysis = await db.query(
+      `
       SELECT 
         DATE(ar.created_at) as date,
         COUNT(DISTINCT ar.id) as sessions,
@@ -188,7 +203,9 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       AND ar.created_at >= DATE_SUB(NOW(), INTERVAL 7 DAY)
       GROUP BY DATE(ar.created_at)
       ORDER BY date DESC
-    `, params);
+    `,
+      params
+    )
 
     // ===== 新增：题目数据统计 =====
     const questionStats = await db.get(`
@@ -198,7 +215,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
         COUNT(CASE WHEN type = 'multiple' THEN 1 END) as multipleChoice,
         COALESCE(AVG(difficulty), 0) as avgDifficulty
       FROM questions
-    `);
+    `)
 
     // 难度分布
     const difficultyDistribution = await db.query(`
@@ -214,7 +231,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       FROM questions
       GROUP BY difficulty
       ORDER BY difficulty
-    `);
+    `)
 
     // 各学科题目数量
     const questionBySubject = await db.query(`
@@ -226,7 +243,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       INNER JOIN subjects s ON q.subject_id = s.id
       GROUP BY q.subject_id, s.name
       ORDER BY questionCount DESC
-    `);
+    `)
 
     // ===== 新增：用户活跃度统计 =====
     const userActivityStats = await db.get(`
@@ -237,7 +254,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
         COUNT(DISTINCT CASE WHEN ar.created_at >= DATE_SUB(NOW(), INTERVAL 30 DAY) THEN u.id END) as activeThisMonth
       FROM users u
       LEFT JOIN answer_records ar ON u.id = ar.user_id
-    `);
+    `)
 
     // 用户答题次数分布
     const userAnswerDistribution = await db.query(`
@@ -265,7 +282,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
           WHEN '11-20次' THEN 4
           ELSE 5
         END
-    `);
+    `)
 
     // ===== 新增：错题收集统计 =====
     const errorCollectionStats = await db.get(`
@@ -274,7 +291,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
         COUNT(DISTINCT ec.question_id) as uniqueErrorQuestions,
         COUNT(*) as totalErrorRecords
       FROM error_collection ec
-    `);
+    `)
 
     // 高频错题（被收藏3次以上）
     const frequentErrorQuestions = await db.query(`
@@ -291,7 +308,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       HAVING errorUserCount >= 3
       ORDER BY errorUserCount DESC
       LIMIT 10
-    `);
+    `)
 
     // ===== 新增：答题时间分布 =====
     const timeDistribution = await db.query(`
@@ -317,7 +334,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
           WHEN '晚上(18-21点)' THEN 3
           ELSE 4
         END
-    `);
+    `)
 
     // ===== 新增：题目尝试统计（各题正确率）=====
     const questionAttemptStats = await db.query(`
@@ -333,7 +350,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       INNER JOIN subjects s ON qa.subject_id = s.id
       GROUP BY qa.subject_id, s.name
       ORDER BY accuracy ASC
-    `);
+    `)
 
     // 最难题目（正确率最低，至少被答5次）
     const hardestQuestions = await db.query(`
@@ -352,7 +369,7 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       HAVING attempts >= 5
       ORDER BY accuracy ASC
       LIMIT 10
-    `);
+    `)
 
     // 构建上下文数据
     const analysisData = {
@@ -363,48 +380,48 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
       classAnalysis,
       subcategoryAnalysis,
       trendAnalysis,
-      
+
       // 新增：题目统计
       questionStats,
       difficultyDistribution,
       questionBySubject,
-      
+
       // 新增：用户活跃度
       userActivityStats,
       userAnswerDistribution,
-      
+
       // 新增：错题统计
       errorCollectionStats,
       frequentErrorQuestions,
-      
+
       // 新增：时间分布
       timeDistribution,
-      
+
       // 新增：题目尝试统计
       questionAttemptStats,
       hardestQuestions,
-      
+
       filters,
       timestamp: new Date().toISOString()
-    };
+    }
 
     // 调用 AI 分析
-    const analysis = await aiService.analyzeData(analysisData, question);
+    const analysis = await aiService.analyzeData(analysisData, question)
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       analysis,
       question,
       timestamp: new Date().toISOString()
-    });
+    })
   } catch (error) {
-    console.error('[AI分析] 分析失败:', error);
-    res.status(500).json({ 
+    console.error('[AI分析] 分析失败:', error)
+    res.status(500).json({
       error: error.message || 'AI 分析失败,请稍后重试',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    })
   }
-});
+})
 
 /**
  * POST /api/ai/error-analysis
@@ -412,19 +429,20 @@ router.post('/analyze-legacy', adminAuth, async (req, res) => {
  */
 router.post('/error-analysis', adminAuth, async (req, res) => {
   try {
-    const { questionIds } = req.body;
-    
+    const { questionIds } = req.body
+
     if (!Array.isArray(questionIds) || questionIds.length === 0) {
-      return res.status(400).json({ error: '请提供题目ID列表' });
+      return res.status(400).json({ error: '请提供题目ID列表' })
     }
 
     // 限制题目数量
     if (questionIds.length > 20) {
-      return res.status(400).json({ error: '单次最多分析20道题目' });
+      return res.status(400).json({ error: '单次最多分析20道题目' })
     }
 
     // 查询题目数据
-    const questions = await db.query(`
+    const questions = await db.query(
+      `
       SELECT 
         q.content,
         s.name as subject_name,
@@ -438,28 +456,30 @@ router.post('/error-analysis', adminAuth, async (req, res) => {
       WHERE q.id IN (${questionIds.map(() => '?').join(',')})
       GROUP BY q.id
       HAVING total_attempts >= 3
-    `, questionIds);
+    `,
+      questionIds
+    )
 
     if (questions.length === 0) {
-      return res.status(404).json({ error: '未找到符合条件的题目数据' });
+      return res.status(404).json({ error: '未找到符合条件的题目数据' })
     }
 
     // 调用 AI 分析
-    const analysis = await aiService.generateErrorAnalysis(questions);
+    const analysis = await aiService.generateErrorAnalysis(questions)
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       analysis,
       questionCount: questions.length,
       timestamp: new Date().toISOString()
-    });
+    })
   } catch (error) {
-    console.error('[AI错题分析] 分析失败:', error);
-    res.status(500).json({ 
+    console.error('[AI错题分析] 分析失败:', error)
+    res.status(500).json({
       error: error.message || '错题分析失败,请稍后重试'
-    });
+    })
   }
-});
+})
 
 /**
  * POST /api/ai/explanation
@@ -467,14 +487,15 @@ router.post('/error-analysis', adminAuth, async (req, res) => {
  */
 router.post('/explanation', adminAuth, async (req, res) => {
   try {
-    const { questionId } = req.body;
-    
+    const { questionId } = req.body
+
     if (!questionId) {
-      return res.status(400).json({ error: '请提供题目ID' });
+      return res.status(400).json({ error: '请提供题目ID' })
     }
 
     // 查询题目数据
-    const question = await db.get(`
+    const question = await db.get(
+      `
       SELECT 
         q.content,
         q.type,
@@ -484,35 +505,37 @@ router.post('/explanation', adminAuth, async (req, res) => {
       FROM questions q
       LEFT JOIN subjects s ON q.subject_id = s.id
       WHERE q.id = ?
-    `, [questionId]);
+    `,
+      [questionId]
+    )
 
     if (!question) {
-      return res.status(404).json({ error: '题目不存在' });
+      return res.status(404).json({ error: '题目不存在' })
     }
 
     // 解析选项和答案
     try {
-      question.options = JSON.parse(question.options);
+      question.options = JSON.parse(question.options)
     } catch (e) {
-      question.options = [];
+      question.options = []
     }
 
     // 调用 AI 生成解析
-    const explanation = await aiService.generateQuestionExplanation(question);
+    const explanation = await aiService.generateQuestionExplanation(question)
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       explanation,
       questionId,
       timestamp: new Date().toISOString()
-    });
+    })
   } catch (error) {
-    console.error('[AI解析生成] 生成失败:', error);
-    res.status(500).json({ 
+    console.error('[AI解析生成] 生成失败:', error)
+    res.status(500).json({
       error: error.message || '解析生成失败,请稍后重试'
-    });
+    })
   }
-});
+})
 
 /**
  * POST /api/ai/test-connection
@@ -520,28 +543,28 @@ router.post('/explanation', adminAuth, async (req, res) => {
  */
 router.post('/test-connection', adminAuth, async (req, res) => {
   try {
-    const { apiKey, apiUrl, model } = req.body;
-    
+    const { apiKey, apiUrl, model } = req.body
+
     if (!apiKey || !apiUrl || !model) {
-      return res.status(400).json({ error: '请提供完整的配置信息' });
+      return res.status(400).json({ error: '请提供完整的配置信息' })
     }
 
     // 测试连接
-    const result = await aiService.testConnection(apiKey, apiUrl, model);
+    const result = await aiService.testConnection(apiKey, apiUrl, model)
 
-    res.json({ 
-      success: true, 
+    res.json({
+      success: true,
       message: '连接成功',
       model: result.model
-    });
+    })
   } catch (error) {
-    console.error('[AI测试] 测试失败:', error);
-    res.status(400).json({ 
+    console.error('[AI测试] 测试失败:', error)
+    res.status(400).json({
       error: error.message || '连接测试失败',
       details: process.env.NODE_ENV === 'development' ? error.message : undefined
-    });
+    })
   }
-});
+})
 
 /**
  * DELETE /api/ai/cache
@@ -549,21 +572,21 @@ router.post('/test-connection', adminAuth, async (req, res) => {
  */
 router.delete('/cache', adminAuth, async (req, res) => {
   try {
-    const count = await aiService.cleanExpiredCache();
-    
-    res.json({ 
-      success: true, 
+    const count = await aiService.cleanExpiredCache()
+
+    res.json({
+      success: true,
       message: `AI缓存清理完成,已清理 ${count} 条记录`,
       cleanedCount: count,
       timestamp: new Date().toISOString()
-    });
+    })
   } catch (error) {
-    console.error('[AI缓存] 清理失败:', error);
-    res.status(500).json({ 
+    console.error('[AI缓存] 清理失败:', error)
+    res.status(500).json({
       error: error.message || '缓存清理失败'
-    });
+    })
   }
-});
+})
 
 /**
  * POST /api/ai/reload-config
@@ -571,20 +594,20 @@ router.delete('/cache', adminAuth, async (req, res) => {
  */
 router.post('/reload-config', adminAuth, async (req, res) => {
   try {
-    await aiService.reloadConfig();
-    
-    res.json({ 
-      success: true, 
+    await aiService.reloadConfig()
+
+    res.json({
+      success: true,
       message: '配置重新加载成功',
       timestamp: new Date().toISOString()
-    });
+    })
   } catch (error) {
-    console.error('[AI配置] 重新加载失败:', error);
-    res.status(500).json({ 
+    console.error('[AI配置] 重新加载失败:', error)
+    res.status(500).json({
       error: error.message || '配置重新加载失败'
-    });
+    })
   }
-});
+})
 
 /**
  * POST /api/ai/history
@@ -592,27 +615,27 @@ router.post('/reload-config', adminAuth, async (req, res) => {
  */
 router.post('/history', adminAuth, async (req, res) => {
   try {
-    const { question, result, filters } = req.body;
-    const userId = req.admin.id;
-    
+    const { question, result, filters } = req.body
+    const userId = req.admin.id
+
     // 输入验证
     if (!question || !result) {
-      return res.status(400).json({ error: '问题和结果不能为空' });
+      return res.status(400).json({ error: '问题和结果不能为空' })
     }
-    
+
     // 保存历史
     await db.run(
       `INSERT INTO ai_analysis_history (user_id, question, result, filters, created_at)
        VALUES (?, ?, ?, ?, NOW())`,
       [userId, question, result, JSON.stringify(filters || {})]
-    );
-    
-    res.json({ success: true, message: '历史保存成功' });
+    )
+
+    res.json({ success: true, message: '历史保存成功' })
   } catch (error) {
-    console.error('[AI历史] 保存失败:', error);
-    res.status(500).json({ error: '保存历史失败' });
+    console.error('[AI历史] 保存失败:', error)
+    res.status(500).json({ error: '保存历史失败' })
   }
-});
+})
 
 /**
  * GET /api/ai/history
@@ -620,15 +643,17 @@ router.post('/history', adminAuth, async (req, res) => {
  */
 router.get('/history', adminAuth, async (req, res) => {
   try {
-    const userId = req.admin.id;
-    const { pageNum, limitNum, offset } = getPaginationParams(req.query.page, req.query.limit, { maxLimit: 100 });
-    
+    const userId = req.admin.id
+    const { pageNum, limitNum, offset } = getPaginationParams(req.query.page, req.query.limit, {
+      maxLimit: 100
+    })
+
     // 查询总数
     const countResult = await db.get(
       'SELECT COUNT(*) as total FROM ai_analysis_history WHERE user_id = ?',
       [userId]
-    );
-    
+    )
+
     // 查询列表（MySQL 不支持 LIMIT/OFFSET 使用占位符，直接拼接）
     const list = await db.all(
       `SELECT id, question, result, filters, created_at
@@ -637,19 +662,19 @@ router.get('/history', adminAuth, async (req, res) => {
        ORDER BY created_at DESC
        LIMIT ${limitNum} OFFSET ${offset}`,
       [userId]
-    );
-    
+    )
+
     res.json({
       list,
       total: countResult?.total || 0,
       page: pageNum,
       limit: limitNum
-    });
+    })
   } catch (error) {
-    console.error('[AI历史] 查询失败:', error);
-    res.status(500).json({ error: '查询历史失败' });
+    console.error('[AI历史] 查询失败:', error)
+    res.status(500).json({ error: '查询历史失败' })
   }
-});
+})
 
 /**
  * DELETE /api/ai/history/:id
@@ -657,24 +682,24 @@ router.get('/history', adminAuth, async (req, res) => {
  */
 router.delete('/history/:id', adminAuth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.admin.id;
-    
-    const result = await db.run(
-      'DELETE FROM ai_analysis_history WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
-    
+    const { id } = req.params
+    const userId = req.admin.id
+
+    const result = await db.run('DELETE FROM ai_analysis_history WHERE id = ? AND user_id = ?', [
+      id,
+      userId
+    ])
+
     if (result.affectedRows === 0) {
-      return res.status(404).json({ error: '记录不存在' });
+      return res.status(404).json({ error: '记录不存在' })
     }
-    
-    res.json({ success: true, message: '删除成功' });
+
+    res.json({ success: true, message: '删除成功' })
   } catch (error) {
-    console.error('[AI历史] 删除失败:', error);
-    res.status(500).json({ error: '删除失败' });
+    console.error('[AI历史] 删除失败:', error)
+    res.status(500).json({ error: '删除失败' })
   }
-});
+})
 
 /**
  * DELETE /api/ai/history
@@ -682,16 +707,16 @@ router.delete('/history/:id', adminAuth, async (req, res) => {
  */
 router.delete('/history', adminAuth, async (req, res) => {
   try {
-    const userId = req.admin.id;
-    
-    await db.run('DELETE FROM ai_analysis_history WHERE user_id = ?', [userId]);
-    
-    res.json({ success: true, message: '清空成功' });
+    const userId = req.admin.id
+
+    await db.run('DELETE FROM ai_analysis_history WHERE user_id = ?', [userId])
+
+    res.json({ success: true, message: '清空成功' })
   } catch (error) {
-    console.error('[AI历史] 清空失败:', error);
-    res.status(500).json({ error: '清空失败' });
+    console.error('[AI历史] 清空失败:', error)
+    res.status(500).json({ error: '清空失败' })
   }
-});
+})
 
 /**
  * POST /api/ai/batch
@@ -699,38 +724,38 @@ router.delete('/history', adminAuth, async (req, res) => {
  */
 router.post('/batch', adminAuth, async (req, res) => {
   try {
-    const { questionIds, title, analysisType = 'deep' } = req.body;
-    const userId = req.admin.id;
-    
+    const { questionIds, title, analysisType = 'deep' } = req.body
+    const userId = req.admin.id
+
     // 输入验证
     if (!questionIds || !Array.isArray(questionIds) || questionIds.length === 0) {
-      return res.status(400).json({ error: '请选择要分析的题目' });
+      return res.status(400).json({ error: '请选择要分析的题目' })
     }
-    
+
     if (questionIds.length > 50) {
-      return res.status(400).json({ error: '单次最多分析50道题目' });
+      return res.status(400).json({ error: '单次最多分析50道题目' })
     }
-    
+
     // 创建批量分析记录
     const result = await db.run(
       `INSERT INTO ai_batch_analysis (user_id, title, question_ids, status, created_at)
        VALUES (?, ?, ?, 'pending', NOW())`,
       [userId, title || '批量题目分析', JSON.stringify(questionIds)]
-    );
-    
+    )
+
     // 异步处理批量分析（后台任务）
-    processBatchAnalysis(result.insertId, questionIds, analysisType);
-    
-    res.json({ 
-      success: true, 
+    processBatchAnalysis(result.insertId, questionIds, analysisType)
+
+    res.json({
+      success: true,
       batchId: result.insertId,
       message: '批量分析任务已创建，正在处理中...'
-    });
+    })
   } catch (error) {
-    console.error('[AI批量分析] 创建失败:', error);
-    res.status(500).json({ error: '创建批量分析失败' });
+    console.error('[AI批量分析] 创建失败:', error)
+    res.status(500).json({ error: '创建批量分析失败' })
   }
-});
+})
 
 /**
  * 处理批量分析任务
@@ -741,26 +766,24 @@ router.post('/batch', adminAuth, async (req, res) => {
 async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep') {
   try {
     // 更新状态为处理中
-    await db.run(
-      'UPDATE ai_batch_analysis SET status = ? WHERE id = ?',
-      ['processing', batchId]
-    );
-    
-    const results = [];
-    let summaryStats = {
+    await db.run('UPDATE ai_batch_analysis SET status = ? WHERE id = ?', ['processing', batchId])
+
+    const results = []
+    const summaryStats = {
       totalQuestions: questionIds.length,
       totalAttempts: 0,
       totalCorrect: 0,
       avgAccuracy: 0
-    };
-    
+    }
+
     // 收集所有题目的统计数据
-    const questionsWithStats = [];
-    
+    const questionsWithStats = []
+
     for (const questionId of questionIds) {
       try {
         // 获取题目基本信息
-        const question = await db.get(`
+        const question = await db.get(
+          `
           SELECT 
             q.id, q.content, q.type, q.options, q.correct_answer, q.difficulty,
             s.name as subject,
@@ -769,18 +792,22 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
           LEFT JOIN subjects s ON q.subject_id = s.id
           LEFT JOIN subcategories sub ON q.subcategory_id = sub.id
           WHERE q.id = ?
-        `, [questionId]);
-        
-        if (!question) continue;
-        
+        `,
+          [questionId]
+        )
+
+        if (!question) continue
+
         // 解析选项
-        let options = [];
+        let options = []
         try {
-          options = typeof question.options === 'string' ? JSON.parse(question.options) : question.options;
+          options =
+            typeof question.options === 'string' ? JSON.parse(question.options) : question.options
         } catch (e) {}
-        
+
         // 获取答题统计
-        const attemptStats = await db.get(`
+        const attemptStats = await db.get(
+          `
           SELECT 
             COUNT(*) as attempts,
             SUM(is_correct) as correctCount,
@@ -789,10 +816,13 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
               ELSE 0 END as accuracy
           FROM question_attempts
           WHERE question_id = ?
-        `, [questionId]);
-        
+        `,
+          [questionId]
+        )
+
         // 获取各选项选择分布
-        const optionDistribution = await db.query(`
+        const optionDistribution = await db.query(
+          `
           SELECT 
             user_answer as selected_option,
             COUNT(*) as count
@@ -800,24 +830,29 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
           WHERE question_id = ?
           GROUP BY user_answer
           ORDER BY count DESC
-        `, [questionId]);
-        
+        `,
+          [questionId]
+        )
+
         // 获取错题收藏数
-        const errorStats = await db.get(`
+        const errorStats = await db.get(
+          `
           SELECT COUNT(DISTINCT user_id) as errorUserCount
           FROM error_collection
           WHERE question_id = ?
-        `, [questionId]);
-        
+        `,
+          [questionId]
+        )
+
         // 难度标签
-        const difficultyLabels = { 1: '简单', 2: '中等', 3: '困难' };
-        const typeLabels = { single: '单选题', multiple: '多选题', true_false: '判断题' };
-        
+        const difficultyLabels = { 1: '简单', 2: '中等', 3: '困难' }
+        const typeLabels = { single: '单选题', multiple: '多选题', true_false: '判断题' }
+
         // 提取内容预览
-        const contentPreview = question.content 
-          ? question.content.replace(/<[^>]+>/g, '').substring(0, 60) + '...' 
-          : `题目${questionId}`;
-        
+        const contentPreview = question.content
+          ? question.content.replace(/<[^>]+>/g, '').substring(0, 60) + '...'
+          : `题目${questionId}`
+
         const questionStats = {
           questionId: question.id,
           content: question.content,
@@ -835,8 +870,8 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
           wrongCount: (attemptStats?.attempts || 0) - (attemptStats?.correctCount || 0),
           accuracy: attemptStats?.accuracy || 0,
           optionDistribution: optionDistribution.reduce((acc, item) => {
-            acc[item.selected_option] = item.count;
-            return acc;
+            acc[item.selected_option] = item.count
+            return acc
           }, {}),
           errorUserCount: errorStats?.errorUserCount || 0,
           // 高频错误选项（非正确答案中选择最多的）
@@ -844,46 +879,45 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
             .filter(o => o.selected_option && o.selected_option !== question.correct_answer)
             .slice(0, 2)
             .map(o => o.selected_option)
-        };
-        
-        questionsWithStats.push(questionStats);
-        
+        }
+
+        questionsWithStats.push(questionStats)
+
         // 更新汇总统计
-        summaryStats.totalAttempts += questionStats.attempts;
-        summaryStats.totalCorrect += questionStats.correctCount;
-        
+        summaryStats.totalAttempts += questionStats.attempts
+        summaryStats.totalCorrect += questionStats.correctCount
       } catch (error) {
-        console.error(`[AI批量分析] 题目 ${questionId} 数据获取失败:`, error);
+        console.error(`[AI批量分析] 题目 ${questionId} 数据获取失败:`, error)
       }
     }
-    
+
     // 计算平均正确率
     if (summaryStats.totalAttempts > 0) {
-      summaryStats.avgAccuracy = (summaryStats.totalCorrect * 100.0) / summaryStats.totalAttempts;
+      summaryStats.avgAccuracy = (summaryStats.totalCorrect * 100.0) / summaryStats.totalAttempts
     }
-    
+
     // 根据分析类型选择分析方法
     if (analysisType === 'deep' && questionsWithStats.length > 1) {
       // 深度分析：整体分析所有题目
       try {
-        const analysis = await aiService.analyzeQuestionsWithStats(questionsWithStats, summaryStats);
-        
+        const analysis = await aiService.analyzeQuestionsWithStats(questionsWithStats, summaryStats)
+
         results.push({
           questionId: 'summary',
           questionTitle: '📊 批量分析报告',
           analysis,
           isSummary: true,
           summaryStats
-        });
+        })
       } catch (error) {
-        console.error('[AI批量分析] 整体分析失败:', error);
+        console.error('[AI批量分析] 整体分析失败:', error)
       }
-      
+
       // 同时为每个题目生成简短分析
       for (const qStats of questionsWithStats) {
         try {
-          const analysis = await aiService.analyzeSingleQuestionWithStats(qStats);
-          
+          const analysis = await aiService.analyzeSingleQuestionWithStats(qStats)
+
           results.push({
             questionId: qStats.questionId,
             questionTitle: qStats.contentPreview,
@@ -893,17 +927,17 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
             accuracy: qStats.accuracy,
             attempts: qStats.attempts,
             analysis
-          });
-          
+          })
+
           // 延迟，避免 API 调用过快
-          await new Promise(resolve => setTimeout(resolve, 800));
+          await new Promise(resolve => setTimeout(resolve, 800))
         } catch (error) {
-          console.error(`[AI批量分析] 题目 ${qStats.questionId} 分析失败:`, error);
+          console.error(`[AI批量分析] 题目 ${qStats.questionId} 分析失败:`, error)
           results.push({
             questionId: qStats.questionId,
             questionTitle: qStats.contentPreview,
             error: '分析失败'
-          });
+          })
         }
       }
     } else {
@@ -915,8 +949,8 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
             type: qStats.type,
             options: qStats.options,
             correctAnswer: qStats.correctAnswer
-          });
-          
+          })
+
           results.push({
             questionId: qStats.questionId,
             questionTitle: qStats.contentPreview,
@@ -926,37 +960,33 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
             accuracy: qStats.accuracy,
             attempts: qStats.attempts,
             analysis
-          });
-          
+          })
+
           // 延迟
-          await new Promise(resolve => setTimeout(resolve, 1000));
+          await new Promise(resolve => setTimeout(resolve, 1000))
         } catch (error) {
-          console.error(`[AI批量分析] 题目 ${qStats.questionId} 解析失败:`, error);
+          console.error(`[AI批量分析] 题目 ${qStats.questionId} 解析失败:`, error)
           results.push({
             questionId: qStats.questionId,
             questionTitle: qStats.contentPreview,
             error: '解析失败'
-          });
+          })
         }
       }
     }
-    
+
     // 更新批量分析结果
     await db.run(
       `UPDATE ai_batch_analysis 
        SET status = 'completed', results = ?, completed_at = NOW()
        WHERE id = ?`,
       [JSON.stringify(results), batchId]
-    );
-    
+    )
   } catch (error) {
-    console.error('[AI批量分析] 处理失败:', error);
-    
+    console.error('[AI批量分析] 处理失败:', error)
+
     // 更新状态为失败
-    await db.run(
-      'UPDATE ai_batch_analysis SET status = ? WHERE id = ?',
-      ['failed', batchId]
-    );
+    await db.run('UPDATE ai_batch_analysis SET status = ? WHERE id = ?', ['failed', batchId])
   }
 }
 
@@ -966,32 +996,32 @@ async function processBatchAnalysis(batchId, questionIds, analysisType = 'deep')
  */
 router.get('/batch/:id', adminAuth, async (req, res) => {
   try {
-    const { id } = req.params;
-    const userId = req.admin.id;
-    
-    const batch = await db.get(
-      'SELECT * FROM ai_batch_analysis WHERE id = ? AND user_id = ?',
-      [id, userId]
-    );
-    
+    const { id } = req.params
+    const userId = req.admin.id
+
+    const batch = await db.get('SELECT * FROM ai_batch_analysis WHERE id = ? AND user_id = ?', [
+      id,
+      userId
+    ])
+
     if (!batch) {
-      return res.status(404).json({ error: '批次不存在' });
+      return res.status(404).json({ error: '批次不存在' })
     }
-    
+
     // 解析 JSON 字段（mysql2 可能已自动解析）
     if (typeof batch.question_ids === 'string') {
-      batch.question_ids = JSON.parse(batch.question_ids || '[]');
+      batch.question_ids = JSON.parse(batch.question_ids || '[]')
     }
     if (typeof batch.results === 'string') {
-      batch.results = JSON.parse(batch.results || '[]');
+      batch.results = JSON.parse(batch.results || '[]')
     }
-    
-    res.json(batch);
+
+    res.json(batch)
   } catch (error) {
-    console.error('[AI批量分析] 查询失败:', error);
-    res.status(500).json({ error: '查询失败' });
+    console.error('[AI批量分析] 查询失败:', error)
+    res.status(500).json({ error: '查询失败' })
   }
-});
+})
 
 /**
  * GET /api/ai/batch
@@ -999,14 +1029,14 @@ router.get('/batch/:id', adminAuth, async (req, res) => {
  */
 router.get('/batch', adminAuth, async (req, res) => {
   try {
-    const userId = req.admin.id;
-    const { pageNum, limitNum, offset } = getPaginationParams(req.query.page, req.query.limit);
-    
+    const userId = req.admin.id
+    const { pageNum, limitNum, offset } = getPaginationParams(req.query.page, req.query.limit)
+
     const countResult = await db.get(
       'SELECT COUNT(*) as total FROM ai_batch_analysis WHERE user_id = ?',
       [userId]
-    );
-    
+    )
+
     const list = await db.query(
       `SELECT id, title, status, created_at, completed_at
        FROM ai_batch_analysis
@@ -1014,19 +1044,19 @@ router.get('/batch', adminAuth, async (req, res) => {
        ORDER BY created_at DESC
        LIMIT ? OFFSET ?`,
       [userId, limitNum, offset]
-    );
-    
+    )
+
     res.json({
       list,
       total: countResult.total,
       page: pageNum,
       limit: limitNum
-    });
+    })
   } catch (error) {
-    console.error('[AI批量分析] 列表查询失败:', error);
-    res.status(500).json({ error: '查询失败' });
+    console.error('[AI批量分析] 列表查询失败:', error)
+    res.status(500).json({ error: '查询失败' })
   }
-});
+})
 
 /**
  * POST /api/ai/error-analysis-user
@@ -1034,14 +1064,15 @@ router.get('/batch', adminAuth, async (req, res) => {
  */
 router.post('/error-analysis-user', adminAuth, async (req, res) => {
   try {
-    const { userId } = req.body;
-    
+    const { userId } = req.body
+
     if (!userId) {
-      return res.status(400).json({ error: '请提供学生ID' });
+      return res.status(400).json({ error: '请提供学生ID' })
     }
-    
+
     // 查询用户的错题收藏
-    const errorQuestions = await db.query(`
+    const errorQuestions = await db.query(
+      `
       SELECT 
         q.id,
         q.content,
@@ -1059,40 +1090,41 @@ router.post('/error-analysis-user', adminAuth, async (req, res) => {
       WHERE ec.user_id = ?
       ORDER BY ec.created_at DESC
       LIMIT 30
-    `, [userId]);
-    
+    `,
+      [userId]
+    )
+
     if (errorQuestions.length === 0) {
       return res.json({
         success: true,
         analysis: '该学生暂无错题收藏记录。',
         errorCount: 0
-      });
+      })
     }
-    
+
     // 解析选项JSON
     errorQuestions.forEach(q => {
       try {
-        q.options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
+        q.options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
       } catch (e) {
-        q.options = [];
+        q.options = []
       }
-    });
-    
+    })
+
     // 调用AI分析（支持图片）
-    const analysis = await aiService.analyzeErrorQuestions(userId, errorQuestions);
-    
+    const analysis = await aiService.analyzeErrorQuestions(userId, errorQuestions)
+
     res.json({
       success: true,
       analysis,
       errorCount: errorQuestions.length,
       timestamp: new Date().toISOString()
-    });
-    
+    })
   } catch (error) {
-    console.error('[AI错题分析] 分析失败:', error);
-    res.status(500).json({ error: error.message || '错题分析失败' });
+    console.error('[AI错题分析] 分析失败:', error)
+    res.status(500).json({ error: error.message || '错题分析失败' })
   }
-});
+})
 
 /**
  * POST /api/ai/question-quality
@@ -1100,14 +1132,15 @@ router.post('/error-analysis-user', adminAuth, async (req, res) => {
  */
 router.post('/question-quality', adminAuth, async (req, res) => {
   try {
-    const { questionId, includeStats = true } = req.body;
-    
+    const { questionId, includeStats = true } = req.body
+
     if (!questionId) {
-      return res.status(400).json({ error: '请提供题目ID' });
+      return res.status(400).json({ error: '请提供题目ID' })
     }
-    
+
     // 查询题目详情
-    const question = await db.get(`
+    const question = await db.get(
+      `
       SELECT 
         q.*,
         s.name as subject,
@@ -1116,24 +1149,28 @@ router.post('/question-quality', adminAuth, async (req, res) => {
       LEFT JOIN subjects s ON q.subject_id = s.id
       LEFT JOIN subcategories sub ON q.subcategory_id = sub.id
       WHERE q.id = ?
-    `, [questionId]);
-    
+    `,
+      [questionId]
+    )
+
     if (!question) {
-      return res.status(404).json({ error: '题目不存在' });
+      return res.status(404).json({ error: '题目不存在' })
     }
-    
+
     // 解析选项
     try {
-      question.options = typeof question.options === 'string' ? JSON.parse(question.options) : question.options;
+      question.options =
+        typeof question.options === 'string' ? JSON.parse(question.options) : question.options
     } catch (e) {
-      question.options = [];
+      question.options = []
     }
-    
-    let answerStats = null;
-    
+
+    let answerStats = null
+
     // 查询答题统计
     if (includeStats) {
-      answerStats = await db.get(`
+      answerStats = await db.get(
+        `
         SELECT 
           COUNT(*) as totalAttempts,
           SUM(is_correct) as correctCount,
@@ -1142,10 +1179,13 @@ router.post('/question-quality', adminAuth, async (req, res) => {
             ELSE 0 END as accuracy
         FROM question_attempts
         WHERE question_id = ?
-      `, [questionId]);
-      
+      `,
+        [questionId]
+      )
+
       // 选项分布
-      const optionDist = await db.query(`
+      const optionDist = await db.query(
+        `
         SELECT 
           user_answer as option,
           COUNT(*) as count
@@ -1153,30 +1193,29 @@ router.post('/question-quality', adminAuth, async (req, res) => {
         WHERE question_id = ?
         GROUP BY user_answer
         ORDER BY count DESC
-      `, [questionId]);
-      
+      `,
+        [questionId]
+      )
+
       if (answerStats) {
-        answerStats.optionDistribution = optionDist;
+        answerStats.optionDistribution = optionDist
       }
     }
-    
+
     // 调用AI评估（支持图片）
-    const evaluation = await aiService.evaluateQuestionQuality(question, answerStats);
-    
+    const evaluation = await aiService.evaluateQuestionQuality(question, answerStats)
+
     res.json({
       success: true,
       evaluation,
       questionId,
-      hasImages: question.options.some(opt => 
-        opt && (opt.includes('<img') || opt.includes('!['))
-      ),
+      hasImages: question.options.some(opt => opt && (opt.includes('<img') || opt.includes('!['))),
       timestamp: new Date().toISOString()
-    });
-    
+    })
   } catch (error) {
-    console.error('[AI题目评估] 评估失败:', error);
-    res.status(500).json({ error: error.message || '题目评估失败' });
+    console.error('[AI题目评估] 评估失败:', error)
+    res.status(500).json({ error: error.message || '题目评估失败' })
   }
-});
+})
 
-module.exports = router;
+module.exports = router

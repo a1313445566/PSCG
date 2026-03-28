@@ -7,21 +7,17 @@
       @close="passwordDialogVisible = false"
       @login-success="handlePasswordVerify"
     />
-    
+
     <!-- 主布局 -->
     <template v-if="isAuthenticated">
       <!-- 顶部栏 -->
-      <AdminHeader 
-        :system-title="systemTitle"
-        @refresh="handleRefresh"
-        @logout="handleLogout"
-      />
-      
+      <AdminHeader :system-title="systemTitle" @refresh="handleRefresh" @logout="handleLogout" />
+
       <!-- 主体区域 -->
       <div class="layout-main">
         <!-- 侧边栏 -->
         <AdminSidebar @menu-select="handleMenuSelect" />
-        
+
         <!-- 内容区域 -->
         <div class="layout-content">
           <!-- 数据加载中提示 -->
@@ -29,7 +25,7 @@
             <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
             <p>正在加载数据，请稍候...</p>
           </div>
-          
+
           <!-- 内容插槽 -->
           <slot v-else></slot>
         </div>
@@ -39,7 +35,16 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick, onErrorCaptured, provide } from 'vue'
+import {
+  ref,
+  computed,
+  watch,
+  onMounted,
+  onUnmounted,
+  nextTick,
+  onErrorCaptured,
+  provide
+} from 'vue'
 import { useQuestionStore, useSettingsStore } from '../../../stores/questionStore'
 import message from '../../../utils/message'
 import { useLoading } from '../../../composables/useLoading'
@@ -64,7 +69,10 @@ const props = defineProps({
 })
 
 // 提供subjects给子组件
-provide('subjects', computed(() => props.subjects))
+provide(
+  'subjects',
+  computed(() => props.subjects)
+)
 
 // Emits
 const emit = defineEmits(['menu-change', 'authenticated'])
@@ -86,12 +94,12 @@ const loadErrors = ref([])
 let isLoadingData = false
 
 // 密码验证成功
-const handlePasswordVerify = (isVerified) => {
+const handlePasswordVerify = isVerified => {
   if (isVerified && isComponentMounted) {
     adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
     isAuthenticated.value = true
     passwordDialogVisible.value = false
-    
+
     // 刷新页面以确保状态正确
     setTimeout(() => {
       window.location.reload()
@@ -124,7 +132,7 @@ const handleLogout = () => {
 }
 
 // 菜单选择
-const handleMenuSelect = (key) => {
+const handleMenuSelect = key => {
   emit('menu-change', key)
 }
 
@@ -146,11 +154,11 @@ const loadSettings = async () => {
 const loadPageData = async () => {
   if (isLoadingData) return
   if (!isComponentMounted) return
-  
+
   isLoadingData = true
   loadErrors.value = []
   isDataReady.value = false
-  
+
   const loadSingleData = async (name, loader) => {
     if (!isComponentMounted) throw new Error('组件已卸载')
     try {
@@ -166,17 +174,17 @@ const loadPageData = async () => {
       loadErrors.value.push(`${name}: ${error.message}`)
     }
   }
-  
+
   try {
     await loadSingleData('核心数据', () => questionStore.loadData())
     if (!isComponentMounted) return
-    
+
     await loadSingleData('系统设置', () => loadSettings())
     if (!isComponentMounted) return
-    
+
     await loadSingleData('题目数据', () => questionStore.loadQuestions({ excludeContent: true }))
     if (!isComponentMounted) return
-    
+
     await nextTick()
     await new Promise(resolve => {
       const timeoutId = setTimeout(() => {
@@ -184,13 +192,13 @@ const loadPageData = async () => {
       }, 100)
       timeoutIds.push(timeoutId)
     })
-    
+
     if (!isComponentMounted) return
-    
+
     if (loadErrors.value.length > 0 && isComponentMounted) {
       message.warning(`部分数据加载失败: ${loadErrors.value.length} 项`)
     }
-    
+
     isDataReady.value = true
     emit('authenticated', true)
   } catch (error) {
@@ -208,10 +216,10 @@ onMounted(async () => {
     isAuthenticated.value = true
     passwordDialogVisible.value = false
     adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
-    
+
     await nextTick()
     await nextTick()
-    
+
     if (isComponentMounted) {
       await loadPageData()
     }
@@ -230,9 +238,9 @@ onUnmounted(() => {
 })
 
 // 错误捕获
-onErrorCaptured((err) => {
+onErrorCaptured(err => {
   const errorMessage = err?.message || ''
-  const isIgnorableError = 
+  const isIgnorableError =
     errorMessage.includes("Cannot destructure property 'node' of 'undefined'") ||
     errorMessage.includes("Cannot destructure property 'row' of 'undefined'") ||
     errorMessage.includes("Cannot destructure property 'bum' of") ||
@@ -240,13 +248,13 @@ onErrorCaptured((err) => {
     errorMessage.includes('Cannot read properties of undefined') ||
     errorMessage.includes('Cannot destructure property') ||
     errorMessage.includes('is null')
-  
+
   // 忽略这些错误，不阻止渲染
   if (isIgnorableError) {
     // 静默忽略，不输出日志
     return false
   }
-  
+
   // 其他错误正常抛出
   console.error('[AdminLayout] 未捕获的错误:', err)
   return true
@@ -259,7 +267,7 @@ onErrorCaptured((err) => {
   height: 100vh;
   display: flex;
   flex-direction: column;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
   overflow: hidden;
 }
 
@@ -311,8 +319,12 @@ onErrorCaptured((err) => {
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* 响应式 */

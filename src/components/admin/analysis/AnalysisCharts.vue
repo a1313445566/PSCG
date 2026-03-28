@@ -107,16 +107,16 @@ let subcategoryChart = null
 // 初始化学科图表
 const initSubjectChart = () => {
   if (!subjectChartRef.value) return
-  
+
   // 先销毁旧图表
   if (subjectChart) {
     subjectChart.release()
     subjectChart = null
   }
-  
+
   const data = props.analysisData.subjectAnalysisList || []
   if (data.length === 0) return
-  
+
   const spec = {
     type: 'bar',
     data: [
@@ -132,7 +132,7 @@ const initSubjectChart = () => {
     yField: 'accuracy',
     axes: [
       { orient: 'bottom', label: { autoRotate: true, autoHide: false } },
-      { orient: 'left', max: 100, label: { formatMethod: (val) => `${val}%` } }
+      { orient: 'left', max: 100, label: { formatMethod: val => `${val}%` } }
     ],
     bar: {
       style: {
@@ -142,14 +142,12 @@ const initSubjectChart = () => {
     tooltip: {
       visible: true,
       mark: {
-        title: (d) => d.subject,
-        content: [
-          { key: '正确率', value: (d) => formatPercent(d.accuracy) }
-        ]
+        title: d => d.subject,
+        content: [{ key: '正确率', value: d => formatPercent(d.accuracy) }]
       }
     }
   }
-  
+
   subjectChart = new VChart(spec, {
     dom: subjectChartRef.value,
     mode: 'desktop-browser'
@@ -160,16 +158,16 @@ const initSubjectChart = () => {
 // 初始化年级图表
 const initGradeChart = () => {
   if (!gradeChartRef.value) return
-  
+
   // 先销毁旧图表
   if (gradeChart) {
     gradeChart.release()
     gradeChart = null
   }
-  
+
   const data = props.analysisData.gradeAnalysisList || []
   if (data.length === 0) return
-  
+
   // 将数据转换为长格式
   const values = []
   data.forEach(item => {
@@ -184,7 +182,7 @@ const initGradeChart = () => {
       value: item.sessions || 0
     })
   })
-  
+
   const spec = {
     type: 'bar',
     data: [{ id: 'data', values }],
@@ -204,7 +202,7 @@ const initGradeChart = () => {
     legends: { visible: true },
     tooltip: { visible: true }
   }
-  
+
   gradeChart = new VChart(spec, {
     dom: gradeChartRef.value,
     mode: 'desktop-browser'
@@ -215,25 +213,26 @@ const initGradeChart = () => {
 // 初始化时间趋势图表
 const initTimeChart = () => {
   if (!timeChartRef.value) return
-  
+
   // 先销毁旧图表
   if (timeChart) {
     timeChart.release()
     timeChart = null
   }
-  
+
   const data = props.analysisData.timeAnalysisList || []
   if (data.length === 0) return
-  
+
   const spec = {
     type: 'line',
     data: [
       {
         id: 'data',
         values: data.map(item => ({
-          date: item.date && typeof item.date === 'string' 
-            ? item.date.split('T')[0].split(' ')[0] 
-            : item.date,
+          date:
+            item.date && typeof item.date === 'string'
+              ? item.date.split('T')[0].split(' ')[0]
+              : item.date,
           accuracy: item.accuracy || 0
         }))
       }
@@ -242,7 +241,7 @@ const initTimeChart = () => {
     yField: 'accuracy',
     axes: [
       { orient: 'bottom' },
-      { orient: 'left', max: 100, label: { formatMethod: (val) => `${val}%` } }
+      { orient: 'left', max: 100, label: { formatMethod: val => `${val}%` } }
     ],
     line: {
       style: {
@@ -264,14 +263,12 @@ const initTimeChart = () => {
     tooltip: {
       visible: true,
       mark: {
-        title: (d) => d.date,
-        content: [
-          { key: '正确率', value: (d) => formatPercent(d.accuracy) }
-        ]
+        title: d => d.date,
+        content: [{ key: '正确率', value: d => formatPercent(d.accuracy) }]
       }
     }
   }
-  
+
   timeChart = new VChart(spec, {
     dom: timeChartRef.value,
     mode: 'desktop-browser'
@@ -282,16 +279,16 @@ const initTimeChart = () => {
 // 初始化班级图表
 const initClassChart = () => {
   if (!classChartRef.value) return
-  
+
   // 先销毁旧图表
   if (classChart) {
     classChart.release()
     classChart = null
   }
-  
+
   const data = props.analysisData.classAnalysisList || []
   if (data.length === 0) return
-  
+
   const spec = {
     type: 'bar',
     data: [
@@ -307,7 +304,7 @@ const initClassChart = () => {
     yField: 'accuracy',
     axes: [
       { orient: 'bottom', label: { autoRotate: true } },
-      { orient: 'left', max: 100, label: { formatMethod: (val) => `${val}%` } }
+      { orient: 'left', max: 100, label: { formatMethod: val => `${val}%` } }
     ],
     bar: {
       style: {
@@ -316,7 +313,7 @@ const initClassChart = () => {
     },
     tooltip: { visible: true }
   }
-  
+
   classChart = new VChart(spec, {
     dom: classChartRef.value,
     mode: 'desktop-browser'
@@ -327,16 +324,16 @@ const initClassChart = () => {
 // 初始化答题时长分布图表
 const initTimeSpentChart = () => {
   if (!timeSpentChartRef.value) return
-  
+
   // 先销毁旧图表
   if (timeSpentChart) {
     timeSpentChart.release()
     timeSpentChart = null
   }
-  
+
   const data = props.analysisData.timeSpentAnalysisList || []
   if (data.length === 0) return
-  
+
   const spec = {
     type: 'pie',
     data: [
@@ -366,7 +363,7 @@ const initTimeSpentChart = () => {
     label: { visible: false },
     tooltip: { visible: true }
   }
-  
+
   timeSpentChart = new VChart(spec, {
     dom: timeSpentChartRef.value,
     mode: 'desktop-browser'
@@ -377,25 +374,29 @@ const initTimeSpentChart = () => {
 // 初始化知识点图表
 const initSubcategoryChart = () => {
   if (!subcategoryChartRef.value) return
-  
+
   // 先销毁旧图表
   if (subcategoryChart) {
     subcategoryChart.release()
     subcategoryChart = null
   }
-  
+
   const data = props.analysisData.subcategoryAnalysisList || []
   if (data.length === 0) return
-  
+
   const spec = {
     type: 'bar',
     data: [
       {
         id: 'data',
-        values: data.map(item => ({
-          name: item.subcategory ? `${item.subject} - ${item.subcategory}` : (item.subject || '未分类'),
-          accuracy: item.accuracy || 0
-        })).reverse()
+        values: data
+          .map(item => ({
+            name: item.subcategory
+              ? `${item.subject} - ${item.subcategory}`
+              : item.subject || '未分类',
+            accuracy: item.accuracy || 0
+          }))
+          .reverse()
       }
     ],
     xField: 'accuracy',
@@ -403,7 +404,7 @@ const initSubcategoryChart = () => {
     direction: 'horizontal',
     axes: [
       { orient: 'left', label: { autoHide: false } },
-      { orient: 'bottom', max: 100, label: { formatMethod: (val) => `${val}%` } }
+      { orient: 'bottom', max: 100, label: { formatMethod: val => `${val}%` } }
     ],
     bar: {
       style: {
@@ -413,14 +414,12 @@ const initSubcategoryChart = () => {
     tooltip: {
       visible: true,
       mark: {
-        title: (d) => d.name,
-        content: [
-          { key: '正确率', value: (d) => formatPercent(d.accuracy) }
-        ]
+        title: d => d.name,
+        content: [{ key: '正确率', value: d => formatPercent(d.accuracy) }]
       }
     }
   }
-  
+
   subcategoryChart = new VChart(spec, {
     dom: subcategoryChartRef.value,
     mode: 'desktop-browser'
@@ -456,7 +455,7 @@ const disposeCharts = () => {
   classChart?.release()
   timeSpentChart?.release()
   subcategoryChart?.release()
-  
+
   subjectChart = null
   gradeChart = null
   timeChart = null
@@ -466,11 +465,15 @@ const disposeCharts = () => {
 }
 
 // 监听数据变化
-watch(() => props.analysisData, () => {
-  nextTick(() => {
-    initAllCharts()
-  })
-}, { deep: true })
+watch(
+  () => props.analysisData,
+  () => {
+    nextTick(() => {
+      initAllCharts()
+    })
+  },
+  { deep: true }
+)
 
 // 生命周期
 onMounted(() => {

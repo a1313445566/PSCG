@@ -26,18 +26,21 @@ const questionStore = useQuestionStore()
 const isAdminPage = computed(() => route.path === '/admin')
 
 // 监听路由变化，显示/隐藏加载指示器
-watch(() => route.path, async (newPath, oldPath) => {
-  if (newPath !== oldPath) {
-    isLoading.value = true
+watch(
+  () => route.path,
+  async (newPath, oldPath) => {
+    if (newPath !== oldPath) {
+      isLoading.value = true
 
-    // 如果从admin页面导航到任何其他页面，重新加载数据
-    if (oldPath === '/admin' && newPath !== '/admin') {
-      await questionStore.loadData()
+      // 如果从admin页面导航到任何其他页面，重新加载数据
+      if (oldPath === '/admin' && newPath !== '/admin') {
+        await questionStore.loadData()
+      }
+
+      isLoading.value = false
     }
-
-    isLoading.value = false
   }
-})
+)
 
 // 组件卸载时设置全局挂载状态
 onUnmounted(() => {

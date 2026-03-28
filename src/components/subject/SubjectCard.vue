@@ -1,5 +1,5 @@
 <template>
-  <div class="subject-card" @click="selectSubject" :class="`subject-${subject.iconIndex + 1}`">
+  <div class="subject-card" :class="`subject-${subject.iconIndex + 1}`" @click="selectSubject">
     <div class="subject-icon">
       {{ subjectIcons[subject.iconIndex || 0] }}
     </div>
@@ -27,10 +27,10 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 // 导入共享图标配置
-import { subjectIcons } from '../../config/iconConfig';
+import { subjectIcons } from '../../config/iconConfig'
 
 // 计算该学科的题目数量
-const getQuestionCount = (subjectId) => {
+const getQuestionCount = subjectId => {
   // 优先使用后端返回的 questionCount 字段（首页场景）
   if (props.subject.questionCount !== undefined) {
     return props.subject.questionCount
@@ -69,7 +69,7 @@ const selectSubject = () => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
@@ -125,7 +125,7 @@ const selectSubject = () => {
   font-weight: 900;
   font-size: 1.1rem;
   border: 2px solid var(--accent-color);
-  box-shadow: 0 4px 0 #E6BF50;
+  box-shadow: 0 4px 0 #e6bf50;
 }
 
 /* 学科颜色 */
@@ -150,22 +150,22 @@ const selectSubject = () => {
 }
 
 .subject-5 .subject-icon {
-  color: #9C27B0;
+  color: #9c27b0;
   text-shadow: 3px 3px 6px rgba(156, 39, 176, 0.3);
 }
 
 .subject-6 .subject-icon {
-  color: #4CAF50;
+  color: #4caf50;
   text-shadow: 3px 3px 6px rgba(76, 175, 80, 0.3);
 }
 
 .subject-7 .subject-icon {
-  color: #2196F3;
+  color: #2196f3;
   text-shadow: 3px 3px 6px rgba(33, 150, 243, 0.3);
 }
 
 .subject-8 .subject-icon {
-  color: #F44336;
+  color: #f44336;
   text-shadow: 3px 3px 6px rgba(244, 67, 54, 0.3);
 }
 
@@ -174,11 +174,11 @@ const selectSubject = () => {
   .subject-card {
     padding: 2rem;
   }
-  
+
   .subject-icon {
     font-size: 4rem;
   }
-  
+
   .subject-name {
     font-size: 1.3rem;
   }
@@ -188,15 +188,15 @@ const selectSubject = () => {
   .subject-card {
     padding: 1.5rem;
   }
-  
+
   .subject-icon {
     font-size: 3rem;
   }
-  
+
   .subject-name {
     font-size: 1.1rem;
   }
-  
+
   .question-count {
     font-size: 0.9rem;
     padding: 0.4rem 1rem;

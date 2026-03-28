@@ -6,11 +6,11 @@
       <el-tab-pane label="实时监控" name="realtime">
         <!-- 刷新按钮 -->
         <div class="header-actions">
-          <el-button type="primary" @click="refreshAll" :loading="loading">
+          <el-button type="primary" :loading="loading" @click="refreshAll">
             <el-icon><Refresh /></el-icon>
             刷新数据
           </el-button>
-          <el-button type="warning" @click="unblockAll" :loading="unblocking">
+          <el-button type="warning" :loading="unblocking" @click="unblockAll">
             <el-icon><Unlock /></el-icon>
             解除所有封禁
           </el-button>
@@ -18,9 +18,7 @@
             <el-icon><Delete /></el-icon>
             批量封禁
           </el-button>
-          <span class="last-update" v-if="lastUpdate">
-            上次更新: {{ lastUpdate }}
-          </span>
+          <span v-if="lastUpdate" class="last-update">上次更新: {{ lastUpdate }}</span>
         </div>
 
         <!-- 限流状态 -->
@@ -32,11 +30,15 @@
                 限流状态监控
               </span>
               <el-tag :type="rateLimitStatus.blockedIPs > 0 ? 'danger' : 'success'">
-                {{ rateLimitStatus.blockedIPs > 0 ? `${rateLimitStatus.blockedIPs} 个IP被封禁` : '正常' }}
+                {{
+                  rateLimitStatus.blockedIPs > 0
+                    ? `${rateLimitStatus.blockedIPs} 个IP被封禁`
+                    : '正常'
+                }}
               </el-tag>
             </div>
           </template>
-          
+
           <div class="stats-grid">
             <div class="stat-item">
               <div class="stat-value">{{ rateLimitStatus.api?.activeUsers || 0 }}</div>
@@ -57,7 +59,10 @@
           </div>
 
           <!-- 被封禁列表 -->
-          <div class="blocked-list" v-if="rateLimitStatus.blockedList && rateLimitStatus.blockedList.length > 0">
+          <div
+            v-if="rateLimitStatus.blockedList && rateLimitStatus.blockedList.length > 0"
+            class="blocked-list"
+          >
             <h4>被封禁列表</h4>
             <el-table :data="rateLimitStatus.blockedList" stripe style="width: 100%">
               <el-table-column prop="key" label="标识" width="200">
@@ -67,14 +72,22 @@
               </el-table-column>
               <el-table-column prop="type" label="类型" width="100">
                 <template #default="{ row }">
-                  <el-tag v-if="row" :type="row.type === 'user' ? 'primary' : 'warning'" size="small">
+                  <el-tag
+                    v-if="row"
+                    :type="row.type === 'user' ? 'primary' : 'warning'"
+                    size="small"
+                  >
                     {{ row.type === 'user' ? '用户' : 'IP' }}
                   </el-tag>
                 </template>
               </el-table-column>
               <el-table-column prop="reason" label="原因" width="120">
                 <template #default="{ row }">
-                  <el-tag v-if="row" :type="row.reason === 'manual_block' ? 'warning' : 'danger'" size="small">
+                  <el-tag
+                    v-if="row"
+                    :type="row.reason === 'manual_block' ? 'warning' : 'danger'"
+                    size="small"
+                  >
                     {{ row.reason === 'manual_block' ? '手动封禁' : '频率超限' }}
                   </el-tag>
                 </template>
@@ -86,7 +99,12 @@
               </el-table-column>
               <el-table-column label="操作" width="120">
                 <template #default="{ row }">
-                  <el-button v-if="row" type="success" size="small" @click="unblockIP(row.ip || row.key)">
+                  <el-button
+                    v-if="row"
+                    type="success"
+                    size="small"
+                    @click="unblockIP(row.ip || row.key)"
+                  >
                     解封
                   </el-button>
                 </template>
@@ -104,12 +122,10 @@
                 <el-icon><Key /></el-icon>
                 签名缓存状态
               </span>
-              <el-tag type="info">
-                防重放保护
-              </el-tag>
+              <el-tag type="info">防重放保护</el-tag>
             </div>
           </template>
-          
+
           <div class="stats-grid">
             <div class="stat-item">
               <div class="stat-value">{{ signatureCacheStatus.usedSignatures || 0 }}</div>
@@ -125,16 +141,27 @@
             </div>
             <div class="stat-item">
               <div class="stat-value">
-                {{ ((signatureCacheStatus.usedSignatures / signatureCacheStatus.maxSize) * 100).toFixed(1) }}%
+                {{
+                  (
+                    (signatureCacheStatus.usedSignatures / signatureCacheStatus.maxSize) *
+                    100
+                  ).toFixed(1)
+                }}%
               </div>
               <div class="stat-label">缓存使用率</div>
             </div>
           </div>
 
           <div class="cache-progress">
-            <el-progress 
-              :percentage="(signatureCacheStatus.usedSignatures / signatureCacheStatus.maxSize) * 100" 
-              :color="getProgressColor((signatureCacheStatus.usedSignatures / signatureCacheStatus.maxSize) * 100)"
+            <el-progress
+              :percentage="
+                (signatureCacheStatus.usedSignatures / signatureCacheStatus.maxSize) * 100
+              "
+              :color="
+                getProgressColor(
+                  (signatureCacheStatus.usedSignatures / signatureCacheStatus.maxSize) * 100
+                )
+              "
             />
           </div>
         </el-card>
@@ -149,7 +176,7 @@
               </span>
             </div>
           </template>
-          
+
           <el-form :model="blockForm" label-width="100px" class="block-form">
             <el-form-item label="IP地址" required>
               <el-input v-model="blockForm.ip" placeholder="输入要封禁的IP地址" />
@@ -175,12 +202,15 @@
               />
             </el-form-item>
             <el-form-item>
-              <el-button type="danger" @click="blockIP" :loading="blocking" :disabled="!blockForm.reason">
+              <el-button
+                type="danger"
+                :loading="blocking"
+                :disabled="!blockForm.reason"
+                @click="blockIP"
+              >
                 封禁IP
               </el-button>
-              <el-button type="success" @click="quickUnblock">
-                快速解封
-              </el-button>
+              <el-button type="success" @click="quickUnblock">快速解封</el-button>
             </el-form-item>
           </el-form>
         </el-card>
@@ -195,11 +225,13 @@
               </span>
             </div>
           </template>
-          
+
           <el-descriptions :column="1" border>
             <el-descriptions-item label="限流策略">
               <el-tag type="primary" size="small">用户ID优先</el-tag>
-              <span style="margin-left: 8px; color: #409eff;">登录用户独立配额，支持学校NAT环境</span>
+              <span style="margin-left: 8px; color: #409eff">
+                登录用户独立配额，支持学校NAT环境
+              </span>
             </el-descriptions-item>
             <el-descriptions-item label="API限流（用户）">
               每个用户每分钟最多 150 次请求
@@ -221,18 +253,18 @@
             </el-descriptions-item>
             <el-descriptions-item label="学校环境适配">
               <el-tag type="success" size="small">已启用</el-tag>
-              <span style="margin-left: 8px; color: #67c23a;">同一AP下多用户各自独立配额</span>
+              <span style="margin-left: 8px; color: #67c23a">同一AP下多用户各自独立配额</span>
             </el-descriptions-item>
           </el-descriptions>
         </el-card>
       </el-tab-pane>
-      
+
       <!-- 操作日志 Tab -->
       <el-tab-pane label="操作日志" name="logs">
         <!-- 筛选条件 -->
         <el-form :inline="true" :model="logFilters" class="log-filters">
           <el-form-item label="操作类型">
-            <el-select v-model="logFilters.type" placeholder="全部" clearable style="width: 150px;">
+            <el-select v-model="logFilters.type" placeholder="全部" clearable style="width: 150px">
               <el-option label="封禁" value="block" />
               <el-option label="解封" value="unblock" />
               <el-option label="批量封禁" value="batch_block" />
@@ -240,19 +272,29 @@
             </el-select>
           </el-form-item>
           <el-form-item label="IP 地址">
-            <el-input v-model="logFilters.ip" placeholder="输入 IP 地址" clearable style="width: 200px;" />
+            <el-input
+              v-model="logFilters.ip"
+              placeholder="输入 IP 地址"
+              clearable
+              style="width: 200px"
+            />
           </el-form-item>
           <el-form-item label="操作人">
-            <el-input v-model="logFilters.operator" placeholder="输入操作人" clearable style="width: 150px;" />
+            <el-input
+              v-model="logFilters.operator"
+              placeholder="输入操作人"
+              clearable
+              style="width: 150px"
+            />
           </el-form-item>
           <el-form-item>
             <el-button type="primary" @click="loadLogs">查询</el-button>
             <el-button @click="resetLogFilters">重置</el-button>
           </el-form-item>
         </el-form>
-        
+
         <!-- 日志表格 -->
-        <el-table :data="logs" stripe v-loading="logsLoading" style="margin-top: 20px;">
+        <el-table v-loading="logsLoading" :data="logs" stripe style="margin-top: 20px">
           <el-table-column prop="ip" label="IP 地址" width="150" />
           <el-table-column prop="type" label="操作类型" width="120">
             <template #default="{ row }">
@@ -274,7 +316,7 @@
             </template>
           </el-table-column>
         </el-table>
-        
+
         <!-- 分页 -->
         <el-pagination
           v-model:current-page="logCurrentPage"
@@ -282,26 +324,21 @@
           :total="logTotal"
           :page-sizes="[10, 20, 50, 100]"
           layout="total, sizes, prev, pager, next, jumper"
+          style="margin-top: 20px; justify-content: center"
           @size-change="handleLogSizeChange"
           @current-change="handleLogCurrentChange"
-          style="margin-top: 20px; justify-content: center;"
         />
       </el-tab-pane>
     </el-tabs>
 
     <!-- 批量封禁对话框 -->
     <el-dialog v-model="batchBlockDialogVisible" title="批量封禁 IP" width="600px">
-      <el-alert
-        title="注意事项"
-        type="warning"
-        :closable="false"
-        style="margin-bottom: 20px;"
-      >
+      <el-alert title="注意事项" type="warning" :closable="false" style="margin-bottom: 20px">
         <p>• 每行一个 IP 地址，最多 100 个</p>
         <p>• 支持 IPv4 和 IPv6 格式</p>
         <p>• 封禁原因必填，将应用于所有 IP</p>
       </el-alert>
-      
+
       <el-form :model="batchBlockForm" label-width="100px">
         <el-form-item label="IP 列表" required>
           <el-input
@@ -310,7 +347,7 @@
             :rows="8"
             placeholder="每行一个 IP 地址&#10;例如:&#10;192.168.1.1&#10;192.168.1.2&#10;192.168.1.3"
           />
-          <div style="margin-top: 5px; color: #909399; font-size: 12px;">
+          <div style="margin-top: 5px; color: #909399; font-size: 12px">
             已输入 {{ ipCount }} 个 IP
           </div>
         </el-form-item>
@@ -333,14 +370,14 @@
           />
         </el-form-item>
       </el-form>
-      
+
       <template #footer>
         <el-button @click="batchBlockDialogVisible = false">取消</el-button>
-        <el-button 
-          type="danger" 
-          @click="handleBatchBlock"
+        <el-button
+          type="danger"
           :disabled="ipCount === 0 || !batchBlockForm.reason"
           :loading="batchBlocking"
+          @click="handleBatchBlock"
         >
           确定封禁
         </el-button>
@@ -408,8 +445,7 @@ const ipCount = computed(() => {
   return batchBlockForm.ipsText
     .split('\n')
     .map(ip => ip.trim())
-    .filter(ip => ip.length > 0)
-    .length
+    .filter(ip => ip.length > 0).length
 })
 
 // 操作日志状态
@@ -426,13 +462,13 @@ const logFilters = reactive({
 })
 
 // 格式化时间
-const formatTime = (ms) => {
+const formatTime = ms => {
   if (!ms || ms <= 0) return '-'
-  
+
   const seconds = Math.floor(ms / 1000)
   const minutes = Math.floor(seconds / 60)
   const hours = Math.floor(minutes / 60)
-  
+
   if (hours > 0) {
     return `${hours}小时${minutes % 60}分`
   } else if (minutes > 0) {
@@ -443,14 +479,14 @@ const formatTime = (ms) => {
 }
 
 // 格式化时间戳
-const formatTimestamp = (timestamp) => {
+const formatTimestamp = timestamp => {
   return new Date(timestamp).toLocaleString('zh-CN', {
     timeZone: 'Asia/Shanghai'
   })
 }
 
 // 获取进度条颜色
-const getProgressColor = (percentage) => {
+const getProgressColor = percentage => {
   if (percentage < 50) return '#67c23a'
   if (percentage < 80) return '#e6a23c'
   return '#f56c6c'
@@ -460,10 +496,7 @@ const getProgressColor = (percentage) => {
 const refreshAll = async () => {
   loading.value = true
   try {
-    await Promise.all([
-      fetchRateLimitStatus(),
-      fetchSignatureCacheStatus()
-    ])
+    await Promise.all([fetchRateLimitStatus(), fetchSignatureCacheStatus()])
     lastUpdate.value = new Date().toLocaleTimeString('zh-CN')
     message.success('数据已刷新')
   } catch (error) {
@@ -478,10 +511,10 @@ const fetchRateLimitStatus = async () => {
   try {
     const data = await api.get('/security/rate-limit')
     rateLimitStatus.value = data
-    
+
     // 计算总封禁数
     let allBlockedList = []
-    
+
     if (data.global?.blockedList) {
       allBlockedList = allBlockedList.concat(data.global.blockedList)
     }
@@ -491,7 +524,7 @@ const fetchRateLimitStatus = async () => {
     if (data.submit?.blockedList) {
       allBlockedList = allBlockedList.concat(data.submit.blockedList)
     }
-    
+
     // 去重
     const uniqueBlocked = [...new Map(allBlockedList.map(item => [item.ip, item])).values()]
     rateLimitStatus.value.blockedIPs = uniqueBlocked.length
@@ -521,18 +554,16 @@ const blockIP = async () => {
     message.warning('请填写封禁原因')
     return
   }
-  
+
   // XSS 防护
   const safeReason = escapeHtml(blockForm.value.reason.trim())
-  
+
   // 确认操作
-  const confirmed = await message.confirm(
-    `确定要封禁 IP ${blockForm.value.ip} 吗？`,
-    '封禁确认',
-    { type: 'warning' }
-  )
+  const confirmed = await message.confirm(`确定要封禁 IP ${blockForm.value.ip} 吗？`, '封禁确认', {
+    type: 'warning'
+  })
   if (!confirmed) return
-  
+
   try {
     blocking.value = true
     await api.post('/security/block-ip', {
@@ -540,7 +571,7 @@ const blockIP = async () => {
       duration: blockForm.value.duration,
       reason: safeReason
     })
-    
+
     message.actionSuccess('封禁')
     blockForm.value.ip = ''
     blockForm.value.reason = ''
@@ -553,14 +584,10 @@ const blockIP = async () => {
 }
 
 // 解封IP
-const unblockIP = async (ip) => {
-  const confirmed = await message.confirm(
-    `确定要解封 IP ${ip} 吗？`,
-    '解封确认',
-    { type: 'info' }
-  )
+const unblockIP = async ip => {
+  const confirmed = await message.confirm(`确定要解封 IP ${ip} 吗？`, '解封确认', { type: 'info' })
   if (!confirmed) return
-  
+
   try {
     await api.post('/security/unblock-ip', { ip })
     message.actionSuccess('解封')
@@ -572,17 +599,13 @@ const unblockIP = async (ip) => {
 
 // 快速解封
 const quickUnblock = async () => {
-  const { value } = await ElMessageBox.prompt(
-    '请输入要解封的IP地址',
-    '快速解封',
-    {
-      confirmButtonText: '解封',
-      cancelButtonText: '取消',
-      inputPattern: /^[\d.:a-fA-F]+$/,
-      inputErrorMessage: 'IP格式不正确'
-    }
-  ).catch(() => ({ value: null }))
-  
+  const { value } = await ElMessageBox.prompt('请输入要解封的IP地址', '快速解封', {
+    confirmButtonText: '解封',
+    cancelButtonText: '取消',
+    inputPattern: /^[\d.:a-fA-F]+$/,
+    inputErrorMessage: 'IP格式不正确'
+  }).catch(() => ({ value: null }))
+
   if (value) {
     await unblockIP(value)
   }
@@ -596,17 +619,18 @@ const unblockAll = async () => {
     { type: 'warning' }
   )
   if (!confirmed) return
-  
+
   try {
     unblocking.value = true
     const data = await api.post('/security/unblock-all')
-    
+
     // 显示详细操作结果
     const details = data.details
-    const totalBlocked = (details.global?.blockedCount || 0) + 
-                         (details.api?.blockedCount || 0) + 
-                         (details.submit?.blockedCount || 0)
-    
+    const totalBlocked =
+      (details.global?.blockedCount || 0) +
+      (details.api?.blockedCount || 0) +
+      (details.submit?.blockedCount || 0)
+
     message.success(`已解除 ${totalBlocked} 个 IP 封禁`)
     await refreshAll()
   } catch (error) {
@@ -623,7 +647,7 @@ const handleBatchBlock = async () => {
     .split('\n')
     .map(ip => ip.trim())
     .filter(ip => ip.length > 0)
-  
+
   // 输入验证
   if (ips.length === 0) {
     message.warning('请输入至少一个 IP 地址')
@@ -637,14 +661,14 @@ const handleBatchBlock = async () => {
     message.warning('请填写封禁原因')
     return
   }
-  
+
   // XSS 防护
   const safeReason = escapeHtml(batchBlockForm.reason.trim())
-  
+
   // 确认操作
   const confirmed = await message.confirmBatch(ips.length, '封禁')
   if (!confirmed) return
-  
+
   try {
     batchBlocking.value = true
     const result = await api.post('/security/batch-block', {
@@ -652,12 +676,12 @@ const handleBatchBlock = async () => {
       duration: batchBlockForm.duration,
       reason: safeReason
     })
-    
+
     message.success(result.message)
     batchBlockDialogVisible.value = false
     batchBlockForm.ipsText = ''
     batchBlockForm.reason = ''
-    
+
     await refreshAll()
   } catch (error) {
     // api 已自动显示错误
@@ -670,15 +694,15 @@ const handleBatchBlock = async () => {
 const loadLogs = async () => {
   try {
     logsLoading.value = true
-    
+
     const params = {
       page: logCurrentPage.value,
       limit: logPageSize.value,
       ...logFilters
     }
-    
+
     const result = await api.get('/security/logs', params)
-    
+
     logs.value = result.logs
     logTotal.value = result.total
   } catch (error) {
@@ -698,7 +722,7 @@ const resetLogFilters = () => {
 }
 
 // 格式化操作类型
-const getLogTypeText = (type) => {
+const getLogTypeText = type => {
   const map = {
     block: '封禁',
     unblock: '解封',
@@ -708,7 +732,7 @@ const getLogTypeText = (type) => {
   return map[type] || type
 }
 
-const getLogTypeTag = (type) => {
+const getLogTypeTag = type => {
   const map = {
     block: 'danger',
     unblock: 'success',
@@ -719,20 +743,20 @@ const getLogTypeTag = (type) => {
 }
 
 // Tab 切换
-const handleTabChange = (tab) => {
+const handleTabChange = tab => {
   if (tab === 'logs') {
     loadLogs()
   }
 }
 
 // 分页事件
-const handleLogSizeChange = (size) => {
+const handleLogSizeChange = size => {
   logPageSize.value = size
   logCurrentPage.value = 1
   loadLogs()
 }
 
-const handleLogCurrentChange = (page) => {
+const handleLogCurrentChange = page => {
   logCurrentPage.value = page
   loadLogs()
 }

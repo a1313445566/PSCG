@@ -12,8 +12,8 @@
     <!-- Tab 切换 -->
     <div class="tabs-container">
       <div class="tabs-nav">
-        <div 
-          v-for="tab in tabs" 
+        <div
+          v-for="tab in tabs"
           :key="tab.name"
           :class="['tab-item', { active: activeTab === tab.name }]"
           @click="activeTab = tab.name"
@@ -22,7 +22,7 @@
           <span>{{ tab.label }}</span>
         </div>
       </div>
-      
+
       <div class="tabs-content">
         <AIAnalysisPanel v-if="activeTab === 'natural'" />
         <BatchAnalysis v-else-if="activeTab === 'batch'" />

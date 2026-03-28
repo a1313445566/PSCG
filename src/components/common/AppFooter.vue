@@ -32,7 +32,7 @@
 
 <style scoped>
 .app-footer {
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
   color: white;
   padding: 2rem 0;
   margin-top: 2rem;

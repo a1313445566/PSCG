@@ -2,23 +2,26 @@
   <div class="login-form-container">
     <div class="login-card">
       <div class="login-header">
-        <h2 class="login-title">欢迎来到<span class="highlight">{{ interfaceName }}</span></h2>
+        <h2 class="login-title">
+          欢迎来到
+          <span class="highlight">{{ interfaceName }}</span>
+        </h2>
         <p class="login-subtitle">请输入您的信息开始学习之旅</p>
       </div>
-      
+
       <!-- 加载错误提示 -->
       <div v-if="loadError" class="error-container">
         <p class="error-message">数据加载失败，请检查网络连接后刷新页面重试</p>
         <button type="button" class="retry-btn" @click="loadGradesAndClasses">重新加载</button>
       </div>
-      
-      <form v-else @submit.prevent="saveStudentId" class="login-form">
+
+      <form v-else class="login-form" @submit.prevent="saveStudentId">
         <div class="form-group">
           <label class="form-label">学号</label>
-          <input 
-            type="text" 
-            v-model="inputStudentId" 
-            placeholder="请输入2位学号" 
+          <input
+            v-model="inputStudentId"
+            type="text"
+            placeholder="请输入2位学号"
             class="form-input"
             required
             inputmode="numeric"
@@ -28,15 +31,15 @@
         </div>
         <div class="form-group">
           <label class="form-label">姓名</label>
-          <input 
-            type="text" 
-            v-model="inputName" 
-            placeholder="请输入姓名（可选）" 
+          <input
+            v-model="inputName"
+            type="text"
+            placeholder="请输入姓名（可选）"
             class="form-input"
+            maxlength="4"
             @input="handleNameInput"
             @compositionstart="isComposing = true"
             @compositionend="handleCompositionEnd"
-            maxlength="4"
           />
         </div>
         <div class="form-row">
@@ -51,7 +54,9 @@
             <label class="form-label">班级</label>
             <select v-model="inputClass" class="form-select" required>
               <option value="">请选择班级</option>
-              <option v-for="classNum in classes" :key="classNum" :value="classNum">{{ classNum }}班</option>
+              <option v-for="classNum in classes" :key="classNum" :value="classNum">
+                {{ classNum }}班
+              </option>
             </select>
           </div>
         </div>
@@ -94,37 +99,43 @@ const loadError = ref(false)
 // 加载年级和班级数据
 const loadGradesAndClasses = async () => {
   loadError.value = false
-  
+
   try {
     // 获取年级列表
     const serverGrades = await api.get('/grades')
     if (!Array.isArray(serverGrades) || serverGrades.length === 0) {
       throw new Error('年级数据为空')
     }
-    grades.value = serverGrades.map(grade => {
-      if (typeof grade === 'object' && grade.name) {
-        const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
-        return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
-      } else if (typeof grade === 'number') {
-        return grade
-      }
-      return 1
-    }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
-    
+    grades.value = serverGrades
+      .map(grade => {
+        if (typeof grade === 'object' && grade.name) {
+          const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
+          return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
+        } else if (typeof grade === 'number') {
+          return grade
+        }
+        return 1
+      })
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort((a, b) => a - b)
+
     // 获取班级列表
     const serverClasses = await api.get('/classes')
     if (!Array.isArray(serverClasses) || serverClasses.length === 0) {
       throw new Error('班级数据为空')
     }
-    classes.value = serverClasses.map(classItem => {
-      if (typeof classItem === 'object' && classItem.name) {
-        const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
-        return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
-      } else if (typeof classItem === 'number') {
-        return classItem
-      }
-      return 1
-    }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+    classes.value = serverClasses
+      .map(classItem => {
+        if (typeof classItem === 'object' && classItem.name) {
+          const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+          return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+        } else if (typeof classItem === 'number') {
+          return classItem
+        }
+        return 1
+      })
+      .filter((value, index, self) => self.indexOf(value) === index)
+      .sort((a, b) => a - b)
   } catch (error) {
     console.error('加载年级班级数据失败:', error)
     loadError.value = true
@@ -133,33 +144,33 @@ const loadGradesAndClasses = async () => {
 }
 
 // 处理姓名输入的公共函数
-const processNameInput = (value) => {
+const processNameInput = value => {
   // 只允许输入中文，过滤非中文字符（包括表情和特殊符号）
   const filteredValue = value.replace(/[^\u4e00-\u9fa5]/g, '')
-  
+
   // 限制最多4个中文字符
   const finalValue = filteredValue.slice(0, 4)
-  
+
   // 检查是否需要显示警告
   if (value !== filteredValue) {
     ElMessage.warning('姓名只能输入中文字符')
   }
-  
+
   if (filteredValue.length > 4) {
     ElMessage.warning('姓名最多只能输入4个中文字符')
   }
-  
+
   return finalValue
 }
 
 // 处理姓名输入
-const handleNameInput = (event) => {
+const handleNameInput = event => {
   // 避免在输入法组合过程中触发
   if (isComposing.value) return
-  
+
   const originalValue = event?.target?.value || inputName.value
   const finalValue = processNameInput(originalValue)
-  
+
   // 只有当值发生变化时才更新，避免输入闪烁
   if (inputName.value !== finalValue) {
     inputName.value = finalValue
@@ -167,12 +178,12 @@ const handleNameInput = (event) => {
 }
 
 // 处理输入法组合结束
-const handleCompositionEnd = (event) => {
+const handleCompositionEnd = event => {
   isComposing.value = false
   // 直接使用event.target.value进行处理
   const originalValue = event.target.value
   const finalValue = processNameInput(originalValue)
-  
+
   if (inputName.value !== finalValue) {
     inputName.value = finalValue
   }
@@ -184,40 +195,40 @@ const saveStudentId = async () => {
     ElMessage.error('请输入学号')
     return
   }
-  
+
   if (!inputGrade.value) {
     ElMessage.error('请选择年级')
     return
   }
-  
+
   if (!inputClass.value) {
     ElMessage.error('请选择班级')
     return
   }
-  
+
   isLoading.value = true
-  
+
   try {
     // 处理学号格式，确保是两位数
     const formattedStudentId = inputStudentId.value.trim().padStart(2, '0')
-    
+
     const data = await api.post('/users/login', {
       studentId: formattedStudentId,
       name: inputName.value.trim(),
       grade: parseInt(inputGrade.value),
       class: parseInt(inputClass.value)
     })
-    
+
     localStorage.setItem('userId', data.userId)
     localStorage.setItem('studentId', formattedStudentId)
     localStorage.setItem('userName', data.name || '')
     localStorage.setItem('userGrade', inputGrade.value)
     localStorage.setItem('userClass', inputClass.value)
     localStorage.setItem('token', data.token)
-    localStorage.setItem('tokenExpiresAt', Date.now() + (24 * 60 * 60 * 1000)) // 24小时过期
+    localStorage.setItem('tokenExpiresAt', Date.now() + 24 * 60 * 60 * 1000) // 24小时过期
     sessionStorage.setItem('lastActivity', Date.now()) // 记录最后活动时间
     ElMessage.success('登录成功')
-    
+
     // 跳转到首页
     router.push('/home')
   } catch (error) {
@@ -264,7 +275,12 @@ onMounted(async () => {
   left: 0;
   width: 100%;
   height: 8px;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  background: linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--secondary-color),
+    var(--accent-color)
+  );
 }
 
 .login-header {
@@ -367,17 +383,19 @@ onMounted(async () => {
   margin-top: 1.5rem;
   text-transform: uppercase;
   letter-spacing: 2px;
-  box-shadow: 0 6px 0 #D9534F;
+  box-shadow: 0 6px 0 #d9534f;
 }
 
 .login-btn:hover:not(:disabled) {
   transform: translateY(-4px);
-  box-shadow: 0 10px 0 #D9534F, 0 15px 20px rgba(255, 107, 107, 0.4);
+  box-shadow:
+    0 10px 0 #d9534f,
+    0 15px 20px rgba(255, 107, 107, 0.4);
 }
 
 .login-btn:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #D9534F;
+  box-shadow: 0 2px 0 #d9534f;
 }
 
 .login-btn:disabled {
@@ -392,15 +410,15 @@ onMounted(async () => {
   .login-form-container {
     padding: 1rem;
   }
-  
+
   .login-card {
     padding: 2.5rem;
   }
-  
+
   .login-title {
     font-size: 1.8rem;
   }
-  
+
   .form-row {
     flex-direction: column;
   }
@@ -410,11 +428,11 @@ onMounted(async () => {
   .login-card {
     padding: 2rem;
   }
-  
+
   .login-title {
     font-size: 1.5rem;
   }
-  
+
   .login-btn {
     padding: 1rem;
     font-size: 1.1rem;

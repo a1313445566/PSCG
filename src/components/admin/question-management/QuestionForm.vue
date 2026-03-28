@@ -1,11 +1,11 @@
 <template>
   <el-dialog
     :model-value="visible"
-    @update:model-value="(value) => emit('update:visible', value)"
     :title="isEditing ? '编辑题目' : '添加题目'"
     width="1000px"
     :before-close="handleClose"
     custom-class="modern-dialog"
+    @update:model-value="value => emit('update:visible', value)"
   >
     <div class="question-form-container">
       <!-- 基本信息区域 -->
@@ -18,17 +18,31 @@
           <div class="form-item-group">
             <label class="form-label">学科</label>
             <el-select v-model="form.subjectId" placeholder="选择学科" class="modern-select">
-              <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id"></el-option>
+              <el-option
+                v-for="subject in subjects"
+                :key="subject.id"
+                :label="subject.name"
+                :value="subject.id"
+              ></el-option>
             </el-select>
           </div>
-          
+
           <div class="form-item-group">
             <label class="form-label">学科题库</label>
-            <el-select v-model="form.subcategoryId" placeholder="选择学科题库" class="modern-select">
-              <el-option v-for="subcategory in currentSubcategories" :key="subcategory.id" :label="subcategory.name" :value="subcategory.id"></el-option>
+            <el-select
+              v-model="form.subcategoryId"
+              placeholder="选择学科题库"
+              class="modern-select"
+            >
+              <el-option
+                v-for="subcategory in currentSubcategories"
+                :key="subcategory.id"
+                :label="subcategory.name"
+                :value="subcategory.id"
+              ></el-option>
             </el-select>
           </div>
-          
+
           <div class="form-item-group">
             <label class="form-label">题目类型</label>
             <el-select v-model="form.type" placeholder="选择类型" class="modern-select">
@@ -40,7 +54,7 @@
               <el-option label="看图题" value="image"></el-option>
             </el-select>
           </div>
-          
+
           <div class="form-item-group">
             <label class="form-label">难度</label>
             <el-select v-model="form.difficulty" placeholder="选择难度" class="modern-select">
@@ -53,7 +67,7 @@
           </div>
         </div>
       </div>
-      
+
       <!-- 题目内容区域 -->
       <div class="form-section">
         <div class="section-header">
@@ -62,35 +76,35 @@
         </div>
         <div class="content-editor modern-card">
           <QuillEditor
-                :key="editorKey"
-                v-model="form.content"
-                @ready="onQuillReady"
-                :options="{
-                  theme: 'snow',
-                  modules: {
-                    toolbar: [
-                      ['bold', 'italic', 'underline', 'strike'],
-                      ['blockquote', 'code-block'],
-                      [{ 'header': 1 }, { 'header': 2 }],
-                      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
-                      [{ 'indent': '-1' }, { 'indent': '+1' }],
-                      [{ 'direction': 'rtl' }],
-                      [{ 'size': ['small', false, 'large', 'huge'] }],
-                      [{ 'header': [1, 2, 3, 4, 5, 6, false] }],
-                      [{ 'color': [] }, { 'background': [] }],
-                      [{ 'font': [] }],
-                      [{ 'align': [] }],
-                      ['clean'],
-                      ['image']
-                    ]
-                  },
-                  placeholder: '输入题目内容'
-                }"
-                style="width: 100%; height: 100%;"
-              />
+            :key="editorKey"
+            v-model="form.content"
+            :options="{
+              theme: 'snow',
+              modules: {
+                toolbar: [
+                  ['bold', 'italic', 'underline', 'strike'],
+                  ['blockquote', 'code-block'],
+                  [{ header: 1 }, { header: 2 }],
+                  [{ list: 'ordered' }, { list: 'bullet' }],
+                  [{ indent: '-1' }, { indent: '+1' }],
+                  [{ direction: 'rtl' }],
+                  [{ size: ['small', false, 'large', 'huge'] }],
+                  [{ header: [1, 2, 3, 4, 5, 6, false] }],
+                  [{ color: [] }, { background: [] }],
+                  [{ font: [] }],
+                  [{ align: [] }],
+                  ['clean'],
+                  ['image']
+                ]
+              },
+              placeholder: '输入题目内容'
+            }"
+            style="width: 100%; height: 100%"
+            @ready="onQuillReady"
+          />
         </div>
       </div>
-      
+
       <!-- 答案选项区域 -->
       <div class="form-section">
         <div class="section-header">
@@ -100,34 +114,59 @@
         <div class="correct-answer-tip modern-alert">
           <div class="alert-icon">💡</div>
           <div class="alert-content">
-            <p><strong>提示：</strong> 勾选框用于标记<strong>正确答案</strong>，请选择一个或多个正确的选项。</p>
-            <p><strong>图片上传：</strong> 您可以直接复制图片，然后粘贴到答案编辑器中，或使用编辑器工具栏中的图片按钮上传图片。</p>
+            <p>
+              <strong>提示：</strong>
+              勾选框用于标记
+              <strong>正确答案</strong>
+              ，请选择一个或多个正确的选项。
+            </p>
+            <p>
+              <strong>图片上传：</strong>
+              您可以直接复制图片，然后粘贴到答案编辑器中，或使用编辑器工具栏中的图片按钮上传图片。
+            </p>
           </div>
         </div>
         <div class="options-list">
-          <div v-for="(option, index) in form.options" :key="`option-${index}`" :class="['option-item', 'modern-card', { 'correct-answer': form.selectedAnswers.includes(String.fromCharCode(65 + index)) }]">
+          <div
+            v-for="(option, index) in form.options"
+            :key="`option-${index}`"
+            :class="[
+              'option-item',
+              'modern-card',
+              { 'correct-answer': form.selectedAnswers.includes(String.fromCharCode(65 + index)) }
+            ]"
+          >
             <div class="option-layout">
               <div class="option-left">
-                <el-checkbox 
-                  :label="String.fromCharCode(65 + index)" 
+                <el-checkbox
                   v-model="form.selectedAnswers"
-                  :disabled="form.type === 'single' && form.selectedAnswers.length > 0 && !form.selectedAnswers.includes(String.fromCharCode(65 + index))"
+                  :label="String.fromCharCode(65 + index)"
+                  :disabled="
+                    form.type === 'single' &&
+                    form.selectedAnswers.length > 0 &&
+                    !form.selectedAnswers.includes(String.fromCharCode(65 + index))
+                  "
                   class="modern-checkbox"
                 >
-                  <span class="option-label">{{ String.fromCharCode(65 + index) }}. </span>
-                  <span v-if="form.selectedAnswers.includes(String.fromCharCode(65 + index))" class="correct-badge">正确答案</span>
+                  <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
+                  <span
+                    v-if="form.selectedAnswers.includes(String.fromCharCode(65 + index))"
+                    class="correct-badge"
+                  >
+                    正确答案
+                  </span>
                 </el-checkbox>
-                <el-button 
-                  type="danger" 
-                  size="small" 
-                  @click="removeOption(index)" 
+                <el-button
+                  type="danger"
+                  size="small"
                   class="modern-button danger"
+                  @click="removeOption(index)"
                 >
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </div>
               <div class="option-right">
-                <EditableContent 
+                <EditableContent
                   v-model="form.options[index]"
                   placeholder="输入答案内容"
                   class="answer-input"
@@ -136,13 +175,14 @@
             </div>
           </div>
           <div class="add-option-btn">
-            <el-button type="primary" @click="addOption" class="modern-button primary">
-              <el-icon><Plus /></el-icon> 添加答案
+            <el-button type="primary" class="modern-button primary" @click="addOption">
+              <el-icon><Plus /></el-icon>
+              添加答案
             </el-button>
           </div>
         </div>
       </div>
-      
+
       <!-- 解析和媒体区域 -->
       <div class="form-section">
         <div class="section-header">
@@ -152,9 +192,15 @@
         <div class="form-grid">
           <div class="form-item-group full-width">
             <label class="form-label">解析</label>
-            <el-input v-model="form.explanation" type="textarea" :rows="3" placeholder="输入答案解析" class="modern-textarea"></el-input>
+            <el-input
+              v-model="form.explanation"
+              type="textarea"
+              :rows="3"
+              placeholder="输入答案解析"
+              class="modern-textarea"
+            ></el-input>
           </div>
-          
+
           <div class="form-item-group full-width">
             <label class="form-label">音频文件</label>
             <div class="media-upload">
@@ -167,17 +213,19 @@
                 :limit="1"
               >
                 <el-button type="primary" class="modern-button primary">
-                  <el-icon><Upload /></el-icon> 上传音频
+                  <el-icon><Upload /></el-icon>
+                  上传音频
                 </el-button>
               </el-upload>
-              <div class="media-input" v-if="form.audio">
-                <el-input v-model="form.audio" placeholder="音频文件路径" class="modern-input"></el-input>
-                <el-button 
-                  type="danger" 
-                  @click="deleteAudio"
-                  class="modern-button danger"
-                >
-                  <el-icon><Delete /></el-icon> 删除
+              <div v-if="form.audio" class="media-input">
+                <el-input
+                  v-model="form.audio"
+                  placeholder="音频文件路径"
+                  class="modern-input"
+                ></el-input>
+                <el-button type="danger" class="modern-button danger" @click="deleteAudio">
+                  <el-icon><Delete /></el-icon>
+                  删除
                 </el-button>
               </div>
             </div>
@@ -185,24 +233,28 @@
         </div>
       </div>
     </div>
-    
+
     <template #footer>
       <div class="dialog-footer">
-        <el-button @click="emit('update:visible', false)" class="modern-button secondary">取消</el-button>
-        <el-button type="primary" @click="saveQuestion" class="modern-button primary">保存</el-button>
+        <el-button class="modern-button secondary" @click="emit('update:visible', false)">
+          取消
+        </el-button>
+        <el-button type="primary" class="modern-button primary" @click="saveQuestion">
+          保存
+        </el-button>
       </div>
     </template>
   </el-dialog>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue';
-import QuillEditor from '../../../components/common/QuillEditor.vue';
-import { ElMessage, ElMessageBox, ElLoading } from 'element-plus';
-import { Plus, Upload, Delete } from '@element-plus/icons-vue';
-import EditableContent from '../../common/EditableContent.vue';
-import draftStorage from '../../../utils/draftStorage.js';
-import { uploadImage } from '../../../utils/imageUpload.js';
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import QuillEditor from '../../../components/common/QuillEditor.vue'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
+import { Plus, Upload, Delete } from '@element-plus/icons-vue'
+import EditableContent from '../../common/EditableContent.vue'
+import draftStorage from '../../../utils/draftStorage.js'
+import { uploadImage } from '../../../utils/imageUpload.js'
 
 // 定义属性和事件
 const props = defineProps({
@@ -218,9 +270,9 @@ const props = defineProps({
     type: Array,
     default: () => []
   }
-});
+})
 
-const emit = defineEmits(['update:visible', 'save-question']);
+const emit = defineEmits(['update:visible', 'save-question'])
 
 // 表单数据
 const form = ref({
@@ -235,143 +287,142 @@ const form = ref({
   explanation: '',
   audio: '',
   difficulty: 1
-});
+})
 
 // 编辑器key，用于重置编辑器
-const editorKey = ref(0);
+const editorKey = ref(0)
 
 // 自动保存定时器
-let autoSaveTimer = null;
+let autoSaveTimer = null
 
 // 草稿恢复标记
-const draftRestored = ref(false);
+const draftRestored = ref(false)
 
 // 计算当前学科的子分类
 const currentSubcategories = computed(() => {
-  if (!form.value.subjectId) return [];
-  const subject = props.subjects.find(s => s.id == form.value.subjectId);
-  return subject ? subject.subcategories || [] : [];
-});
+  if (!form.value.subjectId) return []
+  const subject = props.subjects.find(s => s.id == form.value.subjectId)
+  return subject ? subject.subcategories || [] : []
+})
 
 // 是否为编辑模式
-const isEditing = computed(() => !!props.question);
+const isEditing = computed(() => !!props.question)
 
 // 监听visible变化
-watch(() => props.visible, async (newValue) => {
-  if (newValue) {
-    if (props.question) {
-      editQuestion(props.question);
-    } else {
-      // 检查是否有草稿
-      const draftStatus = draftStorage.hasDraft(null);
-      if (draftStatus && !draftRestored.value) {
-        // 有草稿，询问是否恢复
-        try {
-          await ElMessageBox.confirm(
-            '检测到未保存的草稿，是否恢复？',
-            '恢复草稿',
-            {
+watch(
+  () => props.visible,
+  async newValue => {
+    if (newValue) {
+      if (props.question) {
+        editQuestion(props.question)
+      } else {
+        // 检查是否有草稿
+        const draftStatus = draftStorage.hasDraft(null)
+        if (draftStatus && !draftRestored.value) {
+          // 有草稿，询问是否恢复
+          try {
+            await ElMessageBox.confirm('检测到未保存的草稿，是否恢复？', '恢复草稿', {
               confirmButtonText: '恢复',
               cancelButtonText: '不恢复',
               type: 'info'
+            })
+            // 恢复草稿
+            const draft = draftStorage.restore()
+            if (draft) {
+              form.value = {
+                ...form.value,
+                ...draft.data
+              }
+              draftRestored.value = true
+              ElMessage.success('草稿已恢复')
             }
-          );
-          // 恢复草稿
-          const draft = draftStorage.restore();
-          if (draft) {
-            form.value = {
-              ...form.value,
-              ...draft.data
-            };
-            draftRestored.value = true;
-            ElMessage.success('草稿已恢复');
+          } catch {
+            // 用户选择不恢复
+            resetForm()
           }
-        } catch {
-          // 用户选择不恢复
-          resetForm();
+        } else {
+          resetForm()
         }
-      } else {
-        resetForm();
       }
+
+      // 启动自动保存
+      startAutoSave()
+
+      // 延迟重置滚动位置，确保DOM已经渲染完成
+      setTimeout(() => {
+        const formContainer = document.querySelector('.question-form-container')
+        if (formContainer) {
+          formContainer.scrollTop = 0
+        }
+      }, 100)
+    } else {
+      // 当对话框关闭时，停止自动保存并清除草稿
+      stopAutoSave()
+      // 保存成功后清除草稿会在saveQuestion中处理
+      editorKey.value++
+      draftRestored.value = false
     }
-    
-    // 启动自动保存
-    startAutoSave();
-    
-    // 延迟重置滚动位置，确保DOM已经渲染完成
-    setTimeout(() => {
-      const formContainer = document.querySelector('.question-form-container');
-      if (formContainer) {
-        formContainer.scrollTop = 0;
-      }
-    }, 100);
-  } else {
-    // 当对话框关闭时，停止自动保存并清除草稿
-    stopAutoSave();
-    // 保存成功后清除草稿会在saveQuestion中处理
-    editorKey.value++;
-    draftRestored.value = false;
   }
-});
+)
 
 // 编辑题目
-const editQuestion = (question) => {
-  isEditing.value = true;
-  
+const editQuestion = question => {
+  isEditing.value = true
+
   // 处理富文本内容
-  let contentValue = '';
+  let contentValue = ''
   if (typeof question.content === 'string' && question.content) {
-    contentValue = question.content;
+    contentValue = question.content
   } else if (typeof question.content === 'object' && question.content.ops) {
     // 处理Delta对象
-    const tempElement = document.createElement('div');
+    const tempElement = document.createElement('div')
     question.content.ops.forEach(op => {
       if (typeof op.insert === 'string') {
-        tempElement.innerHTML += op.insert;
+        tempElement.innerHTML += op.insert
       } else if (op.insert && op.insert.image) {
-        tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`;
+        tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`
       }
-    });
-    contentValue = tempElement.innerHTML;
+    })
+    contentValue = tempElement.innerHTML
   } else {
-    contentValue = '';
+    contentValue = ''
   }
-  
+
   // 构建表单数据
-  const answer = question.answer || question.correct_answer || '';
-  const audio = question.audio || question.audio_url || '';
-  const image = question.image || question.image_url || '';
-  
+  const answer = question.answer || question.correct_answer || ''
+  const audio = question.audio || question.audio_url || ''
+  const image = question.image || question.image_url || ''
+
   // 处理options字段
-  let options = [];
+  let options = []
   if (question.options) {
     if (typeof question.options === 'string') {
       try {
-        options = JSON.parse(question.options);
+        options = JSON.parse(question.options)
       } catch (e) {
-        options = [question.options];
+        options = [question.options]
       }
     } else if (Array.isArray(question.options)) {
-      options = question.options;
+      options = question.options
     }
   }
-  
+
   // 确保数组中的每个元素都是字符串
   options = options.map(option => {
     if (typeof option === 'string') {
-      return option;
+      return option
     } else if (option === null || option === undefined) {
-      return '';
+      return ''
     } else {
-      return String(option);
+      return String(option)
     }
-  });
-  
+  })
+
   // 确保options数组至少有4个元素
   while (options.length < 4) {
-    options.push('');
+    options.push('')
   }
-  
+
   // 先设置表单数据
   form.value = {
     id: question.id,
@@ -387,15 +438,15 @@ const editQuestion = (question) => {
     audio: audio,
     image: image,
     difficulty: question.difficulty || 1
-  };
-  
+  }
+
   // 增加一个key来强制重新渲染编辑器
-  editorKey.value++;
-};
+  editorKey.value++
+}
 
 // 重置表单
 const resetForm = () => {
-  isEditing.value = false;
+  isEditing.value = false
   // 先设置表单数据
   form.value = {
     id: null,
@@ -409,93 +460,91 @@ const resetForm = () => {
     explanation: '',
     audio: '',
     difficulty: 1
-  };
+  }
   // 重置编辑器key
-  editorKey.value++;
-};
+  editorKey.value++
+}
 
 // 添加选项
 const addOption = () => {
-  form.value.options.push('');
-};
+  form.value.options.push('')
+}
 
 // 删除选项
-const removeOption = (index) => {
+const removeOption = index => {
   // 移除对应的答案选项
-  const optionLabel = String.fromCharCode(65 + index);
-  const answerIndex = form.value.selectedAnswers.indexOf(optionLabel);
+  const optionLabel = String.fromCharCode(65 + index)
+  const answerIndex = form.value.selectedAnswers.indexOf(optionLabel)
   if (answerIndex !== -1) {
-    form.value.selectedAnswers.splice(answerIndex, 1);
+    form.value.selectedAnswers.splice(answerIndex, 1)
   }
   // 移除选项
-  form.value.options.splice(index, 1);
-};
+  form.value.options.splice(index, 1)
+}
 
 // 处理音频文件变化
-const handleAudioChange = async (file) => {
+const handleAudioChange = async file => {
   try {
-    const formData = new FormData();
-    formData.append('audio', file.raw);
-    
+    const formData = new FormData()
+    formData.append('audio', file.raw)
+
     const response = await fetch('/api/upload/audio', {
       method: 'POST',
       body: formData
-    });
-    
+    })
+
     if (response.ok) {
-      const result = await response.json();
+      const result = await response.json()
       if (result.success) {
-        form.value.audio = result.url;
+        form.value.audio = result.url
       } else {
-        ElMessage.error('音频上传失败');
+        ElMessage.error('音频上传失败')
       }
     } else {
-      ElMessage.error('音频上传失败');
+      ElMessage.error('音频上传失败')
     }
   } catch (error) {
-    ElMessage.error('音频上传失败');
+    ElMessage.error('音频上传失败')
   }
-};
+}
 
 // 删除音频
 const deleteAudio = () => {
-  form.value.audio = '';
-};
+  form.value.audio = ''
+}
 
 // 处理对话框关闭
 const handleClose = async () => {
   // 检查是否有未保存的更改
   if (hasUnsavedChanges()) {
     try {
-      await ElMessageBox.confirm(
-        '有未保存的更改，是否保存草稿？',
-        '保存草稿',
-        {
-          confirmButtonText: '保存草稿',
-          cancelButtonText: '不保存',
-          type: 'warning'
-        }
-      );
+      await ElMessageBox.confirm('有未保存的更改，是否保存草稿？', '保存草稿', {
+        confirmButtonText: '保存草稿',
+        cancelButtonText: '不保存',
+        type: 'warning'
+      })
       // 保存草稿
-      saveDraft();
-      ElMessage.success('草稿已保存');
+      saveDraft()
+      ElMessage.success('草稿已保存')
     } catch {
       // 用户选择不保存，清除草稿
-      draftStorage.clear();
+      draftStorage.clear()
     }
   }
-  emit('update:visible', false);
-};
+  emit('update:visible', false)
+}
 
 // 检查是否有未保存的更改
 const hasUnsavedChanges = () => {
-  const currentForm = form.value;
-  return currentForm.content || 
-         currentForm.options.some(opt => opt) || 
-         currentForm.explanation || 
-         currentForm.audio ||
-         currentForm.selectedAnswers.length > 0;
-};
+  const currentForm = form.value
+  return (
+    currentForm.content ||
+    currentForm.options.some(opt => opt) ||
+    currentForm.explanation ||
+    currentForm.audio ||
+    currentForm.selectedAnswers.length > 0
+  )
+}
 
 // 保存草稿
 const saveDraft = () => {
@@ -509,111 +558,114 @@ const saveDraft = () => {
     explanation: form.value.explanation,
     audio: form.value.audio,
     difficulty: form.value.difficulty
-  };
-  draftStorage.save(form.value.id, formData);
-};
+  }
+  draftStorage.save(form.value.id, formData)
+}
 
 // 启动自动保存
 const startAutoSave = () => {
-  stopAutoSave();
+  stopAutoSave()
   autoSaveTimer = setInterval(() => {
     if (hasUnsavedChanges()) {
-      saveDraft();
+      saveDraft()
     }
-  }, 30000); // 30秒自动保存一次
-};
+  }, 30000) // 30秒自动保存一次
+}
 
 // 停止自动保存
 const stopAutoSave = () => {
   if (autoSaveTimer) {
-    clearInterval(autoSaveTimer);
-    autoSaveTimer = null;
+    clearInterval(autoSaveTimer)
+    autoSaveTimer = null
   }
-};
+}
 
 // 保存题目
 const saveQuestion = async () => {
   // 验证子分类
   if (!form.value.subcategoryId) {
-    ElMessage.error('请选择学科题库！');
-    return;
+    ElMessage.error('请选择学科题库！')
+    return
   }
-  
+
   // 验证正确答案
   if (form.value.selectedAnswers.length === 0) {
-    ElMessage.error('请选择正确答案！');
-    return;
+    ElMessage.error('请选择正确答案！')
+    return
   }
-  
+
   // 检查题目内容是否为空
-  let content = form.value.content;
-  let plainText = '';
-  let contentHtml = '';
-  let hasContent = false;
-  
+  const content = form.value.content
+  let plainText = ''
+  let contentHtml = ''
+  let hasContent = false
+
   // 处理Quill编辑器的内容
   if (typeof content === 'object' && content.ops) {
     // 对于Delta对象，提取纯文本进行验证
-    plainText = content.ops.map(op => {
-      if (typeof op.insert === 'string') {
-        return op.insert;
-      }
-      return '';
-    }).join('').trim();
-    
+    plainText = content.ops
+      .map(op => {
+        if (typeof op.insert === 'string') {
+          return op.insert
+        }
+        return ''
+      })
+      .join('')
+      .trim()
+
     // 检查是否有内容（包括文本和图片）
-    hasContent = plainText !== '' || content.ops.some(op => op.insert && op.insert.image);
-    
+    hasContent = plainText !== '' || content.ops.some(op => op.insert && op.insert.image)
+
     // 将Delta对象转换为HTML字符串
-    const tempElement = document.createElement('div');
+    const tempElement = document.createElement('div')
     content.ops.forEach(op => {
       if (typeof op.insert === 'string') {
-        tempElement.innerHTML += op.insert;
+        tempElement.innerHTML += op.insert
       } else if (op.insert && op.insert.image) {
-        tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`;
+        tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`
       }
-    });
-    contentHtml = tempElement.innerHTML;
+    })
+    contentHtml = tempElement.innerHTML
   } else if (typeof content === 'string') {
     // 移除HTML标签并 trim 后检查是否为空
-    plainText = content.replace(/<[^>]*>/g, '').trim();
+    plainText = content.replace(/<[^>]*>/g, '').trim()
     // 检查是否有内容（包括文本和图片）
-    hasContent = plainText !== '' || content.includes('<img');
-    contentHtml = content;
+    hasContent = plainText !== '' || content.includes('<img')
+    contentHtml = content
   } else {
     // 处理其他类型的内容
-    plainText = String(content || '').trim();
-    hasContent = plainText !== '';
-    contentHtml = String(content || '');
+    plainText = String(content || '').trim()
+    hasContent = plainText !== ''
+    contentHtml = String(content || '')
   }
-  
+
   // 检查是否为空
   if (!hasContent || plainText === '请输入题目内容') {
-    ElMessage.error('请输入题目内容！');
-    return;
+    ElMessage.error('请输入题目内容！')
+    return
   }
-  
+
   // 处理选项数据，确保每个选项都是字符串
   const processedOptions = form.value.options.map(option => {
     if (typeof option === 'object' && option.ops) {
       // 处理Delta对象
-      const tempElement = document.createElement('div');
+      const tempElement = document.createElement('div')
       option.ops.forEach(op => {
         if (typeof op.insert === 'string') {
-          tempElement.innerHTML += op.insert;
+          tempElement.innerHTML += op.insert
         } else if (op.insert && op.insert.image) {
-          tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`;
+          tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`
         }
-      });
-      return tempElement.innerHTML;
+      })
+      return tempElement.innerHTML
     } else if (typeof option !== 'string') {
-      return String(option || '');
+      return String(option || '')
     } else if (option === '<p><br></p>' || option === '<p>&nbsp;</p>') {
       // 处理空内容
-      return '';
+      return ''
     }
-    return option;
-  });
+    return option
+  })
 
   // 构建要保存的题目数据
   const questionData = {
@@ -628,99 +680,99 @@ const saveQuestion = async () => {
     audio: form.value.audio || null,
     image: form.value.image || null,
     difficulty: form.value.difficulty || 1
-  };
-  
+  }
+
   // 发送保存事件
-  emit('save-question', questionData);
-  
+  emit('save-question', questionData)
+
   // 清除草稿
-  draftStorage.clear();
-  stopAutoSave();
-  
-  emit('update:visible', false);
-};
+  draftStorage.clear()
+  stopAutoSave()
+
+  emit('update:visible', false)
+}
 
 // Quill编辑器准备
-const onQuillReady = (quill) => {
+const onQuillReady = quill => {
   // 编辑器准备就绪后，手动设置内容
   if (form.value.content) {
-    quill.root.innerHTML = form.value.content;
+    quill.root.innerHTML = form.value.content
   }
-  
+
   // 添加图片上传处理（工具栏按钮）
-  const toolbar = quill.getModule('toolbar');
-  toolbar.addHandler('image', function() {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.accept = 'image/*';
-    input.onchange = async function() {
-      const file = input.files[0];
+  const toolbar = quill.getModule('toolbar')
+  toolbar.addHandler('image', function () {
+    const input = document.createElement('input')
+    input.type = 'file'
+    input.accept = 'image/*'
+    input.onchange = async function () {
+      const file = input.files[0]
       if (file) {
-        await insertImageToEditor(quill, file);
+        await insertImageToEditor(quill, file)
       }
-    };
-    input.click();
-  });
-  
+    }
+    input.click()
+  })
+
   // 添加粘贴上传处理
-  quill.root.addEventListener('paste', async (e) => {
-    const items = e.clipboardData?.items;
-    if (!items) return;
-    
-    for (let item of items) {
+  quill.root.addEventListener('paste', async e => {
+    const items = e.clipboardData?.items
+    if (!items) return
+
+    for (const item of items) {
       if (item.type.startsWith('image/')) {
-        e.preventDefault();
-        const file = item.getAsFile();
+        e.preventDefault()
+        const file = item.getAsFile()
         if (file) {
-          await insertImageToEditor(quill, file);
+          await insertImageToEditor(quill, file)
         }
       }
     }
-  });
-  
+  })
+
   // 添加拖拽上传处理
-  quill.root.addEventListener('drop', async (e) => {
-    const files = e.dataTransfer?.files;
-    if (!files) return;
-    
-    for (let file of files) {
+  quill.root.addEventListener('drop', async e => {
+    const files = e.dataTransfer?.files
+    if (!files) return
+
+    for (const file of files) {
       if (file.type.startsWith('image/')) {
-        e.preventDefault();
-        await insertImageToEditor(quill, file);
+        e.preventDefault()
+        await insertImageToEditor(quill, file)
       }
     }
-  });
-};
+  })
+}
 
 // 插入图片到编辑器
 async function insertImageToEditor(quill, file) {
   // 检查文件大小
   if (file.size > 2 * 1024 * 1024) {
-    ElMessage.error('图片大小不能超过 2MB');
-    return;
+    ElMessage.error('图片大小不能超过 2MB')
+    return
   }
-  
+
   const loading = ElLoading.service({
     lock: true,
     text: '上传图片中...'
-  });
-  
+  })
+
   try {
-    const url = await uploadImage(file);
-    const range = quill.getSelection(true);
-    quill.insertEmbed(range.index, 'image', url);
-    quill.setSelection(range.index + 1);
+    const url = await uploadImage(file)
+    const range = quill.getSelection(true)
+    quill.insertEmbed(range.index, 'image', url)
+    quill.setSelection(range.index + 1)
   } catch (error) {
-    ElMessage.error(error.message || '图片上传失败');
+    ElMessage.error(error.message || '图片上传失败')
   } finally {
-    loading.close();
+    loading.close()
   }
 }
 
 // 组件卸载时清理
 onUnmounted(() => {
-  stopAutoSave();
-});
+  stopAutoSave()
+})
 </script>
 
 <style scoped>
@@ -1105,29 +1157,29 @@ onUnmounted(() => {
   .question-form-container {
     padding: 20px;
   }
-  
+
   .form-section {
     padding: 20px;
     margin-bottom: 24px;
   }
-  
+
   .form-grid {
     grid-template-columns: 1fr;
     gap: 16px;
   }
-  
+
   .content-editor {
     height: 200px;
   }
-  
+
   .section-title {
     font-size: 16px;
   }
-  
+
   .dialog-footer {
     flex-direction: column;
   }
-  
+
   .dialog-footer .modern-button {
     width: 100%;
   }

@@ -9,7 +9,7 @@ import { ElLoading } from 'element-plus'
  * @example
  * ```js
  * const { showLoading, hideLoading, withLoading, cleanup } = useLoading()
- * 
+ *
  * // 在组件卸载时调用清理
  * onUnmounted(cleanup)
  *
@@ -27,7 +27,7 @@ import { ElLoading } from 'element-plus'
 export function useLoading() {
   // Loading 实例引用
   const loadingInstance = ref(null)
-  
+
   // 组件挂载状态
   let isMounted = true
 
@@ -39,7 +39,7 @@ export function useLoading() {
     if (!isMounted) {
       return
     }
-    
+
     // 先关闭已有实例，避免重复实例
     if (loadingInstance.value) {
       try {
@@ -52,9 +52,9 @@ export function useLoading() {
     // 创建新的 Loading 实例
     try {
       loadingInstance.value = ElLoading.service({
-        lock: true,  // 锁定屏幕滚动
+        lock: true, // 锁定屏幕滚动
         text,
-        background: 'rgba(255, 255, 255, 0.7)'  // 半透明白色背景
+        background: 'rgba(255, 255, 255, 0.7)' // 半透明白色背景
       })
     } catch (e) {
       console.error('[useLoading] 创建 Loading 实例失败:', e)
@@ -69,14 +69,14 @@ export function useLoading() {
     if (!isMounted) {
       return
     }
-    
+
     if (loadingInstance.value) {
       try {
         loadingInstance.value.close()
       } catch (e) {
         // 忽略关闭错误
       } finally {
-        loadingInstance.value = null  // 清空引用，避免内存泄漏
+        loadingInstance.value = null // 清空引用，避免内存泄漏
       }
     }
   }
@@ -97,7 +97,7 @@ export function useLoading() {
     if (!isMounted) {
       return
     }
-    
+
     showLoading(text)
     try {
       const result = await fn()

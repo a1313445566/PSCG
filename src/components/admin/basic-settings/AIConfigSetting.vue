@@ -10,17 +10,11 @@
       </div>
     </template>
 
-    <el-form 
-      ref="formRef" 
-      :model="formData" 
-      :rules="rules" 
-      label-width="140px"
-      v-loading="loading"
-    >
+    <el-form ref="formRef" v-loading="loading" :model="formData" :rules="rules" label-width="140px">
       <!-- API Key -->
       <el-form-item label="API Key" prop="apiKey">
-        <el-input 
-          v-model="formData.apiKey" 
+        <el-input
+          v-model="formData.apiKey"
           type="password"
           placeholder="请输入豆包 API Key"
           show-password
@@ -38,11 +32,7 @@
 
       <!-- API URL -->
       <el-form-item label="API 地址" prop="apiUrl">
-        <el-input 
-          v-model="formData.apiUrl" 
-          placeholder="API 接口地址"
-          clearable
-        >
+        <el-input v-model="formData.apiUrl" placeholder="API 接口地址" clearable>
           <template #prefix>
             <el-icon><Link /></el-icon>
           </template>
@@ -55,11 +45,7 @@
 
       <!-- Model -->
       <el-form-item label="模型 ID" prop="model">
-        <el-input 
-          v-model="formData.model" 
-          placeholder="请输入模型 Endpoint ID"
-          clearable
-        >
+        <el-input v-model="formData.model" placeholder="请输入模型 Endpoint ID" clearable>
           <template #prefix>
             <el-icon><Cpu /></el-icon>
           </template>
@@ -72,20 +58,12 @@
 
       <!-- 功能开关 -->
       <el-form-item label="启用 AI 分析">
-        <el-switch 
-          v-model="formData.enabled"
-          active-text="启用"
-          inactive-text="禁用"
-        />
+        <el-switch v-model="formData.enabled" active-text="启用" inactive-text="禁用" />
       </el-form-item>
 
       <!-- 缓存设置 -->
       <el-form-item label="启用缓存">
-        <el-switch 
-          v-model="formData.cacheEnabled"
-          active-text="启用"
-          inactive-text="禁用"
-        />
+        <el-switch v-model="formData.cacheEnabled" active-text="启用" inactive-text="禁用" />
         <div class="form-tip">
           <el-icon><InfoFilled /></el-icon>
           启用缓存可减少 API 调用次数,节省成本
@@ -94,12 +72,7 @@
 
       <!-- 超时设置 -->
       <el-form-item label="超时时间">
-        <el-input-number 
-          v-model="formData.timeout"
-          :min="10"
-          :max="120"
-          :step="10"
-        />
+        <el-input-number v-model="formData.timeout" :min="10" :max="120" :step="10" />
         <span class="unit-label">秒</span>
       </el-form-item>
 
@@ -110,11 +83,7 @@
 
       <!-- 最大并发请求数 -->
       <el-form-item label="最大并发数">
-        <el-input-number 
-          v-model="formData.maxConcurrent"
-          :min="1"
-          :max="10"
-        />
+        <el-input-number v-model="formData.maxConcurrent" :min="1" :max="10" />
         <div class="form-tip">
           <el-icon><InfoFilled /></el-icon>
           AI 并发调用限制，建议 3-5
@@ -123,11 +92,7 @@
 
       <!-- 重试次数 -->
       <el-form-item label="重试次数">
-        <el-input-number 
-          v-model="formData.retryAttempts"
-          :min="1"
-          :max="5"
-        />
+        <el-input-number v-model="formData.retryAttempts" :min="1" :max="5" />
         <div class="form-tip">
           <el-icon><InfoFilled /></el-icon>
           API 调用失败时的重试次数
@@ -136,18 +101,13 @@
 
       <!-- 重试延迟 -->
       <el-form-item label="重试延迟">
-        <el-input-number 
-          v-model="formData.retryDelay"
-          :min="500"
-          :max="5000"
-          :step="500"
-        />
+        <el-input-number v-model="formData.retryDelay" :min="500" :max="5000" :step="500" />
         <span class="unit-label">毫秒</span>
       </el-form-item>
 
       <!-- 速率限制等待时间 -->
       <el-form-item label="速率限制等待">
-        <el-input-number 
+        <el-input-number
           v-model="formData.rateLimitWait"
           :min="10000"
           :max="300000"
@@ -162,12 +122,7 @@
 
       <!-- 缓存有效期 -->
       <el-form-item label="缓存有效期">
-        <el-input-number 
-          v-model="formData.cacheTTL"
-          :min="300"
-          :max="86400"
-          :step="300"
-        />
+        <el-input-number v-model="formData.cacheTTL" :min="300" :max="86400" :step="300" />
         <span class="unit-label">秒</span>
         <div class="form-tip">
           <el-icon><InfoFilled /></el-icon>
@@ -177,7 +132,7 @@
 
       <!-- 操作按钮 -->
       <el-form-item>
-        <el-button type="primary" @click="handleSave" :loading="saving">
+        <el-button type="primary" :loading="saving" @click="handleSave">
           <el-icon><Check /></el-icon>
           保存配置
         </el-button>
@@ -185,7 +140,7 @@
           <el-icon><RefreshRight /></el-icon>
           重置
         </el-button>
-        <el-button type="success" @click="handleTest" :loading="testing" :disabled="!canTest">
+        <el-button type="success" :loading="testing" :disabled="!canTest" @click="handleTest">
           <el-icon><Connection /></el-icon>
           测试连接
         </el-button>
@@ -200,8 +155,8 @@
       :description="testResult.message"
       show-icon
       closable
-      @close="testResult = null"
       class="test-result"
+      @close="testResult = null"
     />
   </el-card>
 </template>
@@ -210,9 +165,16 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { api } from '@/utils/api'
 import message from '@/utils/message'
-import { 
-  Setting, Key, Link, Cpu, InfoFilled, 
-  Check, RefreshRight, Connection, Operation 
+import {
+  Setting,
+  Key,
+  Link,
+  Cpu,
+  InfoFilled,
+  Check,
+  RefreshRight,
+  Connection,
+  Operation
 } from '@element-plus/icons-vue'
 
 // 响应式数据
@@ -238,15 +200,9 @@ const formData = reactive({
 
 // 表单验证规则
 const rules = {
-  apiKey: [
-    { required: true, message: '请输入 API Key', trigger: 'blur' }
-  ],
-  apiUrl: [
-    { required: true, message: '请输入 API 地址', trigger: 'blur' }
-  ],
-  model: [
-    { required: true, message: '请输入模型 ID', trigger: 'blur' }
-  ]
+  apiKey: [{ required: true, message: '请输入 API Key', trigger: 'blur' }],
+  apiUrl: [{ required: true, message: '请输入 API 地址', trigger: 'blur' }],
+  model: [{ required: true, message: '请输入模型 ID', trigger: 'blur' }]
 }
 
 // 是否可以测试
@@ -259,12 +215,13 @@ const loadConfig = async () => {
   loading.value = true
   try {
     const result = await api.get('/settings')
-    
+
     if (result.aiApiKey) formData.apiKey = result.aiApiKey
     if (result.aiApiUrl) formData.apiUrl = result.aiApiUrl
     if (result.aiModel) formData.model = result.aiModel
     if (result.aiEnabled !== undefined) formData.enabled = result.aiEnabled === 'true'
-    if (result.aiCacheEnabled !== undefined) formData.cacheEnabled = result.aiCacheEnabled === 'true'
+    if (result.aiCacheEnabled !== undefined)
+      formData.cacheEnabled = result.aiCacheEnabled === 'true'
     if (result.aiTimeout) formData.timeout = parseInt(result.aiTimeout)
     if (result.aiMaxConcurrent) formData.maxConcurrent = parseInt(result.aiMaxConcurrent)
     if (result.aiRetryAttempts) formData.retryAttempts = parseInt(result.aiRetryAttempts)
@@ -281,12 +238,12 @@ const loadConfig = async () => {
 // 保存配置
 const handleSave = async () => {
   if (!formRef.value) return
-  
+
   try {
     await formRef.value.validate()
-    
+
     saving.value = true
-    
+
     await api.post('/settings', {
       aiApiKey: formData.apiKey,
       aiApiUrl: formData.apiUrl,
@@ -300,10 +257,10 @@ const handleSave = async () => {
       aiRateLimitWait: formData.rateLimitWait.toString(),
       aiCacheTTL: formData.cacheTTL.toString()
     })
-    
+
     // 重新加载 AI 服务配置
     await api.post('/ai/reload-config')
-    
+
     message.actionSuccess('保存')
   } catch (error) {
     console.error('[AI配置] 保存失败:', error)
@@ -323,17 +280,21 @@ const handleReset = () => {
 const handleTest = async () => {
   testing.value = true
   testResult.value = null
-  
+
   try {
-    const result = await api.post('/ai/test-connection', {
-      apiKey: formData.apiKey,
-      apiUrl: formData.apiUrl,
-      model: formData.model
-    }, {
-      timeout: 30000,
-      showError: false
-    })
-    
+    const result = await api.post(
+      '/ai/test-connection',
+      {
+        apiKey: formData.apiKey,
+        apiUrl: formData.apiUrl,
+        model: formData.model
+      },
+      {
+        timeout: 30000,
+        showError: false
+      }
+    )
+
     testResult.value = {
       success: true,
       message: `AI 服务连接正常，模型: ${result.model || formData.model}`

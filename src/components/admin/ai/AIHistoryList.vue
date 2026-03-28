@@ -11,7 +11,7 @@
     <!-- 历史列表 -->
     <div v-loading="loading" class="history-container">
       <el-empty v-if="historyList.length === 0 && !loading" description="暂无分析历史" />
-      
+
       <div v-else class="history-list">
         <el-card v-for="item in historyList" :key="item.id" class="history-card" shadow="hover">
           <div class="history-header">
@@ -38,7 +38,7 @@
     </div>
 
     <!-- 分页 -->
-    <div class="pagination-wrapper" v-if="total > 0">
+    <div v-if="total > 0" class="pagination-wrapper">
       <el-pagination
         v-model:current-page="currentPage"
         v-model:page-size="pageSize"
@@ -51,17 +51,32 @@
     </div>
 
     <!-- 详情对话框 -->
-    <el-dialog v-model="detailDialogVisible" title="分析详情" width="70%" :close-on-click-modal="false" @closed="handleDialogClosed">
+    <el-dialog
+      v-model="detailDialogVisible"
+      title="分析详情"
+      width="70%"
+      :close-on-click-modal="false"
+      @closed="handleDialogClosed"
+    >
       <div v-if="currentDetail" class="detail-content">
-        <div class="detail-question"><strong>问题：</strong>{{ currentDetail.question }}</div>
+        <div class="detail-question">
+          <strong>问题：</strong>
+          {{ currentDetail.question }}
+        </div>
         <el-divider />
         <div class="detail-result">
           <strong>分析结果：</strong>
-          <div ref="detailResultContainer" class="markdown-body" v-html="renderedDetailResult"></div>
+          <div
+            ref="detailResultContainer"
+            class="markdown-body"
+            v-html="renderedDetailResult"
+          ></div>
         </div>
         <el-divider />
         <div class="detail-meta">
-          <el-tag size="small" type="info">分析时间: {{ formatDate(currentDetail.created_at) }}</el-tag>
+          <el-tag size="small" type="info">
+            分析时间: {{ formatDate(currentDetail.created_at) }}
+          </el-tag>
         </div>
       </div>
     </el-dialog>
@@ -88,7 +103,9 @@ const detailDialogVisible = ref(false)
 const currentDetail = ref(null)
 const detailResultContainer = ref(null)
 
-const renderedDetailResult = computed(() => currentDetail.value ? renderMarkdown(currentDetail.value.result) : '')
+const renderedDetailResult = computed(() =>
+  currentDetail.value ? renderMarkdown(currentDetail.value.result) : ''
+)
 
 const loadHistory = async () => {
   loading.value = true
@@ -104,12 +121,18 @@ const loadHistory = async () => {
   }
 }
 
-const formatDate = (dateStr) => {
+const formatDate = dateStr => {
   if (!dateStr) return ''
-  return new Date(dateStr).toLocaleString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' })
+  return new Date(dateStr).toLocaleString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
 }
 
-const handleViewDetail = (item) => {
+const handleViewDetail = item => {
   currentDetail.value = item
   detailDialogVisible.value = true
   nextTick(() => setTimeout(() => renderCharts(detailResultContainer.value, item.result), 100))
@@ -120,7 +143,7 @@ const handleDialogClosed = () => {
   currentDetail.value = null
 }
 
-const handleDelete = async (id) => {
+const handleDelete = async id => {
   try {
     await api.delete(`/ai/history/${id}`)
     message.success('删除成功')
@@ -145,19 +168,70 @@ onMounted(() => loadHistory())
 </script>
 
 <style scoped>
-.ai-history-list { padding: 20px; background: #fff; border-radius: 8px; }
-.action-bar { margin-bottom: 15px; display: flex; justify-content: flex-end; }
-.history-container { min-height: 400px; }
-.history-list { display: flex; flex-direction: column; gap: 10px; }
-.history-card { cursor: pointer; transition: all 0.3s; }
-.history-card:hover { transform: translateY(-2px); }
-.history-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
-.history-question { flex: 1; font-weight: 500; color: #303133; display: flex; align-items: flex-start; gap: 8px; }
-.history-actions { display: flex; gap: 5px; }
-.history-meta { display: flex; justify-content: flex-end; }
-.pagination-wrapper { margin-top: 20px; display: flex; justify-content: flex-end; }
-.detail-content { padding: 10px; }
-.detail-question { font-size: 15px; color: #303133; margin-bottom: 10px; }
-.detail-result { margin-bottom: 10px; }
-.detail-meta { text-align: right; }
+.ai-history-list {
+  padding: 20px;
+  background: #fff;
+  border-radius: 8px;
+}
+.action-bar {
+  margin-bottom: 15px;
+  display: flex;
+  justify-content: flex-end;
+}
+.history-container {
+  min-height: 400px;
+}
+.history-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.history-card {
+  cursor: pointer;
+  transition: all 0.3s;
+}
+.history-card:hover {
+  transform: translateY(-2px);
+}
+.history-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+.history-question {
+  flex: 1;
+  font-weight: 500;
+  color: #303133;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+.history-actions {
+  display: flex;
+  gap: 5px;
+}
+.history-meta {
+  display: flex;
+  justify-content: flex-end;
+}
+.pagination-wrapper {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+}
+.detail-content {
+  padding: 10px;
+}
+.detail-question {
+  font-size: 15px;
+  color: #303133;
+  margin-bottom: 10px;
+}
+.detail-result {
+  margin-bottom: 10px;
+}
+.detail-meta {
+  text-align: right;
+}
 </style>

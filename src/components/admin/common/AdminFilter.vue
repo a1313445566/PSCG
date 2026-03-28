@@ -2,14 +2,14 @@
   <div class="admin-filter">
     <div class="admin-filter-row">
       <!-- 动态筛选项 -->
-      <div 
-        v-for="item in filterItems" 
-        :key="item.key" 
+      <div
+        v-for="item in filterItems"
+        :key="item.key"
         class="admin-filter-item"
         :style="{ minWidth: item.width || '150px' }"
       >
         <label v-if="item.label" class="admin-filter-label">{{ item.label }}</label>
-        
+
         <!-- 输入框 -->
         <el-input
           v-if="item.type === 'input'"
@@ -18,7 +18,7 @@
           :clearable="item.clearable !== false"
           @input="handleInput(item)"
         />
-        
+
         <!-- 数字输入框 -->
         <el-input
           v-else-if="item.type === 'number'"
@@ -27,7 +27,7 @@
           :clearable="item.clearable !== false"
           @input="handleNumberInput(item)"
         />
-        
+
         <!-- 下拉选择 -->
         <el-select
           v-else-if="item.type === 'select'"
@@ -37,14 +37,14 @@
           :multiple="item.multiple"
           @change="handleChange(item)"
         >
-          <el-option 
-            v-for="option in item.options" 
-            :key="option.value" 
-            :label="option.label" 
+          <el-option
+            v-for="option in item.options"
+            :key="option.value"
+            :label="option.label"
             :value="option.value"
           />
         </el-select>
-        
+
         <!-- 日期选择 -->
         <el-date-picker
           v-else-if="item.type === 'date'"
@@ -55,7 +55,7 @@
           :value-format="item.valueFormat || 'YYYY-MM-DD'"
           @change="handleChange(item)"
         />
-        
+
         <!-- 日期范围 -->
         <el-date-picker
           v-else-if="item.type === 'daterange'"
@@ -69,7 +69,7 @@
           @change="handleChange(item)"
         />
       </div>
-      
+
       <!-- 操作按钮 -->
       <div class="admin-filter-actions">
         <el-button type="primary" @click="handleSearch">
@@ -83,12 +83,12 @@
         <slot name="extra-actions"></slot>
       </div>
     </div>
-    
+
     <!-- 已选筛选标签 -->
     <div v-if="showTags && activeFilterTags.length > 0" class="admin-filter-tags">
       <span class="tags-label">已选筛选：</span>
-      <el-tag 
-        v-for="tag in activeFilterTags" 
+      <el-tag
+        v-for="tag in activeFilterTags"
         :key="tag.key"
         closable
         type="info"
@@ -96,9 +96,7 @@
       >
         {{ tag.label }}: {{ tag.displayValue }}
       </el-tag>
-      <el-button type="primary" link size="small" @click="clearAllTags">
-        清除全部
-      </el-button>
+      <el-button type="primary" link size="small" @click="clearAllTags">清除全部</el-button>
     </div>
   </div>
 </template>
@@ -146,17 +144,21 @@ const emit = defineEmits(['update:modelValue', 'search', 'reset', 'change'])
 const localFilters = ref({ ...props.modelValue })
 
 // 监听外部值变化
-watch(() => props.modelValue, (newVal) => {
-  localFilters.value = { ...newVal }
-}, { deep: true })
+watch(
+  () => props.modelValue,
+  newVal => {
+    localFilters.value = { ...newVal }
+  },
+  { deep: true }
+)
 
 // 处理输入
-const handleInput = (item) => {
+const handleInput = item => {
   emit('change', { key: item.key, value: localFilters.value[item.key] })
 }
 
 // 处理数字输入
-const handleNumberInput = (item) => {
+const handleNumberInput = item => {
   if (localFilters.value[item.key]) {
     localFilters.value[item.key] = localFilters.value[item.key].replace(/[^0-9]/g, '')
   }
@@ -164,7 +166,7 @@ const handleNumberInput = (item) => {
 }
 
 // 处理选择变化
-const handleChange = (item) => {
+const handleChange = item => {
   emit('change', { key: item.key, value: localFilters.value[item.key] })
 }
 
@@ -190,8 +192,12 @@ const activeFilterTags = computed(() => {
   const tags = []
   props.filterItems.forEach(item => {
     const value = localFilters.value[item.key]
-    if (value !== '' && value !== null && value !== undefined && 
-        !(Array.isArray(value) && value.length === 0)) {
+    if (
+      value !== '' &&
+      value !== null &&
+      value !== undefined &&
+      !(Array.isArray(value) && value.length === 0)
+    ) {
       let displayValue = value
       // 如果有选项配置，显示选项标签
       if (item.type === 'select' && item.options) {
@@ -222,7 +228,7 @@ const activeFilterTags = computed(() => {
 })
 
 // 移除单个筛选标签
-const removeFilterTag = (tag) => {
+const removeFilterTag = tag => {
   const item = props.filterItems.find(i => i.key === tag.key)
   if (item && item.type === 'select' && item.multiple) {
     localFilters.value[tag.key] = []
@@ -308,12 +314,12 @@ const clearAllTags = () => {
     flex-direction: column;
     align-items: stretch;
   }
-  
+
   .admin-filter-item {
     width: 100%;
     min-width: auto;
   }
-  
+
   .admin-filter-actions {
     width: 100%;
     justify-content: flex-end;

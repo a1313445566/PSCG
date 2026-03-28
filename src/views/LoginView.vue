@@ -13,6 +13,6 @@ import LoginForm from '../components/common/LoginForm.vue'
 <style scoped>
 .login-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
 }
 </style>

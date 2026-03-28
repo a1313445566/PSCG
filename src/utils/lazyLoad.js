@@ -10,7 +10,7 @@ const defaultConfig = {
   rootMargin: '100px', // 提前 100px 开始加载
   threshold: 0.1,
   fadeInDuration: 300 // 淡入动画时长（毫秒）
-};
+}
 
 /**
  * 创建懒加载观察器
@@ -18,26 +18,29 @@ const defaultConfig = {
  * @returns {IntersectionObserver}
  */
 export function createLazyLoadObserver(config = {}) {
-  const options = { ...defaultConfig, ...config };
-  
-  return new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if (entry.isIntersecting) {
-        const img = entry.target;
-        
-        if (img.dataset.src) {
-          // 使用统一的加载函数
-          loadImage(img);
+  const options = { ...defaultConfig, ...config }
+
+  return new IntersectionObserver(
+    entries => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const img = entry.target
+
+          if (img.dataset.src) {
+            // 使用统一的加载函数
+            loadImage(img)
+          }
+
+          // 停止观察
+          options.observer?.unobserve(img) || entry.target._observer?.unobserve(img)
         }
-        
-        // 停止观察
-        options.observer?.unobserve(img) || entry.target._observer?.unobserve(img);
-      }
-    });
-  }, {
-    rootMargin: options.rootMargin,
-    threshold: options.threshold
-  });
+      })
+    },
+    {
+      rootMargin: options.rootMargin,
+      threshold: options.threshold
+    }
+  )
 }
 
 /**
@@ -47,18 +50,18 @@ export function createLazyLoadObserver(config = {}) {
  * @returns {boolean}
  */
 function isInViewport(element, margin = 100) {
-  if (!element || !element.getBoundingClientRect) return true; // 无法检测时默认在视口内
-  
-  const rect = element.getBoundingClientRect();
-  const windowHeight = window.innerHeight || document.documentElement.clientHeight;
-  const windowWidth = window.innerWidth || document.documentElement.clientWidth;
-  
+  if (!element || !element.getBoundingClientRect) return true // 无法检测时默认在视口内
+
+  const rect = element.getBoundingClientRect()
+  const windowHeight = window.innerHeight || document.documentElement.clientHeight
+  const windowWidth = window.innerWidth || document.documentElement.clientWidth
+
   return (
     rect.top <= windowHeight + margin &&
     rect.bottom >= -margin &&
     rect.left <= windowWidth + margin &&
     rect.right >= -margin
-  );
+  )
 }
 
 /**
@@ -66,35 +69,37 @@ function isInViewport(element, margin = 100) {
  * @param {HTMLImageElement} img - 图片元素
  */
 function loadImage(img) {
-  if (!img.dataset.src) return;
-  
+  if (!img.dataset.src) return
+
   // 先添加事件监听器
   const onLoad = () => {
-    img.classList.add('loaded');
-    img.classList.remove('lazy-loading');
-    img.removeEventListener('load', onLoad);
-    img.removeEventListener('error', onError);
-  };
-  
+    img.classList.add('loaded')
+    img.classList.remove('lazy-loading')
+    img.removeEventListener('load', onLoad)
+    img.removeEventListener('error', onError)
+  }
+
   const onError = () => {
-    img.classList.remove('lazy-loading');
-    img.classList.add('load-error');
-    img.src = 'data:image/svg+xml,' + encodeURIComponent(`
+    img.classList.remove('lazy-loading')
+    img.classList.add('load-error')
+    img.src =
+      'data:image/svg+xml,' +
+      encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
         <rect fill="#f5f5f5" width="200" height="100"/>
         <text x="100" y="55" text-anchor="middle" fill="#999" font-size="14">图片加载失败</text>
       </svg>
-    `);
-    img.removeEventListener('load', onLoad);
-    img.removeEventListener('error', onError);
-  };
-  
-  img.addEventListener('load', onLoad);
-  img.addEventListener('error', onError);
-  
+    `)
+    img.removeEventListener('load', onLoad)
+    img.removeEventListener('error', onError)
+  }
+
+  img.addEventListener('load', onLoad)
+  img.addEventListener('error', onError)
+
   // 然后设置 src
-  img.src = img.dataset.src;
-  delete img.dataset.src;
+  img.src = img.dataset.src
+  delete img.dataset.src
 }
 
 /**
@@ -104,58 +109,60 @@ function loadImage(img) {
  * @returns {IntersectionObserver|null}
  */
 export function applyLazyLoadToContent(container, config = {}) {
-  if (!container) return null;
-  
-  const options = { ...defaultConfig, ...config };
-  
+  if (!container) return null
+
+  const options = { ...defaultConfig, ...config }
+
   // 查找所有图片
-  const images = container.querySelectorAll('img[src]');
-  const observer = createLazyLoadObserver(options);
-  
+  const images = container.querySelectorAll('img[src]')
+  const observer = createLazyLoadObserver(options)
+
   images.forEach(img => {
     // 获取原始 src 属性（而非解析后的 img.src）
-    const originalSrc = img.getAttribute('src') || '';
-    
+    const originalSrc = img.getAttribute('src') || ''
+
     // 只对 URL 图片启用懒加载，Base64 图片和 data URI 直接显示
     // 检查原始属性，避免浏览器自动解析的影响
     if (originalSrc.startsWith('data:')) {
       // base64 或 data URI，不处理
-      return;
+      return
     }
-    
+
     // 检查是否已经被懒加载处理过
     if (img.dataset.src || img.classList.contains('lazy-loading')) {
-      return;
+      return
     }
-    
+
     // 保存原始 src
-    img.dataset.src = originalSrc;
-    
+    img.dataset.src = originalSrc
+
     // 检查是否已在视口内
     if (isInViewport(img, parseInt(options.rootMargin) || 100)) {
       // 已在视口内，直接加载
-      loadImage(img);
-      return;
+      loadImage(img)
+      return
     }
-    
+
     // 设置占位符
-    img.src = 'data:image/svg+xml,' + encodeURIComponent(`
+    img.src =
+      'data:image/svg+xml,' +
+      encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
         <rect fill="#f5f5f5" width="200" height="100"/>
         <text x="100" y="55" text-anchor="middle" fill="#ccc" font-size="12">加载中...</text>
       </svg>
-    `);
-    
-    img.classList.add('lazy-loading');
-    
+    `)
+
+    img.classList.add('lazy-loading')
+
     // 保存观察器引用
-    img._observer = observer;
-    
+    img._observer = observer
+
     // 开始观察
-    observer.observe(img);
-  });
-  
-  return observer;
+    observer.observe(img)
+  })
+
+  return observer
 }
 
 /**
@@ -163,43 +170,45 @@ export function applyLazyLoadToContent(container, config = {}) {
  */
 export const lazyLoadDirective = {
   mounted(el, binding) {
-    const observer = createLazyLoadObserver();
-    
+    const observer = createLazyLoadObserver()
+
     // 保存原始 src
-    el.dataset.src = binding.value;
-    
+    el.dataset.src = binding.value
+
     // 设置占位符
-    el.src = 'data:image/svg+xml,' + encodeURIComponent(`
+    el.src =
+      'data:image/svg+xml,' +
+      encodeURIComponent(`
       <svg xmlns="http://www.w3.org/2000/svg" width="200" height="100" viewBox="0 0 200 100">
         <rect fill="#f5f5f5" width="200" height="100"/>
       </svg>
-    `);
-    
-    el.classList.add('lazy-loading');
-    el._observer = observer;
-    
-    observer.observe(el);
+    `)
+
+    el.classList.add('lazy-loading')
+    el._observer = observer
+
+    observer.observe(el)
   },
-  
+
   updated(el, binding) {
     if (binding.value !== binding.oldValue) {
-      el.dataset.src = binding.value;
-      
+      el.dataset.src = binding.value
+
       // 重新观察
       if (el._observer) {
-        el._observer.unobserve(el);
-        el._observer.observe(el);
+        el._observer.unobserve(el)
+        el._observer.observe(el)
       }
     }
   },
-  
+
   unmounted(el) {
     if (el._observer) {
-      el._observer.disconnect();
-      delete el._observer;
+      el._observer.disconnect()
+      delete el._observer
     }
   }
-};
+}
 
 /**
  * 懒加载样式
@@ -243,21 +252,21 @@ img.load-error {
     transform: scale(1);
   }
 }
-`;
+`
 
 /**
  * 注入懒加载样式到页面
  */
 export function injectLazyLoadStyles() {
-  if (typeof document === 'undefined') return;
-  
+  if (typeof document === 'undefined') return
+
   // 检查是否已注入
-  if (document.getElementById('lazy-load-styles')) return;
-  
-  const style = document.createElement('style');
-  style.id = 'lazy-load-styles';
-  style.textContent = lazyLoadStyles;
-  document.head.appendChild(style);
+  if (document.getElementById('lazy-load-styles')) return
+
+  const style = document.createElement('style')
+  style.id = 'lazy-load-styles'
+  style.textContent = lazyLoadStyles
+  document.head.appendChild(style)
 }
 
 /**
@@ -265,7 +274,7 @@ export function injectLazyLoadStyles() {
  * @returns {boolean}
  */
 export function isLazyLoadSupported() {
-  return typeof IntersectionObserver !== 'undefined';
+  return typeof IntersectionObserver !== 'undefined'
 }
 
 export default {
@@ -275,4 +284,4 @@ export default {
   lazyLoadStyles,
   injectLazyLoadStyles,
   isLazyLoadSupported
-};
+}

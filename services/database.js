@@ -1,8 +1,8 @@
-const mysql = require('mysql2/promise');
+const mysql = require('mysql2/promise')
 
 class Database {
   constructor() {
-    this.pool = null;
+    this.pool = null
   }
 
   // 连接数据库
@@ -19,22 +19,21 @@ class Database {
         waitForConnections: true,
         connectionLimit: 20,
         queueLimit: 100
-      };
+      }
 
-      this.pool = mysql.createPool(config);
-      
+      this.pool = mysql.createPool(config)
+
       // 测试连接
-      const connection = await this.pool.getConnection();
-      connection.release();
-      
-      console.log('数据库连接池创建成功');
-      
+      const connection = await this.pool.getConnection()
+      connection.release()
+
+      console.log('数据库连接池创建成功')
+
       // 初始化表结构
-      await this.initTables();
-      
+      await this.initTables()
     } catch (error) {
-      console.error('数据库连接失败:', error);
-      throw error;
+      console.error('数据库连接失败:', error)
+      throw error
     }
   }
 
@@ -211,18 +210,18 @@ class Database {
           INDEX idx_file_hash (file_hash),
           INDEX idx_file_type (file_type)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
-      ];
+      ]
 
       for (const sql of tables) {
-        await this.pool.execute(sql);
+        await this.pool.execute(sql)
       }
 
       // 添加新的索引
-      await this.addIndexes();
+      await this.addIndexes()
 
-      console.log('表结构创建成功');
+      console.log('表结构创建成功')
     } catch (error) {
-      console.error('初始化表结构失败:', error);
+      console.error('初始化表结构失败:', error)
     }
   }
 
@@ -232,55 +231,63 @@ class Database {
       // 检查并添加 quiz_sessions 表的索引
       const quizSessionsIndexes = await this.pool.execute(
         `SHOW INDEXES FROM quiz_sessions WHERE Key_name = 'idx_user_created'`
-      );
+      )
       if (quizSessionsIndexes[0].length === 0) {
         await this.pool.execute(
           `ALTER TABLE quiz_sessions ADD INDEX idx_user_created (user_id, created_at)`
-        );
+        )
       }
 
       // 检查并添加 quiz_attempts 表的索引
       const quizAttemptsIndexes = await this.pool.execute(
         `SHOW INDEXES FROM quiz_attempts WHERE Key_name = 'idx_quiz_question'`
-      );
+      )
       if (quizAttemptsIndexes[0].length === 0) {
         await this.pool.execute(
           `ALTER TABLE quiz_attempts ADD INDEX idx_quiz_question (quiz_session_id, question_id)`
-        );
+        )
       }
 
       // 检查并添加 subjects 表的 show_in_history_quiz 字段
       const subjectsColumns = await this.pool.execute(
         `SHOW COLUMNS FROM subjects LIKE 'show_in_history_quiz'`
-      );
+      )
       if (subjectsColumns[0].length === 0) {
         await this.pool.execute(
           `ALTER TABLE subjects ADD COLUMN show_in_history_quiz TINYINT(1) DEFAULT 0`
-        );
-        console.log('subjects 表添加 show_in_history_quiz 字段成功');
+        )
+        console.log('subjects 表添加 show_in_history_quiz 字段成功')
       }
 
       // 新增：questions 表性能优化索引
       const questionIndexes = [
-        { name: 'idx_questions_type', sql: 'ALTER TABLE questions ADD INDEX idx_questions_type (type)' },
-        { name: 'idx_questions_created', sql: 'ALTER TABLE questions ADD INDEX idx_questions_created (created_at)' },
-        { name: 'idx_questions_filter', sql: 'ALTER TABLE questions ADD INDEX idx_questions_filter (subject_id, subcategory_id, type)' }
-      ];
+        {
+          name: 'idx_questions_type',
+          sql: 'ALTER TABLE questions ADD INDEX idx_questions_type (type)'
+        },
+        {
+          name: 'idx_questions_created',
+          sql: 'ALTER TABLE questions ADD INDEX idx_questions_created (created_at)'
+        },
+        {
+          name: 'idx_questions_filter',
+          sql: 'ALTER TABLE questions ADD INDEX idx_questions_filter (subject_id, subcategory_id, type)'
+        }
+      ]
 
       for (const index of questionIndexes) {
-        const existing = await this.pool.execute(
-          `SHOW INDEXES FROM questions WHERE Key_name = ?`,
-          [index.name]
-        );
+        const existing = await this.pool.execute(`SHOW INDEXES FROM questions WHERE Key_name = ?`, [
+          index.name
+        ])
         if (existing[0].length === 0) {
-          await this.pool.execute(index.sql);
-          console.log(`questions 表添加 ${index.name} 索引成功`);
+          await this.pool.execute(index.sql)
+          console.log(`questions 表添加 ${index.name} 索引成功`)
         }
       }
 
-      console.log('索引添加成功');
+      console.log('索引添加成功')
     } catch (error) {
-      console.error('添加索引失败:', error);
+      console.error('添加索引失败:', error)
     }
   }
 
@@ -288,12 +295,12 @@ class Database {
   async query(sql, params = []) {
     try {
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
-      const safeParams = params.map(param => param === undefined ? null : param);
-      const [rows] = await this.pool.execute(sql, safeParams);
-      return rows;
+      const safeParams = params.map(param => (param === undefined ? null : param))
+      const [rows] = await this.pool.execute(sql, safeParams)
+      return rows
     } catch (error) {
-      console.error('查询失败:', error);
-      throw error;
+      console.error('查询失败:', error)
+      throw error
     }
   }
 
@@ -301,12 +308,12 @@ class Database {
   async get(sql, params = []) {
     try {
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
-      const safeParams = params.map(param => param === undefined ? null : param);
-      const [rows] = await this.pool.execute(sql, safeParams);
-      return rows[0] || null;
+      const safeParams = params.map(param => (param === undefined ? null : param))
+      const [rows] = await this.pool.execute(sql, safeParams)
+      return rows[0] || null
     } catch (error) {
-      console.error('获取单个结果失败:', error);
-      throw error;
+      console.error('获取单个结果失败:', error)
+      throw error
     }
   }
 
@@ -314,12 +321,12 @@ class Database {
   async all(sql, params = []) {
     try {
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
-      const safeParams = params.map(param => param === undefined ? null : param);
-      const [rows] = await this.pool.execute(sql, safeParams);
-      return rows;
+      const safeParams = params.map(param => (param === undefined ? null : param))
+      const [rows] = await this.pool.execute(sql, safeParams)
+      return rows
     } catch (error) {
-      console.error('获取多个结果失败:', error);
-      throw error;
+      console.error('获取多个结果失败:', error)
+      throw error
     }
   }
 
@@ -327,40 +334,40 @@ class Database {
   async run(sql, params = []) {
     try {
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
-      const safeParams = params.map(param => param === undefined ? null : param);
-      const [result] = await this.pool.execute(sql, safeParams);
-      return result;
+      const safeParams = params.map(param => (param === undefined ? null : param))
+      const [result] = await this.pool.execute(sql, safeParams)
+      return result
     } catch (error) {
-      console.error('执行操作失败:', error);
-      throw error;
+      console.error('执行操作失败:', error)
+      throw error
     }
   }
 
   // 执行事务
   async transaction(callback) {
-    const connection = await this.pool.getConnection();
+    const connection = await this.pool.getConnection()
     try {
-      await connection.beginTransaction();
-      const result = await callback(connection);
-      await connection.commit();
-      return result;
+      await connection.beginTransaction()
+      const result = await callback(connection)
+      await connection.commit()
+      return result
     } catch (error) {
-      await connection.rollback();
-      throw error;
+      await connection.rollback()
+      throw error
     } finally {
-      connection.release();
+      connection.release()
     }
   }
 
   // 关闭连接
   async close() {
     if (this.pool) {
-      await this.pool.end();
-      console.log('数据库连接已关闭');
+      await this.pool.end()
+      console.log('数据库连接已关闭')
     }
   }
 }
 
 // 导出单例实例
-const db = new Database();
-module.exports = db;
+const db = new Database()
+module.exports = db

@@ -9,39 +9,39 @@ export function shuffleOptions(options) {
       shuffledOptions: options,
       shuffleMapping: {},
       reverseMapping: {}
-    };
+    }
   }
 
   // 创建索引数组 [0, 1, 2, 3...]
-  const indices = options.map((_, index) => index);
-  
+  const indices = options.map((_, index) => index)
+
   // Fisher-Yates 洗牌算法
   for (let i = indices.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [indices[i], indices[j]] = [indices[j], indices[i]];
+    const j = Math.floor(Math.random() * (i + 1))
+    ;[indices[i], indices[j]] = [indices[j], indices[i]]
   }
 
   // 生成打乱后的选项
-  const shuffledOptions = indices.map(i => options[i]);
-  
+  const shuffledOptions = indices.map(i => options[i])
+
   // 生成映射：原始选项索引 -> 打乱后的位置
   // 例如：{0: 2, 1: 0, 2: 3, 3: 1} 表示原始第0个选项现在在第2个位置
-  const shuffleMapping = {};
+  const shuffleMapping = {}
   indices.forEach((originalIndex, shuffledIndex) => {
-    shuffleMapping[originalIndex] = shuffledIndex;
-  });
-  
+    shuffleMapping[originalIndex] = shuffledIndex
+  })
+
   // 生成反向映射：打乱后的位置 -> 原始选项索引
-  const reverseMapping = {};
+  const reverseMapping = {}
   indices.forEach((originalIndex, shuffledIndex) => {
-    reverseMapping[shuffledIndex] = originalIndex;
-  });
+    reverseMapping[shuffledIndex] = originalIndex
+  })
 
   return {
     shuffledOptions,
     shuffleMapping,
     reverseMapping
-  };
+  }
 }
 
 /**
@@ -51,24 +51,24 @@ export function shuffleOptions(options) {
  * @returns {String|Array} 映射后的答案
  */
 export function mapAnswerToOriginal(userAnswer, reverseMapping) {
-  if (!userAnswer) return userAnswer;
-  
+  if (!userAnswer) return userAnswer
+
   // 将字母转换为索引（A->0, B->1, C->2, D->3）
-  const letterToIndex = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5 };
-  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F'];
-  
+  const letterToIndex = { A: 0, B: 1, C: 2, D: 3, E: 4, F: 5 }
+  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F']
+
   if (Array.isArray(userAnswer)) {
     // 多选题
     return userAnswer.map(letter => {
-      const shuffledIndex = letterToIndex[letter];
-      const originalIndex = reverseMapping[shuffledIndex];
-      return indexToLetter[originalIndex];
-    });
+      const shuffledIndex = letterToIndex[letter]
+      const originalIndex = reverseMapping[shuffledIndex]
+      return indexToLetter[originalIndex]
+    })
   } else {
     // 单选题
-    const shuffledIndex = letterToIndex[userAnswer];
-    const originalIndex = reverseMapping[shuffledIndex];
-    return indexToLetter[originalIndex];
+    const shuffledIndex = letterToIndex[userAnswer]
+    const originalIndex = reverseMapping[shuffledIndex]
+    return indexToLetter[originalIndex]
   }
 }
 
@@ -79,31 +79,31 @@ export function mapAnswerToOriginal(userAnswer, reverseMapping) {
  * @returns {String|Array} 映射后的答案
  */
 export function mapAnswerToShuffled(correctAnswer, shuffleMapping) {
-  if (!correctAnswer) return correctAnswer;
-  
-  const letterToIndex = { 'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 4, 'F': 5 };
-  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F'];
-  
+  if (!correctAnswer) return correctAnswer
+
+  const letterToIndex = { A: 0, B: 1, C: 2, D: 3, E: 4, F: 5 }
+  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F']
+
   if (Array.isArray(correctAnswer)) {
     // 多选题
     return correctAnswer.map(letter => {
-      const originalIndex = letterToIndex[letter];
-      const shuffledIndex = shuffleMapping[originalIndex];
-      return indexToLetter[shuffledIndex];
-    });
+      const originalIndex = letterToIndex[letter]
+      const shuffledIndex = shuffleMapping[originalIndex]
+      return indexToLetter[shuffledIndex]
+    })
   } else if (typeof correctAnswer === 'string' && correctAnswer.length > 1) {
     // 多选题，格式为 "ABC"
-    const letters = correctAnswer.split('');
+    const letters = correctAnswer.split('')
     const mappedLetters = letters.map(letter => {
-      const originalIndex = letterToIndex[letter];
-      const shuffledIndex = shuffleMapping[originalIndex];
-      return indexToLetter[shuffledIndex];
-    });
-    return mappedLetters.join('');
+      const originalIndex = letterToIndex[letter]
+      const shuffledIndex = shuffleMapping[originalIndex]
+      return indexToLetter[shuffledIndex]
+    })
+    return mappedLetters.join('')
   } else {
     // 单选题
-    const originalIndex = letterToIndex[correctAnswer];
-    const shuffledIndex = shuffleMapping[originalIndex];
-    return indexToLetter[shuffledIndex];
+    const originalIndex = letterToIndex[correctAnswer]
+    const shuffledIndex = shuffleMapping[originalIndex]
+    return indexToLetter[shuffledIndex]
   }
 }

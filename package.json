@@ -6,7 +6,10 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "server": "node server.cjs"
+    "server": "node server.cjs",
+    "lint": "eslint . --fix",
+    "format": "prettier --write \"src/**/*.{js,ts,vue,css,scss,json}\" \"routes/**/*.js\" \"services/**/*.js\" \"middleware/**/*.js\" \"utils/**/*.js\"",
+    "lint:check": "eslint ."
   },
   "dependencies": {
     "@visactor/vchart": "^2.0.20",
@@ -15,7 +18,6 @@
     "compression": "^1.8.1",
     "cors": "^2.8.5",
     "dotenv": "^17.3.1",
-
     "element-plus": "^2.13.3",
     "express": "^4.18.2",
     "jsonwebtoken": "^9.0.3",
@@ -31,8 +33,15 @@
     "xlsx": "^0.18.5"
   },
   "devDependencies": {
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "^8.57.2",
     "@vitejs/plugin-vue": "^5.0.4",
+    "eslint": "^8.57.1",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-prettier": "^5.5.5",
+    "eslint-plugin-vue": "^9.33.0",
     "marked": "^17.0.5",
+    "prettier": "^3.8.1",
     "vite": "^5.2.0"
   }
 }

@@ -12,28 +12,28 @@ export async function uploadImage(file, maxSize = 2 * 1024 * 1024) {
   if (file.size > maxSize) {
     throw new Error(`图片大小不能超过 ${maxSize / 1024 / 1024}MB`)
   }
-  
+
   // 检查文件类型
   const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
   if (!allowedTypes.includes(file.type)) {
     throw new Error('不支持的图片格式，仅支持 JPG、PNG、GIF、WebP')
   }
-  
+
   const formData = new FormData()
   formData.append('image', file)
-  
+
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), 30000) // 30秒超时
-  
+
   try {
     // 获取 CSRF Token
     const csrfToken = await getCSRFToken()
-    
+
     const headers = {}
     if (csrfToken) {
       headers['X-CSRF-Token'] = csrfToken
     }
-    
+
     const response = await fetch('/api/upload/image', {
       method: 'POST',
       headers,
@@ -41,27 +41,27 @@ export async function uploadImage(file, maxSize = 2 * 1024 * 1024) {
       signal: controller.signal,
       credentials: 'same-origin'
     })
-    
+
     clearTimeout(timeoutId)
-    
+
     if (!response.ok) {
       const error = await response.json()
       throw new Error(error.error || '上传失败')
     }
-    
+
     const result = await response.json()
     if (result.success) {
       return result.url
     }
-    
+
     throw new Error(result.error || '上传失败')
   } catch (error) {
     clearTimeout(timeoutId)
-    
+
     if (error.name === 'AbortError') {
       throw new Error('上传超时，请检查网络')
     }
-    
+
     throw error
   }
 }
@@ -71,25 +71,25 @@ export async function uploadImage(file, maxSize = 2 * 1024 * 1024) {
  */
 export async function uploadImageWithRetry(file, maxRetries = 3) {
   let lastError = null
-  
+
   for (let i = 0; i < maxRetries; i++) {
     try {
       return await uploadImage(file)
     } catch (error) {
       lastError = error
-      
+
       // 不重试的错误
       if (error.message.includes('不支持') || error.message.includes('超过')) {
         throw error
       }
-      
+
       if (i < maxRetries - 1) {
         // 等待后重试
         await new Promise(resolve => setTimeout(resolve, 1000 * (i + 1)))
       }
     }
   }
-  
+
   throw lastError
 }
 
@@ -103,13 +103,13 @@ export const uploadQueue = {
   maxConcurrent: 3,
   abortControllers: new Map(), // 用于取消上传
   listeners: new Set(), // 状态监听器
-  
+
   // 添加状态监听
   subscribe(listener) {
     this.listeners.add(listener)
     return () => this.listeners.delete(listener)
   },
-  
+
   // 通知状态变化
   notify() {
     const state = {
@@ -119,30 +119,30 @@ export const uploadQueue = {
     }
     this.listeners.forEach(listener => listener(state))
   },
-  
+
   // 添加上传任务
   async add(file, taskId = null) {
     const id = taskId || `${Date.now()}-${Math.random().toString(36).slice(2)}`
     const controller = new AbortController()
     this.abortControllers.set(id, controller)
-    
+
     return new Promise((resolve, reject) => {
       this.queue.push({ file, resolve, reject, id, controller })
       this.notify()
       this.process()
     })
   },
-  
+
   // 处理队列
   async process() {
     if (this.running >= this.maxConcurrent || this.queue.length === 0) {
       return
     }
-    
+
     this.running++
     this.notify()
     const { file, resolve, reject, id, controller } = this.queue.shift()
-    
+
     try {
       const url = await uploadImageWithRetry(file, 3)
       resolve(url)
@@ -159,7 +159,7 @@ export const uploadQueue = {
       this.process()
     }
   },
-  
+
   // 取消上传
   cancel(taskId) {
     const controller = this.abortControllers.get(taskId)
@@ -167,7 +167,7 @@ export const uploadQueue = {
       controller.abort()
       this.abortControllers.delete(taskId)
     }
-    
+
     // 从队列中移除
     const index = this.queue.findIndex(item => item.id === taskId)
     if (index !== -1) {
@@ -175,7 +175,7 @@ export const uploadQueue = {
       this.notify()
     }
   },
-  
+
   // 取消所有上传
   cancelAll() {
     this.abortControllers.forEach(controller => controller.abort())
@@ -183,7 +183,7 @@ export const uploadQueue = {
     this.queue = []
     this.notify()
   },
-  
+
   // 获取状态
   getState() {
     return {
@@ -199,10 +199,10 @@ export const uploadQueue = {
  */
 export function setupImageHandler(quill) {
   // 粘贴事件
-  quill.root.addEventListener('paste', async (e) => {
+  quill.root.addEventListener('paste', async e => {
     const items = e.clipboardData.items
-    
-    for (let item of items) {
+
+    for (const item of items) {
       if (item.type.startsWith('image/')) {
         e.preventDefault()
         const file = item.getAsFile()
@@ -210,12 +210,12 @@ export function setupImageHandler(quill) {
       }
     }
   })
-  
+
   // 拖拽事件
-  quill.root.addEventListener('drop', async (e) => {
+  quill.root.addEventListener('drop', async e => {
     const files = e.dataTransfer.files
-    
-    for (let file of files) {
+
+    for (const file of files) {
       if (file.type.startsWith('image/')) {
         e.preventDefault()
         await insertImage(quill, file)
@@ -229,7 +229,7 @@ async function insertImage(quill, file) {
     lock: true,
     text: '上传图片中...'
   })
-  
+
   try {
     const url = await uploadQueue.add(file)
     const range = quill.getSelection(true)

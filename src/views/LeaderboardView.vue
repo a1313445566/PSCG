@@ -16,11 +16,25 @@
             <div class="filter-section">
               <el-select v-model="selectedGrade" placeholder="选择年级" @change="handleGradeChange">
                 <el-option label="全部年级" :value="null"></el-option>
-                <el-option v-for="grade in grades" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
+                <el-option
+                  v-for="grade in grades"
+                  :key="grade"
+                  :label="grade + '年级'"
+                  :value="grade"
+                ></el-option>
               </el-select>
-              <el-select v-model="selectedClass" placeholder="选择班级" @change="loadGlobalLeaderboard">
+              <el-select
+                v-model="selectedClass"
+                placeholder="选择班级"
+                @change="loadGlobalLeaderboard"
+              >
                 <el-option label="全部班级" :value="null"></el-option>
-                <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
+                <el-option
+                  v-for="classNum in classes"
+                  :key="classNum"
+                  :label="classNum + '班'"
+                  :value="classNum"
+                ></el-option>
               </el-select>
             </div>
             <div v-if="globalLeaderboard.length > 0" class="leaderboard-table">
@@ -36,7 +50,18 @@
                 <div class="sessions-col">答题次数</div>
                 <div class="points-col">积分</div>
               </div>
-              <div v-for="(item, index) in globalLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
+              <div
+                v-for="(item, index) in globalLeaderboard"
+                :key="item.user_id || index"
+                class="leaderboard-row"
+                :class="{
+                  'current-user': item.student_id === currentStudentId,
+                  'top-3': index < 3,
+                  'top-10': index < 10
+                }"
+                style="cursor: pointer"
+                @click="openUserDetailDialog(item)"
+              >
                 <div class="rank-col">
                   <span v-if="index === 0" class="rank-number rank-1">🥇</span>
                   <span v-else-if="index === 1" class="rank-number rank-2">🥈</span>
@@ -58,9 +83,9 @@
               <p>暂无排行数据</p>
               <p>全局排行榜数据长度: {{ globalLeaderboard.length }}</p>
             </div>
-            
+
             <!-- 全局排行榜分页 -->
-            <div class="pagination" style="margin-top: 20px; text-align: right;">
+            <div class="pagination" style="margin-top: 20px; text-align: right">
               <el-pagination
                 v-model:current-page="globalCurrentPage"
                 v-model:page-size="globalPageSize"
@@ -71,7 +96,7 @@
                 @current-change="handleGlobalPageChange"
               />
             </div>
-            
+
             <div class="leaderboard-content-row">
               <div class="leaderboard-rules">
                 <h3 class="rules-title">🏆 排行榜规则</h3>
@@ -83,38 +108,63 @@
                   <li>🔄 排行榜数据每日更新，确保公平公正</li>
                 </ul>
               </div>
-
             </div>
           </el-tab-pane>
           <el-tab-pane label="学科排行榜" name="subject">
             <div class="filter-section">
-              <el-select v-model="selectedSubjectId" placeholder="选择学科" @change="handleSubjectChange">
-                <el-option 
-                  v-for="subject in subjects" 
+              <el-select
+                v-model="selectedSubjectId"
+                placeholder="选择学科"
+                @change="handleSubjectChange"
+              >
+                <el-option
+                  v-for="subject in subjects"
                   :key="subject.id"
-                  :label="subject.name" 
+                  :label="subject.name"
                   :value="subject.id"
                 ></el-option>
               </el-select>
-              <el-select v-model="selectedSubcategoryId" placeholder="选择题库" @change="handleSubcategoryChange" :disabled="!selectedSubjectId">
+              <el-select
+                v-model="selectedSubcategoryId"
+                placeholder="选择题库"
+                :disabled="!selectedSubjectId"
+                @change="handleSubcategoryChange"
+              >
                 <el-option label="全部题库" :value="null"></el-option>
-                <el-option 
-                  v-for="subcategory in subcategories" 
+                <el-option
+                  v-for="subcategory in subcategories"
                   :key="subcategory.id"
-                  :label="subcategory.name" 
+                  :label="subcategory.name"
                   :value="subcategory.id"
                 ></el-option>
               </el-select>
               <el-select v-model="selectedGrade" placeholder="选择年级" @change="handleGradeChange">
                 <el-option label="全部年级" :value="null"></el-option>
-                <el-option v-for="grade in grades" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
+                <el-option
+                  v-for="grade in grades"
+                  :key="grade"
+                  :label="grade + '年级'"
+                  :value="grade"
+                ></el-option>
               </el-select>
-              <el-select v-model="selectedClass" placeholder="选择班级" @change="handleSubjectClassChange">
+              <el-select
+                v-model="selectedClass"
+                placeholder="选择班级"
+                @change="handleSubjectClassChange"
+              >
                 <el-option label="全部班级" :value="null"></el-option>
-                <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
+                <el-option
+                  v-for="classNum in classes"
+                  :key="classNum"
+                  :label="classNum + '班'"
+                  :value="classNum"
+                ></el-option>
               </el-select>
             </div>
-            <div v-if="subjectLeaderboard.length > 0 && selectedSubjectId" class="leaderboard-table">
+            <div
+              v-if="subjectLeaderboard.length > 0 && selectedSubjectId"
+              class="leaderboard-table"
+            >
               <div class="leaderboard-header">
                 <div class="rank-col">排名</div>
                 <div class="student-col">学号</div>
@@ -127,7 +177,18 @@
                 <div class="sessions-col">答题次数</div>
                 <div class="points-col">积分</div>
               </div>
-              <div v-for="(item, index) in subjectLeaderboard" :key="item.user_id || index" class="leaderboard-row" :class="{ 'current-user': item.student_id === currentStudentId, 'top-3': index < 3, 'top-10': index < 10 }" @click="openUserDetailDialog(item)" style="cursor: pointer;">
+              <div
+                v-for="(item, index) in subjectLeaderboard"
+                :key="item.user_id || index"
+                class="leaderboard-row"
+                :class="{
+                  'current-user': item.student_id === currentStudentId,
+                  'top-3': index < 3,
+                  'top-10': index < 10
+                }"
+                style="cursor: pointer"
+                @click="openUserDetailDialog(item)"
+              >
                 <div class="rank-col">
                   <span v-if="index === 0" class="rank-number rank-1">🥇</span>
                   <span v-else-if="index === 1" class="rank-number rank-2">🥈</span>
@@ -149,9 +210,9 @@
               <p>{{ selectedSubjectId ? '暂无排行数据' : '请选择一个学科查看排行榜' }}</p>
               <p v-if="selectedSubjectId">学科排行榜数据长度: {{ subjectLeaderboard.length }}</p>
             </div>
-            
+
             <!-- 学科排行榜分页 -->
-            <div class="pagination" style="margin-top: 20px; text-align: right;">
+            <div class="pagination" style="margin-top: 20px; text-align: right">
               <el-pagination
                 v-model:current-page="subjectCurrentPage"
                 v-model:page-size="subjectPageSize"
@@ -162,7 +223,7 @@
                 @current-change="handleSubjectPageChange"
               />
             </div>
-            
+
             <div class="leaderboard-content-row">
               <div class="leaderboard-rules">
                 <h3 class="rules-title">🏆 排行榜规则</h3>
@@ -174,11 +235,10 @@
                   <li>🔄 排行榜数据每日更新，确保公平公正</li>
                 </ul>
               </div>
-
             </div>
           </el-tab-pane>
           <el-tab-pane label="个人成绩" name="personal">
-            <div class="personal-stats" v-if="currentUserId">
+            <div v-if="currentUserId" class="personal-stats">
               <div class="stats-overview">
                 <div class="stat-card">
                   <div class="stat-icon">📊</div>
@@ -201,7 +261,10 @@
                   <div class="stat-label">平均正确率</div>
                 </div>
               </div>
-              <div class="subject-stats" v-if="userStats.subjectStats && userStats.subjectStats.length > 0">
+              <div
+                v-if="userStats.subjectStats && userStats.subjectStats.length > 0"
+                class="subject-stats"
+              >
                 <h3 class="section-title">各学科成绩</h3>
                 <div class="leaderboard-table">
                   <div class="leaderboard-header">
@@ -210,7 +273,11 @@
                     <div class="correct-col">正确数</div>
                     <div class="score-col">正确率</div>
                   </div>
-                  <div v-for="(item, index) in userStats.subjectStats" :key="item.subject_id" class="leaderboard-row">
+                  <div
+                    v-for="(item, index) in userStats.subjectStats"
+                    :key="item.subject_id"
+                    class="leaderboard-row"
+                  >
                     <div class="subject-col">{{ item.subject_name }}</div>
                     <div class="questions-col">{{ item.total_questions || 0 }}</div>
                     <div class="correct-col">{{ item.correct_count || 0 }}</div>
@@ -218,7 +285,7 @@
                   </div>
                 </div>
               </div>
-              <div class="recent-records" v-if="recentRecords.length > 0">
+              <div v-if="recentRecords.length > 0" class="recent-records">
                 <h3 class="section-title">最近答题记录</h3>
                 <div class="leaderboard-table">
                   <div class="leaderboard-header">
@@ -230,13 +297,23 @@
                     <div class="accuracy-col">正确率</div>
                     <div class="time-col">时间</div>
                   </div>
-                  <div v-for="(item, index) in recentRecords" :key="item.id" class="leaderboard-row" @click="openAnswerDetailDialog(item)" style="cursor: pointer;">
+                  <div
+                    v-for="(item, index) in recentRecords"
+                    :key="item.id"
+                    class="leaderboard-row"
+                    style="cursor: pointer"
+                    @click="openAnswerDetailDialog(item)"
+                  >
                     <div class="grade-col">{{ item.grade || '-' }}</div>
                     <div class="class-col">{{ item.class || '-' }}</div>
                     <div class="subject-col">{{ item.subject_name || '未知' }}</div>
                     <div class="subcategory-col">{{ item.subcategory_name || '全部' }}</div>
-                    <div class="score-col">{{ item.correct_count }} / {{ item.total_questions }}</div>
-                    <div class="accuracy-col">{{ Math.round((item.correct_count / item.total_questions) * 100) }}%</div>
+                    <div class="score-col">
+                      {{ item.correct_count }} / {{ item.total_questions }}
+                    </div>
+                    <div class="accuracy-col">
+                      {{ Math.round((item.correct_count / item.total_questions) * 100) }}%
+                    </div>
                     <div class="time-col">{{ formatDate(item.created_at, '未知时间') }}</div>
                   </div>
                 </div>
@@ -253,27 +330,56 @@
       </div>
     </div>
   </div>
-  
+
   <!-- 用户详情对话框 -->
   <el-dialog
     v-model="userDetailDialogVisible"
-    :title="selectedUser?.name ? `${selectedUser.name}的答题记录` : `${selectedUser?.grade || '-'}年级${selectedUser?.class || '-'}班的${selectedUser?.student_id || '未知'}的答题记录`"
+    :title="
+      selectedUser?.name
+        ? `${selectedUser.name}的答题记录`
+        : `${selectedUser?.grade || '-'}年级${selectedUser?.class || '-'}班的${selectedUser?.student_id || '未知'}的答题记录`
+    "
     width="800px"
   >
-    <div v-if="selectedUser" class="user-detail-info" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px;">
-      <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-        <div><strong>学号:</strong> {{ selectedUser.student_id || '未知' }}</div>
-        <div><strong>姓名:</strong> {{ selectedUser.name || '未知' }}</div>
-        <div><strong>年级:</strong> {{ selectedUser.grade || '-' }}年级</div>
-        <div><strong>班级:</strong> {{ selectedUser.class || '-' }}班</div>
-        <div><strong>正确率:</strong> {{ Math.round(selectedUser.avg_accuracy || 0) }}%</div>
-        <div><strong>答题数:</strong> {{ selectedUser.total_questions || 0 }}</div>
-        <div><strong>答题次数:</strong> {{ selectedUser.total_sessions || 0 }}</div>
+    <div
+      v-if="selectedUser"
+      class="user-detail-info"
+      style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px"
+    >
+      <div style="display: flex; gap: 20px; flex-wrap: wrap">
+        <div>
+          <strong>学号:</strong>
+          {{ selectedUser.student_id || '未知' }}
+        </div>
+        <div>
+          <strong>姓名:</strong>
+          {{ selectedUser.name || '未知' }}
+        </div>
+        <div>
+          <strong>年级:</strong>
+          {{ selectedUser.grade || '-' }}年级
+        </div>
+        <div>
+          <strong>班级:</strong>
+          {{ selectedUser.class || '-' }}班
+        </div>
+        <div>
+          <strong>正确率:</strong>
+          {{ Math.round(selectedUser.avg_accuracy || 0) }}%
+        </div>
+        <div>
+          <strong>答题数:</strong>
+          {{ selectedUser.total_questions || 0 }}
+        </div>
+        <div>
+          <strong>答题次数:</strong>
+          {{ selectedUser.total_sessions || 0 }}
+        </div>
       </div>
     </div>
-    
-    <div class="user-records" v-if="selectedUserRecords.length > 0">
-      <h3 style="margin-bottom: 15px; color: #6a11cb;">答题记录</h3>
+
+    <div v-if="selectedUserRecords.length > 0" class="user-records">
+      <h3 style="margin-bottom: 15px; color: #6a11cb">答题记录</h3>
       <div class="leaderboard-table">
         <div class="leaderboard-header">
           <div class="subject-col">学科</div>
@@ -286,47 +392,81 @@
           <div class="subject-col">{{ item.subject_name || '未知' }}</div>
           <div class="subcategory-col">{{ item.subcategory_name || '全部' }}</div>
           <div class="score-col">{{ item.correct_count }} / {{ item.total_questions }}</div>
-          <div class="accuracy-col">{{ Math.round((item.correct_count / item.total_questions) * 100) }}%</div>
+          <div class="accuracy-col">
+            {{ Math.round((item.correct_count / item.total_questions) * 100) }}%
+          </div>
           <div class="time-col">{{ formatDate(item.created_at, '未知时间') }}</div>
         </div>
       </div>
     </div>
-    <div v-else class="leaderboard-empty" style="text-align: center; padding: 40px;">
+    <div v-else class="leaderboard-empty" style="text-align: center; padding: 40px">
       <p>暂无答题记录</p>
     </div>
   </el-dialog>
-  
+
   <!-- 答题详情对话框 -->
   <el-dialog
     v-model="answerDetailDialogVisible"
     :title="`${selectedAnswerRecord?.subject_name || '未知'} - ${selectedAnswerRecord?.subcategory_name || '全部'} 的答题详情`"
     width="800px"
   >
-    <div v-if="selectedAnswerRecord" class="answer-detail-info" style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px;">
-      <div style="display: flex; gap: 20px; flex-wrap: wrap;">
-        <div><strong>年级:</strong> {{ selectedAnswerRecord.grade || '-' }}</div>
-        <div><strong>班级:</strong> {{ selectedAnswerRecord.class || '-' }}</div>
-        <div><strong>学科:</strong> {{ selectedAnswerRecord.subject_name || '未知' }}</div>
-        <div><strong>题库:</strong> {{ selectedAnswerRecord.subcategory_name || '全部' }}</div>
-        <div><strong>成绩:</strong> {{ selectedAnswerRecord.correct_count }} / {{ selectedAnswerRecord.total_questions }}</div>
-        <div><strong>正确率:</strong> {{ Math.round((selectedAnswerRecord.correct_count / selectedAnswerRecord.total_questions) * 100) }}%</div>
-        <div><strong>时间:</strong> {{ formatDate(selectedAnswerRecord.created_at, '未知时间') }}</div>
+    <div
+      v-if="selectedAnswerRecord"
+      class="answer-detail-info"
+      style="margin-bottom: 20px; padding: 15px; background-color: #f5f7fa; border-radius: 8px"
+    >
+      <div style="display: flex; gap: 20px; flex-wrap: wrap">
+        <div>
+          <strong>年级:</strong>
+          {{ selectedAnswerRecord.grade || '-' }}
+        </div>
+        <div>
+          <strong>班级:</strong>
+          {{ selectedAnswerRecord.class || '-' }}
+        </div>
+        <div>
+          <strong>学科:</strong>
+          {{ selectedAnswerRecord.subject_name || '未知' }}
+        </div>
+        <div>
+          <strong>题库:</strong>
+          {{ selectedAnswerRecord.subcategory_name || '全部' }}
+        </div>
+        <div>
+          <strong>成绩:</strong>
+          {{ selectedAnswerRecord.correct_count }} / {{ selectedAnswerRecord.total_questions }}
+        </div>
+        <div>
+          <strong>正确率:</strong>
+          {{
+            Math.round(
+              (selectedAnswerRecord.correct_count / selectedAnswerRecord.total_questions) * 100
+            )
+          }}%
+        </div>
+        <div>
+          <strong>时间:</strong>
+          {{ formatDate(selectedAnswerRecord.created_at, '未知时间') }}
+        </div>
       </div>
     </div>
-    
-    <div class="answer-questions" v-if="selectedAnswerQuestions.length > 0">
-      <h3 style="margin-bottom: 15px; color: #6a11cb;">答题情况</h3>
+
+    <div v-if="selectedAnswerQuestions.length > 0" class="answer-questions">
+      <h3 style="margin-bottom: 15px; color: #6a11cb">答题情况</h3>
       <div class="question-cards">
         <div v-for="(item, index) in selectedAnswerQuestions" :key="item.id" class="question-card">
           <div class="question-card-header">
             <div class="question-number">第 {{ index + 1 }} 题</div>
-            <div class="question-result" :class="{ 'correct': item.is_correct, 'incorrect': !item.is_correct }">
-              <span v-if="item.is_correct" style="color: green; font-weight: bold;">✓ 正确</span>
-              <span v-else style="color: red; font-weight: bold;">✗ 错误</span>
+            <div
+              class="question-result"
+              :class="{ correct: item.is_correct, incorrect: !item.is_correct }"
+            >
+              <span v-if="item.is_correct" style="color: green; font-weight: bold">✓ 正确</span>
+              <span v-else style="color: red; font-weight: bold">✗ 错误</span>
             </div>
           </div>
           <div class="question-content" v-html="item.content"></div>
-          <div class="question-options" v-if="item.options && item.options.length > 0">
+          <div v-if="item.options && item.options.length > 0" class="question-options">
             <div v-for="(option, optIndex) in item.options" :key="optIndex" class="option-item">
               <span class="option-letter">{{ String.fromCharCode(65 + optIndex) }}.</span>
               <span class="option-text" v-html="option"></span>
@@ -342,18 +482,18 @@
               <span class="answer-value">{{ item.correct_answer }}</span>
             </div>
           </div>
-          <div class="question-explanation" v-if="item.explanation">
+          <div v-if="item.explanation" class="question-explanation">
             <div class="explanation-label">解析:</div>
             <div class="explanation-content" v-html="item.explanation"></div>
           </div>
-          <div class="question-explanation" v-else>
+          <div v-else class="question-explanation">
             <div class="explanation-label">解析:</div>
             <div class="explanation-content">暂无解析</div>
           </div>
         </div>
       </div>
     </div>
-    <div v-else class="leaderboard-empty" style="text-align: center; padding: 40px;">
+    <div v-else class="leaderboard-empty" style="text-align: center; padding: 40px">
       <p>暂无答题详情</p>
     </div>
   </el-dialog>
@@ -398,32 +538,38 @@ const loadGradesAndClasses = async () => {
   try {
     const serverGrades = await api.get('/grades')
     if (Array.isArray(serverGrades) && serverGrades.length > 0) {
-      grades.value = serverGrades.map(grade => {
-        if (typeof grade === 'object' && grade.name) {
-          const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
-          return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
-        } else if (typeof grade === 'number') {
-          return grade
-        } else {
-          return 1
-        }
-      }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+      grades.value = serverGrades
+        .map(grade => {
+          if (typeof grade === 'object' && grade.name) {
+            const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
+            return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
+          } else if (typeof grade === 'number') {
+            return grade
+          } else {
+            return 1
+          }
+        })
+        .filter((value, index, self) => self.indexOf(value) === index)
+        .sort((a, b) => a - b)
     } else {
       grades.value = []
     }
-    
+
     const serverClasses = await api.get('/classes')
     if (Array.isArray(serverClasses) && serverClasses.length > 0) {
-      classes.value = serverClasses.map(classItem => {
-        if (typeof classItem === 'object' && classItem.name) {
-          const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
-          return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
-        } else if (typeof classItem === 'number') {
-          return classItem
-        } else {
-          return 1
-        }
-      }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+      classes.value = serverClasses
+        .map(classItem => {
+          if (typeof classItem === 'object' && classItem.name) {
+            const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+            return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+          } else if (typeof classItem === 'number') {
+            return classItem
+          } else {
+            return 1
+          }
+        })
+        .filter((value, index, self) => self.indexOf(value) === index)
+        .sort((a, b) => a - b)
     } else {
       classes.value = []
     }
@@ -437,16 +583,19 @@ const handleGradeChange = async () => {
   try {
     const data = await api.get(`/classes?grade=${selectedGrade.value}`)
     if (Array.isArray(data) && data.length > 0) {
-      classes.value = data.map(classItem => {
-        if (typeof classItem === 'object' && classItem.name) {
-          const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
-          return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
-        } else if (typeof classItem === 'number') {
-          return classItem
-        } else {
-          return 1
-        }
-      }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
+      classes.value = data
+        .map(classItem => {
+          if (typeof classItem === 'object' && classItem.name) {
+            const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+            return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+          } else if (typeof classItem === 'number') {
+            return classItem
+          } else {
+            return 1
+          }
+        })
+        .filter((value, index, self) => self.indexOf(value) === index)
+        .sort((a, b) => a - b)
     } else {
       classes.value = []
     }
@@ -462,17 +611,14 @@ const handleGradeChange = async () => {
   }
 }
 
-
-
 const loadSubjects = async () => {
   try {
     subjects.value = await api.get('/subjects')
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 // 加载子分类（题库）数据
-const loadSubcategories = async (subjectId) => {
+const loadSubcategories = async subjectId => {
   try {
     if (!subjectId) {
       subcategories.value = []
@@ -492,7 +638,10 @@ const globalCurrentPage = ref(1)
 const globalPageSize = ref(20)
 const globalTotal = ref(0)
 
-const loadGlobalLeaderboard = async (page = globalCurrentPage.value, size = globalPageSize.value) => {
+const loadGlobalLeaderboard = async (
+  page = globalCurrentPage.value,
+  size = globalPageSize.value
+) => {
   try {
     const params = {
       grade: selectedGrade.value || undefined,
@@ -500,7 +649,7 @@ const loadGlobalLeaderboard = async (page = globalCurrentPage.value, size = glob
       limit: size,
       page: page
     }
-    
+
     const data = await api.get('/leaderboard/global', params)
     globalLeaderboard.value = data.data || data
     globalTotal.value = data.total || data.length
@@ -510,11 +659,11 @@ const loadGlobalLeaderboard = async (page = globalCurrentPage.value, size = glob
 }
 
 // 处理全局排行榜分页
-const handleGlobalPageChange = (current) => {
+const handleGlobalPageChange = current => {
   loadGlobalLeaderboard(current, globalPageSize.value)
 }
 
-const handleGlobalSizeChange = (size) => {
+const handleGlobalSizeChange = size => {
   globalCurrentPage.value = 1
   loadGlobalLeaderboard(1, size)
 }
@@ -524,12 +673,15 @@ const subjectCurrentPage = ref(1)
 const subjectPageSize = ref(20)
 const subjectTotal = ref(0)
 
-const loadSubjectLeaderboard = async (page = subjectCurrentPage.value, size = subjectPageSize.value) => {
+const loadSubjectLeaderboard = async (
+  page = subjectCurrentPage.value,
+  size = subjectPageSize.value
+) => {
   if (!selectedSubjectId.value) {
     subjectLeaderboard.value = []
     return
   }
-  
+
   try {
     const params = {
       subcategoryId: selectedSubcategoryId.value || undefined,
@@ -538,7 +690,7 @@ const loadSubjectLeaderboard = async (page = subjectCurrentPage.value, size = su
       limit: size,
       page: page
     }
-    
+
     const data = await api.get(`/leaderboard/subject/${selectedSubjectId.value}`, params)
     subjectLeaderboard.value = data.data || data
     subjectTotal.value = data.total || data.length
@@ -548,12 +700,12 @@ const loadSubjectLeaderboard = async (page = subjectCurrentPage.value, size = su
 }
 
 // 处理学科排行榜分页
-const handleSubjectPageChange = (current) => {
-  console.log('学科分页变化:', current)  // 调试日志
+const handleSubjectPageChange = current => {
+  console.log('学科分页变化:', current) // 调试日志
   loadSubjectLeaderboard(current, subjectPageSize.value)
 }
 
-const handleSubjectSizeChange = (size) => {
+const handleSubjectSizeChange = size => {
   subjectCurrentPage.value = 1
   loadSubjectLeaderboard(1, size)
 }
@@ -565,7 +717,7 @@ const handleSubcategoryChange = () => {
 }
 
 // 处理学科变化
-const handleSubjectChange = async (value) => {
+const handleSubjectChange = async value => {
   await loadSubcategories(value)
   subjectCurrentPage.value = 1
   loadSubjectLeaderboard(1, subjectPageSize.value)
@@ -579,11 +731,10 @@ const handleSubjectClassChange = () => {
 
 const loadUserStats = async () => {
   if (!currentUserId.value) return
-  
+
   try {
     userStats.value = await api.get(`/users/stats/${currentUserId.value}`)
-  } catch (error) {
-  }
+  } catch (error) {}
 }
 
 const loadRecentRecords = async () => {
@@ -591,14 +742,14 @@ const loadRecentRecords = async () => {
     recentRecords.value = []
     return
   }
-  
+
   try {
     const params = {
       userId: currentUserId.value,
       grade: selectedGrade.value || undefined,
       class: selectedClass.value || undefined
     }
-    
+
     const data = await api.get('/answer-records/all', params)
     recentRecords.value = data.data || data
   } catch (error) {
@@ -608,7 +759,7 @@ const loadRecentRecords = async () => {
 }
 
 // 加载用户的答题记录
-const loadUserRecords = async (userId) => {
+const loadUserRecords = async userId => {
   try {
     const data = await api.get(`/answer-records/${userId}`)
     selectedUserRecords.value = data.data || data
@@ -619,7 +770,7 @@ const loadUserRecords = async (userId) => {
 }
 
 // 打开用户详情对话框
-const openUserDetailDialog = async (user) => {
+const openUserDetailDialog = async user => {
   selectedUser.value = user
   // 确保使用正确的用户ID字段
   const userId = user.id || user.user_id
@@ -628,9 +779,11 @@ const openUserDetailDialog = async (user) => {
 }
 
 // 加载答题详情
-const loadAnswerQuestions = async (recordId) => {
+const loadAnswerQuestions = async recordId => {
   try {
-    const data = await api.get(`/answer-records/question-attempts/${currentUserId.value}`, { answerRecordId: recordId })
+    const data = await api.get(`/answer-records/question-attempts/${currentUserId.value}`, {
+      answerRecordId: recordId
+    })
 
     // 解析题目数据
     const parsedData = data.map(item => {
@@ -644,7 +797,7 @@ const loadAnswerQuestions = async (recordId) => {
       } catch (e) {
         // 解析失败，使用原始值
       }
-      
+
       // 解析用户答案
       let userAnswer = item.user_answer
       try {
@@ -657,7 +810,7 @@ const loadAnswerQuestions = async (recordId) => {
       } catch (e) {
         // 解析失败，使用原始值
       }
-      
+
       // 解析正确答案
       let correctAnswer = item.correct_answer
       try {
@@ -670,7 +823,7 @@ const loadAnswerQuestions = async (recordId) => {
       } catch (e) {
         // 解析失败，使用原始值
       }
-      
+
       // 解析选项 - 使用原始选项，因为 user_answer 和 correct_answer 都保存的是原始位置
       let options = []
       try {
@@ -683,7 +836,7 @@ const loadAnswerQuestions = async (recordId) => {
       } catch (e) {
         // 解析失败，使用空数组
       }
-      
+
       // 解析题目解析
       let explanation = item.explanation
       try {
@@ -697,14 +850,14 @@ const loadAnswerQuestions = async (recordId) => {
         // 解析失败，使用空字符串
         explanation = ''
       }
-      
+
       // 确保explanation是字符串类型
       if (explanation === null || explanation === undefined) {
         explanation = ''
       } else if (typeof explanation !== 'string') {
         explanation = String(explanation)
       }
-      
+
       return {
         ...item,
         content,
@@ -721,7 +874,7 @@ const loadAnswerQuestions = async (recordId) => {
 }
 
 // 打开答题详情对话框
-const openAnswerDetailDialog = async (record) => {
+const openAnswerDetailDialog = async record => {
   selectedAnswerRecord.value = record
   await loadAnswerQuestions(record.id)
   answerDetailDialogVisible.value = true
@@ -737,7 +890,7 @@ onMounted(async () => {
   }
 })
 
-watch(activeTab, (newTab) => {
+watch(activeTab, newTab => {
   if (newTab === 'global') {
     loadGlobalLeaderboard()
   } else if (newTab === 'subject' && selectedSubjectId.value) {
@@ -1032,7 +1185,7 @@ watch(activeTab, (newTab) => {
   font-family: 'Fredoka One', 'Comic Sans MS', cursive;
   font-size: 1.5rem;
   font-weight: 900;
-  color: #FFD700;
+  color: #ffd700;
   margin: 0;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -1112,7 +1265,7 @@ watch(activeTab, (newTab) => {
 }
 
 .first-place-message p:first-child {
-  color: #FFD700;
+  color: #ffd700;
   font-size: 1.1rem;
   font-weight: 900;
 }
@@ -1225,7 +1378,7 @@ watch(activeTab, (newTab) => {
   height: 40px;
   line-height: 40px;
   font-size: 1.5rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, #ffd700, #ffa500);
   box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
   animation: glow 2s infinite;
 }
@@ -1235,7 +1388,7 @@ watch(activeTab, (newTab) => {
   height: 36px;
   line-height: 36px;
   font-size: 1.3rem;
-  background: linear-gradient(135deg, #C0C0C0, #A9A9A9);
+  background: linear-gradient(135deg, #c0c0c0, #a9a9a9);
   box-shadow: 0 4px 8px rgba(192, 192, 192, 0.5);
   animation: glow 2s infinite 0.3s;
 }
@@ -1245,7 +1398,7 @@ watch(activeTab, (newTab) => {
   height: 34px;
   line-height: 34px;
   font-size: 1.2rem;
-  background: linear-gradient(135deg, #CD7F32, #B87333);
+  background: linear-gradient(135deg, #cd7f32, #b87333);
   box-shadow: 0 4px 8px rgba(205, 127, 50, 0.5);
   animation: glow 2s infinite 0.6s;
 }
@@ -1276,7 +1429,8 @@ watch(activeTab, (newTab) => {
 
 /* 发光动画 */
 @keyframes glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
   }
   50% {
@@ -1296,8 +1450,6 @@ watch(activeTab, (newTab) => {
   font-family: var(--game-font);
   font-size: 1.2rem;
 }
-
-
 
 .personal-stats {
   padding: 1.5rem;
@@ -1588,7 +1740,11 @@ watch(activeTab, (newTab) => {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -1761,16 +1917,16 @@ watch(activeTab, (newTab) => {
     gap: 0.8rem;
     padding: 1.2rem;
   }
-  
+
   .filter-section .el-select {
     min-width: 160px;
   }
-  
+
   .filter-section .el-select .el-input__inner {
     font-size: 1rem;
     padding: 0.8rem 1.2rem;
   }
-  
+
   /* 第一名卡片响应式调整 */
   .first-place-content {
     min-width: 350px;
@@ -1782,50 +1938,50 @@ watch(activeTab, (newTab) => {
   .leaderboard-content {
     padding: 1.5rem;
   }
-  
+
   .leaderboard-section {
     padding: 2rem;
   }
-  
+
   .filter-section {
     flex-wrap: wrap;
     gap: 0.8rem;
     padding: 1rem;
   }
-  
+
   .filter-section .el-select {
     min-width: 140px;
     flex: 1;
     min-width: calc(50% - 0.4rem);
   }
-  
+
   .filter-section .el-select .el-input__inner {
     font-size: 0.9rem;
     padding: 0.7rem 1rem;
   }
-  
+
   /* 第一名卡片响应式调整 */
   .leaderboard-content-row {
     gap: 1.5rem;
   }
-  
+
   .first-place-content {
     min-width: 100%;
     max-width: 100%;
   }
-  
+
   .first-place-title {
     font-size: 1.3rem;
   }
-  
+
   .first-place-badge {
     font-size: 2.2rem;
   }
-  
+
   .user-name {
     font-size: 1.6rem;
   }
-  
+
   .first-place-stats {
     gap: 0.9rem;
   }
@@ -1835,76 +1991,76 @@ watch(activeTab, (newTab) => {
   .leaderboard-content {
     padding: 1rem;
   }
-  
+
   .leaderboard-section {
     padding: 1.5rem;
   }
-  
+
   .filter-section {
     flex-direction: column;
     align-items: stretch;
     gap: 0.6rem;
     padding: 0.8rem;
   }
-  
+
   .filter-section .el-select {
     width: 100%;
     min-width: 100%;
   }
-  
+
   .filter-section .el-select .el-input__inner {
     font-size: 0.8rem;
     padding: 0.6rem 0.9rem;
   }
-  
+
   /* 第一名卡片响应式调整 */
   .leaderboard-content-row {
     gap: 1rem;
   }
-  
+
   .first-place-content {
     min-width: 100%;
     max-width: 100%;
     padding: 1rem;
   }
-  
+
   .first-place-title {
     font-size: 1.2rem;
   }
-  
+
   .first-place-badge {
     font-size: 2rem;
   }
-  
+
   .user-name {
     font-size: 1.5rem;
   }
-  
+
   .user-class {
     font-size: 1rem;
   }
-  
+
   .first-place-stats {
     grid-template-columns: repeat(3, 1fr);
     gap: 0.8rem;
   }
-  
+
   .first-place-stats .stat-item {
     padding: 0.8rem;
   }
-  
+
   .first-place-stats .stat-value {
     font-size: 1.1rem;
   }
-  
+
   .first-place-stats .stat-label {
     font-size: 0.8rem;
   }
-  
+
   .first-place-message p {
     font-size: 0.9rem;
   }
-  
+
   .first-place-message p:first-child {
     font-size: 1rem;
   }

@@ -9,15 +9,15 @@
  * @returns {string} 格式化后的日期字符串
  */
 export const formatDate = (dateString, defaultStr = '') => {
-  if (!dateString) return defaultStr;
+  if (!dateString) return defaultStr
   try {
-    const date = new Date(dateString);
-    
+    const date = new Date(dateString)
+
     // 确保日期有效
     if (isNaN(date.getTime())) {
-      return defaultStr;
+      return defaultStr
     }
-    
+
     // 使用 timeZone 选项直接显示北京时间
     return date.toLocaleString('zh-CN', {
       timeZone: 'Asia/Shanghai',
@@ -27,8 +27,8 @@ export const formatDate = (dateString, defaultStr = '') => {
       hour: '2-digit',
       minute: '2-digit',
       second: '2-digit'
-    });
+    })
   } catch (error) {
-    return defaultStr;
+    return defaultStr
   }
-};
+}

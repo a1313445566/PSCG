@@ -20,7 +20,7 @@ export default defineConfig({
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
           'element-plus': ['element-plus'],
-          'quill': ['quill']
+          quill: ['quill']
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
@@ -32,7 +32,7 @@ export default defineConfig({
     proxy: {
       '/api': {
         target: 'http://localhost:3001',
-        changeOrigin: true,
+        changeOrigin: true
       }
     }
   },
@@ -40,9 +40,7 @@ export default defineConfig({
   modulePreload: {
     resolveDependencies: (url, deps) => {
       // 只预加载核心库，不预加载 element-plus
-      return deps.filter(dep => 
-        !dep.includes('element-plus')
-      )
+      return deps.filter(dep => !dep.includes('element-plus'))
     }
   }
 })

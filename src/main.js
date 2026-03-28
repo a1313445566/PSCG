@@ -18,7 +18,7 @@ app.use(router)
 app.config.errorHandler = (err, instance, info) => {
   // 忽略 Vue/Element Plus 组件在销毁/渲染期间的竞态错误
   const errorMessage = err?.message || ''
-  const isIgnorableError = 
+  const isIgnorableError =
     errorMessage.includes("Cannot destructure property 'node' of 'undefined'") ||
     errorMessage.includes("Cannot destructure property 'row' of 'undefined'") ||
     errorMessage.includes("Cannot destructure property 'bum' of") ||
@@ -27,12 +27,12 @@ app.config.errorHandler = (err, instance, info) => {
     errorMessage.includes('as it is undefined') ||
     errorMessage.includes('as it is null') ||
     errorMessage.includes('Cannot destructure property')
-  
+
   // 静默忽略这些无害错误
   if (isIgnorableError) {
     return
   }
-  
+
   // 其他错误正常抛出
   console.error('[Vue Error]', err, info)
 }
@@ -51,11 +51,13 @@ if (loadingElement) {
 }
 
 // 异步加载 Element Plus 组件库
-import('element-plus').then(ElementPlus => {
-  app.use(ElementPlus.default)
-}).catch(err => {
-  console.error('Element Plus 加载失败:', err)
-})
+import('element-plus')
+  .then(ElementPlus => {
+    app.use(ElementPlus.default)
+  })
+  .catch(err => {
+    console.error('Element Plus 加载失败:', err)
+  })
 
 // 注意：数据初始化由各个页面自己管理，不再在全局初始化
 // 这样可以避免竞态条件和重复初始化的问题

@@ -3,45 +3,45 @@
  * 实现异步任务处理、并发控制、优先级调度
  */
 
-const db = require('./database');
-const aiService = require('./aiService');
-const monitor = require('../utils/aiPerformanceMonitor');
+const db = require('./database')
+const aiService = require('./aiService')
+const monitor = require('../utils/aiPerformanceMonitor')
 
 class AIQueueService {
   constructor() {
-    this.isProcessing = false;
-    this.maxConcurrent = 5;
-    this.pollInterval = 2000;
-    this.currentTasks = 0;
-    this.timer = null;
+    this.isProcessing = false
+    this.maxConcurrent = 5
+    this.pollInterval = 2000
+    this.currentTasks = 0
+    this.timer = null
   }
 
   /**
    * 启动任务处理器
    */
   async startProcessor() {
-    if (this.timer) return;
-    
+    if (this.timer) return
+
     // 等待数据库连接就绪
-    let retries = 0;
-    const maxRetries = 30; // 最多等待30秒
+    let retries = 0
+    const maxRetries = 30 // 最多等待30秒
     while (!db.pool && retries < maxRetries) {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      retries++;
+      await new Promise(resolve => setTimeout(resolve, 1000))
+      retries++
     }
-    
+
     if (!db.pool) {
-      console.error('[AI队列] 数据库连接超时，任务处理器未启动');
-      return;
+      console.error('[AI队列] 数据库连接超时，任务处理器未启动')
+      return
     }
-    
-    console.log('[AI队列] 任务处理器启动');
+
+    console.log('[AI队列] 任务处理器启动')
     this.timer = setInterval(() => {
-      this.processQueue();
-    }, this.pollInterval);
-    
+      this.processQueue()
+    }, this.pollInterval)
+
     // 延迟执行第一次处理（等待数据库完全就绪）
-    setTimeout(() => this.processQueue(), 2000);
+    setTimeout(() => this.processQueue(), 2000)
   }
 
   /**
@@ -49,9 +49,9 @@ class AIQueueService {
    */
   stopProcessor() {
     if (this.timer) {
-      clearInterval(this.timer);
-      this.timer = null;
-      console.log('[AI队列] 任务处理器停止');
+      clearInterval(this.timer)
+      this.timer = null
+      console.log('[AI队列] 任务处理器停止')
     }
   }
 
@@ -65,14 +65,14 @@ class AIQueueService {
          (task_type, target_id, priority, status, created_at)
          VALUES (?, ?, ?, 'pending', NOW())`,
         [taskType, targetId, priority]
-      );
-      
-      console.log(`[AI队列] 添加任务: ${taskType}, ID: ${targetId}, 优先级: ${priority}`);
-      
-      return result.insertId;
+      )
+
+      console.log(`[AI队列] 添加任务: ${taskType}, ID: ${targetId}, 优先级: ${priority}`)
+
+      return result.insertId
     } catch (error) {
-      console.error('[AI队列] 添加任务失败:', error);
-      throw error;
+      console.error('[AI队列] 添加任务失败:', error)
+      throw error
     }
   }
 
@@ -82,26 +82,26 @@ class AIQueueService {
   async addBatchTasks(tasks) {
     try {
       // 批量插入任务 - 使用正确的占位符语法
-      const placeholders = tasks.map(() => '(?, ?, ?, ?, ?)').join(', ');
+      const placeholders = tasks.map(() => '(?, ?, ?, ?, ?)').join(', ')
       const values = tasks.flatMap(t => [
         t.taskType,
         t.targetId,
         t.priority || 5,
         'pending',
         new Date()
-      ]);
-      
+      ])
+
       await db.query(
         `INSERT INTO ai_analysis_queue 
          (task_type, target_id, priority, status, created_at)
          VALUES ${placeholders}`,
         values
-      );
-      
-      console.log(`[AI队列] 批量添加 ${tasks.length} 个任务`);
+      )
+
+      console.log(`[AI队列] 批量添加 ${tasks.length} 个任务`)
     } catch (error) {
-      console.error('[AI队列] 批量添加任务失败:', error);
-      throw error;
+      console.error('[AI队列] 批量添加任务失败:', error)
+      throw error
     }
   }
 
@@ -109,15 +109,15 @@ class AIQueueService {
    * 处理队列
    */
   async processQueue() {
-    if (this.isProcessing) return;
-    
+    if (this.isProcessing) return
+
     // 检查并发限制
     if (this.currentTasks >= this.maxConcurrent) {
-      return;
+      return
     }
-    
-    this.isProcessing = true;
-    
+
+    this.isProcessing = true
+
     try {
       // 获取待处理任务（按优先级和创建时间排序）
       const task = await db.get(
@@ -125,20 +125,20 @@ class AIQueueService {
          WHERE status = 'pending' 
          ORDER BY priority ASC, created_at ASC 
          LIMIT 1`
-      );
-      
+      )
+
       if (task) {
-        this.currentTasks++;
-        
+        this.currentTasks++
+
         // 异步执行任务
         this.executeTask(task).finally(() => {
-          this.currentTasks--;
-        });
+          this.currentTasks--
+        })
       }
     } catch (error) {
-      console.error('[AI队列] 处理队列失败:', error);
+      console.error('[AI队列] 处理队列失败:', error)
     } finally {
-      this.isProcessing = false;
+      this.isProcessing = false
     }
   }
 
@@ -146,10 +146,10 @@ class AIQueueService {
    * 执行任务
    */
   async executeTask(task) {
-    console.log(`[AI队列] 开始执行任务: ${task.id}, 类型: ${task.task_type}`);
-    
-    monitor.startTask(task.id);
-    
+    console.log(`[AI队列] 开始执行任务: ${task.id}, 类型: ${task.task_type}`)
+
+    monitor.startTask(task.id)
+
     try {
       // 更新任务状态为处理中
       await db.run(
@@ -157,42 +157,41 @@ class AIQueueService {
          SET status = 'processing', started_at = NOW() 
          WHERE id = ?`,
         [task.id]
-      );
-      
+      )
+
       // 根据任务类型执行不同操作
-      let result;
+      let result
       switch (task.task_type) {
         case 'question_semantic':
-          result = await this.processQuestionSemantic(task.target_id);
-          break;
+          result = await this.processQuestionSemantic(task.target_id)
+          break
         case 'user_learning_style':
-          result = await this.processUserLearningStyle(task.target_id);
-          break;
+          result = await this.processUserLearningStyle(task.target_id)
+          break
         case 'error_analysis':
-          result = await this.processErrorAnalysis(task.target_id);
-          break;
+          result = await this.processErrorAnalysis(task.target_id)
+          break
         default:
-          throw new Error(`未知任务类型: ${task.task_type}`);
+          throw new Error(`未知任务类型: ${task.task_type}`)
       }
-      
+
       // 更新任务状态为完成
       await db.run(
         `UPDATE ai_analysis_queue 
          SET status = 'completed', completed_at = NOW(), result = ? 
          WHERE id = ?`,
         [JSON.stringify(result), task.id]
-      );
-      
-      monitor.endTask(task.id, true);
-      console.log(`[AI队列] 任务完成: ${task.id}`);
-      
+      )
+
+      monitor.endTask(task.id, true)
+      console.log(`[AI队列] 任务完成: ${task.id}`)
     } catch (error) {
-      console.error(`[AI队列] 任务失败: ${task.id}`, error);
-      
+      console.error(`[AI队列] 任务失败: ${task.id}`, error)
+
       // 更新任务状态为失败
-      const retryCount = task.retry_count + 1;
-      const maxRetries = task.max_retries;
-      
+      const retryCount = task.retry_count + 1
+      const maxRetries = task.max_retries
+
       if (retryCount < maxRetries) {
         // 重试
         await db.run(
@@ -200,10 +199,10 @@ class AIQueueService {
            SET status = 'pending', retry_count = ?, error_message = ? 
            WHERE id = ?`,
           [retryCount, error.message, task.id]
-        );
-        
-        monitor.recordRetry(task.id);
-        console.log(`[AI队列] 任务将重试: ${task.id}, 次数: ${retryCount}/${maxRetries}`);
+        )
+
+        monitor.recordRetry(task.id)
+        console.log(`[AI队列] 任务将重试: ${task.id}, 次数: ${retryCount}/${maxRetries}`)
       } else {
         // 标记为失败
         await db.run(
@@ -211,10 +210,10 @@ class AIQueueService {
            SET status = 'failed', error_message = ? 
            WHERE id = ?`,
           [error.message, task.id]
-        );
-        
-        monitor.endTask(task.id, false);
-        console.log(`[AI队列] 任务最终失败: ${task.id}`);
+        )
+
+        monitor.endTask(task.id, false)
+        console.log(`[AI队列] 任务最终失败: ${task.id}`)
       }
     }
   }
@@ -231,12 +230,12 @@ class AIQueueService {
        LEFT JOIN subcategories sub ON q.subcategory_id = sub.id
        WHERE q.id = ?`,
       [questionId]
-    );
-    
+    )
+
     if (!question) {
-      throw new Error('题目不存在');
+      throw new Error('题目不存在')
     }
-    
+
     // 调用 AI 分析
     const analysis = await aiService.analyzeQuestionSemantic({
       id: question.id,
@@ -245,8 +244,8 @@ class AIQueueService {
       difficulty: question.difficulty,
       subject: question.subject_name,
       subcategory: question.subcategory_name
-    });
-    
+    })
+
     // 保存分析结果
     await db.run(
       `INSERT INTO question_semantic_analysis 
@@ -271,9 +270,9 @@ class AIQueueService {
         analysis.contentQualityScore || 0,
         analysis.aiAnalysis || ''
       ]
-    );
-    
-    return analysis;
+    )
+
+    return analysis
   }
 
   /**
@@ -299,18 +298,20 @@ class AIQueueService {
        ORDER BY ab.created_at DESC
        LIMIT 100`,
       [userId]
-    );
-    
+    )
+
     if (behaviorData.length < 10) {
-      throw new Error('答题数据不足，至少需要 10 次答题记录');
+      throw new Error('答题数据不足，至少需要 10 次答题记录')
     }
-    
+
     // 计算统计数据
-    const avgAnswerTime = behaviorData.reduce((sum, b) => sum + b.answer_time, 0) / behaviorData.length;
-    const answerTimeStability = this.calculateStdDev(behaviorData.map(b => b.answer_time));
-    const avgModifications = behaviorData.reduce((sum, b) => sum + b.answer_modifications, 0) / behaviorData.length;
-    const skipRate = behaviorData.filter(b => b.skipped_and_returned).length / behaviorData.length;
-    
+    const avgAnswerTime =
+      behaviorData.reduce((sum, b) => sum + b.answer_time, 0) / behaviorData.length
+    const answerTimeStability = this.calculateStdDev(behaviorData.map(b => b.answer_time))
+    const avgModifications =
+      behaviorData.reduce((sum, b) => sum + b.answer_modifications, 0) / behaviorData.length
+    const skipRate = behaviorData.filter(b => b.skipped_and_returned).length / behaviorData.length
+
     // 分析错误模式
     const errorPatterns = await db.query(
       `SELECT error_type, COUNT(*) as count
@@ -318,13 +319,13 @@ class AIQueueService {
        WHERE user_id = ?
        GROUP BY error_type`,
       [userId]
-    );
-    
-    const errorPatternsObj = {};
+    )
+
+    const errorPatternsObj = {}
     errorPatterns.forEach(ep => {
-      errorPatternsObj[ep.error_type] = ep.count;
-    });
-    
+      errorPatternsObj[ep.error_type] = ep.count
+    })
+
     // 调用 AI 分析学习风格
     const styleAnalysis = await aiService.analyzeUserLearningStyle({
       userId,
@@ -336,8 +337,8 @@ class AIQueueService {
         errorPatterns: errorPatternsObj,
         sampleSize: behaviorData.length
       }
-    });
-    
+    })
+
     // 保存分析结果
     await db.run(
       `INSERT INTO user_learning_style 
@@ -365,9 +366,9 @@ class AIQueueService {
         styleAnalysis.aiSuggestion || '',
         behaviorData.length
       ]
-    );
-    
-    return styleAnalysis;
+    )
+
+    return styleAnalysis
   }
 
   /**
@@ -381,12 +382,12 @@ class AIQueueService {
        LEFT JOIN questions q ON ep.question_id = q.id
        WHERE ep.id = ?`,
       [errorId]
-    );
-    
+    )
+
     if (!errorData) {
-      throw new Error('错题记录不存在');
+      throw new Error('错题记录不存在')
     }
-    
+
     // 调用 AI 分析
     const analysis = await aiService.analyzeErrorReason({
       questionId: errorData.question_id,
@@ -395,8 +396,8 @@ class AIQueueService {
       questionContent: errorData.content,
       questionType: errorData.type,
       difficulty: errorData.difficulty
-    });
-    
+    })
+
     // 更新错题分析结果
     await db.run(
       `UPDATE error_patterns 
@@ -408,20 +409,20 @@ class AIQueueService {
         JSON.stringify(analysis.relatedKnowledgePoints || []),
         errorId
       ]
-    );
-    
-    return analysis;
+    )
+
+    return analysis
   }
 
   /**
    * 计算标准差
    */
   calculateStdDev(values) {
-    if (values.length === 0) return 0;
-    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
-    const squareDiffs = values.map(v => Math.pow(v - avg, 2));
-    const avgSquareDiff = squareDiffs.reduce((sum, v) => sum + v, 0) / values.length;
-    return Math.sqrt(avgSquareDiff);
+    if (values.length === 0) return 0
+    const avg = values.reduce((sum, v) => sum + v, 0) / values.length
+    const squareDiffs = values.map(v => Math.pow(v - avg, 2))
+    const avgSquareDiff = squareDiffs.reduce((sum, v) => sum + v, 0) / values.length
+    return Math.sqrt(avgSquareDiff)
   }
 
   /**
@@ -436,16 +437,16 @@ class AIQueueService {
           COUNT(CASE WHEN status = 'completed' THEN 1 END) as completed,
           COUNT(CASE WHEN status = 'failed' THEN 1 END) as failed
          FROM ai_analysis_queue`
-      );
-      
+      )
+
       return {
         ...stats,
         currentTasks: this.currentTasks,
         maxConcurrent: this.maxConcurrent
-      };
+      }
     } catch (error) {
-      console.error('[AI队列] 获取状态失败:', error);
-      throw error;
+      console.error('[AI队列] 获取状态失败:', error)
+      throw error
     }
   }
 
@@ -459,23 +460,23 @@ class AIQueueService {
          WHERE status IN ('completed', 'failed') 
          AND completed_at < DATE_SUB(NOW(), INTERVAL ? DAY)`,
         [daysToKeep]
-      );
-      
-      console.log(`[AI队列] 清理了 ${result.affectedRows} 个已完成任务`);
-      return result.affectedRows;
+      )
+
+      console.log(`[AI队列] 清理了 ${result.affectedRows} 个已完成任务`)
+      return result.affectedRows
     } catch (error) {
-      console.error('[AI队列] 清理任务失败:', error);
-      throw error;
+      console.error('[AI队列] 清理任务失败:', error)
+      throw error
     }
   }
 }
 
 // 导出单例
-const queueService = new AIQueueService();
+const queueService = new AIQueueService()
 
 // 延迟启动任务处理器（等待数据库连接）
 setTimeout(() => {
-  queueService.startProcessor();
-}, 3000);
+  queueService.startProcessor()
+}, 3000)
 
-module.exports = queueService;
+module.exports = queueService

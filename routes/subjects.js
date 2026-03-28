@@ -1,28 +1,30 @@
-const express = require('express');
-const router = express.Router();
-const db = require('../services/database');
-const cacheService = require('../services/cache');
+const express = require('express')
+const router = express.Router()
+const db = require('../services/database')
+const cacheService = require('../services/cache')
 
 // 获取所有学科（包含子分类）
 router.get('/', async (req, res) => {
   try {
     // 尝试从缓存获取
-    const cachedSubjects = cacheService.get(cacheService.CACHE_KEYS.SUBJECTS);
+    const cachedSubjects = cacheService.get(cacheService.CACHE_KEYS.SUBJECTS)
     if (cachedSubjects) {
-      res.json(cachedSubjects);
-      return;
+      res.json(cachedSubjects)
+      return
     }
-    
-    const subjects = await db.all('SELECT * FROM subjects ORDER BY sort_order ASC');
 
-    
+    const subjects = await db.all('SELECT * FROM subjects ORDER BY sort_order ASC')
+
     // 为每个学科获取子分类
     for (const subject of subjects) {
-      const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ? ORDER BY sort_order ASC', [subject.id]);
+      const subcategories = await db.all(
+        'SELECT * FROM subcategories WHERE subject_id = ? ORDER BY sort_order ASC',
+        [subject.id]
+      )
 
-      subject.subcategories = subcategories || [];
+      subject.subcategories = subcategories || []
     }
-    
+
     // 转换所有学科的字段名
     const subjectsWithCamelCase = subjects.map(subject => ({
       id: subject.id,
@@ -35,354 +37,374 @@ router.get('/', async (req, res) => {
         name: subcat.name,
         iconIndex: subcat.icon_index
       }))
-    }));
-    
+    }))
+
     // 缓存结果
-    cacheService.set(cacheService.CACHE_KEYS.SUBJECTS, subjectsWithCamelCase);
-    res.json(subjectsWithCamelCase);
+    cacheService.set(cacheService.CACHE_KEYS.SUBJECTS, subjectsWithCamelCase)
+    res.json(subjectsWithCamelCase)
   } catch (error) {
-    console.error('获取学科失败:', error);
-    res.status(500).json({ error: '获取学科失败' });
+    console.error('获取学科失败:', error)
+    res.status(500).json({ error: '获取学科失败' })
   }
-});
+})
 
 // 获取学科题目数量统计
 router.get('/stats', async (req, res) => {
   try {
     // 尝试从缓存获取
-    const cachedStats = cacheService.get(cacheService.CACHE_KEYS.SUBJECTS_STATS);
+    const cachedStats = cacheService.get(cacheService.CACHE_KEYS.SUBJECTS_STATS)
     if (cachedStats) {
-      res.json(cachedStats);
-      return;
+      res.json(cachedStats)
+      return
     }
-    
+
     const results = await db.all(`
       SELECT s.id, s.name, COUNT(q.id) as questionCount
       FROM subjects s
       LEFT JOIN questions q ON s.id = q.subject_id
       GROUP BY s.id
       ORDER BY s.sort_order
-    `);
-    
+    `)
+
     // 转换字段名为驼峰命名
     const statsWithCamelCase = results.map(stat => ({
       id: stat.id,
       name: stat.name,
       questionCount: stat.questionCount
-    }));
-    
+    }))
+
     // 缓存结果
-    cacheService.set(cacheService.CACHE_KEYS.SUBJECTS_STATS, statsWithCamelCase, 3600); // 缓存1小时
-    res.json(statsWithCamelCase);
+    cacheService.set(cacheService.CACHE_KEYS.SUBJECTS_STATS, statsWithCamelCase, 3600) // 缓存1小时
+    res.json(statsWithCamelCase)
   } catch (error) {
-    console.error('获取学科统计数据失败:', error);
-    res.status(500).json({ error: '获取数据失败' });
+    console.error('获取学科统计数据失败:', error)
+    res.status(500).json({ error: '获取数据失败' })
   }
-});
+})
 
 // 获取指定学科的子分类
 router.get('/:id/subcategories', async (req, res) => {
   try {
-    const subjectId = req.params.id;
-    const cacheKey = cacheService.generateSubcategoryKey(subjectId);
-    
-    // 尝试从缓存获取
-    const cachedSubcategories = cacheService.get(cacheKey);
-    if (cachedSubcategories) {
-      res.json(cachedSubcategories);
-      return;
-    }
-    
-    const subcategories = await db.all('SELECT * FROM subcategories WHERE subject_id = ? ORDER BY sort_order ASC', [subjectId]);
+    const subjectId = req.params.id
+    const cacheKey = cacheService.generateSubcategoryKey(subjectId)
 
-    
+    // 尝试从缓存获取
+    const cachedSubcategories = cacheService.get(cacheKey)
+    if (cachedSubcategories) {
+      res.json(cachedSubcategories)
+      return
+    }
+
+    const subcategories = await db.all(
+      'SELECT * FROM subcategories WHERE subject_id = ? ORDER BY sort_order ASC',
+      [subjectId]
+    )
+
     // 缓存结果
-    cacheService.set(cacheKey, subcategories);
-    res.json(subcategories);
+    cacheService.set(cacheKey, subcategories)
+    res.json(subcategories)
   } catch (error) {
-    console.error('获取子分类失败:', error);
-    res.status(500).json({ error: '获取子分类失败' });
+    console.error('获取子分类失败:', error)
+    res.status(500).json({ error: '获取子分类失败' })
   }
-});
+})
 
 // 添加学科
 router.post('/', async (req, res) => {
   try {
-    const { name, iconIndex = 0 } = req.body;
-    
+    const { name, iconIndex = 0 } = req.body
+
     if (!name) {
-      res.status(400).json({ error: '学科名称不能为空' });
-      return;
+      res.status(400).json({ error: '学科名称不能为空' })
+      return
     }
-    
-    const result = await db.run('INSERT INTO subjects (name, icon_index) VALUES (?, ?)', [name, iconIndex]);
-    
+
+    const result = await db.run('INSERT INTO subjects (name, icon_index) VALUES (?, ?)', [
+      name,
+      iconIndex
+    ])
+
     // 清除缓存
-    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
-    
+    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
+
     // 返回新添加的学科
-    const newSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [result.insertId]);
+    const newSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [result.insertId])
     // 转换字段名为驼峰命名
     const formattedSubject = {
       id: newSubject.id,
       name: newSubject.name,
       iconIndex: newSubject.icon_index
-    };
-    res.json(formattedSubject);
+    }
+    res.json(formattedSubject)
   } catch (error) {
-    console.error('添加学科失败:', error);
-    res.status(500).json({ error: '添加学科失败' });
+    console.error('添加学科失败:', error)
+    res.status(500).json({ error: '添加学科失败' })
   }
-});
+})
 
 // 更新学科排序
 router.put('/sort', async (req, res) => {
   try {
-    const { subjectOrder } = req.body;
-    
+    const { subjectOrder } = req.body
+
     if (!Array.isArray(subjectOrder)) {
-      res.status(400).json({ error: '学科排序数据格式错误' });
-      return;
+      res.status(400).json({ error: '学科排序数据格式错误' })
+      return
     }
-    
+
     // 获取连接并开启事务
-    const connection = await db.pool.getConnection();
-    
+    const connection = await db.pool.getConnection()
+
     try {
-      await connection.beginTransaction();
-      
+      await connection.beginTransaction()
+
       // 更新每个学科的排序值
       for (let i = 0; i < subjectOrder.length; i++) {
-        const subjectId = subjectOrder[i];
-        await connection.execute('UPDATE subjects SET sort_order = ? WHERE id = ?', [i, subjectId]);
+        const subjectId = subjectOrder[i]
+        await connection.execute('UPDATE subjects SET sort_order = ? WHERE id = ?', [i, subjectId])
       }
-      
+
       // 提交事务
-      await connection.commit();
-      
+      await connection.commit()
+
       // 清除缓存
-      cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
-      
-      res.json({ success: true });
+      cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
+
+      res.json({ success: true })
     } catch (error) {
       // 回滚事务
       if (connection) {
-        await connection.rollback();
+        await connection.rollback()
       }
-      throw error;
+      throw error
     } finally {
       // 释放连接
       if (connection) {
         try {
-          connection.release();
+          connection.release()
         } catch (e) {
-          console.error('释放连接失败:', e);
+          console.error('释放连接失败:', e)
         }
       }
     }
   } catch (error) {
-    console.error('更新学科排序失败:', error);
-    res.status(500).json({ error: '更新学科排序失败' });
+    console.error('更新学科排序失败:', error)
+    res.status(500).json({ error: '更新学科排序失败' })
   }
-});
+})
 
 // 更新学科
 router.put('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, iconIndex, showInHistoryQuiz } = req.body;
-    
+    const { id } = req.params
+    const { name, iconIndex, showInHistoryQuiz } = req.body
+
     if (!name) {
-      res.status(400).json({ error: '学科名称不能为空' });
-      return;
+      res.status(400).json({ error: '学科名称不能为空' })
+      return
     }
-    
+
     // 将 showInHistoryQuiz 转换为 0/1
-    const showInHistoryQuizValue = showInHistoryQuiz ? 1 : 0;
-    
-    await db.run('UPDATE subjects SET name = ?, icon_index = ?, show_in_history_quiz = ? WHERE id = ?', [name, iconIndex, showInHistoryQuizValue, id]);
-    
+    const showInHistoryQuizValue = showInHistoryQuiz ? 1 : 0
+
+    await db.run(
+      'UPDATE subjects SET name = ?, icon_index = ?, show_in_history_quiz = ? WHERE id = ?',
+      [name, iconIndex, showInHistoryQuizValue, id]
+    )
+
     // 清除缓存
-    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
-    
+    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
+
     // 获取更新后的学科
-    const updatedSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [id]);
+    const updatedSubject = await db.get('SELECT * FROM subjects WHERE id = ?', [id])
     // 转换字段名为驼峰命名
     const formattedSubject = {
       id: updatedSubject.id,
       name: updatedSubject.name,
       iconIndex: updatedSubject.icon_index,
       showInHistoryQuiz: updatedSubject.show_in_history_quiz === 1
-    };
-    res.json(formattedSubject);
+    }
+    res.json(formattedSubject)
   } catch (error) {
-    console.error('更新学科失败:', error);
-    res.status(500).json({ error: '更新学科失败' });
+    console.error('更新学科失败:', error)
+    res.status(500).json({ error: '更新学科失败' })
   }
-});
+})
 
 // 删除学科
 router.delete('/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    
-    await db.run('DELETE FROM subjects WHERE id = ?', [id]);
-    
+    const { id } = req.params
+
+    await db.run('DELETE FROM subjects WHERE id = ?', [id])
+
     // 清除缓存
-    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
-    
-    res.json({ success: true });
+    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
+
+    res.json({ success: true })
   } catch (error) {
-    console.error('删除学科失败:', error);
-    res.status(500).json({ error: '删除学科失败' });
+    console.error('删除学科失败:', error)
+    res.status(500).json({ error: '删除学科失败' })
   }
-});
+})
 
 // 添加子分类
 router.post('/:subjectId/subcategories', async (req, res) => {
   try {
-    const { subjectId } = req.params;
-    const { name, iconIndex = 0 } = req.body;
-    
+    const { subjectId } = req.params
+    const { name, iconIndex = 0 } = req.body
+
     if (!name) {
-      res.status(400).json({ error: '子分类名称不能为空' });
-      return;
+      res.status(400).json({ error: '子分类名称不能为空' })
+      return
     }
-    
-    const result = await db.run('INSERT INTO subcategories (subject_id, name, icon_index) VALUES (?, ?, ?)', [subjectId, name, iconIndex]);
-    
+
+    const result = await db.run(
+      'INSERT INTO subcategories (subject_id, name, icon_index) VALUES (?, ?, ?)',
+      [subjectId, name, iconIndex]
+    )
+
     // 清除缓存
-    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
-    cacheService.del(cacheService.generateSubcategoryKey(subjectId));
-    
+    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
+    cacheService.del(cacheService.generateSubcategoryKey(subjectId))
+
     // 返回新添加的子分类
-    const newSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [result.insertId]);
+    const newSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [
+      result.insertId
+    ])
     // 转换字段名为驼峰命名
     const formattedSubcategory = {
       id: newSubcategory.id,
       subjectId: newSubcategory.subject_id,
       name: newSubcategory.name,
       iconIndex: newSubcategory.icon_index
-    };
-    res.json(formattedSubcategory);
+    }
+    res.json(formattedSubcategory)
   } catch (error) {
-    console.error('添加子分类失败:', error);
-    res.status(500).json({ error: '添加子分类失败' });
+    console.error('添加子分类失败:', error)
+    res.status(500).json({ error: '添加子分类失败' })
   }
-});
+})
 
 // 更新子分类
 router.put('/subcategories/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    const { name, iconIndex } = req.body;
-    
+    const { id } = req.params
+    const { name, iconIndex } = req.body
+
     if (!name) {
-      res.status(400).json({ error: '子分类名称不能为空' });
-      return;
+      res.status(400).json({ error: '子分类名称不能为空' })
+      return
     }
-    
+
     // 获取子分类信息，用于清除缓存
-    const subcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id]);
-    
-    await db.run('UPDATE subcategories SET name = ?, icon_index = ? WHERE id = ?', [name, iconIndex, id]);
-    
+    const subcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id])
+
+    await db.run('UPDATE subcategories SET name = ?, icon_index = ? WHERE id = ?', [
+      name,
+      iconIndex,
+      id
+    ])
+
     // 清除缓存
-    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
+    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
     if (subcategory) {
-      cacheService.del(cacheService.generateSubcategoryKey(subcategory.subject_id));
+      cacheService.del(cacheService.generateSubcategoryKey(subcategory.subject_id))
     }
-    
+
     // 获取更新后的子分类
-    const updatedSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id]);
+    const updatedSubcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id])
     // 转换字段名为驼峰命名
     const formattedSubcategory = {
       id: updatedSubcategory.id,
       subjectId: updatedSubcategory.subject_id,
       name: updatedSubcategory.name,
       iconIndex: updatedSubcategory.icon_index
-    };
-    res.json(formattedSubcategory);
+    }
+    res.json(formattedSubcategory)
   } catch (error) {
-    console.error('更新子分类失败:', error);
-    res.status(500).json({ error: '更新子分类失败' });
+    console.error('更新子分类失败:', error)
+    res.status(500).json({ error: '更新子分类失败' })
   }
-});
+})
 
 // 删除子分类
 router.delete('/subcategories/:id', async (req, res) => {
   try {
-    const { id } = req.params;
-    
+    const { id } = req.params
+
     // 获取子分类信息，用于清除缓存
-    const subcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id]);
-    
-    await db.run('DELETE FROM subcategories WHERE id = ?', [id]);
-    
+    const subcategory = await db.get('SELECT * FROM subcategories WHERE id = ?', [id])
+
+    await db.run('DELETE FROM subcategories WHERE id = ?', [id])
+
     // 清除缓存
-    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
+    cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
     if (subcategory) {
-      cacheService.del(cacheService.generateSubcategoryKey(subcategory.subject_id));
+      cacheService.del(cacheService.generateSubcategoryKey(subcategory.subject_id))
     }
-    
-    res.json({ success: true });
+
+    res.json({ success: true })
   } catch (error) {
-    console.error('删除子分类失败:', error);
-    res.status(500).json({ error: '删除子分类失败' });
+    console.error('删除子分类失败:', error)
+    res.status(500).json({ error: '删除子分类失败' })
   }
-});
+})
 
 // 更新子分类排序
 router.put('/:subjectId/subcategories/sort', async (req, res) => {
   try {
-    const { subjectId } = req.params;
-    const { subcategoryOrder } = req.body;
-    
+    const { subjectId } = req.params
+    const { subcategoryOrder } = req.body
+
     if (!Array.isArray(subcategoryOrder)) {
-      res.status(400).json({ error: '子分类排序数据格式错误' });
-      return;
+      res.status(400).json({ error: '子分类排序数据格式错误' })
+      return
     }
-    
+
     // 获取连接并开启事务
-    const connection = await db.pool.getConnection();
-    
+    const connection = await db.pool.getConnection()
+
     try {
-      await connection.beginTransaction();
-      
+      await connection.beginTransaction()
+
       // 更新每个子分类的排序值
       for (let i = 0; i < subcategoryOrder.length; i++) {
-        const subcategoryId = subcategoryOrder[i];
-        await connection.execute('UPDATE subcategories SET sort_order = ? WHERE id = ? AND subject_id = ?', [i, subcategoryId, subjectId]);
+        const subcategoryId = subcategoryOrder[i]
+        await connection.execute(
+          'UPDATE subcategories SET sort_order = ? WHERE id = ? AND subject_id = ?',
+          [i, subcategoryId, subjectId]
+        )
       }
-      
+
       // 提交事务
-      await connection.commit();
-      
+      await connection.commit()
+
       // 清除缓存
-      cacheService.del(cacheService.CACHE_KEYS.SUBJECTS);
-      cacheService.del(cacheService.generateSubcategoryKey(subjectId));
-      
-      res.json({ success: true });
+      cacheService.del(cacheService.CACHE_KEYS.SUBJECTS)
+      cacheService.del(cacheService.generateSubcategoryKey(subjectId))
+
+      res.json({ success: true })
     } catch (error) {
       // 回滚事务
       if (connection) {
-        await connection.rollback();
+        await connection.rollback()
       }
-      throw error;
+      throw error
     } finally {
       // 释放连接
       if (connection) {
         try {
-          connection.release();
+          connection.release()
         } catch (e) {
-          console.error('释放连接失败:', e);
+          console.error('释放连接失败:', e)
         }
       }
     }
   } catch (error) {
-    console.error('更新子分类排序失败:', error);
-    res.status(500).json({ error: '更新子分类排序失败' });
+    console.error('更新子分类排序失败:', error)
+    res.status(500).json({ error: '更新子分类排序失败' })
   }
-});
+})
 
-module.exports = router;
+module.exports = router

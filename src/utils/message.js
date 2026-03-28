@@ -83,11 +83,7 @@ export const confirm = async (message, title = '提示', options = {}) => {
  * @returns {Promise<boolean>} 用户是否确认
  */
 export const confirmDelete = async (itemName = '此项目') => {
-  return confirm(
-    `确定要删除${itemName}吗？此操作不可恢复。`,
-    '删除确认',
-    { type: 'warning' }
-  )
+  return confirm(`确定要删除${itemName}吗？此操作不可恢复。`, '删除确认', { type: 'warning' })
 }
 
 /**
@@ -97,11 +93,7 @@ export const confirmDelete = async (itemName = '此项目') => {
  * @returns {Promise<boolean>} 用户是否确认
  */
 export const confirmBatch = async (count, action = '删除') => {
-  return confirm(
-    `确定要批量${action} ${count} 个项目吗？`,
-    '批量操作确认',
-    { type: 'warning' }
-  )
+  return confirm(`确定要批量${action} ${count} 个项目吗？`, '批量操作确认', { type: 'warning' })
 }
 
 /**
@@ -125,7 +117,7 @@ export const notify = (title, message, type = 'info', duration = 4500) => {
  * 操作成功提示（带操作名称）
  * @param {string} action - 操作名称，如 '保存'、'删除'
  */
-export const actionSuccess = (action) => {
+export const actionSuccess = action => {
   success(`${action}成功`)
 }
 

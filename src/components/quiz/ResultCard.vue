@@ -4,13 +4,13 @@
       <h2 class="result-title">{{ isErrorCollection ? '错题巩固结果' : '答题结果' }}</h2>
       <div class="result-icon">{{ resultIcon }}</div>
     </div>
-    
+
     <div class="score-main">
       <div class="score-number">{{ score }}</div>
       <div class="score-divider">/</div>
       <div class="score-total">{{ totalQuestions }}</div>
     </div>
-    
+
     <div class="stats-grid">
       <div class="stat-item">
         <div class="stat-label">正确率</div>
@@ -25,7 +25,7 @@
         <div class="stat-value">{{ points }} 分</div>
       </div>
     </div>
-    
+
     <div v-if="isErrorCollection" class="error-collection-summary">
       <div class="summary-item">
         <span class="summary-label">巩固完成数：</span>
@@ -36,18 +36,16 @@
         <span class="summary-value">{{ overallProgress }}%</span>
       </div>
     </div>
-    
+
     <div class="encouragement">
       {{ getEncouragement() }}
     </div>
-    
+
     <div class="action-buttons">
       <button class="action-btn primary" @click="generateNewQuestions">
         {{ isErrorCollection ? '🔄 继续巩固' : '🔄 重新闯关' }}
       </button>
-      <button class="action-btn secondary" @click="backToSubjects">
-        🏠 返回首页
-      </button>
+      <button class="action-btn secondary" @click="backToSubjects">🏠 返回首页</button>
     </div>
   </div>
 </template>
@@ -95,11 +93,13 @@ const resultIcon = computed(() => {
   return '😐'
 })
 
-
-
 // 巩固完成数
 const completedCount = computed(() => {
-  if (!props.isErrorCollection || !props.errorCollectionProgress || !props.errorCollectionProgress.length) {
+  if (
+    !props.isErrorCollection ||
+    !props.errorCollectionProgress ||
+    !props.errorCollectionProgress.length
+  ) {
     return 0
   }
   return props.errorCollectionProgress.filter(item => item.correctCount >= MAX_CORRECT_COUNT).length
@@ -107,10 +107,17 @@ const completedCount = computed(() => {
 
 // 整体进度
 const overallProgress = computed(() => {
-  if (!props.isErrorCollection || !props.errorCollectionProgress || !props.errorCollectionProgress.length) {
+  if (
+    !props.isErrorCollection ||
+    !props.errorCollectionProgress ||
+    !props.errorCollectionProgress.length
+  ) {
     return 0
   }
-  const totalProgress = props.errorCollectionProgress.reduce((sum, item) => sum + item.correctCount, 0)
+  const totalProgress = props.errorCollectionProgress.reduce(
+    (sum, item) => sum + item.correctCount,
+    0
+  )
   const maxProgress = props.errorCollectionProgress.length * MAX_CORRECT_COUNT
   return maxProgress > 0 ? Math.round((totalProgress / maxProgress) * 100) : 0
 })
@@ -143,7 +150,7 @@ const getEncouragement = () => {
 }
 
 // 格式化时间
-const formatTime = (seconds) => {
+const formatTime = seconds => {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   return `${minutes}分${remainingSeconds}秒`
@@ -197,7 +204,7 @@ const backToSubjects = () => {
 .score-number {
   font-size: 64px;
   font-weight: 700;
-  color: #409EFF;
+  color: #409eff;
   margin-right: 10px;
 }
 
@@ -255,7 +262,7 @@ const backToSubjects = () => {
 }
 
 .summary-label {
-  color: #67C23A;
+  color: #67c23a;
   font-weight: 500;
 }
 
@@ -292,7 +299,7 @@ const backToSubjects = () => {
 }
 
 .action-btn.primary {
-  background: #409EFF;
+  background: #409eff;
   color: white;
 }
 
@@ -313,28 +320,28 @@ const backToSubjects = () => {
   .result-card {
     padding: 20px;
   }
-  
+
   .score-number {
     font-size: 48px;
   }
-  
+
   .score-divider {
     font-size: 24px;
   }
-  
+
   .score-total {
     font-size: 24px;
   }
-  
+
   .stats-grid {
     grid-template-columns: 1fr;
     gap: 15px;
   }
-  
+
   .action-buttons {
     flex-direction: column;
   }
-  
+
   .action-btn {
     width: 100%;
   }

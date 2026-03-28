@@ -7,11 +7,7 @@
           <span>错题率统计（按学科）</span>
         </div>
       </template>
-      <el-table
-        :data="errorStatsData"
-        stripe
-        style="width: 100%"
-      >
+      <el-table :data="errorStatsData" stripe style="width: 100%">
         <el-table-column prop="subject" label="学科" width="150" align="center" />
         <el-table-column prop="total_attempts" label="答题次数" width="120" align="center">
           <template #default="{ row }">
@@ -45,11 +41,7 @@
           <span>易错题 TOP20</span>
         </div>
       </template>
-      <el-table
-        :data="errorQuestionsData"
-        stripe
-        style="width: 100%"
-      >
+      <el-table :data="errorQuestionsData" stripe style="width: 100%">
         <el-table-column label="排名" width="70" align="center">
           <template #default="{ $index }">
             <el-tag
@@ -71,7 +63,9 @@
         </el-table-column>
         <el-table-column label="错误次数" width="120" align="center">
           <template #default="{ row }">
-            <el-tag type="danger">{{ (row.total_attempts || 0) - (row.correct_count || 0) }}</el-tag>
+            <el-tag type="danger">
+              {{ (row.total_attempts || 0) - (row.correct_count || 0) }}
+            </el-tag>
           </template>
         </el-table-column>
         <el-table-column label="错误率" min-width="150" align="center">
@@ -84,7 +78,8 @@
         <el-table-column label="操作" width="100" align="center" fixed="right">
           <template #default="{ row }">
             <el-button type="primary" size="small" link @click="handleViewDetail(row)">
-              <el-icon><View /></el-icon> 详情
+              <el-icon><View /></el-icon>
+              详情
             </el-button>
           </template>
         </el-table-column>
@@ -92,13 +87,8 @@
     </el-card>
 
     <!-- 题目详情弹窗 -->
-    <el-dialog
-      v-model="previewVisible"
-      title="题目详情"
-      width="700px"
-      destroy-on-close
-    >
-      <div class="preview-content" v-loading="previewLoading" v-if="previewData">
+    <el-dialog v-model="previewVisible" title="题目详情" width="700px" destroy-on-close>
+      <div v-if="previewData" v-loading="previewLoading" class="preview-content">
         <div class="preview-item">
           <label>题目ID：</label>
           <span>{{ previewData.id }}</span>
@@ -119,15 +109,19 @@
           <label>题目内容：</label>
           <div class="preview-content-box" v-html="previewData.content"></div>
         </div>
-        <div class="preview-item" v-if="previewData.image">
+        <div v-if="previewData.image" class="preview-item">
           <label>题目图片：</label>
-          <el-image :src="previewData.image" fit="contain" style="max-width: 400px; max-height: 300px;" />
+          <el-image
+            :src="previewData.image"
+            fit="contain"
+            style="max-width: 400px; max-height: 300px"
+          />
         </div>
-        <div class="preview-item" v-if="previewData.audio">
+        <div v-if="previewData.audio" class="preview-item">
           <label>音频：</label>
-          <audio controls :src="previewData.audio" style="max-width: 100%;"></audio>
+          <audio controls :src="previewData.audio" style="max-width: 100%"></audio>
         </div>
-        <div class="preview-item" v-if="previewData.options && previewData.options.length > 0">
+        <div v-if="previewData.options && previewData.options.length > 0" class="preview-item">
           <label>选项：</label>
           <div class="preview-options">
             <div v-for="(option, index) in previewData.options" :key="index" class="preview-option">
@@ -140,7 +134,7 @@
           <label>正确答案：</label>
           <el-tag type="success" effect="dark">{{ previewData.answer }}</el-tag>
         </div>
-        <div class="preview-item" v-if="previewData.explanation">
+        <div v-if="previewData.explanation" class="preview-item">
           <label>解析：</label>
           <div class="preview-content-box" v-html="previewData.explanation"></div>
         </div>
@@ -149,7 +143,9 @@
           <div class="stats-info">
             <el-tag type="info">总答题: {{ previewData.totalAttempts || 0 }} 次</el-tag>
             <el-tag type="success">正确: {{ previewData.correctCount || 0 }} 次</el-tag>
-            <el-tag type="danger">错误: {{ (previewData.totalAttempts || 0) - (previewData.correctCount || 0) }} 次</el-tag>
+            <el-tag type="danger">
+              错误: {{ (previewData.totalAttempts || 0) - (previewData.correctCount || 0) }} 次
+            </el-tag>
           </div>
         </div>
       </div>
@@ -190,52 +186,52 @@ const errorQuestionsData = computed(() => {
 })
 
 // 获取错误率颜色
-const getErrorColor = (rate) => {
+const getErrorColor = rate => {
   if (rate >= 50) return '#F56C6C'
   if (rate >= 30) return '#E6A23C'
   return '#67C23A'
 }
 
 // 获取错误率标签类型
-const getErrorTagType = (rate) => {
+const getErrorTagType = rate => {
   if (rate >= 50) return 'danger'
   if (rate >= 30) return 'warning'
   return 'info'
 }
 
 // 计算错误率
-const getErrorRate = (row) => {
+const getErrorRate = row => {
   const total = row.total_attempts || 0
   const correct = row.correct_count || 0
   if (total === 0) return 0
-  return ((total - correct) / total * 100)
+  return ((total - correct) / total) * 100
 }
 
 // XSS 防护
-const sanitizeHtml = (html) => {
+const sanitizeHtml = html => {
   if (!html) return ''
   return xssFilter.sanitize(html)
 }
 
 // 获取类型标签样式
-const getTypeTagType = (type) => {
+const getTypeTagType = type => {
   const typeMap = {
-    'single': 'success',
-    'multiple': 'warning',
-    'judgment': 'info',
-    'listening': '',
-    'reading': '',
-    'image': ''
+    single: 'success',
+    multiple: 'warning',
+    judgment: 'info',
+    listening: '',
+    reading: '',
+    image: ''
   }
   return typeMap[type] || ''
 }
 
 // 查看题目详情
-const handleViewDetail = async (row) => {
+const handleViewDetail = async row => {
   previewLoading.value = true
   previewVisible.value = true
   previewData.value = null
-  
+
   try {
     // 解析选项（易错题数据中已有）
     let options = []
@@ -246,7 +242,7 @@ const handleViewDetail = async (row) => {
         console.error('解析选项失败:', e)
       }
     }
-    
+
     // 解析正确答案（易错题数据中已有）
     let answer = row.correct_answer
     if (typeof answer === 'string') {
@@ -261,7 +257,7 @@ const handleViewDetail = async (row) => {
         // 保持原值
       }
     }
-    
+
     // 构建预览数据（优先使用易错题列表中已有的数据）
     previewData.value = {
       id: row.id,
@@ -287,14 +283,14 @@ const handleViewDetail = async (row) => {
 }
 
 // 获取类型名称
-const getTypeName = (type) => {
+const getTypeName = type => {
   const typeNames = {
-    'single': '单选题',
-    'multiple': '多选题',
-    'judgment': '判断题',
-    'listening': '听力题',
-    'reading': '阅读题',
-    'image': '看图题'
+    single: '单选题',
+    multiple: '多选题',
+    judgment: '判断题',
+    listening: '听力题',
+    reading: '阅读题',
+    image: '看图题'
   }
   return typeNames[type] || '未知类型'
 }
@@ -348,11 +344,11 @@ const getTypeName = (type) => {
     flex-direction: column;
     align-items: flex-start;
   }
-  
+
   .error-rate-cell .el-progress {
     width: 100%;
   }
-  
+
   .error-rate-text {
     text-align: left;
     margin-top: 5px;

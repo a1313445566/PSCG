@@ -13,27 +13,27 @@
     <div class="user-selector">
       <el-form :inline="true" class="search-form">
         <el-form-item label="学号">
-          <el-input 
-            v-model="studentId" 
-            placeholder="输入学号" 
+          <el-input
+            v-model="studentId"
+            placeholder="输入学号"
             style="width: 150px"
             clearable
             @clear="handleSearch"
           />
         </el-form-item>
         <el-form-item label="姓名">
-          <el-input 
-            v-model="name" 
-            placeholder="输入姓名" 
+          <el-input
+            v-model="name"
+            placeholder="输入姓名"
             style="width: 150px"
             clearable
             @clear="handleSearch"
           />
         </el-form-item>
         <el-form-item label="年级">
-          <el-select 
-            v-model="grade" 
-            placeholder="选择年级" 
+          <el-select
+            v-model="grade"
+            placeholder="选择年级"
             style="width: 120px"
             clearable
             @change="handleSearch"
@@ -42,9 +42,9 @@
           </el-select>
         </el-form-item>
         <el-form-item label="班级">
-          <el-select 
-            v-model="classNum" 
-            placeholder="选择班级" 
+          <el-select
+            v-model="classNum"
+            placeholder="选择班级"
             style="width: 120px"
             clearable
             @change="handleSearch"
@@ -53,7 +53,7 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch" :loading="searching">
+          <el-button type="primary" :loading="searching" @click="handleSearch">
             <el-icon><Search /></el-icon>
             搜索
           </el-button>
@@ -67,7 +67,12 @@
 
     <!-- 用户列表 -->
     <div v-if="userList.length > 0" class="user-list">
-      <el-table :data="userList" style="width: 100%" @row-click="handleSelectUser" highlight-current-row>
+      <el-table
+        :data="userList"
+        style="width: 100%"
+        highlight-current-row
+        @row-click="handleSelectUser"
+      >
         <el-table-column prop="id" label="ID" width="70" />
         <el-table-column prop="student_id" label="学号" width="100" />
         <el-table-column prop="name" label="姓名" width="120" />
@@ -89,11 +94,11 @@
         </el-table-column>
         <el-table-column label="操作" width="120" fixed="right">
           <template #default="{ row }">
-            <el-button 
-              type="primary" 
-              size="small" 
-              @click.stop="handleAnalyzeUser(row.id)"
+            <el-button
+              type="primary"
+              size="small"
               :loading="analyzingId === row.id"
+              @click.stop="handleAnalyzeUser(row.id)"
             >
               {{ getAnalysisStatus(row.id) }}
             </el-button>
@@ -118,9 +123,9 @@
     <el-empty v-else-if="!searching" description="请搜索用户进行分析" />
 
     <!-- 分析结果对话框 -->
-    <el-dialog 
-      v-model="showAnalysisDialog" 
-      title="学习风格分析结果" 
+    <el-dialog
+      v-model="showAnalysisDialog"
+      title="学习风格分析结果"
       width="80%"
       @close="closeDialog"
     >
@@ -133,7 +138,9 @@
           </div>
           <div class="stat-item">
             <div class="stat-label">答题时间稳定性</div>
-            <div class="stat-value">{{ currentStyleAnalysis.answer_time_stability.toFixed(1) }}</div>
+            <div class="stat-value">
+              {{ currentStyleAnalysis.answer_time_stability.toFixed(1) }}
+            </div>
           </div>
           <div class="stat-item">
             <div class="stat-label">平均修改次数</div>
@@ -152,8 +159,8 @@
             AI 深度分析
           </div>
           <div class="dimensions-grid">
-            <div 
-              v-for="(value, dimension) in currentStyleAnalysis.analysis_dimensions" 
+            <div
+              v-for="(value, dimension) in currentStyleAnalysis.analysis_dimensions"
               :key="dimension"
               class="dimension-item"
             >
@@ -164,14 +171,14 @@
         </div>
 
         <!-- 学习风格标签 -->
-        <div class="style-tags-section" v-if="parsedStyleTags.length > 0">
+        <div v-if="parsedStyleTags.length > 0" class="style-tags-section">
           <div class="section-title">
             <el-icon><CollectionTag /></el-icon>
             学习风格标签
           </div>
           <div class="tags-container">
-            <el-tag 
-              v-for="(tag, index) in parsedStyleTags" 
+            <el-tag
+              v-for="(tag, index) in parsedStyleTags"
               :key="index"
               class="style-tag"
               :type="getStyleTagType(tag)"
@@ -183,7 +190,10 @@
         </div>
 
         <!-- 优势分析 -->
-        <div v-if="currentStyleAnalysis.strengths && currentStyleAnalysis.strengths.length > 0" class="strengths-section">
+        <div
+          v-if="currentStyleAnalysis.strengths && currentStyleAnalysis.strengths.length > 0"
+          class="strengths-section"
+        >
           <div class="section-title">
             <el-icon><Star /></el-icon>
             发现的优势
@@ -196,7 +206,10 @@
         </div>
 
         <!-- 改进建议 -->
-        <div v-if="currentStyleAnalysis.improvements && currentStyleAnalysis.improvements.length > 0" class="improvements-section">
+        <div
+          v-if="currentStyleAnalysis.improvements && currentStyleAnalysis.improvements.length > 0"
+          class="improvements-section"
+        >
           <div class="section-title">
             <el-icon><Aim /></el-icon>
             改进方向
@@ -209,7 +222,13 @@
         </div>
 
         <!-- 推荐行动 -->
-        <div v-if="currentStyleAnalysis.recommended_actions && currentStyleAnalysis.recommended_actions.length > 0" class="actions-section">
+        <div
+          v-if="
+            currentStyleAnalysis.recommended_actions &&
+            currentStyleAnalysis.recommended_actions.length > 0
+          "
+          class="actions-section"
+        >
           <div class="section-title">
             <el-icon><List /></el-icon>
             推荐行动
@@ -227,21 +246,17 @@
         </div>
 
         <!-- 错误模式分析 -->
-        <div class="error-patterns-section" v-if="Object.keys(parsedErrorPatterns).length > 0">
+        <div v-if="Object.keys(parsedErrorPatterns).length > 0" class="error-patterns-section">
           <div class="section-title">
             <el-icon><Warning /></el-icon>
             错误模式分析
           </div>
           <div class="error-grid">
-            <div 
-              v-for="(count, pattern) in parsedErrorPatterns" 
-              :key="pattern"
-              class="error-item"
-            >
+            <div v-for="(count, pattern) in parsedErrorPatterns" :key="pattern" class="error-item">
               <div class="error-name">{{ pattern }}</div>
               <div class="error-count">
-                <el-progress 
-                  :percentage="getErrorPercentage(count)" 
+                <el-progress
+                  :percentage="getErrorPercentage(count)"
                   :color="getErrorColor(pattern)"
                 />
                 <span class="count-text">{{ count }} 次</span>
@@ -251,30 +266,36 @@
         </div>
 
         <!-- 难度偏好 -->
-        <div class="difficulty-preference-section" v-if="currentStyleAnalysis.difficulty_preference">
+        <div
+          v-if="currentStyleAnalysis.difficulty_preference"
+          class="difficulty-preference-section"
+        >
           <div class="section-title">
             <el-icon><TrendCharts /></el-icon>
             难度偏好
           </div>
           <div class="difficulty-preference">
-            <el-tag :type="getDifficultyPreferenceType(currentStyleAnalysis.difficulty_preference)" size="large">
+            <el-tag
+              :type="getDifficultyPreferenceType(currentStyleAnalysis.difficulty_preference)"
+              size="large"
+            >
               {{ getDifficultyPreferenceLabel(currentStyleAnalysis.difficulty_preference) }}
             </el-tag>
-            <el-text type="info" size="small" style="margin-left: 10px;">
+            <el-text type="info" size="small" style="margin-left: 10px">
               平均偏好难度: {{ currentStyleAnalysis.difficulty_preference.toFixed(2) }}
             </el-text>
           </div>
         </div>
 
         <!-- AI 建议 -->
-        <div class="suggestion-section" v-if="currentStyleAnalysis.ai_suggestion">
+        <div v-if="currentStyleAnalysis.ai_suggestion" class="suggestion-section">
           <div class="section-title">
             <el-icon><ChatDotRound /></el-icon>
             AI 学习建议
           </div>
-          <el-alert 
-            :title="currentStyleAnalysis.ai_suggestion" 
-            type="info" 
+          <el-alert
+            :title="currentStyleAnalysis.ai_suggestion"
+            type="info"
             :closable="false"
             show-icon
           />
@@ -285,7 +306,7 @@
           <el-text type="info" size="small">
             已分析 {{ currentStyleAnalysis.total_analyzed_sessions }} 次答题会话
           </el-text>
-          <el-text type="info" size="small" v-if="currentStyleAnalysis.updated_at">
+          <el-text v-if="currentStyleAnalysis.updated_at" type="info" size="small">
             · 上次更新: {{ formatDate(currentStyleAnalysis.updated_at) }}
           </el-text>
         </div>
@@ -299,23 +320,23 @@ import { ref, computed, onMounted } from 'vue'
 import { api } from '@/utils/api'
 import message from '@/utils/message'
 import { useUserFilters } from '@/composables/useUserFilters'
-import { 
-  TrendCharts, Refresh, CollectionTag, 
-  Warning, ChatDotRound, Search, RefreshRight,
-  DataAnalysis, Star, Aim, List
+import {
+  TrendCharts,
+  Refresh,
+  CollectionTag,
+  Warning,
+  ChatDotRound,
+  Search,
+  RefreshRight,
+  DataAnalysis,
+  Star,
+  Aim,
+  List
 } from '@element-plus/icons-vue'
 
 // 使用筛选 Hook
-const { 
-  studentId, 
-  name, 
-  grade, 
-  classNum,
-  validate, 
-  reset, 
-  toParams,
-  hasActiveFilters 
-} = useUserFilters()
+const { studentId, name, grade, classNum, validate, reset, toParams, hasActiveFilters } =
+  useUserFilters()
 
 // 响应式数据
 const searching = ref(false)
@@ -334,7 +355,7 @@ const total = ref(0)
 // 计算属性：解析学习风格标签
 const parsedStyleTags = computed(() => {
   if (!currentStyleAnalysis.value?.learning_style_tags) return []
-  
+
   try {
     if (typeof currentStyleAnalysis.value.learning_style_tags === 'string') {
       return JSON.parse(currentStyleAnalysis.value.learning_style_tags)
@@ -349,7 +370,7 @@ const parsedStyleTags = computed(() => {
 // 计算属性：解析错误模式
 const parsedErrorPatterns = computed(() => {
   if (!currentStyleAnalysis.value?.error_patterns) return {}
-  
+
   try {
     if (typeof currentStyleAnalysis.value.error_patterns === 'string') {
       return JSON.parse(currentStyleAnalysis.value.error_patterns)
@@ -369,9 +390,9 @@ const handleSearch = async () => {
     message.warning(errors[0])
     return
   }
-  
+
   searching.value = true
-  
+
   try {
     // 使用 composable 提供的参数转换方法
     const params = {
@@ -379,9 +400,9 @@ const handleSearch = async () => {
       limit: pageSize.value,
       ...toParams()
     }
-    
+
     const result = await api.get('/users', params)
-    
+
     // 兼容两种响应格式
     if (result.data) {
       // 新的分页格式
@@ -412,18 +433,18 @@ const handleReset = () => {
 }
 
 // 选择用户
-const handleSelectUser = (row) => {
+const handleSelectUser = row => {
   handleAnalyzeUser(row.id)
 }
 
 // 分析用户学习风格
-const handleAnalyzeUser = async (userId) => {
+const handleAnalyzeUser = async userId => {
   analyzingId.value = userId
-  
+
   try {
     // 先加载已有的分析结果
     const loadResult = await api.get(`/answer-behavior/user-style/${userId}`)
-    
+
     if (loadResult.success && loadResult.styleAnalysis) {
       // 已有分析结果
       currentStyleAnalysis.value = loadResult.styleAnalysis
@@ -432,7 +453,7 @@ const handleAnalyzeUser = async (userId) => {
     } else {
       // 开始新的分析
       const analyzeResult = await api.post('/answer-behavior/analyze-style', { userId })
-      
+
       if (analyzeResult.success) {
         if (analyzeResult.styleAnalysis) {
           // 同步返回结果
@@ -458,7 +479,7 @@ const handleAnalyzeUser = async (userId) => {
 }
 
 // 获取分析状态
-const getAnalysisStatus = (userId) => {
+const getAnalysisStatus = userId => {
   return analyzedUsers.value.has(userId) ? '查看分析' : '分析'
 }
 
@@ -468,7 +489,7 @@ const closeDialog = () => {
 }
 
 // 工具函数 - 完全基于数据，无硬编码
-const getStyleTagType = (tag) => {
+const getStyleTagType = tag => {
   // AI 自主决定标签，前端只负责显示，不预设类型
   // 使用随机或基于标签内容的哈希来分配颜色，保证视觉多样性
   const types = ['primary', 'success', 'warning', 'danger', 'info']
@@ -476,7 +497,7 @@ const getStyleTagType = (tag) => {
   return types[hash % types.length]
 }
 
-const getErrorColor = (pattern) => {
+const getErrorColor = pattern => {
   // AI 自主分析错误模式，前端只负责渲染
   // 使用基于模式名称的哈希来生成颜色，避免硬编码
   const colors = ['#409eff', '#67c23a', '#e6a23c', '#f56c6c', '#909399', '#b37feb']
@@ -484,16 +505,16 @@ const getErrorColor = (pattern) => {
   return colors[hash % colors.length]
 }
 
-const getErrorPercentage = (count) => {
+const getErrorPercentage = count => {
   if (!currentStyleAnalysis.value?.total_analyzed_sessions) return 0
   return Math.min((count / currentStyleAnalysis.value.total_analyzed_sessions) * 100, 100)
 }
 
-const getDifficultyPreferenceType = (pref) => {
+const getDifficultyPreferenceType = pref => {
   // AI 会自主分析并给出建议，前端只负责展示
   // 不预设阈值，完全基于数据本身
   if (typeof pref !== 'number' || isNaN(pref)) return 'info'
-  
+
   // 动态计算：基于数据分布自动调整阈值
   // 使用简单的线性映射：1-2 低难度，2-3 中等，3-5 高难度
   if (pref >= 3) return 'danger'
@@ -501,17 +522,17 @@ const getDifficultyPreferenceType = (pref) => {
   return 'success'
 }
 
-const getDifficultyPreferenceLabel = (pref) => {
+const getDifficultyPreferenceLabel = pref => {
   // 不使用硬编码标签，返回数值让 AI 自主解释
   if (typeof pref !== 'number' || isNaN(pref)) return '数据不足'
-  
+
   // 只返回数值范围描述，具体标签由 AI 决定
   if (pref >= 3) return `难度偏好: ${pref.toFixed(2)} (较高)`
   if (pref >= 2) return `难度偏好: ${pref.toFixed(2)} (中等)`
   return `难度偏好: ${pref.toFixed(2)} (较低)`
 }
 
-const formatDate = (dateStr) => {
+const formatDate = dateStr => {
   if (!dateStr) return ''
   return new Date(dateStr).toLocaleString('zh-CN')
 }

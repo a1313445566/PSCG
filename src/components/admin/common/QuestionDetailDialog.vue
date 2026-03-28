@@ -1,20 +1,26 @@
 <template>
   <el-dialog
     :model-value="dialogVisible"
-    @update:model-value="(value) => emit('update:dialogVisible', value)"
     title="题目详情"
     width="700px"
     :destroy-on-close="true"
+    @update:model-value="value => emit('update:dialogVisible', value)"
   >
     <div v-if="question" class="question-detail">
       <!-- 基本信息 -->
       <div class="info-section">
         <el-tag type="info" size="small">{{ question.subject_name || '未知学科' }}</el-tag>
-        <el-tag type="info" size="small" style="margin-left: 8px;">{{ question.subcategory_name || '未知题库' }}</el-tag>
-        <el-tag :type="getTypeTagType(question.type)" size="small" style="margin-left: 8px;">
+        <el-tag type="info" size="small" style="margin-left: 8px">
+          {{ question.subcategory_name || '未知题库' }}
+        </el-tag>
+        <el-tag :type="getTypeTagType(question.type)" size="small" style="margin-left: 8px">
           {{ getTypeLabel(question.type) }}
         </el-tag>
-        <el-tag :type="getDifficultyTagType(question.difficulty)" size="small" style="margin-left: 8px;">
+        <el-tag
+          :type="getDifficultyTagType(question.difficulty)"
+          size="small"
+          style="margin-left: 8px"
+        >
           难度: {{ question.difficulty || 1 }}
         </el-tag>
       </div>
@@ -29,8 +35,8 @@
       <div v-if="question.options && question.options.length > 0" class="options-section">
         <h3>答案选项</h3>
         <div class="options-list">
-          <div 
-            v-for="(option, index) in question.options" 
+          <div
+            v-for="(option, index) in question.options"
             :key="index"
             class="option-item"
             :class="{
@@ -40,16 +46,33 @@
           >
             <span class="option-letter">{{ String.fromCharCode(65 + index) }}.</span>
             <span class="option-text" v-html="formatOption(option)"></span>
-            <el-tag v-if="isCorrectOption(index)" type="success" size="small" style="margin-left: auto;">正确答案</el-tag>
+            <el-tag
+              v-if="isCorrectOption(index)"
+              type="success"
+              size="small"
+              style="margin-left: auto"
+            >
+              正确答案
+            </el-tag>
           </div>
         </div>
       </div>
 
       <!-- 调试信息（开发环境） -->
-      <div v-if="isDev" class="debug-info" style="margin-top: 20px; padding: 10px; background: #f5f5f5; border-radius: 4px; font-size: 12px;">
+      <div
+        v-if="isDev"
+        class="debug-info"
+        style="
+          margin-top: 20px;
+          padding: 10px;
+          background: #f5f5f5;
+          border-radius: 4px;
+          font-size: 12px;
+        "
+      >
         <details>
-          <summary style="cursor: pointer; font-weight: bold;">调试信息</summary>
-          <pre style="margin-top: 10px; overflow: auto;">{{ debugInfo }}</pre>
+          <summary style="cursor: pointer; font-weight: bold">调试信息</summary>
+          <pre style="margin-top: 10px; overflow: auto">{{ debugInfo }}</pre>
         </details>
       </div>
 
@@ -57,7 +80,7 @@
       <div class="answer-section">
         <div class="answer-row">
           <span class="answer-label">用户答案:</span>
-          <span :class="['answer-value', { 'correct': isUserCorrect, 'wrong': !isUserCorrect }]">
+          <span :class="['answer-value', { correct: isUserCorrect, wrong: !isUserCorrect }]">
             {{ formatAnswer(question.userAnswer || question.user_answer) }}
           </span>
           <el-tag :type="isUserCorrect ? 'success' : 'danger'" size="small">
@@ -111,44 +134,48 @@ const isDev = import.meta.env.DEV
 // 调试信息
 const debugInfo = computed(() => {
   if (!props.question) return '无题目数据'
-  return JSON.stringify({
-    id: props.question.id,
-    type: props.question.type,
-    options: props.question.options,
-    optionsType: typeof props.question.options,
-    optionsLength: props.question.options?.length,
-    correctAnswer: props.question.correctAnswer || props.question.correct_answer,
-    userAnswer: props.question.userAnswer || props.question.user_answer,
-    isCorrect: props.question.isCorrect || props.question.is_correct
-  }, null, 2)
+  return JSON.stringify(
+    {
+      id: props.question.id,
+      type: props.question.type,
+      options: props.question.options,
+      optionsType: typeof props.question.options,
+      optionsLength: props.question.options?.length,
+      correctAnswer: props.question.correctAnswer || props.question.correct_answer,
+      userAnswer: props.question.userAnswer || props.question.user_answer,
+      isCorrect: props.question.isCorrect || props.question.is_correct
+    },
+    null,
+    2
+  )
 })
 
 // 获取题目类型标签
-const getTypeLabel = (type) => {
+const getTypeLabel = type => {
   const typeMap = {
-    'single': '单选题',
-    'multiple': '多选题',
-    'judgment': '判断题',
-    'listening': '听力题',
-    'reading': '阅读题',
-    'image': '看图题'
+    single: '单选题',
+    multiple: '多选题',
+    judgment: '判断题',
+    listening: '听力题',
+    reading: '阅读题',
+    image: '看图题'
   }
   return typeMap[type] || '未知类型'
 }
 
-const getTypeTagType = (type) => {
+const getTypeTagType = type => {
   const typeColorMap = {
-    'single': 'primary',
-    'multiple': 'success',
-    'judgment': 'warning',
-    'listening': 'info',
-    'reading': 'info',
-    'image': 'info'
+    single: 'primary',
+    multiple: 'success',
+    judgment: 'warning',
+    listening: 'info',
+    reading: 'info',
+    image: 'info'
   }
   return typeColorMap[type] || 'info'
 }
 
-const getDifficultyTagType = (difficulty) => {
+const getDifficultyTagType = difficulty => {
   const diff = difficulty || 1
   if (diff <= 2) return 'success'
   if (diff === 3) return 'warning'
@@ -156,7 +183,7 @@ const getDifficultyTagType = (difficulty) => {
 }
 
 // 格式化答案
-const formatAnswer = (answer) => {
+const formatAnswer = answer => {
   if (!answer) return '-'
   if (Array.isArray(answer)) {
     return answer.join(', ')
@@ -165,9 +192,9 @@ const formatAnswer = (answer) => {
 }
 
 // 格式化选项内容（支持富文本）
-const formatOption = (option) => {
+const formatOption = option => {
   if (!option) return ''
-  
+
   // 如果已经是 HTML 字符串，直接返回
   if (typeof option === 'string') {
     // 检查是否包含 HTML 标签
@@ -182,13 +209,13 @@ const formatOption = (option) => {
       .replace(/"/g, '&quot;')
       .replace(/'/g, '&#039;')
   }
-  
+
   // 如果是其他类型，转为字符串
   return String(option)
 }
 
 // 判断是否是正确选项
-const isCorrectOption = (index) => {
+const isCorrectOption = index => {
   const letter = String.fromCharCode(65 + index)
   const correctAnswer = props.question?.correctAnswer || props.question?.correct_answer
   if (Array.isArray(correctAnswer)) {
@@ -198,14 +225,16 @@ const isCorrectOption = (index) => {
 }
 
 // 判断是否是错误选项（用户选错）
-const isWrongOption = (index) => {
+const isWrongOption = index => {
   const letter = String.fromCharCode(65 + index)
   const userAnswer = props.question?.userAnswer || props.question?.user_answer
-  
+
   // 用户选了这个选项，但这不是正确答案
-  const isSelected = Array.isArray(userAnswer) ? userAnswer.includes(letter) : String(userAnswer) === letter
+  const isSelected = Array.isArray(userAnswer)
+    ? userAnswer.includes(letter)
+    : String(userAnswer) === letter
   const isCorrect = isCorrectOption(index)
-  
+
   return isSelected && !isCorrect
 }
 

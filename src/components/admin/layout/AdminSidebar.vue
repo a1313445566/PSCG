@@ -1,8 +1,5 @@
 <template>
-  <div
-    class="admin-sidebar"
-    :style="{ width: currentWidth + 'px' }"
-  >
+  <div class="admin-sidebar" :style="{ width: currentWidth + 'px' }">
     <!-- 折叠按钮 -->
     <div class="collapse-btn" @click="toggleCollapse">
       <el-icon :size="20">
@@ -24,7 +21,9 @@
         >
           <div
             class="collapsed-menu-item"
-            :class="{ active: activeMenu === item.key || (item.key === 'questions' && isQuestionsActive) }"
+            :class="{
+              active: activeMenu === item.key || (item.key === 'questions' && isQuestionsActive)
+            }"
             @click="handleCollapsedClick(item)"
           >
             <el-icon :size="20">
@@ -72,11 +71,7 @@
     </el-scrollbar>
 
     <!-- 拖拽调整宽度 -->
-    <div
-      v-if="!isCollapse"
-      class="resize-handle"
-      @mousedown="startResize"
-    />
+    <div v-if="!isCollapse" class="resize-handle" @mousedown="startResize" />
   </div>
 </template>
 
@@ -84,10 +79,25 @@
 import { ref, computed, watch, onUnmounted, inject, nextTick } from 'vue'
 import { useAdminLayout } from '../../../composables/useAdminLayout'
 import {
-  DataLine, Document, Reading, School,
-  UserFilled, User, Tools, Coin, Lock,
-  ArrowLeft, ArrowRight, Grid, FolderOpened, Histogram, Clock,
-  TrendCharts, ChatDotRound, MagicStick, DataAnalysis
+  DataLine,
+  Document,
+  Reading,
+  School,
+  UserFilled,
+  User,
+  Tools,
+  Coin,
+  Lock,
+  ArrowLeft,
+  ArrowRight,
+  Grid,
+  FolderOpened,
+  Histogram,
+  Clock,
+  TrendCharts,
+  ChatDotRound,
+  MagicStick,
+  DataAnalysis
 } from '@element-plus/icons-vue'
 
 const {
@@ -132,7 +142,7 @@ const iconMap = {
 }
 
 // 获取图标组件
-const getIconComponent = (iconName) => {
+const getIconComponent = iconName => {
   return iconMap[iconName] || Document
 }
 
@@ -185,7 +195,7 @@ const isQuestionsActive = computed(() => {
 // 树形菜单数据
 const menuTreeData = computed(() => {
   const subjectsValue = subjects.value || []
-  
+
   // 构建学科筛选节点
   const subjectFilterNodes = subjectsValue.map(subject => ({
     id: `subject-${subject.id}`,
@@ -334,13 +344,13 @@ const handleNodeClick = (data, node) => {
     if (data.id !== 'questions') {
       clearFilter()
     }
-  } 
+  }
   // 如果是学科节点，设置筛选
   else if (data.type === 'subject') {
     setActiveMenu('questions')
     emit('menu-select', 'questions')
     setFilterSubject(data.subjectId)
-  } 
+  }
   // 如果是题库节点，设置筛选
   else if (data.type === 'subcategory') {
     setActiveMenu('questions')
@@ -350,7 +360,7 @@ const handleNodeClick = (data, node) => {
 }
 
 // 折叠状态点击
-const handleCollapsedClick = (item) => {
+const handleCollapsedClick = item => {
   setActiveMenu(item.key)
   emit('menu-select', item.key)
   // 点击题目管理时清除筛选，显示全部
@@ -369,7 +379,7 @@ const handleClearFilter = () => {
 }
 
 // 监听展开状态变化，更新树选中状态
-watch(isCollapse, async (collapsed) => {
+watch(isCollapse, async collapsed => {
   if (!collapsed && treeRef.value) {
     await nextTick()
     treeRef.value.setCurrentKey(currentNodeKey.value)
@@ -377,7 +387,7 @@ watch(isCollapse, async (collapsed) => {
 })
 
 // 监听当前节点变化
-watch(currentNodeKey, (newKey) => {
+watch(currentNodeKey, newKey => {
   if (treeRef.value && !isCollapse.value) {
     treeRef.value.setCurrentKey(newKey)
   }
@@ -388,7 +398,7 @@ const isResizing = ref(false)
 const startX = ref(0)
 const startWidth = ref(0)
 
-const startResize = (e) => {
+const startResize = e => {
   isResizing.value = true
   startX.value = e.clientX
   startWidth.value = currentWidth.value
@@ -399,7 +409,7 @@ const startResize = (e) => {
   document.body.style.userSelect = 'none'
 }
 
-const handleResize = (e) => {
+const handleResize = e => {
   if (!isResizing.value) return
 
   const diff = e.clientX - startX.value
@@ -441,7 +451,7 @@ onUnmounted(() => {
   right: -12px;
   width: 24px;
   height: 24px;
-  background-color: #409EFF;
+  background-color: #409eff;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -489,7 +499,7 @@ onUnmounted(() => {
 }
 
 .collapsed-menu-item.active {
-  background-color: #409EFF !important;
+  background-color: #409eff !important;
   color: #fff !important;
 }
 
@@ -518,7 +528,7 @@ onUnmounted(() => {
 }
 
 :deep(.el-tree-node.is-current > .el-tree-node__content) {
-  background-color: #409EFF !important;
+  background-color: #409eff !important;
   color: #fff !important;
 }
 
@@ -626,6 +636,6 @@ onUnmounted(() => {
 }
 
 .resize-handle:hover {
-  background-color: #409EFF;
+  background-color: #409eff;
 }
 </style>

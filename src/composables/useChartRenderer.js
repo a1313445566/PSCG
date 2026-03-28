@@ -8,7 +8,7 @@ import { extractAllChartConfigs, VChart } from '@/utils/chartGenerator'
 export function useChartRenderer() {
   // 图表实例存储
   const chartInstances = ref([])
-  
+
   /**
    * 在指定容器中渲染图表
    * @param {HTMLElement} container - 包含 .chart-placeholder 的容器
@@ -17,21 +17,21 @@ export function useChartRenderer() {
    */
   const renderCharts = (container, markdownContent) => {
     if (!container || !markdownContent) return 0
-    
+
     const chartConfigs = extractAllChartConfigs(markdownContent)
     if (chartConfigs.length === 0) return 0
-    
+
     const placeholders = container.querySelectorAll('.chart-placeholder')
     let renderedCount = 0
-    
+
     placeholders.forEach((placeholder, index) => {
       const chartConfig = chartConfigs[index]
       if (!chartConfig) return
-      
+
       const chartWrapper = document.createElement('div')
       chartWrapper.className = 'inline-chart-container'
       placeholder.replaceWith(chartWrapper)
-      
+
       try {
         const instance = new VChart(chartConfig.config, {
           dom: chartWrapper,
@@ -47,10 +47,10 @@ export function useChartRenderer() {
         chartWrapper.innerHTML = '<div class="chart-error">图表渲染失败</div>'
       }
     })
-    
+
     return renderedCount
   }
-  
+
   /**
    * 清理所有图表实例
    */
@@ -64,7 +64,7 @@ export function useChartRenderer() {
     })
     chartInstances.value = []
   }
-  
+
   /**
    * 调整所有图表大小
    */
@@ -77,12 +77,12 @@ export function useChartRenderer() {
       }
     })
   }
-  
+
   // 组件卸载时自动清理
   onUnmounted(() => {
     clearCharts()
   })
-  
+
   return {
     chartInstances,
     renderCharts,

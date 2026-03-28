@@ -6,11 +6,16 @@
         <el-input
           v-model="searchKeyword"
           placeholder="搜索题目内容..."
-          style="width: 280px;"
+          style="width: 280px"
           clearable
           :prefix-icon="Search"
         />
-        <el-select v-model="filterType" placeholder="题目类型" style="width: 120px; margin-left: 10px;" clearable>
+        <el-select
+          v-model="filterType"
+          placeholder="题目类型"
+          style="width: 120px; margin-left: 10px"
+          clearable
+        >
           <el-option label="全部类型" value="" />
           <el-option label="单选题" value="single" />
           <el-option label="多选题" value="multiple" />
@@ -22,34 +27,49 @@
       </div>
       <div class="toolbar-right">
         <el-button type="primary" @click="openAddPanel">
-          <el-icon><Plus /></el-icon> 添加题目
+          <el-icon><Plus /></el-icon>
+          添加题目
         </el-button>
         <el-button type="success" @click="showBatchAddQuestionDialog">
-          <el-icon><Upload /></el-icon> 批量添加
+          <el-icon><Upload /></el-icon>
+          批量添加
         </el-button>
-        <el-dropdown trigger="click" @command="handleBatchCommand" :disabled="selectedQuestions.length === 0">
+        <el-dropdown
+          trigger="click"
+          :disabled="selectedQuestions.length === 0"
+          @command="handleBatchCommand"
+        >
           <el-button type="warning">
-            批量操作 <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+            批量操作
+            <el-icon class="el-icon--right"><ArrowDown /></el-icon>
           </el-button>
           <template #dropdown>
             <el-dropdown-menu>
               <el-dropdown-item command="delete" :disabled="selectedQuestions.length === 0">
-                <el-icon><Delete /></el-icon> 批量删除
+                <el-icon><Delete /></el-icon>
+                批量删除
               </el-dropdown-item>
-              <el-dropdown-item command="updateDifficulty" :disabled="selectedQuestions.length === 0">
-                <el-icon><Star /></el-icon> 修改难度
+              <el-dropdown-item
+                command="updateDifficulty"
+                :disabled="selectedQuestions.length === 0"
+              >
+                <el-icon><Star /></el-icon>
+                修改难度
               </el-dropdown-item>
               <el-dropdown-item command="updateType" :disabled="selectedQuestions.length === 0">
-                <el-icon><Document /></el-icon> 修改类型
+                <el-icon><Document /></el-icon>
+                修改类型
               </el-dropdown-item>
               <el-dropdown-item command="move" :disabled="selectedQuestions.length === 0">
-                <el-icon><FolderOpened /></el-icon> 移动到
+                <el-icon><FolderOpened /></el-icon>
+                移动到
               </el-dropdown-item>
             </el-dropdown-menu>
           </template>
         </el-dropdown>
-        <el-button type="info" @click="refreshQuestions" :loading="loading">
-          <el-icon><Refresh /></el-icon> 刷新
+        <el-button type="info" :loading="loading" @click="refreshQuestions">
+          <el-icon><Refresh /></el-icon>
+          刷新
         </el-button>
       </div>
     </div>
@@ -63,36 +83,83 @@
           <div class="edit-panel-header">
             <div class="edit-panel-title">
               <el-icon><Edit /></el-icon>
-              <span>{{ editMode === 'add' ? '添加新题目' : `编辑题目 #${editingQuestionId}` }}</span>
+              <span>
+                {{ editMode === 'add' ? '添加新题目' : `编辑题目 #${editingQuestionId}` }}
+              </span>
             </div>
             <div class="edit-panel-actions">
-              <el-button type="primary" size="small" @click="saveSplitEdit" :loading="splitEditSaving">
-                <el-icon><Check /></el-icon> {{ editMode === 'add' ? '添加' : '保存' }}
+              <el-button
+                type="primary"
+                size="small"
+                :loading="splitEditSaving"
+                @click="saveSplitEdit"
+              >
+                <el-icon><Check /></el-icon>
+                {{ editMode === 'add' ? '添加' : '保存' }}
               </el-button>
-              <el-button v-if="editMode === 'edit'" type="success" size="small" @click="saveAndNext" :loading="splitEditSaving">
-                <el-icon><Right /></el-icon> 保存并下一个
+              <el-button
+                v-if="editMode === 'edit'"
+                type="success"
+                size="small"
+                :loading="splitEditSaving"
+                @click="saveAndNext"
+              >
+                <el-icon><Right /></el-icon>
+                保存并下一个
               </el-button>
               <el-button size="small" @click="closeSplitEdit">
-                <el-icon><Close /></el-icon> 关闭
+                <el-icon><Close /></el-icon>
+                关闭
               </el-button>
             </div>
           </div>
-          <div class="edit-panel-body" v-if="splitEditData">
+          <div v-if="splitEditData" class="edit-panel-body">
             <div class="split-edit-form">
               <!-- 基本信息 -->
               <div class="quick-edit-row">
-                <el-select v-model="splitEditData.subjectId" placeholder="学科" size="small" style="width: 120px;" @change="onSplitEditSubjectChange">
-                  <el-option v-for="subject in props.subjects" :key="subject.id" :label="subject.name" :value="subject.id" />
+                <el-select
+                  v-model="splitEditData.subjectId"
+                  placeholder="学科"
+                  size="small"
+                  style="width: 120px"
+                  @change="onSplitEditSubjectChange"
+                >
+                  <el-option
+                    v-for="subject in props.subjects"
+                    :key="subject.id"
+                    :label="subject.name"
+                    :value="subject.id"
+                  />
                 </el-select>
-                <el-select v-model="splitEditData.subcategoryId" placeholder="题库" size="small" style="width: 140px;">
-                  <el-option v-for="sub in splitEditSubcategories" :key="sub.id" :label="sub.name" :value="sub.id" />
+                <el-select
+                  v-model="splitEditData.subcategoryId"
+                  placeholder="题库"
+                  size="small"
+                  style="width: 140px"
+                >
+                  <el-option
+                    v-for="sub in splitEditSubcategories"
+                    :key="sub.id"
+                    :label="sub.name"
+                    :value="sub.id"
+                  />
                 </el-select>
-                <el-select v-model="splitEditData.type" placeholder="类型" size="small" style="width: 100px;">
+                <el-select
+                  v-model="splitEditData.type"
+                  placeholder="类型"
+                  size="small"
+                  style="width: 100px"
+                >
                   <el-option label="单选" value="single" />
                   <el-option label="多选" value="multiple" />
                   <el-option label="判断" value="judgment" />
                 </el-select>
-                <el-select v-model="splitEditData.difficulty" placeholder="难度" size="small" style="width: 100px;">
+                <el-select
+                  v-model="splitEditData.difficulty"
+                  placeholder="难度"
+                  size="small"
+                  style="width: 100px"
+                >
                   <el-option label="简单" :value="1" />
                   <el-option label="较简单" :value="2" />
                   <el-option label="中等" :value="3" />
@@ -113,8 +180,8 @@
                       modules: {
                         toolbar: [
                           ['bold', 'italic', 'underline'],
-                          [{ 'color': [] }, { 'background': [] }],
-                          [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+                          [{ color: [] }, { background: [] }],
+                          [{ list: 'ordered' }, { list: 'bullet' }],
                           ['clean'],
                           ['image']
                         ]
@@ -130,15 +197,24 @@
                 <label class="section-label">
                   答案选项
                   <el-button type="primary" size="small" text @click="addSplitEditOption">
-                    <el-icon><Plus /></el-icon> 添加
+                    <el-icon><Plus /></el-icon>
+                    添加
                   </el-button>
                 </label>
                 <div class="options-grid">
-                  <div v-for="(option, index) in splitEditData.options" :key="index" class="quick-option-item">
+                  <div
+                    v-for="(option, index) in splitEditData.options"
+                    :key="index"
+                    class="quick-option-item"
+                  >
                     <el-checkbox
-                      :label="String.fromCharCode(65 + index)"
                       v-model="splitEditData.selectedAnswers"
-                      :disabled="splitEditData.type === 'single' && splitEditData.selectedAnswers.length > 0 && !splitEditData.selectedAnswers.includes(String.fromCharCode(65 + index))"
+                      :label="String.fromCharCode(65 + index)"
+                      :disabled="
+                        splitEditData.type === 'single' &&
+                        splitEditData.selectedAnswers.length > 0 &&
+                        !splitEditData.selectedAnswers.includes(String.fromCharCode(65 + index))
+                      "
                     >
                       <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
                     </el-checkbox>
@@ -147,7 +223,12 @@
                       placeholder="输入选项内容"
                       class="quick-option-input"
                     />
-                    <el-button type="danger" size="small" text @click="removeSplitEditOption(index)">
+                    <el-button
+                      type="danger"
+                      size="small"
+                      text
+                      @click="removeSplitEditOption(index)"
+                    >
                       <el-icon><Delete /></el-icon>
                     </el-button>
                   </div>
@@ -182,7 +263,10 @@
                     >
                       <div class="audio-upload-dragger">
                         <el-icon class="upload-icon"><Upload /></el-icon>
-                        <div class="upload-text">拖拽音频文件到此处，或<em>点击上传</em></div>
+                        <div class="upload-text">
+                          拖拽音频文件到此处，或
+                          <em>点击上传</em>
+                        </div>
                         <div class="upload-tip">支持 MP3、WAV、OGG、M4A 格式，最大 10MB</div>
                       </div>
                     </el-upload>
@@ -196,7 +280,13 @@
                   <div v-if="splitEditData.audio && !audioUploading" class="audio-preview">
                     <!-- 增强的音频播放器 -->
                     <div class="audio-player">
-                      <audio ref="audioPlayerRef" :src="splitEditData.audio" @loadedmetadata="onAudioLoaded" @timeupdate="onAudioTimeUpdate" @ended="onAudioEnded"></audio>
+                      <audio
+                        ref="audioPlayerRef"
+                        :src="splitEditData.audio"
+                        @loadedmetadata="onAudioLoaded"
+                        @timeupdate="onAudioTimeUpdate"
+                        @ended="onAudioEnded"
+                      ></audio>
                       <div class="player-controls">
                         <el-button-group class="play-buttons">
                           <el-button size="small" @click="audioSeekBackward">
@@ -212,13 +302,19 @@
                         </el-button-group>
                         <div class="progress-wrapper">
                           <span class="time-display">{{ formatAudioTime(audioCurrentTime) }}</span>
-                          <el-slider v-model="audioProgress" :show-tooltip="false" @change="onAudioProgressChange" class="progress-slider" />
+                          <el-slider
+                            v-model="audioProgress"
+                            :show-tooltip="false"
+                            class="progress-slider"
+                            @change="onAudioProgressChange"
+                          />
                           <span class="time-display">{{ formatAudioTime(audioDuration) }}</span>
                         </div>
                         <div class="speed-control">
-                          <el-dropdown @command="setAudioSpeed" trigger="click">
+                          <el-dropdown trigger="click" @command="setAudioSpeed">
                             <el-button size="small">
-                              {{ audioSpeed }}x <el-icon class="el-icon--right"><ArrowDown /></el-icon>
+                              {{ audioSpeed }}x
+                              <el-icon class="el-icon--right"><ArrowDown /></el-icon>
                             </el-button>
                             <template #dropdown>
                               <el-dropdown-menu>
@@ -242,7 +338,7 @@
               </div>
             </div>
           </div>
-          <div class="edit-panel-body edit-panel-loading" v-else>
+          <div v-else class="edit-panel-body edit-panel-loading">
             <el-icon class="is-loading"><Loading /></el-icon>
             <span>加载中...</span>
           </div>
@@ -250,181 +346,213 @@
 
         <!-- 右侧表格区 -->
         <div class="content-area">
-        <!-- 当前路径面包屑 -->
-        <div class="breadcrumb-bar">
-          <el-breadcrumb separator="/">
-            <el-breadcrumb-item>全部题目</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="currentSubjectName">{{ currentSubjectName }}</el-breadcrumb-item>
-            <el-breadcrumb-item v-if="currentSubcategoryName">{{ currentSubcategoryName }}</el-breadcrumb-item>
-          </el-breadcrumb>
-          <span class="total-count">共 {{ pagination.total }} 题</span>
-        </div>
+          <!-- 当前路径面包屑 -->
+          <div class="breadcrumb-bar">
+            <el-breadcrumb separator="/">
+              <el-breadcrumb-item>全部题目</el-breadcrumb-item>
+              <el-breadcrumb-item v-if="currentSubjectName">
+                {{ currentSubjectName }}
+              </el-breadcrumb-item>
+              <el-breadcrumb-item v-if="currentSubcategoryName">
+                {{ currentSubcategoryName }}
+              </el-breadcrumb-item>
+            </el-breadcrumb>
+            <span class="total-count">共 {{ pagination.total }} 题</span>
+          </div>
 
-        <!-- 筛选标签 -->
-        <div class="filter-tags" v-if="hasActiveFilters">
-          <span class="filter-label">当前筛选：</span>
-          <el-tag
-            v-if="filterSubjectId"
-            closable
-            @close="clearFilter('subject')"
-            type="primary"
-          >
-            学科: {{ currentSubjectName }}
-          </el-tag>
-          <el-tag
-            v-if="filterSubcategoryId"
-            closable
-            @close="clearFilter('subcategory')"
-            type="success"
-          >
-            题库: {{ currentSubcategoryName }}
-          </el-tag>
-          <el-tag
-            v-if="filterType"
-            closable
-            @close="clearFilter('type')"
-            type="warning"
-          >
-            类型: {{ getTypeName(filterType) }}
-          </el-tag>
-          <el-tag
-            v-if="searchKeyword"
-            closable
-            @close="clearFilter('keyword')"
-            type="info"
-          >
-            关键词: {{ searchKeyword }}
-          </el-tag>
-          <el-button text type="primary" @click="clearAllFilters">清除全部</el-button>
-        </div>
+          <!-- 筛选标签 -->
+          <div v-if="hasActiveFilters" class="filter-tags">
+            <span class="filter-label">当前筛选：</span>
+            <el-tag v-if="filterSubjectId" closable type="primary" @close="clearFilter('subject')">
+              学科: {{ currentSubjectName }}
+            </el-tag>
+            <el-tag
+              v-if="filterSubcategoryId"
+              closable
+              type="success"
+              @close="clearFilter('subcategory')"
+            >
+              题库: {{ currentSubcategoryName }}
+            </el-tag>
+            <el-tag v-if="filterType" closable type="warning" @close="clearFilter('type')">
+              类型: {{ getTypeName(filterType) }}
+            </el-tag>
+            <el-tag v-if="searchKeyword" closable type="info" @close="clearFilter('keyword')">
+              关键词: {{ searchKeyword }}
+            </el-tag>
+            <el-button text type="primary" @click="clearAllFilters">清除全部</el-button>
+          </div>
 
-        <!-- 题目表格 -->
-        <div class="table-wrapper">
-          <el-table
-            ref="tableRef"
-            :data="displayQuestions"
-            @selection-change="handleSelectionChange"
-            stripe
-            border
-            :row-class-name="getRowClassName"
-            v-loading="loading"
-            element-loading-text="加载中..."
-            height="100%"
-          >
-          <el-table-column type="selection" width="40" />
-          <el-table-column prop="id" label="ID" width="50" align="center" />
-          <el-table-column prop="subjectName" label="学科" width="70" align="center">
-            <template #default="{ row }">
-              <el-tag size="small" type="primary" effect="light">{{ row.subjectName }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="subcategoryName" label="题库" width="80" align="center" show-overflow-tooltip>
-            <template #default="{ row }">
-              <span class="subcategory-text">{{ row.subcategoryName || '-' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column prop="typeName" label="类型" width="70" align="center">
-            <template #default="{ row }">
-              <el-tag size="small" :type="getTypeTagType(row.type)">{{ row.typeName }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="content" label="题目内容" min-width="200" align="left">
-            <template #default="{ row }">
-              <div class="question-content-wrapper">
-                <!-- 行内编辑模式 -->
-                <template v-if="editingId === row.id">
-                  <el-input
-                    v-model="editingContent"
-                    type="textarea"
-                    :rows="3"
-                    @blur="saveInlineEdit(row)"
-                    @keyup.enter.ctrl="saveInlineEdit(row)"
-                    @keyup.escape="cancelInlineEdit"
-                    ref="inlineEditInput"
-                  />
-                  <div class="edit-hint">按 Ctrl+Enter 保存，Esc 取消</div>
+          <!-- 题目表格 -->
+          <div class="table-wrapper">
+            <el-table
+              ref="tableRef"
+              v-loading="loading"
+              :data="displayQuestions"
+              stripe
+              border
+              :row-class-name="getRowClassName"
+              element-loading-text="加载中..."
+              height="100%"
+              @selection-change="handleSelectionChange"
+            >
+              <el-table-column type="selection" width="40" />
+              <el-table-column prop="id" label="ID" width="50" align="center" />
+              <el-table-column prop="subjectName" label="学科" width="70" align="center">
+                <template #default="{ row }">
+                  <el-tag size="small" type="primary" effect="light">{{ row.subjectName }}</el-tag>
                 </template>
-                <!-- 正常显示模式 -->
-                <template v-else>
-                  <div
-                    class="question-content-preview"
-                    :class="{ editable: canInlineEdit(row) }"
-                    @dblclick="startInlineEdit(row)"
-                    :title="canInlineEdit(row) ? '双击快速编辑' : '富文本内容，请使用编辑按钮'"
-                  >
-                    <div v-if="hasValidImage(row)" class="content-with-image">
-                      <div class="image-preview" @click.stop="showImagePreview(row)">
-                        <img :src="extractImageUrl(row)" alt="题目图片" class="question-image" />
+              </el-table-column>
+              <el-table-column
+                prop="subcategoryName"
+                label="题库"
+                width="80"
+                align="center"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  <span class="subcategory-text">{{ row.subcategoryName || '-' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column prop="typeName" label="类型" width="70" align="center">
+                <template #default="{ row }">
+                  <el-tag size="small" :type="getTypeTagType(row.type)">{{ row.typeName }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column prop="content" label="题目内容" min-width="200" align="left">
+                <template #default="{ row }">
+                  <div class="question-content-wrapper">
+                    <!-- 行内编辑模式 -->
+                    <template v-if="editingId === row.id">
+                      <el-input
+                        ref="inlineEditInput"
+                        v-model="editingContent"
+                        type="textarea"
+                        :rows="3"
+                        @blur="saveInlineEdit(row)"
+                        @keyup.enter.ctrl="saveInlineEdit(row)"
+                        @keyup.escape="cancelInlineEdit"
+                      />
+                      <div class="edit-hint">按 Ctrl+Enter 保存，Esc 取消</div>
+                    </template>
+                    <!-- 正常显示模式 -->
+                    <template v-else>
+                      <div
+                        class="question-content-preview"
+                        :class="{ editable: canInlineEdit(row) }"
+                        :title="canInlineEdit(row) ? '双击快速编辑' : '富文本内容，请使用编辑按钮'"
+                        @dblclick="startInlineEdit(row)"
+                      >
+                        <div v-if="hasValidImage(row)" class="content-with-image">
+                          <div class="image-preview" @click.stop="showImagePreview(row)">
+                            <img
+                              :src="extractImageUrl(row)"
+                              alt="题目图片"
+                              class="question-image"
+                            />
+                          </div>
+                          <div
+                            class="content-text"
+                            v-html="truncate(stripImages(row.content), 150)"
+                          ></div>
+                          <el-tag
+                            v-if="isRichText(row.content)"
+                            size="small"
+                            type="info"
+                            class="rich-text-tag"
+                          >
+                            富文本
+                          </el-tag>
+                        </div>
+                        <div v-else-if="row.audio" class="content-with-audio">
+                          <el-icon class="audio-icon"><Microphone /></el-icon>
+                          <div class="content-text" v-html="truncate(row.content, 150)"></div>
+                          <el-tag
+                            v-if="isRichText(row.content)"
+                            size="small"
+                            type="info"
+                            class="rich-text-tag"
+                          >
+                            富文本
+                          </el-tag>
+                        </div>
+                        <div v-else class="content-text-wrapper">
+                          <div class="content-text" v-html="truncate(row.content, 150)"></div>
+                          <el-tag
+                            v-if="isRichText(row.content)"
+                            size="small"
+                            type="info"
+                            class="rich-text-tag"
+                          >
+                            富文本
+                          </el-tag>
+                        </div>
                       </div>
-                      <div class="content-text" v-html="truncate(stripImages(row.content), 150)"></div>
-                      <el-tag v-if="isRichText(row.content)" size="small" type="info" class="rich-text-tag">富文本</el-tag>
-                    </div>
-                    <div v-else-if="row.audio" class="content-with-audio">
-                      <el-icon class="audio-icon"><Microphone /></el-icon>
-                      <div class="content-text" v-html="truncate(row.content, 150)"></div>
-                      <el-tag v-if="isRichText(row.content)" size="small" type="info" class="rich-text-tag">富文本</el-tag>
-                    </div>
-                    <div v-else class="content-text-wrapper">
-                      <div class="content-text" v-html="truncate(row.content, 150)"></div>
-                      <el-tag v-if="isRichText(row.content)" size="small" type="info" class="rich-text-tag">富文本</el-tag>
-                    </div>
+                    </template>
                   </div>
                 </template>
-              </div>
-            </template>
-          </el-table-column>
-          <el-table-column prop="answer" label="答案" width="50" align="center">
-            <template #default="{ row }">
-              <el-tag size="small" type="danger" effect="dark">{{ row.answer || '-' }}</el-tag>
-            </template>
-          </el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="90" align="center" show-overflow-tooltip>
-            <template #default="{ row }">
-              <span class="time-text">{{ row.createdAt || '未知' }}</span>
-            </template>
-          </el-table-column>
-          <el-table-column label="操作" width="160" fixed="right" align="center">
-            <template #default="{ row }">
-              <div class="row-operations">
-                <el-button type="primary" size="small" link @click.stop="previewQuestion(row)">
-                  <el-icon><View /></el-icon> 预览
-                </el-button>
-                <el-button type="warning" size="small" link @click.stop="editQuestion(row)">
-                  <el-icon><Edit /></el-icon> 编辑
-                </el-button>
-                <el-button type="danger" size="small" link @click.stop="deleteQuestionWithUndo(row)">
-                  <el-icon><Delete /></el-icon> 删除
-                </el-button>
-              </div>
-            </template>
-          </el-table-column>
-          </el-table>
-        </div>
+              </el-table-column>
+              <el-table-column prop="answer" label="答案" width="50" align="center">
+                <template #default="{ row }">
+                  <el-tag size="small" type="danger" effect="dark">{{ row.answer || '-' }}</el-tag>
+                </template>
+              </el-table-column>
+              <el-table-column
+                prop="createdAt"
+                label="创建时间"
+                width="90"
+                align="center"
+                show-overflow-tooltip
+              >
+                <template #default="{ row }">
+                  <span class="time-text">{{ row.createdAt || '未知' }}</span>
+                </template>
+              </el-table-column>
+              <el-table-column label="操作" width="160" fixed="right" align="center">
+                <template #default="{ row }">
+                  <div class="row-operations">
+                    <el-button type="primary" size="small" link @click.stop="previewQuestion(row)">
+                      <el-icon><View /></el-icon>
+                      预览
+                    </el-button>
+                    <el-button type="warning" size="small" link @click.stop="editQuestion(row)">
+                      <el-icon><Edit /></el-icon>
+                      编辑
+                    </el-button>
+                    <el-button
+                      type="danger"
+                      size="small"
+                      link
+                      @click.stop="deleteQuestionWithUndo(row)"
+                    >
+                      <el-icon><Delete /></el-icon>
+                      删除
+                    </el-button>
+                  </div>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
 
-        <!-- 分页 -->
-        <div class="pagination-container">
-          <el-pagination
-            :current-page="paginationPage"
-            :page-size="paginationLimit"
-            :page-sizes="[20, 50, 100]"
-            :total="paginationTotal"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="onSizeChange"
-            @current-change="onPageChange"
-          />
-        </div>
+          <!-- 分页 -->
+          <div class="pagination-container">
+            <el-pagination
+              :current-page="paginationPage"
+              :page-size="paginationLimit"
+              :page-sizes="[20, 50, 100]"
+              :total="paginationTotal"
+              layout="total, sizes, prev, pager, next, jumper"
+              @size-change="onSizeChange"
+              @current-change="onPageChange"
+            />
+          </div>
         </div>
       </div>
     </div>
 
     <!-- 预览弹窗 -->
-    <el-dialog
-      v-model="previewVisible"
-      title="题目预览"
-      width="700px"
-      destroy-on-close
-    >
-      <div class="preview-content" v-loading="previewLoading" v-if="previewData">
+    <el-dialog v-model="previewVisible" title="题目预览" width="700px" destroy-on-close>
+      <div v-if="previewData" v-loading="previewLoading" class="preview-content">
         <div class="preview-item">
           <label>题目ID：</label>
           <span>{{ previewData.id }}</span>
@@ -445,15 +573,19 @@
           <label>题目内容：</label>
           <div class="preview-content-box" v-html="previewData.content"></div>
         </div>
-        <div class="preview-item" v-if="previewData.image">
+        <div v-if="previewData.image" class="preview-item">
           <label>题目图片：</label>
-          <el-image :src="previewData.image" fit="contain" style="max-width: 400px; max-height: 300px;" />
+          <el-image
+            :src="previewData.image"
+            fit="contain"
+            style="max-width: 400px; max-height: 300px"
+          />
         </div>
-        <div class="preview-item" v-if="previewData.audio">
+        <div v-if="previewData.audio" class="preview-item">
           <label>音频：</label>
-          <audio controls :src="previewData.audio" style="max-width: 100%;"></audio>
+          <audio controls :src="previewData.audio" style="max-width: 100%"></audio>
         </div>
-        <div class="preview-item" v-if="previewData.options && previewData.options.length > 0">
+        <div v-if="previewData.options && previewData.options.length > 0" class="preview-item">
           <label>选项：</label>
           <div class="preview-options">
             <div v-for="(option, index) in previewData.options" :key="index" class="preview-option">
@@ -466,14 +598,22 @@
           <label>正确答案：</label>
           <el-tag type="danger" effect="dark" v-html="previewData.answer"></el-tag>
         </div>
-        <div class="preview-item" v-if="previewData.explanation">
+        <div v-if="previewData.explanation" class="preview-item">
           <label>解析：</label>
           <div class="preview-content-box" v-html="previewData.explanation"></div>
         </div>
       </div>
       <template #footer>
         <el-button @click="previewVisible = false">关闭</el-button>
-        <el-button type="primary" @click="editQuestion(previewData); previewVisible = false;">编辑</el-button>
+        <el-button
+          type="primary"
+          @click="
+            editQuestion(previewData)
+            previewVisible = false
+          "
+        >
+          编辑
+        </el-button>
       </template>
     </el-dialog>
 
@@ -514,40 +654,80 @@
     <el-dialog v-model="batchMoveVisible" title="批量移动到" width="450px">
       <el-form label-width="80px">
         <el-form-item label="目标学科">
-          <el-select v-model="batchMoveSubjectId" placeholder="选择学科" @change="handleBatchMoveSubjectChange">
-            <el-option v-for="subject in subjects" :key="subject.id" :label="subject.name" :value="subject.id" />
+          <el-select
+            v-model="batchMoveSubjectId"
+            placeholder="选择学科"
+            @change="handleBatchMoveSubjectChange"
+          >
+            <el-option
+              v-for="subject in subjects"
+              :key="subject.id"
+              :label="subject.name"
+              :value="subject.id"
+            />
           </el-select>
         </el-form-item>
         <el-form-item label="目标题库">
-          <el-select v-model="batchMoveSubcategoryId" placeholder="选择题库" :disabled="!batchMoveSubjectId">
-            <el-option v-for="sub in batchMoveSubcategories" :key="sub.id" :label="sub.name" :value="sub.id" />
+          <el-select
+            v-model="batchMoveSubcategoryId"
+            placeholder="选择题库"
+            :disabled="!batchMoveSubjectId"
+          >
+            <el-option
+              v-for="sub in batchMoveSubcategories"
+              :key="sub.id"
+              :label="sub.name"
+              :value="sub.id"
+            />
           </el-select>
         </el-form-item>
       </el-form>
       <template #footer>
         <el-button @click="batchMoveVisible = false">取消</el-button>
-        <el-button type="primary" @click="executeBatchMove" :disabled="!batchMoveSubjectId">确定</el-button>
+        <el-button type="primary" :disabled="!batchMoveSubjectId" @click="executeBatchMove">
+          确定
+        </el-button>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import {
-  Search, Plus, Upload, ArrowDown, Delete, Star, Document, FolderOpened,
-  Refresh, Folder, Reading, Notebook, View, Edit, Microphone, Check, Right, Close, Loading,
-  VideoPlay, VideoPause, DArrowLeft, DArrowRight
-} from '@element-plus/icons-vue';
-import { useQuestionStore } from '../../../stores/questionStore';
-import { useAdminLayout } from '../../../composables/useAdminLayout';
-import { usePagination } from '../../../composables/usePagination';
-import { formatDate } from '../../../utils/dateUtils';
-import { getApiBaseUrl } from '../../../utils/database';
-import { api } from '../../../utils/api';
-import EditableContent from '../../common/EditableContent.vue';
-import QuillEditor from '../../common/QuillEditor.vue';
+  Search,
+  Plus,
+  Upload,
+  ArrowDown,
+  Delete,
+  Star,
+  Document,
+  FolderOpened,
+  Refresh,
+  Folder,
+  Reading,
+  Notebook,
+  View,
+  Edit,
+  Microphone,
+  Check,
+  Right,
+  Close,
+  Loading,
+  VideoPlay,
+  VideoPause,
+  DArrowLeft,
+  DArrowRight
+} from '@element-plus/icons-vue'
+import { useQuestionStore } from '../../../stores/questionStore'
+import { useAdminLayout } from '../../../composables/useAdminLayout'
+import { usePagination } from '../../../composables/usePagination'
+import { formatDate } from '../../../utils/dateUtils'
+import { getApiBaseUrl } from '../../../utils/database'
+import { api } from '../../../utils/api'
+import EditableContent from '../../common/EditableContent.vue'
+import QuillEditor from '../../common/QuillEditor.vue'
 
 // Props
 const props = defineProps({
@@ -555,134 +735,147 @@ const props = defineProps({
     type: Array,
     default: () => []
   }
-});
+})
 
 // Emits
-const emit = defineEmits(['edit-question', 'delete-question', 'show-add-dialog', 'show-batch-add-dialog']);
+const emit = defineEmits([
+  'edit-question',
+  'delete-question',
+  'show-add-dialog',
+  'show-batch-add-dialog'
+])
 
 // Store
-const questionStore = useQuestionStore();
+const questionStore = useQuestionStore()
 
 // 使用全局布局状态
-const { filterSubjectId, filterSubcategoryId, clearFilter: clearGlobalFilter } = useAdminLayout();
+const { filterSubjectId, filterSubcategoryId, clearFilter: clearGlobalFilter } = useAdminLayout()
 
 // 筛选条件
-const searchKeyword = ref('');
-const filterType = ref('');
+const searchKeyword = ref('')
+const filterType = ref('')
 
 // 加载状态
-const loading = ref(false);
+const loading = ref(false)
 
 // 选中的题目
-const selectedQuestions = ref([]);
+const selectedQuestions = ref([])
 
 // 使用分页 Hook（服务端分页）
-const paginationTotal = ref(0);
-const { currentPage: paginationPage, pageSize: paginationLimit, handleSizeChange, handleCurrentChange, reset: resetPagination } = usePagination(50, paginationTotal);
+const paginationTotal = ref(0)
+const {
+  currentPage: paginationPage,
+  pageSize: paginationLimit,
+  handleSizeChange,
+  handleCurrentChange,
+  reset: resetPagination
+} = usePagination(50, paginationTotal)
 
 // 分页对象（为了兼容现有代码，使用计算属性）
 const pagination = computed(() => ({
   page: paginationPage.value,
   limit: paginationLimit.value,
   total: paginationTotal.value
-}));
+}))
 
 // 服务端数据
-const serverQuestions = ref([]);
+const serverQuestions = ref([])
 
 // 行内编辑
-const editingId = ref(null);
-const editingContent = ref('');
-const inlineEditInput = ref(null);
+const editingId = ref(null)
+const editingContent = ref('')
+const inlineEditInput = ref(null)
 
 // 预览
-const previewVisible = ref(false);
-const previewData = ref(null);
-const previewLoading = ref(false);
-const previewCache = new Map(); // 预览缓存
+const previewVisible = ref(false)
+const previewData = ref(null)
+const previewLoading = ref(false)
+const previewCache = new Map() // 预览缓存
 
 // 批量操作
-const batchDifficultyVisible = ref(false);
-const batchDifficulty = ref(1);
-const batchTypeVisible = ref(false);
-const batchType = ref('');
-const batchMoveVisible = ref(false);
-const batchMoveSubjectId = ref('');
-const batchMoveSubcategoryId = ref('');
+const batchDifficultyVisible = ref(false)
+const batchDifficulty = ref(1)
+const batchTypeVisible = ref(false)
+const batchType = ref('')
+const batchMoveVisible = ref(false)
+const batchMoveSubjectId = ref('')
+const batchMoveSubcategoryId = ref('')
 
 // Tree ref
-const treeRef = ref(null);
-const tableRef = ref(null);
+const treeRef = ref(null)
+const tableRef = ref(null)
 
 // 删除撤销相关
-const pendingDeletes = ref(new Map()); // 存储待删除的题目
+const pendingDeletes = ref(new Map()) // 存储待删除的题目
 
 // 分屏编辑相关
-const splitEditMode = ref(false);
-const editMode = ref('edit'); // 'add' 或 'edit'
-const editingQuestionId = ref(null);
-const splitEditData = ref(null);
-const splitEditSaving = ref(false);
-const editPanelHeight = ref(800);
-const splitEditQuill = ref(null);
+const splitEditMode = ref(false)
+const editMode = ref('edit') // 'add' 或 'edit'
+const editingQuestionId = ref(null)
+const splitEditData = ref(null)
+const splitEditSaving = ref(false)
+const editPanelHeight = ref(800)
+const splitEditQuill = ref(null)
 
 // 音频播放器相关
-const audioPlayerRef = ref(null);
-const audioPlaying = ref(false);
-const audioCurrentTime = ref(0);
-const audioDuration = ref(0);
-const audioProgress = ref(0);
-const audioSpeed = ref(1);
-const audioUploading = ref(false);
-const audioUploadProgress = ref(0);
+const audioPlayerRef = ref(null)
+const audioPlaying = ref(false)
+const audioCurrentTime = ref(0)
+const audioDuration = ref(0)
+const audioProgress = ref(0)
+const audioSpeed = ref(1)
+const audioUploading = ref(false)
+const audioUploadProgress = ref(0)
 
 // 防抖定时器
-let searchTimer = null;
+let searchTimer = null
 
 // 当前学科名称
 const currentSubjectName = computed(() => {
-  if (!filterSubjectId.value) return '';
-  const subject = props.subjects.find(s => s.id == filterSubjectId.value);
-  return subject ? subject.name : '';
-});
+  if (!filterSubjectId.value) return ''
+  const subject = props.subjects.find(s => s.id == filterSubjectId.value)
+  return subject ? subject.name : ''
+})
 
 // 当前题库名称
 const currentSubcategoryName = computed(() => {
-  if (!filterSubcategoryId.value) return '';
-  const subject = props.subjects.find(s => s.id == filterSubjectId.value);
-  if (!subject || !subject.subcategories) return '';
-  const subcategory = subject.subcategories.find(sc => sc.id == filterSubcategoryId.value);
-  return subcategory ? subcategory.name : '';
-});
+  if (!filterSubcategoryId.value) return ''
+  const subject = props.subjects.find(s => s.id == filterSubjectId.value)
+  if (!subject || !subject.subcategories) return ''
+  const subcategory = subject.subcategories.find(sc => sc.id == filterSubcategoryId.value)
+  return subcategory ? subcategory.name : ''
+})
 
 // 批量移动的子分类列表
 const batchMoveSubcategories = computed(() => {
-  if (!batchMoveSubjectId.value) return [];
-  const subject = props.subjects.find(s => s.id == batchMoveSubjectId.value);
-  return subject ? subject.subcategories || [] : [];
-});
+  if (!batchMoveSubjectId.value) return []
+  const subject = props.subjects.find(s => s.id == batchMoveSubjectId.value)
+  return subject ? subject.subcategories || [] : []
+})
 
 // 分屏编辑的子分类列表
 const splitEditSubcategories = computed(() => {
-  if (!splitEditData.value?.subjectId) return [];
-  const subject = props.subjects.find(s => s.id == splitEditData.value.subjectId);
-  return subject ? subject.subcategories || [] : [];
-});
+  if (!splitEditData.value?.subjectId) return []
+  const subject = props.subjects.find(s => s.id == splitEditData.value.subjectId)
+  return subject ? subject.subcategories || [] : []
+})
 
 // 是否有激活的筛选条件
 const hasActiveFilters = computed(() => {
-  return filterSubjectId.value || filterSubcategoryId.value || filterType.value || searchKeyword.value;
-});
+  return (
+    filterSubjectId.value || filterSubcategoryId.value || filterType.value || searchKeyword.value
+  )
+})
 
 // 显示的题目
-const displayQuestions = computed(() => serverQuestions.value);
+const displayQuestions = computed(() => serverQuestions.value)
 
 // 加载题目
 const loadQuestions = async (resetPage = false) => {
   try {
-    loading.value = true;
+    loading.value = true
     if (resetPage) {
-      resetPagination();
+      resetPagination()
     }
 
     const result = await questionStore.loadQuestions({
@@ -693,49 +886,50 @@ const loadQuestions = async (resetPage = false) => {
       page: paginationPage.value,
       limit: paginationLimit.value,
       excludeContent: true
-    });
+    })
 
-    serverQuestions.value = formatQuestions(result?.data || []);
-    paginationTotal.value = result?.total || 0;
+    serverQuestions.value = formatQuestions(result?.data || [])
+    paginationTotal.value = result?.total || 0
   } catch (error) {
-    console.error('加载题目失败:', error);
-    ElMessage.error('加载题目失败');
+    console.error('加载题目失败:', error)
+    ElMessage.error('加载题目失败')
   } finally {
-    loading.value = false;
+    loading.value = false
   }
-};
+}
 
 // 格式化题目数据
-const formatQuestions = (questions) => {
+const formatQuestions = questions => {
   return questions.map(question => {
-    const subjectId = question.subjectId || question.subject_id;
-    const subject = props.subjects.find(s => String(s.id) === String(subjectId));
-    const subjectName = subject ? subject.name : '';
+    const subjectId = question.subjectId || question.subject_id
+    const subject = props.subjects.find(s => String(s.id) === String(subjectId))
+    const subjectName = subject ? subject.name : ''
 
-    let subcategoryName = '';
-    const subcategoryId = question.subcategoryId || question.subcategory_id;
+    let subcategoryName = ''
+    const subcategoryId = question.subcategoryId || question.subcategory_id
     if (subject && subcategoryId) {
-      const subcategory = subject.subcategories?.find(sc => String(sc.id) === String(subcategoryId));
-      subcategoryName = subcategory ? subcategory.name : '';
+      const subcategory = subject.subcategories?.find(sc => String(sc.id) === String(subcategoryId))
+      subcategoryName = subcategory ? subcategory.name : ''
     }
 
-    const typeName = getTypeName(question.type);
-    const createdAt = question.createdAt || question.created_at || '未知';
-    const formattedCreatedAt = typeof createdAt === 'string' && createdAt !== '未知' ? formatDate(createdAt) : createdAt;
+    const typeName = getTypeName(question.type)
+    const createdAt = question.createdAt || question.created_at || '未知'
+    const formattedCreatedAt =
+      typeof createdAt === 'string' && createdAt !== '未知' ? formatDate(createdAt) : createdAt
 
-    let content = question.content;
+    let content = question.content
     if (typeof content === 'object' && content?.ops) {
-      const tempElement = document.createElement('div');
+      const tempElement = document.createElement('div')
       content.ops.forEach(op => {
         if (typeof op.insert === 'string') {
-          tempElement.innerHTML += op.insert;
+          tempElement.innerHTML += op.insert
         } else if (op.insert?.image) {
-          tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`;
+          tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`
         }
-      });
-      content = tempElement.innerHTML;
+      })
+      content = tempElement.innerHTML
     } else if (typeof content !== 'string') {
-      content = String(content || '');
+      content = String(content || '')
     }
 
     return {
@@ -746,131 +940,131 @@ const formatQuestions = (questions) => {
       typeName,
       createdAt: formattedCreatedAt,
       image: question.image || question.image_url || ''
-    };
-  });
-};
+    }
+  })
+}
 
 // 防抖搜索
 const debouncedSearch = () => {
-  clearTimeout(searchTimer);
+  clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
-    loadQuestions(true);
-  }, 300);
-};
+    loadQuestions(true)
+  }, 300)
+}
 
 // 监听筛选条件变化
 watch([filterSubjectId, filterSubcategoryId, filterType], () => {
-  loadQuestions(true);
-});
+  loadQuestions(true)
+})
 
 watch(searchKeyword, () => {
-  debouncedSearch();
-});
+  debouncedSearch()
+})
 
 // 监听分页变化
 watch([paginationPage, paginationLimit], () => {
-  loadQuestions();
-});
+  loadQuestions()
+})
 
 // 分页变化处理
-const onSizeChange = (size) => {
-  handleSizeChange(size);
-};
+const onSizeChange = size => {
+  handleSizeChange(size)
+}
 
-const onPageChange = (page) => {
-  handleCurrentChange(page);
-};
+const onPageChange = page => {
+  handleCurrentChange(page)
+}
 
 // 清除筛选
-const clearFilter = (type) => {
+const clearFilter = type => {
   switch (type) {
     case 'subject':
     case 'subcategory':
-      clearGlobalFilter();
-      break;
+      clearGlobalFilter()
+      break
     case 'type':
-      filterType.value = '';
-      break;
+      filterType.value = ''
+      break
     case 'keyword':
-      searchKeyword.value = '';
-      break;
+      searchKeyword.value = ''
+      break
   }
-};
+}
 
 const clearAllFilters = () => {
-  filterSubjectId.value = '';
-  filterSubcategoryId.value = '';
-  filterType.value = '';
-  searchKeyword.value = '';
-};
+  filterSubjectId.value = ''
+  filterSubcategoryId.value = ''
+  filterType.value = ''
+  searchKeyword.value = ''
+}
 
 // 选择变化
-const handleSelectionChange = (selection) => {
-  selectedQuestions.value = selection;
-};
+const handleSelectionChange = selection => {
+  selectedQuestions.value = selection
+}
 
 // 行内编辑
-const startInlineEdit = (row) => {
+const startInlineEdit = row => {
   // 检查是否为富文本内容
   if (isRichText(row.content)) {
-    ElMessage.warning('该题目包含富文本格式，请使用"编辑"按钮进行完整编辑');
-    return;
+    ElMessage.warning('该题目包含富文本格式，请使用"编辑"按钮进行完整编辑')
+    return
   }
-  
-  editingId.value = row.id;
-  editingContent.value = row.content;
-  nextTick(() => {
-    inlineEditInput.value?.focus();
-  });
-};
 
-const saveInlineEdit = async (row) => {
+  editingId.value = row.id
+  editingContent.value = row.content
+  nextTick(() => {
+    inlineEditInput.value?.focus()
+  })
+}
+
+const saveInlineEdit = async row => {
   if (editingContent.value === row.content) {
-    editingId.value = null;
-    return;
+    editingId.value = null
+    return
   }
 
   try {
     // 获取完整题目数据
-    const fullQuestion = await api.get(`/questions/${row.id}`);
+    const fullQuestion = await api.get(`/questions/${row.id}`)
 
     await api.put(`/questions/${row.id}`, {
       ...fullQuestion,
       content: editingContent.value
-    });
+    })
 
-    ElMessage.success('修改成功');
+    ElMessage.success('修改成功')
     // 更新本地数据
-    const index = serverQuestions.value.findIndex(q => q.id === row.id);
+    const index = serverQuestions.value.findIndex(q => q.id === row.id)
     if (index !== -1) {
-      serverQuestions.value[index].content = editingContent.value;
+      serverQuestions.value[index].content = editingContent.value
     }
   } catch (error) {
-    console.error('保存失败:', error);
-    ElMessage.error('保存失败');
+    console.error('保存失败:', error)
+    ElMessage.error('保存失败')
   } finally {
-    editingId.value = null;
+    editingId.value = null
   }
-};
+}
 
 const cancelInlineEdit = () => {
-  editingId.value = null;
-};
+  editingId.value = null
+}
 
 // 删除撤销功能
-const deleteQuestionWithUndo = (row) => {
+const deleteQuestionWithUndo = row => {
   // 先临时从列表移除
-  const index = serverQuestions.value.findIndex(q => q.id === row.id);
-  const removed = { ...serverQuestions.value[index] };
-  serverQuestions.value.splice(index, 1);
-  paginationTotal.value -= 1;
+  const index = serverQuestions.value.findIndex(q => q.id === row.id)
+  const removed = { ...serverQuestions.value[index] }
+  serverQuestions.value.splice(index, 1)
+  paginationTotal.value -= 1
 
   // 存储待删除项
   pendingDeletes.value.set(row.id, {
     data: removed,
     index,
     timer: null
-  });
+  })
 
   // 显示撤销提示
   ElMessage({
@@ -881,66 +1075,66 @@ const deleteQuestionWithUndo = (row) => {
     action: {
       text: '撤销',
       handler: () => {
-        undoDelete(row.id);
+        undoDelete(row.id)
       }
     },
     onClose: () => {
       // 消息关闭后执行真正删除
-      executeRealDelete(row.id);
+      executeRealDelete(row.id)
     }
-  });
-};
+  })
+}
 
-const undoDelete = (questionId) => {
-  const pending = pendingDeletes.value.get(questionId);
+const undoDelete = questionId => {
+  const pending = pendingDeletes.value.get(questionId)
   if (pending) {
     // 恢复数据
-    serverQuestions.value.splice(pending.index, 0, pending.data);
-    paginationTotal.value += 1;
-    pendingDeletes.value.delete(questionId);
-    ElMessage.success('已撤销删除');
+    serverQuestions.value.splice(pending.index, 0, pending.data)
+    paginationTotal.value += 1
+    pendingDeletes.value.delete(questionId)
+    ElMessage.success('已撤销删除')
   }
-};
+}
 
-const executeRealDelete = async (questionId) => {
-  const pending = pendingDeletes.value.get(questionId);
-  if (!pending) return; // 已被撤销
+const executeRealDelete = async questionId => {
+  const pending = pendingDeletes.value.get(questionId)
+  if (!pending) return // 已被撤销
 
   try {
-    await api.delete(`/questions/${questionId}`);
-    pendingDeletes.value.delete(questionId);
-    emit('delete-question', questionId);
+    await api.delete(`/questions/${questionId}`)
+    pendingDeletes.value.delete(questionId)
+    emit('delete-question', questionId)
   } catch (error) {
-    console.error('删除失败:', error);
+    console.error('删除失败:', error)
   }
-};
+}
 
 // 批量操作
-const handleBatchCommand = (command) => {
+const handleBatchCommand = command => {
   if (selectedQuestions.value.length === 0) {
-    ElMessage.warning('请先选择题目');
-    return;
+    ElMessage.warning('请先选择题目')
+    return
   }
 
   switch (command) {
     case 'delete':
-      batchDeleteQuestions();
-      break;
+      batchDeleteQuestions()
+      break
     case 'updateDifficulty':
-      batchDifficulty.value = 1;
-      batchDifficultyVisible.value = true;
-      break;
+      batchDifficulty.value = 1
+      batchDifficultyVisible.value = true
+      break
     case 'updateType':
-      batchType.value = '';
-      batchTypeVisible.value = true;
-      break;
+      batchType.value = ''
+      batchTypeVisible.value = true
+      break
     case 'move':
-      batchMoveSubjectId.value = '';
-      batchMoveSubcategoryId.value = '';
-      batchMoveVisible.value = true;
-      break;
+      batchMoveSubjectId.value = ''
+      batchMoveSubcategoryId.value = ''
+      batchMoveVisible.value = true
+      break
   }
-};
+}
 
 // 批量删除
 const batchDeleteQuestions = async () => {
@@ -949,68 +1143,68 @@ const batchDeleteQuestions = async () => {
       `确定要删除选中的 ${selectedQuestions.value.length} 道题目吗？`,
       '批量删除确认',
       { type: 'warning' }
-    );
+    )
 
-    const ids = selectedQuestions.value.map(q => q.id);
-    await api.post('/questions/batch', { action: 'delete', ids });
-    ElMessage.success(`成功删除 ${ids.length} 道题目`);
-    selectedQuestions.value = [];
-    loadQuestions();
+    const ids = selectedQuestions.value.map(q => q.id)
+    await api.post('/questions/batch', { action: 'delete', ids })
+    ElMessage.success(`成功删除 ${ids.length} 道题目`)
+    selectedQuestions.value = []
+    loadQuestions()
   } catch (e) {
     if (e !== 'cancel') {
-      ElMessage.error('删除失败');
+      ElMessage.error('删除失败')
     }
   }
-};
+}
 
 // 批量修改难度
 const executeBatchDifficulty = async () => {
-  const ids = selectedQuestions.value.map(q => q.id);
+  const ids = selectedQuestions.value.map(q => q.id)
   try {
     await api.post('/questions/batch', {
       action: 'updateDifficulty',
       ids,
       data: { difficulty: batchDifficulty.value }
-    });
-    ElMessage.success(`成功修改 ${ids.length} 道题目的难度`);
-    batchDifficultyVisible.value = false;
-    selectedQuestions.value = [];
-    loadQuestions();
+    })
+    ElMessage.success(`成功修改 ${ids.length} 道题目的难度`)
+    batchDifficultyVisible.value = false
+    selectedQuestions.value = []
+    loadQuestions()
   } catch (error) {
-    ElMessage.error('修改失败');
+    ElMessage.error('修改失败')
   }
-};
+}
 
 // 批量修改类型
 const executeBatchType = async () => {
   if (!batchType.value) {
-    ElMessage.warning('请选择目标类型');
-    return;
+    ElMessage.warning('请选择目标类型')
+    return
   }
 
-  const ids = selectedQuestions.value.map(q => q.id);
+  const ids = selectedQuestions.value.map(q => q.id)
   try {
     await api.post('/questions/batch', {
       action: 'updateType',
       ids,
       data: { type: batchType.value }
-    });
-    ElMessage.success(`成功修改 ${ids.length} 道题目的类型`);
-    batchTypeVisible.value = false;
-    selectedQuestions.value = [];
-    loadQuestions();
+    })
+    ElMessage.success(`成功修改 ${ids.length} 道题目的类型`)
+    batchTypeVisible.value = false
+    selectedQuestions.value = []
+    loadQuestions()
   } catch (error) {
-    ElMessage.error('修改失败');
+    ElMessage.error('修改失败')
   }
-};
+}
 
 // 批量移动
 const handleBatchMoveSubjectChange = () => {
-  batchMoveSubcategoryId.value = '';
-};
+  batchMoveSubcategoryId.value = ''
+}
 
 const executeBatchMove = async () => {
-  const ids = selectedQuestions.value.map(q => q.id);
+  const ids = selectedQuestions.value.map(q => q.id)
   try {
     await api.post('/questions/batch', {
       action: 'move',
@@ -1019,80 +1213,87 @@ const executeBatchMove = async () => {
         subjectId: batchMoveSubjectId.value,
         subcategoryId: batchMoveSubcategoryId.value || null
       }
-    });
-    ElMessage.success(`成功移动 ${ids.length} 道题目`);
-    batchMoveVisible.value = false;
-    selectedQuestions.value = [];
-    loadQuestions();
+    })
+    ElMessage.success(`成功移动 ${ids.length} 道题目`)
+    batchMoveVisible.value = false
+    selectedQuestions.value = []
+    loadQuestions()
   } catch (error) {
-    ElMessage.error('移动失败');
+    ElMessage.error('移动失败')
   }
-};
+}
 
 // 预览题目
-const previewQuestion = async (row) => {
+const previewQuestion = async row => {
   // 检查缓存
   if (previewCache.has(row.id)) {
-    previewData.value = previewCache.get(row.id);
-    previewVisible.value = true;
-    return;
+    previewData.value = previewCache.get(row.id)
+    previewVisible.value = true
+    return
   }
 
-  previewLoading.value = true;
-  previewVisible.value = true;
-  previewData.value = null;
+  previewLoading.value = true
+  previewVisible.value = true
+  previewData.value = null
 
   try {
-    const data = await api.get(`/questions/${row.id}`);
+    const data = await api.get(`/questions/${row.id}`)
 
     const previewInfo = {
       ...data,
-      subjectName: currentSubjectName.value || props.subjects.find(s => s.id == data.subjectId)?.name || '',
-      subcategoryName: currentSubcategoryName.value || props.subjects.find(s => s.id == data.subjectId)?.subcategories?.find(sc => sc.id == data.subcategoryId)?.name || '',
+      subjectName:
+        currentSubjectName.value || props.subjects.find(s => s.id == data.subjectId)?.name || '',
+      subcategoryName:
+        currentSubcategoryName.value ||
+        props.subjects
+          .find(s => s.id == data.subjectId)
+          ?.subcategories?.find(sc => sc.id == data.subcategoryId)?.name ||
+        '',
       typeName: getTypeName(data.type)
-    };
+    }
 
     // 缓存预览数据（最多缓存50条）
     if (previewCache.size >= 50) {
-      const firstKey = previewCache.keys().next().value;
-      previewCache.delete(firstKey);
+      const firstKey = previewCache.keys().next().value
+      previewCache.delete(firstKey)
     }
-    previewCache.set(row.id, previewInfo);
+    previewCache.set(row.id, previewInfo)
 
-    previewData.value = previewInfo;
+    previewData.value = previewInfo
   } catch (error) {
-    previewVisible.value = false;
-    ElMessage.error('获取题目详情失败');
+    previewVisible.value = false
+    ElMessage.error('获取题目详情失败')
   } finally {
-    previewLoading.value = false;
+    previewLoading.value = false
   }
-};
+}
 
 // 显示图片预览
-const showImagePreview = (row) => {
-  const url = extractImageUrl(row);
+const showImagePreview = row => {
+  const url = extractImageUrl(row)
   if (url) {
-    window.open(url, '_blank');
+    window.open(url, '_blank')
   }
-};
+}
 
 // 编辑题目
-const editQuestion = (row) => {
+const editQuestion = row => {
   // 开启分屏编辑模式
-  openSplitEdit(row);
-};
+  openSplitEdit(row)
+}
 
 // 打开添加面板
 const openAddPanel = () => {
-  editMode.value = 'add';
-  editingQuestionId.value = null;
-  splitEditMode.value = true;
+  editMode.value = 'add'
+  editingQuestionId.value = null
+  splitEditMode.value = true
 
   // 初始化空表单
-  const defaultSubjectId = props.subjects.length > 0 ? props.subjects[0].id : null;
-  const defaultSubcategoryId = defaultSubjectId && props.subjects[0]?.subcategories?.length > 0
-    ? props.subjects[0].subcategories[0].id
-    : null;
+  const defaultSubjectId = props.subjects.length > 0 ? props.subjects[0].id : null
+  const defaultSubcategoryId =
+    defaultSubjectId && props.subjects[0]?.subcategories?.length > 0
+      ? props.subjects[0].subcategories[0].id
+      : null
 
   splitEditData.value = {
     subjectId: defaultSubjectId,
@@ -1104,38 +1305,38 @@ const openAddPanel = () => {
     selectedAnswers: [],
     explanation: '',
     audio: null
-  };
-};
+  }
+}
 
 // 开启分屏编辑
-const openSplitEdit = async (row) => {
-  editMode.value = 'edit';
+const openSplitEdit = async row => {
+  editMode.value = 'edit'
   // 先显示面板和加载状态
-  splitEditMode.value = true;
-  splitEditData.value = null;
-  editingQuestionId.value = row.id;
+  splitEditMode.value = true
+  splitEditData.value = null
+  editingQuestionId.value = row.id
 
   try {
     // 获取完整题目数据
-    const data = await api.get(`/questions/${row.id}`);
+    const data = await api.get(`/questions/${row.id}`)
 
-    let options = data.options || [];
+    let options = data.options || []
     if (typeof options === 'string') {
       try {
-        options = JSON.parse(options);
+        options = JSON.parse(options)
       } catch (e) {
-        options = [];
+        options = []
       }
     }
 
     // 解析答案
-    let selectedAnswers = [];
-    const answer = data.answer || data.correct_answer;
+    let selectedAnswers = []
+    const answer = data.answer || data.correct_answer
     if (answer) {
       if (data.type === 'multiple') {
-        selectedAnswers = String(answer).split('');
+        selectedAnswers = String(answer).split('')
       } else {
-        selectedAnswers = [String(answer)];
+        selectedAnswers = [String(answer)]
       }
     }
 
@@ -1150,57 +1351,57 @@ const openSplitEdit = async (row) => {
       selectedAnswers: selectedAnswers,
       explanation: data.explanation || '',
       audio: data.audio_url || data.audio || null
-    };
-
+    }
   } catch (error) {
-    console.error('获取题目详情失败:', error);
-    ElMessage.error('获取题目详情失败');
-    closeSplitEdit();
+    console.error('获取题目详情失败:', error)
+    ElMessage.error('获取题目详情失败')
+    closeSplitEdit()
   }
-};
+}
 
 // 关闭分屏编辑
 const closeSplitEdit = () => {
-  splitEditMode.value = false;
-  editMode.value = 'edit';
-  editingQuestionId.value = null;
-  splitEditData.value = null;
-  splitEditQuill.value = null;
-};
+  splitEditMode.value = false
+  editMode.value = 'edit'
+  editingQuestionId.value = null
+  splitEditData.value = null
+  splitEditQuill.value = null
+}
 
 // 保存分屏编辑
 const saveSplitEdit = async () => {
-  if (!splitEditData.value) return;
+  if (!splitEditData.value) return
 
   // 验证
   if (!splitEditData.value.subjectId) {
-    ElMessage.warning('请选择学科');
-    return;
+    ElMessage.warning('请选择学科')
+    return
   }
   if (!splitEditData.value.subcategoryId) {
-    ElMessage.warning('请选择题库');
-    return;
+    ElMessage.warning('请选择题库')
+    return
   }
   if (!splitEditData.value.content) {
-    ElMessage.warning('请输入题目内容');
-    return;
+    ElMessage.warning('请输入题目内容')
+    return
   }
   if (splitEditData.value.selectedAnswers.length === 0) {
-    ElMessage.warning('请选择正确答案');
-    return;
+    ElMessage.warning('请选择正确答案')
+    return
   }
   // 验证选项内容
   if (splitEditData.value.options.some(opt => !opt || (typeof opt === 'string' && !opt.trim()))) {
-    ElMessage.warning('请填写所有选项内容');
-    return;
+    ElMessage.warning('请填写所有选项内容')
+    return
   }
 
-  splitEditSaving.value = true;
+  splitEditSaving.value = true
 
   try {
-    const answer = splitEditData.value.type === 'multiple'
-      ? splitEditData.value.selectedAnswers.join('')
-      : splitEditData.value.selectedAnswers[0];
+    const answer =
+      splitEditData.value.type === 'multiple'
+        ? splitEditData.value.selectedAnswers.join('')
+        : splitEditData.value.selectedAnswers[0]
 
     const requestBody = {
       subjectId: splitEditData.value.subjectId,
@@ -1212,138 +1413,150 @@ const saveSplitEdit = async () => {
       answer: answer,
       explanation: splitEditData.value.explanation,
       audio: splitEditData.value.audio || null
-    };
+    }
 
-    let response;
+    let response
     if (editMode.value === 'add') {
       // 添加新题目
-      response = await api.post('/questions', requestBody);
+      response = await api.post('/questions', requestBody)
     } else {
       // 编辑现有题目
-      response = await api.put(`/questions/${editingQuestionId.value}`, requestBody);
+      response = await api.put(`/questions/${editingQuestionId.value}`, requestBody)
     }
 
-    ElMessage.success(editMode.value === 'add' ? '添加成功' : '保存成功');
+    ElMessage.success(editMode.value === 'add' ? '添加成功' : '保存成功')
     // 刷新列表
-    loadQuestions();
+    loadQuestions()
     // 添加成功后关闭面板
     if (editMode.value === 'add') {
-      closeSplitEdit();
+      closeSplitEdit()
     }
   } catch (error) {
-    console.error('保存失败:', error);
-    ElMessage.error(error.message || '保存失败');
+    console.error('保存失败:', error)
+    ElMessage.error(error.message || '保存失败')
   } finally {
-    splitEditSaving.value = false;
+    splitEditSaving.value = false
   }
-};
+}
 
 // 保存并下一个
 const saveAndNext = async () => {
-  await saveSplitEdit();
-  
-  if (!splitEditMode.value) return; // 保存失败则不继续
-  
+  await saveSplitEdit()
+
+  if (!splitEditMode.value) return // 保存失败则不继续
+
   // 找到当前题目的索引
-  const currentIndex = serverQuestions.value.findIndex(q => q.id === editingQuestionId.value);
-  
+  const currentIndex = serverQuestions.value.findIndex(q => q.id === editingQuestionId.value)
+
   if (currentIndex < serverQuestions.value.length - 1) {
     // 打开下一个题目
-    const nextQuestion = serverQuestions.value[currentIndex + 1];
-    openSplitEdit(nextQuestion);
+    const nextQuestion = serverQuestions.value[currentIndex + 1]
+    openSplitEdit(nextQuestion)
   } else {
-    ElMessage.info('已是最后一题');
-    closeSplitEdit();
+    ElMessage.info('已是最后一题')
+    closeSplitEdit()
   }
-};
+}
 
 // 分屏编辑学科变化
 const onSplitEditSubjectChange = () => {
-  splitEditData.value.subcategoryId = null;
-};
+  splitEditData.value.subcategoryId = null
+}
 
 // 分屏编辑 Quill 准备
-const onSplitQuillReady = (quill) => {
-  splitEditQuill.value = quill;
-};
+const onSplitQuillReady = quill => {
+  splitEditQuill.value = quill
+}
 
 // 添加选项
 const addSplitEditOption = () => {
-  if (!splitEditData.value) return;
+  if (!splitEditData.value) return
   if (splitEditData.value.options.length >= 6) {
-    ElMessage.warning('最多添加6个选项');
-    return;
+    ElMessage.warning('最多添加6个选项')
+    return
   }
-  splitEditData.value.options.push('');
-};
+  splitEditData.value.options.push('')
+}
 
 // 删除选项
-const removeSplitEditOption = (index) => {
-  if (!splitEditData.value) return;
-  const letter = String.fromCharCode(65 + index);
+const removeSplitEditOption = index => {
+  if (!splitEditData.value) return
+  const letter = String.fromCharCode(65 + index)
   // 移除选项
-  splitEditData.value.options.splice(index, 1);
+  splitEditData.value.options.splice(index, 1)
   // 移除答案中的该选项
-  splitEditData.value.selectedAnswers = splitEditData.value.selectedAnswers.filter(a => a !== letter);
-};
+  splitEditData.value.selectedAnswers = splitEditData.value.selectedAnswers.filter(
+    a => a !== letter
+  )
+}
 
 // 处理音频文件上传
-const handleSplitEditAudioChange = async (file) => {
+const handleSplitEditAudioChange = async file => {
   console.log('[音频上传] 文件信息:', {
     name: file?.name,
     size: file?.raw?.size,
     type: file?.raw?.type,
     sizeMB: file?.raw?.size ? (file.raw.size / 1024 / 1024).toFixed(2) + ' MB' : 'unknown'
-  });
-  
-  if (!file || !file.raw) return;
-  
+  })
+
+  if (!file || !file.raw) return
+
   // 检查文件大小
-  const maxSize = 10 * 1024 * 1024; // 10MB
-  const fileSizeMB = (file.raw.size / 1024 / 1024).toFixed(2);
-  
-  console.log(`[音频上传] 文件大小: ${fileSizeMB} MB, 限制: 10 MB`);
-  
+  const maxSize = 10 * 1024 * 1024 // 10MB
+  const fileSizeMB = (file.raw.size / 1024 / 1024).toFixed(2)
+
+  console.log(`[音频上传] 文件大小: ${fileSizeMB} MB, 限制: 10 MB`)
+
   if (file.raw.size > maxSize) {
-    ElMessage.error(`音频文件大小 ${fileSizeMB} MB 超过限制（最大 10MB）`);
-    return;
+    ElMessage.error(`音频文件大小 ${fileSizeMB} MB 超过限制（最大 10MB）`)
+    return
   }
-  
+
   // 检查文件类型
-  const allowedTypes = ['audio/mpeg', 'audio/mp3', 'audio/wav', 'audio/x-wav', 'audio/wave', 'audio/ogg', 'audio/mp4', 'audio/x-m4a', 'audio/m4a'];
-  const ext = file.name.split('.').pop().toLowerCase();
-  const allowedExts = ['mp3', 'wav', 'ogg', 'm4a'];
-  
+  const allowedTypes = [
+    'audio/mpeg',
+    'audio/mp3',
+    'audio/wav',
+    'audio/x-wav',
+    'audio/wave',
+    'audio/ogg',
+    'audio/mp4',
+    'audio/x-m4a',
+    'audio/m4a'
+  ]
+  const ext = file.name.split('.').pop().toLowerCase()
+  const allowedExts = ['mp3', 'wav', 'ogg', 'm4a']
+
   if (!allowedTypes.includes(file.raw.type) && !allowedExts.includes(ext)) {
-    ElMessage.error('不支持的音频格式，仅支持 MP3、WAV、OGG、M4A');
-    return;
+    ElMessage.error('不支持的音频格式，仅支持 MP3、WAV、OGG、M4A')
+    return
   }
-  
-  audioUploading.value = true;
-  audioUploadProgress.value = 0;
-  
-  const formData = new FormData();
-  formData.append('audio', file.raw);
-  
+
+  audioUploading.value = true
+  audioUploadProgress.value = 0
+
+  const formData = new FormData()
+  formData.append('audio', file.raw)
+
   // 使用 XMLHttpRequest 获取真实上传进度
-  const xhr = new XMLHttpRequest();
-  xhr.timeout = 60000; // 60秒超时
-  
+  const xhr = new XMLHttpRequest()
+  xhr.timeout = 60000 // 60秒超时
+
   // 添加 readystatechange 监听
   xhr.addEventListener('readystatechange', () => {
-    console.log('[音频上传] readyState:', xhr.readyState, 'status:', xhr.status);
-  });
-  
-  xhr.upload.addEventListener('progress', (e) => {
+    console.log('[音频上传] readyState:', xhr.readyState, 'status:', xhr.status)
+  })
+
+  xhr.upload.addEventListener('progress', e => {
     if (e.lengthComputable) {
-      audioUploadProgress.value = Math.round((e.loaded / e.total) * 100);
+      audioUploadProgress.value = Math.round((e.loaded / e.total) * 100)
     }
-  });
-  
+  })
+
   xhr.addEventListener('load', () => {
-    console.log('[音频上传] 状态:', xhr.status, '响应:', xhr.responseText);
+    console.log('[音频上传] 状态:', xhr.status, '响应:', xhr.responseText)
     try {
-      const result = JSON.parse(xhr.responseText);
+      const result = JSON.parse(xhr.responseText)
       if (xhr.status === 200 && result.success) {
         // 确保 splitEditData 存在
         if (!splitEditData.value) {
@@ -1357,273 +1570,276 @@ const handleSplitEditAudioChange = async (file) => {
             selectedAnswers: [],
             explanation: '',
             audio: result.url
-          };
+          }
         } else {
-          splitEditData.value.audio = result.url;
+          splitEditData.value.audio = result.url
         }
-        console.log('[音频上传] 设置 audio URL:', result.url);
-        ElMessage.success('音频上传成功');
+        console.log('[音频上传] 设置 audio URL:', result.url)
+        ElMessage.success('音频上传成功')
       } else {
         // 显示服务器返回的具体错误信息
-        const errorMsg = result.error || result.message || `上传失败 (${xhr.status})`;
-        console.error('[音频上传] 服务器错误:', errorMsg);
-        ElMessage.error(errorMsg);
+        const errorMsg = result.error || result.message || `上传失败 (${xhr.status})`
+        console.error('[音频上传] 服务器错误:', errorMsg)
+        ElMessage.error(errorMsg)
       }
     } catch (e) {
-      console.error('[音频上传] 解析错误:', e);
-      ElMessage.error(xhr.status === 200 ? '解析响应失败' : `上传失败: ${xhr.status}`);
+      console.error('[音频上传] 解析错误:', e)
+      ElMessage.error(xhr.status === 200 ? '解析响应失败' : `上传失败: ${xhr.status}`)
     }
-  });
-  
+  })
+
   xhr.addEventListener('loadend', () => {
-    console.log('[音频上传] 请求结束');
-    audioUploading.value = false;
-    audioUploadProgress.value = 0;
-  });
-  
+    console.log('[音频上传] 请求结束')
+    audioUploading.value = false
+    audioUploadProgress.value = 0
+  })
+
   xhr.addEventListener('error', () => {
-    console.error('[音频上传] 网络错误');
-    ElMessage.error('网络错误，上传失败');
-  });
-  
+    console.error('[音频上传] 网络错误')
+    ElMessage.error('网络错误，上传失败')
+  })
+
   xhr.addEventListener('timeout', () => {
-    console.error('[音频上传] 超时');
-    ElMessage.error('上传超时');
-  });
-  
+    console.error('[音频上传] 超时')
+    ElMessage.error('上传超时')
+  })
+
   xhr.addEventListener('abort', () => {
-    console.log('[音频上传] 被中止');
-    ElMessage.warning('上传已取消');
-  });
-  
-  console.log('[音频上传] 开始上传:', file.name, '大小:', file.raw.size);
-  console.log('[音频上传] API URL:', `${getApiBaseUrl()}/upload/audio`);
-  
-  xhr.open('POST', `${getApiBaseUrl()}/upload/audio`);
-  xhr.send(formData);
-  
-  console.log('[音频上传] 请求已发送');
-};
+    console.log('[音频上传] 被中止')
+    ElMessage.warning('上传已取消')
+  })
+
+  console.log('[音频上传] 开始上传:', file.name, '大小:', file.raw.size)
+  console.log('[音频上传] API URL:', `${getApiBaseUrl()}/upload/audio`)
+
+  xhr.open('POST', `${getApiBaseUrl()}/upload/audio`)
+  xhr.send(formData)
+
+  console.log('[音频上传] 请求已发送')
+}
 
 // 删除音频
 const deleteSplitEditAudio = () => {
   if (splitEditData.value) {
-    splitEditData.value.audio = null;
-    audioPlaying.value = false;
-    audioCurrentTime.value = 0;
-    audioDuration.value = 0;
-    audioProgress.value = 0;
+    splitEditData.value.audio = null
+    audioPlaying.value = false
+    audioCurrentTime.value = 0
+    audioDuration.value = 0
+    audioProgress.value = 0
   }
-};
+}
 
 // 音频播放器控制
 const toggleAudioPlay = () => {
-  if (!audioPlayerRef.value) return;
-  
+  if (!audioPlayerRef.value) return
+
   if (audioPlaying.value) {
-    audioPlayerRef.value.pause();
+    audioPlayerRef.value.pause()
   } else {
-    audioPlayerRef.value.play();
+    audioPlayerRef.value.play()
   }
-  audioPlaying.value = !audioPlaying.value;
-};
+  audioPlaying.value = !audioPlaying.value
+}
 
 const onAudioLoaded = () => {
   if (audioPlayerRef.value) {
-    audioDuration.value = audioPlayerRef.value.duration;
+    audioDuration.value = audioPlayerRef.value.duration
   }
-};
+}
 
 const onAudioTimeUpdate = () => {
-  if (!audioPlayerRef.value) return;
-  audioCurrentTime.value = audioPlayerRef.value.currentTime;
+  if (!audioPlayerRef.value) return
+  audioCurrentTime.value = audioPlayerRef.value.currentTime
   if (audioDuration.value > 0) {
-    audioProgress.value = (audioCurrentTime.value / audioDuration.value) * 100;
+    audioProgress.value = (audioCurrentTime.value / audioDuration.value) * 100
   }
-};
+}
 
 const onAudioEnded = () => {
-  audioPlaying.value = false;
-  audioProgress.value = 0;
-};
+  audioPlaying.value = false
+  audioProgress.value = 0
+}
 
-const onAudioProgressChange = (val) => {
-  if (!audioPlayerRef.value || !audioDuration.value) return;
-  audioPlayerRef.value.currentTime = (val / 100) * audioDuration.value;
-};
+const onAudioProgressChange = val => {
+  if (!audioPlayerRef.value || !audioDuration.value) return
+  audioPlayerRef.value.currentTime = (val / 100) * audioDuration.value
+}
 
 const audioSeekBackward = () => {
-  if (!audioPlayerRef.value) return;
-  audioPlayerRef.value.currentTime = Math.max(0, audioPlayerRef.value.currentTime - 5);
-};
+  if (!audioPlayerRef.value) return
+  audioPlayerRef.value.currentTime = Math.max(0, audioPlayerRef.value.currentTime - 5)
+}
 
 const audioSeekForward = () => {
-  if (!audioPlayerRef.value) return;
-  audioPlayerRef.value.currentTime = Math.min(audioDuration.value, audioPlayerRef.value.currentTime + 5);
-};
+  if (!audioPlayerRef.value) return
+  audioPlayerRef.value.currentTime = Math.min(
+    audioDuration.value,
+    audioPlayerRef.value.currentTime + 5
+  )
+}
 
-const setAudioSpeed = (speed) => {
-  if (!audioPlayerRef.value) return;
-  audioPlayerRef.value.playbackRate = speed;
-  audioSpeed.value = speed;
-};
+const setAudioSpeed = speed => {
+  if (!audioPlayerRef.value) return
+  audioPlayerRef.value.playbackRate = speed
+  audioSpeed.value = speed
+}
 
-const formatAudioTime = (seconds) => {
-  if (!seconds || isNaN(seconds)) return '00:00';
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
-};
+const formatAudioTime = seconds => {
+  if (!seconds || isNaN(seconds)) return '00:00'
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+}
 
 // 编辑面板拖拽调整高度
-let isPanelResizing = false;
-let startPanelY = 0;
-let startPanelHeight = 0;
+let isPanelResizing = false
+let startPanelY = 0
+let startPanelHeight = 0
 
-const startPanelResize = (e) => {
-  isPanelResizing = true;
-  startPanelY = e.clientY;
-  startPanelHeight = editPanelHeight.value;
-  document.addEventListener('mousemove', handlePanelResize);
-  document.addEventListener('mouseup', stopPanelResize);
-};
+const startPanelResize = e => {
+  isPanelResizing = true
+  startPanelY = e.clientY
+  startPanelHeight = editPanelHeight.value
+  document.addEventListener('mousemove', handlePanelResize)
+  document.addEventListener('mouseup', stopPanelResize)
+}
 
-const handlePanelResize = (e) => {
-  if (!isPanelResizing) return;
-  const diff = startPanelY - e.clientY;
-  const newHeight = Math.max(200, Math.min(500, startPanelHeight + diff));
-  editPanelHeight.value = newHeight;
-};
+const handlePanelResize = e => {
+  if (!isPanelResizing) return
+  const diff = startPanelY - e.clientY
+  const newHeight = Math.max(200, Math.min(500, startPanelHeight + diff))
+  editPanelHeight.value = newHeight
+}
 
 const stopPanelResize = () => {
-  isPanelResizing = false;
-  document.removeEventListener('mousemove', handlePanelResize);
-  document.removeEventListener('mouseup', stopPanelResize);
-};
+  isPanelResizing = false
+  document.removeEventListener('mousemove', handlePanelResize)
+  document.removeEventListener('mouseup', stopPanelResize)
+}
 
 // 显示批量添加对话框
 const showBatchAddQuestionDialog = () => {
-  emit('show-batch-add-dialog');
-};
+  emit('show-batch-add-dialog')
+}
 
 // 刷新题目
 const refreshQuestions = () => {
-  loadQuestions();
-};
+  loadQuestions()
+}
 
 // 侧边栏拖拽调整宽度
-let isResizing = false;
-let startX = 0;
-let startWidth = 0;
+let isResizing = false
+let startX = 0
+let startWidth = 0
 
-const startResize = (e) => {
-  isResizing = true;
-  startX = e.clientX;
-  startWidth = sidebarWidth.value;
-  document.addEventListener('mousemove', handleResize);
-  document.addEventListener('mouseup', stopResize);
-};
+const startResize = e => {
+  isResizing = true
+  startX = e.clientX
+  startWidth = sidebarWidth.value
+  document.addEventListener('mousemove', handleResize)
+  document.addEventListener('mouseup', stopResize)
+}
 
-const handleResize = (e) => {
-  if (!isResizing) return;
-  const diff = e.clientX - startX;
-  const newWidth = Math.max(180, Math.min(350, startWidth + diff));
-  sidebarWidth.value = newWidth;
-};
+const handleResize = e => {
+  if (!isResizing) return
+  const diff = e.clientX - startX
+  const newWidth = Math.max(180, Math.min(350, startWidth + diff))
+  sidebarWidth.value = newWidth
+}
 
 const stopResize = () => {
-  isResizing = false;
-  document.removeEventListener('mousemove', handleResize);
-  document.removeEventListener('mouseup', stopResize);
-};
+  isResizing = false
+  document.removeEventListener('mousemove', handleResize)
+  document.removeEventListener('mouseup', stopResize)
+}
 
 // 辅助方法
-const hasValidImage = (row) => {
-  if (row.image) return true;
-  if (row.image_url) return true;
-  return typeof row.content === 'string' && row.content.includes('<img');
-};
+const hasValidImage = row => {
+  if (row.image) return true
+  if (row.image_url) return true
+  return typeof row.content === 'string' && row.content.includes('<img')
+}
 
 // 检测内容是否包含富文本（HTML标签）
-const isRichText = (content) => {
-  if (!content || typeof content !== 'string') return false;
+const isRichText = content => {
+  if (!content || typeof content !== 'string') return false
   // 检测常见的 HTML 标签（排除简单的换行）
-  const richTextPattern = /<(?!br\s*\/?>)[a-zA-Z][^>]*>/i;
-  return richTextPattern.test(content);
-};
+  const richTextPattern = /<(?!br\s*\/?>)[a-zA-Z][^>]*>/i
+  return richTextPattern.test(content)
+}
 
 // 检测内容是否可以安全进行行内编辑
-const canInlineEdit = (row) => {
+const canInlineEdit = row => {
   // 富文本内容不适合行内编辑
-  return !isRichText(row.content);
-};
+  return !isRichText(row.content)
+}
 
-const extractImageUrl = (row) => {
-  if (row.image) return row.image;
-  if (row.image_url) return row.image_url;
-  if (typeof row.content !== 'string') return '';
-  const match = row.content.match(/<img[^>]+src="([^"]+)"/);
-  return match ? match[1] : '';
-};
+const extractImageUrl = row => {
+  if (row.image) return row.image
+  if (row.image_url) return row.image_url
+  if (typeof row.content !== 'string') return ''
+  const match = row.content.match(/<img[^>]+src="([^"]+)"/)
+  return match ? match[1] : ''
+}
 
-const stripImages = (content) => {
-  if (typeof content !== 'string') return '';
-  return content.replace(/<img[^>]+>/g, '');
-};
+const stripImages = content => {
+  if (typeof content !== 'string') return ''
+  return content.replace(/<img[^>]+>/g, '')
+}
 
 const truncate = (html, length) => {
-  if (!html) return '';
-  const text = html.replace(/<[^>]+>/g, '');
-  return text.length > length ? text.substring(0, length) + '...' : html;
-};
+  if (!html) return ''
+  const text = html.replace(/<[^>]+>/g, '')
+  return text.length > length ? text.substring(0, length) + '...' : html
+}
 
-const getTypeName = (type) => {
+const getTypeName = type => {
   const typeMap = {
-    'single': '单选题',
-    'multiple': '多选题',
-    'judgment': '判断题',
-    'listening': '听力题',
-    'reading': '阅读题',
-    'image': '看图题'
-  };
-  return typeMap[type] || (typeof type === 'string' ? type : '未知');
-};
+    single: '单选题',
+    multiple: '多选题',
+    judgment: '判断题',
+    listening: '听力题',
+    reading: '阅读题',
+    image: '看图题'
+  }
+  return typeMap[type] || (typeof type === 'string' ? type : '未知')
+}
 
-const getTypeTagType = (type) => {
+const getTypeTagType = type => {
   const typeMap = {
-    'single': 'primary',
-    'multiple': 'success',
-    'judgment': 'warning'
-  };
-  return typeMap[type] || 'info';
-};
+    single: 'primary',
+    multiple: 'success',
+    judgment: 'warning'
+  }
+  return typeMap[type] || 'info'
+}
 
 const getRowClassName = ({ row }) => {
-  return (hasValidImage(row) || row.audio) ? 'has-media' : '';
-};
+  return hasValidImage(row) || row.audio ? 'has-media' : ''
+}
 
 // 初始加载
 onMounted(() => {
-  loadQuestions();
-});
+  loadQuestions()
+})
 
 // 组件卸载时清理
 onUnmounted(() => {
   // 清理搜索定时器
   if (searchTimer) {
-    clearTimeout(searchTimer);
-    searchTimer = null;
+    clearTimeout(searchTimer)
+    searchTimer = null
   }
   // 清理预览缓存
-  previewCache.clear();
+  previewCache.clear()
   // 清理待删除队列
-  pendingDeletes.value.clear();
-});
+  pendingDeletes.value.clear()
+})
 
 // 暴露方法给父组件
 defineExpose({
   refresh: loadQuestions
-});
+})
 </script>
 
 <style scoped>
@@ -1781,8 +1997,12 @@ defineExpose({
 }
 
 @keyframes rotating {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .split-edit-form {

@@ -8,7 +8,7 @@
     <span class="decor-element decor-star decor-star--top-right">✨</span>
     <span class="decor-element decor-star decor-star--bottom-left">🌟</span>
     <span class="decor-element decor-star decor-star--bottom-right">⭐</span>
-    
+
     <div class="header-content">
       <h1 class="header-title">🎊 {{ interfaceName }} 🎊</h1>
       <p class="header-subtitle">快乐学习 · 智慧闯关 · 勇敢挑战 · 争做小达人</p>
@@ -35,12 +35,12 @@ onMounted(async () => {
 /* 1. CSS 变量抽离（仅保留核心业务变量，通用UI变量按需引用） */
 :root {
   /* 业务核心变量 */
-  --primary-color: #FF6B6B;
-  --accent-color: #FFD166;
-  --background-color: #F7FFF7;
-  --header-gradient: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
-  --header-border-color: #FF9999;
-  
+  --primary-color: #ff6b6b;
+  --accent-color: #ffd166;
+  --background-color: #f7fff7;
+  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  --header-border-color: #ff9999;
+
   /* 通用UI变量（精简版，仅保留使用到的） */
   --el-color-white: #fff;
   --el-color-black: #000;
@@ -54,7 +54,8 @@ onMounted(async () => {
 
 /* 动画效果 */
 @keyframes header-float {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateY(0) rotate(0deg);
   }
   50% {
@@ -63,7 +64,8 @@ onMounted(async () => {
 }
 
 @keyframes header-twinkle {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 0.6;
     transform: scale(1);
   }
@@ -74,7 +76,8 @@ onMounted(async () => {
 }
 
 @keyframes header-pulse {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(-50%) scale(1);
   }
   50% {
@@ -158,7 +161,7 @@ onMounted(async () => {
   left: 50%;
   top: 15px;
   transform: translateX(-50%);
-  color: #FF6B6B;
+  color: #ff6b6b;
   animation: header-pulse 2s ease-in-out infinite;
 }
 
@@ -173,8 +176,8 @@ onMounted(async () => {
   font-weight: bold;
   color: var(--el-color-white);
   margin-bottom: 15px;
-  text-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .header-subtitle {
@@ -182,11 +185,11 @@ onMounted(async () => {
   color: var(--el-color-white);
   line-height: 1.6;
   letter-spacing: 1px;
-  background: rgba(255,255,255,0.2);
+  background: rgba(255, 255, 255, 0.2);
   padding: 8px 20px;
   border-radius: var(--el-border-radius-round);
   display: inline-block;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 /* 6. 响应式适配（媒体查询精简） */

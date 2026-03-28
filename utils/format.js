@@ -11,15 +11,15 @@
  */
 function formatNumber(value, decimals = 1) {
   if (value === null || value === undefined || value === '') {
-    return decimals === 0 ? '0' : '0.' + '0'.repeat(decimals);
+    return decimals === 0 ? '0' : '0.' + '0'.repeat(decimals)
   }
-  
-  const num = Number(value);
+
+  const num = Number(value)
   if (isNaN(num)) {
-    return decimals === 0 ? '0' : '0.' + '0'.repeat(decimals);
+    return decimals === 0 ? '0' : '0.' + '0'.repeat(decimals)
   }
-  
-  return num.toFixed(decimals);
+
+  return num.toFixed(decimals)
 }
 
 /**
@@ -29,7 +29,7 @@ function formatNumber(value, decimals = 1) {
  * @returns {string} 格式化后的百分比，如 "85.5%"
  */
 function formatPercent(value, decimals = 1) {
-  return formatNumber(value, decimals) + '%';
+  return formatNumber(value, decimals) + '%'
 }
 
 /**
@@ -38,13 +38,13 @@ function formatPercent(value, decimals = 1) {
  * @returns {string} 格式化后的大小，如 "1.5 MB"
  */
 function formatFileSize(bytes) {
-  if (!bytes || bytes === 0) return '0 B';
-  
-  const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-  const k = 1024;
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + units[i];
+  if (!bytes || bytes === 0) return '0 B'
+
+  const units = ['B', 'KB', 'MB', 'GB', 'TB']
+  const k = 1024
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+
+  return (bytes / Math.pow(k, i)).toFixed(2) + ' ' + units[i]
 }
 
 /**
@@ -53,12 +53,12 @@ function formatFileSize(bytes) {
  * @returns {string} 格式化后的时长，如 "05:30"
  */
 function formatDuration(seconds) {
-  if (!seconds || seconds < 0) return '00:00';
-  
-  const mins = Math.floor(seconds / 60);
-  const secs = Math.floor(seconds % 60);
-  
-  return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+  if (!seconds || seconds < 0) return '00:00'
+
+  const mins = Math.floor(seconds / 60)
+  const secs = Math.floor(seconds % 60)
+
+  return String(mins).padStart(2, '0') + ':' + String(secs).padStart(2, '0')
 }
 
 module.exports = {
@@ -66,4 +66,4 @@ module.exports = {
   formatPercent,
   formatFileSize,
   formatDuration
-};
+}

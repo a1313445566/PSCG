@@ -1,40 +1,39 @@
 <template>
   <div class="subcategory-view">
     <AppHeader />
-    
+
     <div class="subcategory-content">
       <div class="page-header">
         <h2 class="page-title">{{ currentSubject.name }}</h2>
         <button class="back-btn" @click="backToHome">🔙 返回学科选择</button>
       </div>
-      
+
       <!-- 错题巩固题库 -->
-      <ErrorCollectionCard 
-        :subjectId="currentSubject.id"
-        :subjectName="currentSubject.name"
-      />
+      <ErrorCollectionCard :subject-id="currentSubject.id" :subject-name="currentSubject.name" />
 
       <div class="subcategory-section">
         <h3 class="section-title">🎯 选择题库</h3>
         <div class="subcategory-grid">
-          <SubcategoryCard 
-            v-for="subcategory in currentSubject.subcategories" 
+          <SubcategoryCard
+            v-for="subcategory in currentSubject.subcategories"
             :key="subcategory.id"
             :subcategory="subcategory"
-            :subjectId="currentSubject.id"
+            :subject-id="currentSubject.id"
             :questions="questions"
-            :subcategoryStats="subcategoryStats"
+            :subcategory-stats="subcategoryStats"
             @select="selectSubcategory"
           />
         </div>
       </div>
-      
+
       <div class="difficulty-rules-section">
         <div class="rules-header" @click="toggleRules">
           <h3 class="section-title">📊 难度调整规则</h3>
-          <div class="toggle-icon" :class="{ 'rotated': rulesExpanded }">{{ rulesExpanded ? '▼' : '▼' }}</div>
+          <div class="toggle-icon" :class="{ rotated: rulesExpanded }">
+            {{ rulesExpanded ? '▼' : '▼' }}
+          </div>
         </div>
-        <div class="difficulty-rules-content" v-show="rulesExpanded">
+        <div v-show="rulesExpanded" class="difficulty-rules-content">
           <div class="rule-item">
             <h4>自动难度调整</h4>
             <p>系统会根据学生的答题情况自动调整题目难度：</p>
@@ -48,9 +47,18 @@
           <div class="rule-item">
             <h4>难度等级说明</h4>
             <ul>
-              <li><span class="difficulty-badge easy">简单</span>：适合初学者，题目较为基础</li>
-              <li><span class="difficulty-badge medium">中等</span>：适合有一定基础的学生</li>
-              <li><span class="difficulty-badge hard">困难</span>：适合挑战自我，题目较为复杂</li>
+              <li>
+                <span class="difficulty-badge easy">简单</span>
+                ：适合初学者，题目较为基础
+              </li>
+              <li>
+                <span class="difficulty-badge medium">中等</span>
+                ：适合有一定基础的学生
+              </li>
+              <li>
+                <span class="difficulty-badge hard">困难</span>
+                ：适合挑战自我，题目较为复杂
+              </li>
             </ul>
           </div>
           <div class="rule-item">
@@ -89,7 +97,12 @@ const subjectId = computed(() => parseInt(route.params.subjectId))
 // 当前学科
 const currentSubject = computed(() => {
   // 直接使用从数据库获取的排序（已在后端按sort_order排序）
-  return questionStore.subjects.find(s => s.id === subjectId.value) || { name: '未知学科', subcategories: [] };
+  return (
+    questionStore.subjects.find(s => s.id === subjectId.value) || {
+      name: '未知学科',
+      subcategories: []
+    }
+  )
 })
 
 // 题目数据（用于兼容，但不再预加载所有题目）
@@ -99,7 +112,7 @@ const questions = computed(() => questionStore.questions)
 const subcategoryStats = computed(() => questionStore.subcategoryStats)
 
 // 选择题库
-const selectSubcategory = (subcategoryId) => {
+const selectSubcategory = subcategoryId => {
   router.push(`/quiz/${subjectId.value}/${subcategoryId}`)
 }
 
@@ -116,27 +129,27 @@ const toggleRules = () => {
 onMounted(async () => {
   // 初始化数据
   await questionStore.initialize()
-  
+
   // 加载当前学科的子分类统计数据（不再加载所有题目）
   if (subjectId.value) {
     await questionStore.loadSubcategoryStats(subjectId.value)
   }
-  
+
   // 检查是否已登录
   if (!localStorage.getItem('studentId')) {
     router.push('/login')
   }
-  
+
   // 确保 subjects 加载完成后，加载错题巩固题库
   if (currentSubject.value.id) {
     await questionStore.loadErrorCollection(currentSubject.value.id)
   }
-  
+
   // 在小屏幕上默认折叠难度规则
   if (window.innerWidth <= 768) {
     rulesExpanded.value = false
   }
-  
+
   // 监听窗口大小变化
   window.addEventListener('resize', () => {
     if (window.innerWidth <= 768) {
@@ -151,7 +164,7 @@ onMounted(async () => {
 <style scoped>
 .subcategory-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
   background-repeat: repeat;
   padding-bottom: 2rem;
@@ -178,12 +191,12 @@ onMounted(async () => {
   font-family: 'Fredoka One', 'Comic Sans MS', cursive;
   font-size: 1.8rem;
   font-weight: bold;
-  color: #4A90E2;
+  color: #4a90e2;
   margin: 0;
 }
 
 .back-btn {
-  background-color: #F0F4F8;
+  background-color: #f0f4f8;
   color: #333;
   border: none;
   padding: 0.8rem 1.5rem;
@@ -197,7 +210,7 @@ onMounted(async () => {
 }
 
 .back-btn:hover {
-  background-color: #E3EAF6;
+  background-color: #e3eaf6;
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
@@ -220,7 +233,7 @@ onMounted(async () => {
 
 .toggle-icon {
   font-size: 1rem;
-  color: #4A90E2;
+  color: #4a90e2;
   transition: transform 0.3s ease;
 }
 
@@ -238,7 +251,7 @@ onMounted(async () => {
   background: #f9f9f9;
   border-radius: 12px;
   padding: 1.5rem;
-  border-left: 4px solid #4A90E2;
+  border-left: 4px solid #4a90e2;
 }
 
 .rule-item h4 {
@@ -276,7 +289,7 @@ onMounted(async () => {
   content: '•';
   position: absolute;
   left: 0;
-  color: #4A90E2;
+  color: #4a90e2;
   font-weight: bold;
 }
 
@@ -290,18 +303,18 @@ onMounted(async () => {
 }
 
 .difficulty-badge.easy {
-  background-color: #E8F5E9;
-  color: #2E7D32;
+  background-color: #e8f5e9;
+  color: #2e7d32;
 }
 
 .difficulty-badge.medium {
-  background-color: #FFF8E1;
-  color: #EF6C00;
+  background-color: #fff8e1;
+  color: #ef6c00;
 }
 
 .difficulty-badge.hard {
-  background-color: #FFEBEE;
-  color: #C62828;
+  background-color: #ffebee;
+  color: #c62828;
 }
 
 .subcategory-section {
@@ -332,35 +345,35 @@ onMounted(async () => {
   .subcategory-content {
     padding: 1.5rem;
   }
-  
+
   .page-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
     padding: 1.2rem;
   }
-  
+
   .page-title {
     font-size: 1.5rem;
   }
-  
+
   .section-title {
     font-size: 1.3rem;
   }
-  
+
   .subcategory-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1rem;
   }
-  
+
   .subcategory-section {
     padding: 1.5rem;
   }
-  
+
   .difficulty-rules-section {
     padding: 1.5rem;
   }
-  
+
   .difficulty-rules-content {
     grid-template-columns: 1fr;
     gap: 1rem;
@@ -371,28 +384,28 @@ onMounted(async () => {
   .subcategory-content {
     padding: 1rem;
   }
-  
+
   .page-header {
     padding: 1rem;
   }
-  
+
   .page-title {
     font-size: 1.3rem;
   }
-  
+
   .section-title {
     font-size: 1.2rem;
   }
-  
+
   .subcategory-grid {
     grid-template-columns: 1fr;
     gap: 0.8rem;
   }
-  
+
   .subcategory-section {
     padding: 1.2rem;
   }
-  
+
   .difficulty-rules-section {
     padding: 1.2rem;
   }
@@ -402,40 +415,40 @@ onMounted(async () => {
   .page-header {
     padding: 0.8rem;
   }
-  
+
   .page-title {
     font-size: 1.2rem;
   }
-  
+
   .section-title {
     font-size: 1.1rem;
   }
-  
+
   .subcategory-grid {
     grid-template-columns: 1fr;
     gap: 0.6rem;
   }
-  
+
   .subcategory-section {
     padding: 1rem;
   }
-  
+
   .difficulty-rules-section {
     padding: 1rem;
   }
-  
+
   .difficulty-rules-content {
     gap: 0.8rem;
   }
-  
+
   .rule-item {
     padding: 1rem;
   }
-  
+
   .rule-item h4 {
     font-size: 1rem;
   }
-  
+
   .rule-item li {
     font-size: 0.9rem;
   }

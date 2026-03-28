@@ -14,22 +14,22 @@
  */
 export const formatPercent = (value, options = {}) => {
   const { isDecimal = false, decimals = 0, suffix = '%' } = options
-  
+
   if (value === null || value === undefined || value === '') {
     return `0${suffix}`
   }
-  
+
   let num = parseFloat(value)
   if (isNaN(num)) return `0${suffix}`
-  
+
   // 如果是小数形式（0-1），转换为百分比
   if (isDecimal) {
     num = num * 100
   }
-  
+
   // 限制范围
   num = Math.max(0, Math.min(100, num))
-  
+
   return `${num.toFixed(decimals)}${suffix}`
 }
 
@@ -38,7 +38,7 @@ export const formatPercent = (value, options = {}) => {
  * @param {number|string} accuracy - 正确率数值（0-100）
  * @returns {string} 格式化后的正确率，如 "85%"
  */
-export const formatAccuracy = (accuracy) => {
+export const formatAccuracy = accuracy => {
   return formatPercent(accuracy, { decimals: 0 })
 }
 
@@ -52,10 +52,10 @@ export const formatNumber = (value, decimals = 0) => {
   if (value === null || value === undefined || value === '') {
     return '0'
   }
-  
+
   const num = parseFloat(value)
   if (isNaN(num)) return '0'
-  
+
   return num.toLocaleString('zh-CN', {
     minimumFractionDigits: decimals,
     maximumFractionDigits: decimals
@@ -67,13 +67,13 @@ export const formatNumber = (value, decimals = 0) => {
  * @param {number} bytes - 字节数
  * @returns {string} 格式化后的大小，如 "1.5 MB"
  */
-export const formatFileSize = (bytes) => {
+export const formatFileSize = bytes => {
   if (!bytes || bytes === 0) return '0 B'
-  
+
   const units = ['B', 'KB', 'MB', 'GB', 'TB']
   const k = 1024
   const i = Math.floor(Math.log(bytes) / Math.log(k))
-  
+
   return `${(bytes / Math.pow(k, i)).toFixed(2)} ${units[i]}`
 }
 
@@ -82,12 +82,12 @@ export const formatFileSize = (bytes) => {
  * @param {number} seconds - 秒数
  * @returns {string} 格式化后的时长，如 "05:30"
  */
-export const formatDuration = (seconds) => {
+export const formatDuration = seconds => {
   if (!seconds || seconds < 0) return '00:00'
-  
+
   const mins = Math.floor(seconds / 60)
   const secs = Math.floor(seconds % 60)
-  
+
   return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
 }
 

@@ -37,7 +37,7 @@ const SUBMIT_INTERVAL = 30000 // 批量提交间隔（30秒）
 onMounted(() => {
   // 生成会话ID
   sessionId.value = generateSessionId()
-  
+
   // 启动批量提交定时器
   submitTimer.value = setInterval(() => {
     flushBuffer()
@@ -49,16 +49,16 @@ onUnmounted(() => {
   if (submitTimer.value) {
     clearInterval(submitTimer.value)
   }
-  
+
   // 清理 useLoading
   cleanupLoading()
-  
+
   // 提交剩余数据
   flushBuffer()
 })
 
 // 开始答题
-const startTracking = (questionId) => {
+const startTracking = questionId => {
   currentQuestionId.value = questionId
   startTime.value = Date.now()
   modificationCount.value = 0
@@ -73,7 +73,7 @@ const trackModification = () => {
 }
 
 // 记录首次答案
-const trackFirstAnswer = (answer) => {
+const trackFirstAnswer = answer => {
   if (!firstAnswer.value) {
     firstAnswer.value = answer
   }
@@ -89,12 +89,12 @@ const trackHoverStart = () => {
 const trackHoverEnd = () => {
   if (hoverStartTime.value > 0) {
     const duration = (Date.now() - hoverStartTime.value) / 1000
-    
+
     // 只有超过1秒的犹豫才记录
     if (duration > 1) {
       hesitationTime.value += duration
     }
-    
+
     hoverStartTime.value = 0
   }
 }
@@ -113,7 +113,7 @@ const trackReturn = () => {
 const submitBehavior = async (userId, questionId, finalAnswer, isCorrect) => {
   const answerTime = Math.round((Date.now() - startTime.value) / 1000)
   const isFirstAnswerCorrect = firstAnswer.value === finalAnswer && isCorrect
-  
+
   // 添加到缓冲区
   behaviorBuffer.value.push({
     userId,
@@ -127,7 +127,7 @@ const submitBehavior = async (userId, questionId, finalAnswer, isCorrect) => {
     skippedAndReturned: isSkipped.value ? 1 : 0,
     sessionId: sessionId.value
   })
-  
+
   // 如果缓冲区满了，立即提交
   if (behaviorBuffer.value.length >= BATCH_SIZE) {
     await flushBuffer()
@@ -139,10 +139,10 @@ const flushBuffer = async () => {
   if (behaviorBuffer.value.length === 0) {
     return
   }
-  
+
   const dataToSubmit = [...behaviorBuffer.value]
   behaviorBuffer.value = []
-  
+
   try {
     // 使用 withLoading 和 api 封装
     await withLoading(async () => {

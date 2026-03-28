@@ -1,7 +1,7 @@
 <template>
   <div class="analysis-overview">
     <el-row :gutter="20">
-      <el-col :xs="24" :sm="12" :md="6" v-for="item in overviewItems" :key="item.key">
+      <el-col v-for="item in overviewItems" :key="item.key" :xs="24" :sm="12" :md="6">
         <el-card class="overview-card" :body-style="{ padding: '20px' }">
           <div class="card-content">
             <div class="card-icon" :style="{ backgroundColor: item.bgColor }">
@@ -129,12 +129,12 @@ const overviewItems = computed(() => [
   .card-value {
     font-size: 24px;
   }
-  
+
   .card-icon {
     width: 56px;
     height: 56px;
   }
-  
+
   .card-icon .el-icon {
     font-size: 28px;
   }

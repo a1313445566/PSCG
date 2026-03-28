@@ -11,10 +11,10 @@
         <div class="score-col">正确率</div>
         <div class="points-col">积分</div>
       </div>
-      
+
       <div class="leaderboard-body">
-        <div 
-          v-for="(item, index) in leaderboardData" 
+        <div
+          v-for="(item, index) in leaderboardData"
           :key="item.user_id || index"
           class="leaderboard-row"
           :class="{ 'current-user': item.student_id === currentStudentId }"
@@ -32,17 +32,17 @@
           <div class="score-col">{{ Math.round(item.avg_accuracy) }}%</div>
           <div class="points-col">{{ item.points || 0 }}</div>
         </div>
-        
+
         <div v-if="leaderboardData.length === 0" class="leaderboard-empty">
           <p>暂无排行数据</p>
         </div>
       </div>
     </div>
-    
+
     <!-- 小屏：卡片布局 -->
     <div v-else class="card-layout">
-      <div 
-        v-for="(item, index) in leaderboardData" 
+      <div
+        v-for="(item, index) in leaderboardData"
         :key="item.user_id || index"
         class="leaderboard-card"
         :class="{ 'current-user': item.student_id === currentStudentId }"
@@ -71,7 +71,7 @@
           </div>
         </div>
       </div>
-      
+
       <div v-if="leaderboardData.length === 0" class="leaderboard-empty">
         <p>暂无排行数据</p>
       </div>
@@ -140,13 +140,13 @@ onUnmounted(() => {
 }
 
 .table-layout::-webkit-scrollbar-thumb {
-  background: #4A90E2;
+  background: #4a90e2;
   border-radius: 10px;
   transition: background 0.3s ease;
 }
 
 .table-layout::-webkit-scrollbar-thumb:hover {
-  background: #357ABD;
+  background: #357abd;
 }
 
 /* 确保表格内容不会溢出容器 */
@@ -165,7 +165,7 @@ onUnmounted(() => {
 .leaderboard-header {
   display: grid;
   grid-template-columns: 70px 100px 90px 70px 70px 100px 100px;
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
   color: white;
   font-weight: bold;
   padding: 1rem;
@@ -185,17 +185,17 @@ onUnmounted(() => {
   grid-template-columns: 70px 100px 90px 70px 70px 100px 100px;
   padding: 1rem;
   text-align: center;
-  border-bottom: 1px solid #F0F0F0;
+  border-bottom: 1px solid #f0f0f0;
   transition: all 0.3s ease;
 }
 
 .leaderboard-row:hover {
-  background-color: #F5F9FF;
+  background-color: #f5f9ff;
 }
 
 .leaderboard-row.current-user {
-  background-color: #E3F2FD;
-  border-left: 4px solid #4A90E2;
+  background-color: #e3f2fd;
+  border-left: 4px solid #4a90e2;
 }
 
 /* 卡片布局 */
@@ -211,7 +211,7 @@ onUnmounted(() => {
   border-radius: 12px;
   padding: 1.2rem;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 1px solid #E3F2FD;
+  border: 1px solid #e3f2fd;
   transition: all 0.3s ease;
 }
 
@@ -221,8 +221,8 @@ onUnmounted(() => {
 }
 
 .leaderboard-card.current-user {
-  background: linear-gradient(135deg, #E3F2FD, #BBDEFB);
-  border: 2px solid #4A90E2;
+  background: linear-gradient(135deg, #e3f2fd, #bbdefb);
+  border: 2px solid #4a90e2;
 }
 
 .card-header {
@@ -296,7 +296,7 @@ onUnmounted(() => {
   height: 32px;
   line-height: 32px;
   border-radius: 50%;
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
   color: white;
   font-weight: bold;
   font-size: 1rem;
@@ -310,7 +310,7 @@ onUnmounted(() => {
   height: 40px;
   line-height: 40px;
   font-size: 1.5rem;
-  background: linear-gradient(135deg, #FFD700, #FFA500);
+  background: linear-gradient(135deg, #ffd700, #ffa500);
   box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
   animation: glow 2s infinite;
   color: #333 !important;
@@ -321,7 +321,7 @@ onUnmounted(() => {
   height: 36px;
   line-height: 36px;
   font-size: 1.3rem;
-  background: linear-gradient(135deg, #C0C0C0, #A9A9A9);
+  background: linear-gradient(135deg, #c0c0c0, #a9a9a9);
   box-shadow: 0 4px 8px rgba(192, 192, 192, 0.5);
   animation: glow 2s infinite 0.3s;
   color: #333 !important;
@@ -332,63 +332,64 @@ onUnmounted(() => {
   height: 34px;
   line-height: 34px;
   font-size: 1.2rem;
-  background: linear-gradient(135deg, #CD7F32, #B87333);
+  background: linear-gradient(135deg, #cd7f32, #b87333);
   box-shadow: 0 4px 8px rgba(205, 127, 50, 0.5);
   animation: glow 2s infinite 0.6s;
   color: #333 !important;
 }
 
 /* Top 10 特殊样式 */
-.leaderboard-row:nth-child(-n+3) {
+.leaderboard-row:nth-child(-n + 3) {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 255, 255, 0.8));
   border: 2px solid rgba(255, 215, 0, 0.3);
   transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
-.leaderboard-row:nth-child(-n+3):hover {
+.leaderboard-row:nth-child(-n + 3):hover {
   transform: scale(1.04);
   box-shadow: 0 6px 16px rgba(255, 215, 0, 0.5);
 }
 
-.leaderboard-row:nth-child(-n+10) {
+.leaderboard-row:nth-child(-n + 10) {
   background: linear-gradient(135deg, rgba(106, 17, 203, 0.05), rgba(255, 255, 255, 0.9));
   border: 1px solid rgba(106, 17, 203, 0.2);
   transition: all 0.4s ease;
 }
 
-.leaderboard-row:nth-child(-n+10):hover {
+.leaderboard-row:nth-child(-n + 10):hover {
   transform: scale(1.01);
   box-shadow: 0 4px 10px rgba(106, 17, 203, 0.3);
 }
 
 /* Top 10 卡片特殊样式 */
-.leaderboard-card:nth-child(-n+3) {
+.leaderboard-card:nth-child(-n + 3) {
   background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 255, 255, 0.9));
   border: 2px solid rgba(255, 215, 0, 0.4);
   transform: scale(1.02);
   box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
 }
 
-.leaderboard-card:nth-child(-n+3):hover {
+.leaderboard-card:nth-child(-n + 3):hover {
   transform: scale(1.04);
   box-shadow: 0 6px 16px rgba(255, 215, 0, 0.5);
 }
 
-.leaderboard-card:nth-child(-n+10) {
+.leaderboard-card:nth-child(-n + 10) {
   background: linear-gradient(135deg, rgba(106, 17, 203, 0.05), rgba(255, 255, 255, 0.9));
   border: 1px solid rgba(106, 17, 203, 0.2);
   transition: all 0.4s ease;
 }
 
-.leaderboard-card:nth-child(-n+10):hover {
+.leaderboard-card:nth-child(-n + 10):hover {
   transform: scale(1.02);
   box-shadow: 0 4px 10px rgba(106, 17, 203, 0.3);
 }
 
 /* 发光动画 */
 @keyframes glow {
-  0%, 100% {
+  0%,
+  100% {
     box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
   }
   50% {
@@ -421,39 +422,39 @@ onUnmounted(() => {
   .card-layout {
     display: none;
   }
-  
+
   .leaderboard-header,
   .leaderboard-row {
     grid-template-columns: 60px 90px 80px 60px 60px 90px 80px;
     font-size: 14px;
   }
-  
+
   .leaderboard-header,
   .leaderboard-row {
     padding: 0.8rem;
   }
-  
+
   .rank-number {
     width: 24px;
     height: 24px;
     line-height: 24px;
     font-size: 12px;
   }
-  
+
   .rank-number.rank-1 {
     width: 30px;
     height: 30px;
     line-height: 30px;
     font-size: 1.2rem;
   }
-  
+
   .rank-number.rank-2 {
     width: 28px;
     height: 28px;
     line-height: 28px;
     font-size: 1.1rem;
   }
-  
+
   .rank-number.rank-3 {
     width: 26px;
     height: 26px;
@@ -470,52 +471,52 @@ onUnmounted(() => {
   .card-layout {
     display: flex;
   }
-  
+
   .leaderboard-card {
     padding: 1rem;
   }
-  
+
   .card-header {
     gap: 0.8rem;
   }
-  
+
   .user-name {
     font-size: 1.1rem;
   }
-  
+
   .card-stats {
     gap: 0.8rem;
   }
-  
+
   .stat-item {
     padding: 0.6rem;
   }
-  
+
   .stat-value {
     font-size: 1.2rem;
   }
-  
+
   .rank-number {
     width: 28px;
     height: 28px;
     line-height: 28px;
     font-size: 1rem;
   }
-  
+
   .rank-number.rank-1 {
     width: 32px;
     height: 32px;
     line-height: 32px;
     font-size: 1.3rem;
   }
-  
+
   .rank-number.rank-2 {
     width: 30px;
     height: 30px;
     line-height: 30px;
     font-size: 1.2rem;
   }
-  
+
   .rank-number.rank-3 {
     width: 29px;
     height: 29px;

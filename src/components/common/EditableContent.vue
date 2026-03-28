@@ -1,6 +1,6 @@
 <template>
   <div class="editable-content">
-    <QuillEditor 
+    <QuillEditor
       ref="quillRef"
       v-model="localValue"
       :options="editorOptions"
@@ -37,9 +37,9 @@ const editorOptions = {
   modules: {
     toolbar: [
       ['bold', 'italic', 'underline', 'strike'],
-      [{ 'color': [] }, { 'background': [] }],
-      [{ 'script': 'sub' }, { 'script': 'super' }], // 上下标
-      ['image'],  // 图片
+      [{ color: [] }, { background: [] }],
+      [{ script: 'sub' }, { script: 'super' }], // 上下标
+      ['image'], // 图片
       ['clean']
     ]
   },
@@ -47,14 +47,14 @@ const editorOptions = {
 }
 
 // Quill 编辑器准备就绪
-const onQuillReady = (quill) => {
+const onQuillReady = quill => {
   // 添加图片上传处理（工具栏按钮）
   const toolbar = quill.getModule('toolbar')
-  toolbar.addHandler('image', function() {
+  toolbar.addHandler('image', function () {
     const input = document.createElement('input')
     input.type = 'file'
     input.accept = 'image/*'
-    input.onchange = async function() {
+    input.onchange = async function () {
       const file = input.files[0]
       if (file) {
         await insertImageToEditor(quill, file)
@@ -62,13 +62,13 @@ const onQuillReady = (quill) => {
     }
     input.click()
   })
-  
+
   // 添加粘贴上传处理
-  quill.root.addEventListener('paste', async (e) => {
+  quill.root.addEventListener('paste', async e => {
     const items = e.clipboardData?.items
     if (!items) return
-    
-    for (let item of items) {
+
+    for (const item of items) {
       if (item.type.startsWith('image/')) {
         e.preventDefault()
         const file = item.getAsFile()
@@ -78,13 +78,13 @@ const onQuillReady = (quill) => {
       }
     }
   })
-  
+
   // 添加拖拽上传处理
-  quill.root.addEventListener('drop', async (e) => {
+  quill.root.addEventListener('drop', async e => {
     const files = e.dataTransfer?.files
     if (!files) return
-    
-    for (let file of files) {
+
+    for (const file of files) {
       if (file.type.startsWith('image/')) {
         e.preventDefault()
         await insertImageToEditor(quill, file)
@@ -100,12 +100,12 @@ async function insertImageToEditor(quill, file) {
     ElMessage.error('图片大小不能超过 2MB')
     return
   }
-  
+
   const loading = ElLoading.service({
     lock: true,
     text: '上传图片中...'
   })
-  
+
   try {
     const url = await uploadImage(file)
     const range = quill.getSelection(true)
@@ -118,18 +118,24 @@ async function insertImageToEditor(quill, file) {
   }
 }
 
-watch(() => localValue.value, (newVal) => {
-  if (newVal !== props.modelValue) {
-    emit('update:modelValue', newVal);
+watch(
+  () => localValue.value,
+  newVal => {
+    if (newVal !== props.modelValue) {
+      emit('update:modelValue', newVal)
+    }
   }
-});
+)
 
-watch(() => props.modelValue, (newVal) => {
-  if (newVal !== localValue.value) {
-    localValue.value = newVal || '';
-  }
-}, { immediate: true });
-
+watch(
+  () => props.modelValue,
+  newVal => {
+    if (newVal !== localValue.value) {
+      localValue.value = newVal || ''
+    }
+  },
+  { immediate: true }
+)
 </script>
 
 <style scoped>

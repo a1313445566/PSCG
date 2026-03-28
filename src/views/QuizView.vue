@@ -1,10 +1,10 @@
 <template>
   <div class="quiz-view">
     <AppHeader />
-    
+
     <!-- 答题行为追踪组件（无UI，纯逻辑） -->
     <AnswerBehaviorTracker ref="behaviorTracker" />
-    
+
     <div class="quiz-content">
       <div class="quiz-header">
         <div class="quiz-info">
@@ -17,7 +17,7 @@
             </span>
           </div>
         </div>
-        
+
         <!-- 答题规则及积分规则 -->
         <div class="rules-section">
           <h3 class="rules-title">答题规则</h3>
@@ -32,7 +32,7 @@
             </template>
           </div>
         </div>
-        
+
         <div class="progress-section">
           <div class="progress-bar">
             <div class="progress-fill" :style="{ width: progressPercentage + '%' }"></div>
@@ -40,17 +40,17 @@
           <div class="progress-text">{{ answeredQuestions }}/{{ totalQuestions }} 已答</div>
         </div>
       </div>
-      
+
       <div class="questions-section">
         <div v-if="currentQuestions.length > 0">
-          <QuestionCard 
-            v-for="(question, index) in currentQuestions" 
+          <QuestionCard
+            v-for="(question, index) in currentQuestions"
             :key="question.id"
             :question="question"
             :question-number="index + 1"
             :user-answer="userAnswers[question.id]"
             :show-result="false"
-            @select-option="(option) => selectOption(question.id, option, question.type)"
+            @select-option="option => selectOption(question.id, option, question.type)"
             @mouseenter="handleQuestionHover(question.id, true)"
             @mouseleave="handleQuestionHover(question.id, false)"
           />
@@ -59,18 +59,16 @@
           <SkeletonLoader v-for="i in 3" :key="i" type="question-card" />
         </div>
       </div>
-      
+
       <div class="action-buttons">
-        <button class="submit-btn" @click="submitAnswers" :disabled="!hasAnsweredAll || !canSubmit || isSubmitting">
-          <template v-if="isSubmitting">
-            ⏳ 提交中...
-          </template>
-          <template v-else-if="!canSubmit">
-            🔒 {{ countdown }}秒后可提交
-          </template>
-          <template v-else>
-            🚩 提交答案
-          </template>
+        <button
+          class="submit-btn"
+          :disabled="!hasAnsweredAll || !canSubmit || isSubmitting"
+          @click="submitAnswers"
+        >
+          <template v-if="isSubmitting">⏳ 提交中...</template>
+          <template v-else-if="!canSubmit">🔒 {{ countdown }}秒后可提交</template>
+          <template v-else>🚩 提交答案</template>
         </button>
       </div>
     </div>
@@ -126,7 +124,11 @@ const currentSubcategory = computed(() => {
     return { name: '错题巩固题库' }
   }
   if (currentSubject.value.subcategories) {
-    return currentSubject.value.subcategories.find(sc => sc.id === parseInt(subcategoryId.value)) || { name: '未知题库' }
+    return (
+      currentSubject.value.subcategories.find(sc => sc.id === parseInt(subcategoryId.value)) || {
+        name: '未知题库'
+      }
+    )
   }
   return { name: '未知题库' }
 })
@@ -174,7 +176,7 @@ const isSubmitting = ref(false)
 const lastSubmitTime = ref(0)
 
 // 格式化时间
-const formatTime = (seconds) => {
+const formatTime = seconds => {
   const minutes = Math.floor(seconds / 60)
   const remainingSeconds = seconds % 60
   return `${minutes}分${remainingSeconds}秒`
@@ -187,7 +189,7 @@ const selectOption = (questionId, option, questionType = 'single') => {
     behaviorTracker.value?.startTracking(questionId)
     currentTrackingQuestionId.value = questionId
   }
-  
+
   // 追踪首次答案
   const currentAnswer = userAnswers.value[questionId]
   if (!currentAnswer || (questionType === 'multiple' && currentAnswer.length === 0)) {
@@ -196,7 +198,7 @@ const selectOption = (questionId, option, questionType = 'single') => {
     // 如果已有答案，说明是修改
     behaviorTracker.value?.trackModification()
   }
-  
+
   quizStore.submitAnswer(questionId, option, questionType)
 }
 
@@ -233,51 +235,55 @@ const isAnswerCorrect = (question, userAnswer) => {
 
 // 生成随机密钥的函数
 const generateRandomSecret = () => {
-  const array = new Uint8Array(32);
-  crypto.getRandomValues(array);
-  return Array.from(array).map(b => b.toString(16).padStart(2, '0')).join('');
-};
+  const array = new Uint8Array(32)
+  crypto.getRandomValues(array)
+  return Array.from(array)
+    .map(b => b.toString(16).padStart(2, '0'))
+    .join('')
+}
 
 // 检查并获取签名密钥
 const getSignatureSecret = () => {
-  const secret = import.meta.env.VITE_SIGNATURE_SECRET;
-  
+  const secret = import.meta.env.VITE_SIGNATURE_SECRET
+
   // 生产环境必须设置密钥
   if (import.meta.env.PROD && !secret) {
-    console.error('Error: VITE_SIGNATURE_SECRET is required in production environment');
-    throw new Error('VITE_SIGNATURE_SECRET is required in production environment');
+    console.error('Error: VITE_SIGNATURE_SECRET is required in production environment')
+    throw new Error('VITE_SIGNATURE_SECRET is required in production environment')
   }
-  
+
   // 开发环境如果没有设置，使用随机生成的临时密钥
   if (!secret) {
-    const randomSecret = generateRandomSecret();
-    console.warn('Warning: VITE_SIGNATURE_SECRET not set. Using random temporary secret for development.');
-    return randomSecret;
+    const randomSecret = generateRandomSecret()
+    console.warn(
+      'Warning: VITE_SIGNATURE_SECRET not set. Using random temporary secret for development.'
+    )
+    return randomSecret
   }
-  
-  return secret;
-};
+
+  return secret
+}
 
 // 安全的签名脱敏函数（只显示前8位和后8位）
-const maskSignature = (signature) => {
+const maskSignature = signature => {
   if (!signature || signature.length < 20) {
-    return '***invalid***';
+    return '***invalid***'
   }
-  const start = signature.substring(0, 8);
-  const end = signature.substring(signature.length - 8);
-  return `${start}***${end}`;
-};
+  const start = signature.substring(0, 8)
+  const end = signature.substring(signature.length - 8)
+  return `${start}***${end}`
+}
 
 // 安全的日志输出函数（生产环境禁用）
 const logSignatureDebug = (message, data = {}) => {
   // 生产环境不输出任何日志
   if (import.meta.env.PROD) {
-    return;
+    return
   }
-  
+
   // 开发环境输出详细信息（脱敏）
-  console.log(`[签名生成] ${message}`, data);
-};
+  console.log(`[签名生成] ${message}`, data)
+}
 
 // 生成签名（与后端保持一致）
 const generateSignature = async (data, timestamp, userId) => {
@@ -286,19 +292,19 @@ const generateSignature = async (data, timestamp, userId) => {
     userId,
     answerCount: Object.keys(data.answers).length,
     hasSecret: !!getSignatureSecret()
-  });
-  
-  const secret = getSignatureSecret();
+  })
+
+  const secret = getSignatureSecret()
   // 按照固定顺序构建dataStr
-  const dataStr = JSON.stringify(data) + timestamp + userId;
-  
+  const dataStr = JSON.stringify(data) + timestamp + userId
+
   // 检查 Web Crypto API 是否可用（需要安全上下文：HTTPS 或 localhost）
   if (crypto.subtle) {
     try {
-      const encoder = new TextEncoder();
-      const dataBuffer = encoder.encode(dataStr);
-      const keyBuffer = encoder.encode(secret);
-      
+      const encoder = new TextEncoder()
+      const dataBuffer = encoder.encode(dataStr)
+      const keyBuffer = encoder.encode(secret)
+
       // 导入密钥
       const key = await crypto.subtle.importKey(
         'raw',
@@ -306,88 +312,88 @@ const generateSignature = async (data, timestamp, userId) => {
         { name: 'HMAC', hash: { name: 'SHA-256' } },
         false,
         ['sign']
-      );
-      
+      )
+
       // 生成签名
-      const signatureBuffer = await crypto.subtle.sign('HMAC', key, dataBuffer);
-      
+      const signatureBuffer = await crypto.subtle.sign('HMAC', key, dataBuffer)
+
       // 转换为十六进制字符串
       const hex = Array.from(new Uint8Array(signatureBuffer))
         .map(b => b.toString(16).padStart(2, '0'))
-        .join('');
-      
+        .join('')
+
       logSignatureDebug('✅ HMAC-SHA256 签名生成成功', {
         method: 'HMAC-SHA256',
         signature: maskSignature(hex),
         length: hex.length
-      });
-      
-      return hex;
+      })
+
+      return hex
     } catch (error) {
       logSignatureDebug('⚠️ HMAC 失败，切换到降级方案', {
         error: error.message
-      });
+      })
     }
   }
-  
+
   // 安全降级方案：使用密钥的多轮哈希
   // 注意：这不是标准 HMAC，但提供了足够的安全性用于非 HTTPS 环境
-  const combinedStr = secret + dataStr + secret;
-  let hash = 0;
-  
+  const combinedStr = secret + dataStr + secret
+  let hash = 0
+
   // 多轮哈希增加安全性
   for (let round = 0; round < 64; round++) {
-    const roundStr = combinedStr + round.toString();
+    const roundStr = combinedStr + round.toString()
     for (let i = 0; i < roundStr.length; i++) {
-      const char = roundStr.charCodeAt(i);
-      hash = ((hash << 5) - hash) + char;
-      hash = hash & hash;
+      const char = roundStr.charCodeAt(i)
+      hash = (hash << 5) - hash + char
+      hash = hash & hash
     }
   }
-  
+
   // 生成更长的签名（16位十六进制）
-  let result = Math.abs(hash).toString(16);
-  
+  let result = Math.abs(hash).toString(16)
+
   // 补齐到16位
   while (result.length < 16) {
-    result = '0' + result;
+    result = '0' + result
   }
-  
+
   logSignatureDebug('✅ 降级签名生成成功', {
     method: '降级签名（非HTTPS环境）',
     signature: maskSignature(result),
     length: result.length
-  });
-  
-  return result;
+  })
+
+  return result
 }
 
 // 提交答案
 const submitAnswers = async () => {
   // 防止重复提交
   if (isSubmitting.value) return
-  
+
   if (!hasAnsweredAll.value) {
     ElMessage.warning('请回答所有题目后再提交！')
     return
   }
-  
+
   if (!canSubmit.value) {
     ElMessage.warning('提交过于频繁，请稍后再试！')
     return
   }
-  
+
   // 检查时间戳，防止快速重复提交
   const currentTime = Date.now()
   if (currentTime - lastSubmitTime.value < 5000) {
     ElMessage.warning('提交过于频繁，请稍后再试！')
     return
   }
-  
+
   // 设置提交状态
   isSubmitting.value = true
   lastSubmitTime.value = currentTime
-  
+
   try {
     // 🔥 提交答题行为数据
     const userId = localStorage.getItem('userId')
@@ -398,7 +404,7 @@ const submitAnswers = async () => {
         if (userAnswer) {
           const isCorrect = isAnswerCorrect(question, userAnswer)
           const finalAnswer = Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
-          
+
           await behaviorTracker.value.submitBehavior(
             parseInt(userId),
             question.id,
@@ -407,45 +413,45 @@ const submitAnswers = async () => {
           )
         }
       }
-      
+
       // 刷新缓冲区，确保所有数据已提交
       await behaviorTracker.value.flushBuffer()
     }
-    
+
     // 生成时间戳和签名
     const timestamp = Date.now()
-    
+
     logSignatureDebug('准备提交答案', {
       quizId: quizStore.quizId,
       userId,
       answerCount: Object.keys(userAnswers.value).length,
       timestamp
-    });
-    
+    })
+
     // 准备打乱映射数据
-    const shuffleMappings = {};
+    const shuffleMappings = {}
     currentQuestions.value.forEach(q => {
-      shuffleMappings[q.id] = q.shuffleMapping; // 前端传递 reverseMapping，后端接收名为 shuffleMappings
-    });
-    
+      shuffleMappings[q.id] = q.shuffleMapping // 前端传递 reverseMapping，后端接收名为 shuffleMappings
+    })
+
     // 构建签名数据
     const signatureData = {
       quizId: quizStore.quizId,
       answers: userAnswers.value,
       timestamp
     }
-    
+
     // 生成签名
     const signature = await generateSignature(signatureData, timestamp, userId)
-    
+
     logSignatureDebug('签名生成完成，准备发送', {
       signature: maskSignature(signature),
       dataLength: JSON.stringify(signatureData).length
-    });
-    
+    })
+
     // 计算用时（秒）
     const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
-    
+
     // 调用后端API提交答案
     const submitData = {
       quizId: quizStore.quizId,
@@ -455,98 +461,104 @@ const submitAnswers = async () => {
       timestamp,
       signature
     }
-    
+
     const apiUrl = `${getApiBaseUrl()}/quiz/submit`
-    
+
     logSignatureDebug('发送请求到后端', {
       url: apiUrl,
       method: 'POST'
-    });
-    
+    })
+
     // 获取 token 用于身份验证
     const token = localStorage.getItem('token')
-    
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         // 使用 JWT token 进行身份验证（优先）
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       body: JSON.stringify(submitData)
     })
-    
+
     if (!response.ok) {
       const errorData = await response.json()
       logSignatureDebug('❌ 提交失败', {
         status: response.status,
         error: errorData.error
-      });
+      })
       ElMessage.error(errorData.error || '提交答案失败')
       return
     }
-    
+
     const result = await response.json()
-    
+
     logSignatureDebug('✅ 提交成功', {
       score: result.score,
       correctCount: result.correctCount,
       totalQuestions: result.totalQuestions,
       points: result.points
-    });
-    
+    })
+
     // 验证积分数据
     let validatedPoints = result.points || 0
-    
+
     // 计算预期积分范围
     const totalQuestions = result.totalQuestions || 0
     const correctCount = result.correctCount || 0
     const wrongCount = totalQuestions - correctCount
-    
+
     // 普通题库积分规则：答对1分，答错扣1分，全对积分翻倍
     let expectedMinPoints = -wrongCount // 全错的情况
     let expectedMaxPoints = correctCount // 普通情况
-    
+
     if (correctCount === totalQuestions && totalQuestions > 0) {
       expectedMaxPoints = correctCount * 2 // 全对翻倍
     }
-    
+
     // 错题巩固题库积分规则：每道题累计正确3次+1分
     if (isErrorCollection.value) {
       // 错题巩固题库每道题最多+1分
       expectedMaxPoints = totalQuestions
       expectedMinPoints = 0
     }
-    
+
     // 验证积分是否在合理范围内
     if (result.points < expectedMinPoints || result.points > expectedMaxPoints) {
-      console.warn('积分数据异常，使用计算值:', { 
-        received: result.points, 
-        expectedMin: expectedMinPoints, 
-        expectedMax: expectedMaxPoints 
+      console.warn('积分数据异常，使用计算值:', {
+        received: result.points,
+        expectedMin: expectedMinPoints,
+        expectedMax: expectedMaxPoints
       })
-      
+
       // 使用计算的最大可能积分作为替代
       validatedPoints = Math.min(Math.max(result.points || 0, expectedMinPoints), expectedMaxPoints)
     }
-    
+
     // 保存答题结果到localStorage
-    localStorage.setItem('quizResult', JSON.stringify({
-      score: result.score,
-      correctCount: result.correctCount,
-      totalQuestions: result.totalQuestions,
-      results: result.results,
-      points: validatedPoints
-    }))
-    
+    localStorage.setItem(
+      'quizResult',
+      JSON.stringify({
+        score: result.score,
+        correctCount: result.correctCount,
+        totalQuestions: result.totalQuestions,
+        results: result.results,
+        points: validatedPoints
+      })
+    )
+
     // 如果是错题巩固题库，更新统计数据
     if (isErrorCollection.value && result.stats) {
-      questionStore.errorCollectionStats = { ...questionStore.errorCollectionStats, ...result.stats }
+      questionStore.errorCollectionStats = {
+        ...questionStore.errorCollectionStats,
+        ...result.stats
+      }
     }
-    
+
     // 存储用时数据到localStorage
     localStorage.setItem('timeSpent', timeSpentSeconds.toString())
-    
+
     // 跳转到结果页面
     router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
   } catch (error) {
@@ -570,7 +582,7 @@ const startCountdown = () => {
   // 重置倒计时和canSubmit状态
   countdown.value = SUBMIT_COOLDOWN
   canSubmit.value = false
-  
+
   countdownInterval = setInterval(() => {
     countdown.value--
 
@@ -599,22 +611,22 @@ const stopTimer = () => {
 onMounted(async () => {
   // 重置 quizStore 状态，避免显示之前的题目
   quizStore.resetQuizState()
-  
+
   // 初始化数据
   await questionStore.initialize()
   await settingsStore.loadSettings()
-  
+
   // 检查是否已登录
   if (!localStorage.getItem('studentId')) {
     router.push('/login')
     return
   }
-  
+
   // 调用后端API开始答题
   try {
     // 使用学科独立配置获取题目数量
     const questionCount = settingsStore.getQuestionCountForSubject(subjectId.value)
-    
+
     const startData = {
       subjectId: subjectId.value,
       subcategoryId: subcategoryId.value,
@@ -623,22 +635,22 @@ onMounted(async () => {
       grade: parseInt(localStorage.getItem('userGrade')),
       class: parseInt(localStorage.getItem('userClass'))
     }
-    
+
     const apiUrl = `${getApiBaseUrl()}/quiz/start`
-    
+
     // 获取 token 用于身份验证
     const token = localStorage.getItem('token')
-    
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         // 使用 JWT token 进行身份验证（优先）
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
       },
       body: JSON.stringify(startData)
     })
-    
+
     if (!response.ok) {
       // 特殊处理错题巩固题库为空的情况
       if (isErrorCollection.value && response.status === 404) {
@@ -646,7 +658,7 @@ onMounted(async () => {
         router.push(`/subcategory/${subjectId.value}`)
         return
       }
-      
+
       try {
         const errorData = await response.json()
         ElMessage.error(errorData.error || '开始答题失败')
@@ -656,29 +668,29 @@ onMounted(async () => {
       router.push(`/subcategory/${subjectId.value}`)
       return
     }
-    
+
     const data = await response.json()
-    
+
     // 保存quizId用于后续提交
     quizStore.quizId = data.quizId
     quizStore.expiresAt = data.expiresAt
-    
+
     // 设置题目数据（后端已返回不含正确答案的题目）
     // 根据设置决定是否对每道题的选项进行打乱
     const questionsWithShuffled = data.questions.map(q => {
-      const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options;
-      
+      const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
+
       // 根据题库类型的设置决定是否打乱选项
       if (shouldRandomize.value) {
-        const { shuffledOptions, reverseMapping } = shuffleOptions(options);
-        
+        const { shuffledOptions, reverseMapping } = shuffleOptions(options)
+
         return {
           ...q,
           options: shuffledOptions, // 打乱后的选项
           originalOptions: options, // 保存原始选项（可选）
           shuffleMapping: reverseMapping, // 打乱映射：{打乱后位置: 原始位置}
           type: q.type || 'single'
-        };
+        }
       } else {
         // 不打乱选项
         return {
@@ -686,27 +698,26 @@ onMounted(async () => {
           options: options,
           shuffleMapping: null, // 不打乱时映射为 null
           type: q.type || 'single'
-        };
+        }
       }
-    });
-    
+    })
+
     quizStore.currentQuestions = questionsWithShuffled
     quizStore.userAnswers = {}
     quizStore.score = null
     quizStore.startTime = Date.now()
-    
+
     // 如果是错题巩固题库，保存统计数据
     if (isErrorCollection.value && data.stats) {
       questionStore.errorCollectionStats = { ...questionStore.errorCollectionStats, ...data.stats }
     }
-    
   } catch (error) {
     console.error('开始答题失败:', error)
     ElMessage.error('开始答题失败，请检查网络连接')
     router.push(`/subcategory/${subjectId.value}`)
     return
   }
-  
+
   // 开始计时
   startTime.value = Date.now()
   startTimer()
@@ -722,24 +733,22 @@ onUnmounted(() => {
 <style scoped>
 /* 引入全局CSS变量 */
 :root {
-  --primary-color: #FF6B6B;
-  --accent-color: #FFD166;
-  --background-color: #F7FFF7;
-  --header-gradient: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
-  --header-border-color: #FF9999;
+  --primary-color: #ff6b6b;
+  --accent-color: #ffd166;
+  --background-color: #f7fff7;
+  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  --header-border-color: #ff9999;
   --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
   --el-border-radius-round: 20px;
 }
 
 .quiz-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--background-color) 0%, #E8F5E9 100%);
+  background: linear-gradient(135deg, var(--background-color) 0%, #e8f5e9 100%);
   padding-bottom: 2rem;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%237DD3F8" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%23A8E6CF" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD88B" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%23FF9999" opacity="0.3"/></svg>');
   background-repeat: repeat;
 }
-
-
 
 .quiz-content {
   max-width: 1200px;
@@ -752,7 +761,7 @@ onUnmounted(() => {
   border-radius: 24px;
   padding: 2.5rem;
   box-shadow: var(--el-shadow-light);
-  border: 2px solid #E8E8E8;
+  border: 2px solid #e8e8e8;
   overflow: hidden;
   margin-bottom: 2rem;
   position: relative;
@@ -761,9 +770,9 @@ onUnmounted(() => {
 .rules-section {
   margin: 2rem 0;
   padding: 1.5rem;
-  background-color: #F8F9FA;
+  background-color: #f8f9fa;
   border-radius: 12px;
-  border-left: 4px solid #7DD3F8;
+  border-left: 4px solid #7dd3f8;
 }
 
 .rules-title {
@@ -771,7 +780,7 @@ onUnmounted(() => {
   font-weight: bold;
   color: #333;
   margin: 0 0 1rem 0;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .rules-content p {
@@ -783,7 +792,7 @@ onUnmounted(() => {
 
 .points-rule {
   font-weight: bold;
-  color: #FF6B6B;
+  color: #ff6b6b;
   margin-top: 1rem !important;
 }
 
@@ -802,10 +811,10 @@ onUnmounted(() => {
 }
 
 .quiz-title {
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
   font-size: 2.2rem;
   font-weight: bold;
-  color: #7DD3F8;
+  color: #7dd3f8;
   margin: 0 0 1.5rem 0;
   letter-spacing: 2px;
   text-shadow: 2px 2px 4px rgba(125, 211, 248, 0.3);
@@ -826,12 +835,12 @@ onUnmounted(() => {
   border-radius: 25px;
   font-weight: bold;
   font-size: 1.1rem;
-  border: 2px solid #7DD3F8;
+  border: 2px solid #7dd3f8;
   box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .shuffle-tag {
@@ -841,23 +850,23 @@ onUnmounted(() => {
   border-radius: 25px;
   font-weight: bold;
   font-size: 1.1rem;
-  border: 2px solid #7DD3F8;
+  border: 2px solid #7dd3f8;
   box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .shuffle-tag.shuffle-on {
-  background: linear-gradient(135deg, #FF9A9E 0%, #FECFEF 100%);
-  border-color: #FF9A9E;
+  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
+  border-color: #ff9a9e;
   box-shadow: 0 4px 0 rgba(255, 154, 158, 0.5);
 }
 
 .shuffle-tag.shuffle-off {
   background: var(--header-gradient);
-  border-color: #7DD3F8;
+  border-color: #7dd3f8;
   box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
 }
 
@@ -868,11 +877,11 @@ onUnmounted(() => {
 .progress-bar {
   width: 100%;
   height: 15px;
-  background-color: #E8E8E8;
+  background-color: #e8e8e8;
   border-radius: 10px;
   overflow: hidden;
   margin-bottom: 1rem;
-  border: 2px solid #E8E8E8;
+  border: 2px solid #e8e8e8;
 }
 
 .progress-fill {
@@ -888,7 +897,7 @@ onUnmounted(() => {
   color: #333;
   text-align: right;
   font-weight: bold;
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .questions-section {
@@ -903,7 +912,7 @@ onUnmounted(() => {
 .submit-btn {
   background: var(--header-gradient);
   color: white;
-  border: 3px solid #7DD3F8;
+  border: 3px solid #7dd3f8;
   padding: 1.2rem 3rem;
   border-radius: 50px;
   font-size: 1.3rem;
@@ -915,12 +924,14 @@ onUnmounted(() => {
   gap: 1rem;
   letter-spacing: 2px;
   box-shadow: 0 6px 0 rgba(125, 211, 248, 0.5);
-  font-family: "Microsoft YaHei", 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-4px);
-  box-shadow: 0 10px 0 rgba(125, 211, 248, 0.5), 0 15px 20px rgba(125, 211, 248, 0.4);
+  box-shadow:
+    0 10px 0 rgba(125, 211, 248, 0.5),
+    0 15px 20px rgba(125, 211, 248, 0.4);
 }
 
 .submit-btn:active:not(:disabled) {
@@ -940,21 +951,21 @@ onUnmounted(() => {
   .quiz-content {
     padding: 1rem;
   }
-  
+
   .quiz-header {
     padding: 2rem;
   }
-  
+
   .quiz-title {
     font-size: 1.8rem;
   }
-  
+
   .quiz-stats {
     flex-direction: column;
     gap: 1rem;
     align-items: flex-start;
   }
-  
+
   .submit-btn {
     padding: 1rem 2.5rem;
     font-size: 1.1rem;
@@ -965,11 +976,11 @@ onUnmounted(() => {
   .quiz-header {
     padding: 1.5rem;
   }
-  
+
   .quiz-title {
     font-size: 1.5rem;
   }
-  
+
   .submit-btn {
     padding: 0.9rem 2rem;
     font-size: 1rem;

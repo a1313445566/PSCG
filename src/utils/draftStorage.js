@@ -13,22 +13,25 @@ class DraftStorage {
     this.maxAge = MAX_AGE
     this.maxSize = MAX_SIZE
   }
-  
+
   // 获取标签页唯一ID
   getTabId() {
     if (typeof sessionStorage === 'undefined') return 'default'
-    
+
     if (!sessionStorage.getItem('tabId')) {
-      sessionStorage.setItem('tabId', Date.now().toString(36) + Math.random().toString(36).substr(2))
+      sessionStorage.setItem(
+        'tabId',
+        Date.now().toString(36) + Math.random().toString(36).substr(2)
+      )
     }
     return sessionStorage.getItem('tabId')
   }
-  
+
   // 获取存储 key
   get key() {
     return `question_edit_draft_${this.getTabId()}`
   }
-  
+
   // 保存草稿
   save(questionId, formData) {
     const draft = {
@@ -38,20 +41,20 @@ class DraftStorage {
       data: formData,
       timestamp: Date.now()
     }
-    
+
     let jsonStr = JSON.stringify(draft)
-    
+
     // 检查大小，必要时压缩
     if (jsonStr.length > this.maxSize) {
       draft.data = this.compressData(formData)
       jsonStr = JSON.stringify(draft)
-      
+
       if (jsonStr.length > this.maxSize) {
         console.warn('草稿内容过大，无法保存')
         return false
       }
     }
-    
+
     try {
       localStorage.setItem(this.key, jsonStr)
       return true
@@ -70,26 +73,26 @@ class DraftStorage {
       throw e
     }
   }
-  
+
   // 恢复草稿
   restore() {
     try {
       const draft = localStorage.getItem(this.key)
       if (!draft) return null
-      
+
       const parsed = JSON.parse(draft)
-      
+
       // 版本检查和迁移
       if (parsed.version !== this.version) {
         return this.migrate(parsed)
       }
-      
+
       // 超时检查
       if (Date.now() - parsed.timestamp > this.maxAge) {
         this.clear()
         return null
       }
-      
+
       return {
         id: parsed.id,
         isNew: parsed.isNew,
@@ -102,18 +105,18 @@ class DraftStorage {
       return null
     }
   }
-  
+
   // 检查草稿状态
   hasDraft(currentQuestionId) {
     const draft = this.restore()
     if (!draft) return false
-    
+
     // 新建题目检查
     if (!currentQuestionId && draft.isNew) return true
-    
+
     // 编辑题目检查
     if (currentQuestionId && draft.id === currentQuestionId) return true
-    
+
     // 有其他题目的草稿
     return {
       hasOtherDraft: true,
@@ -122,16 +125,16 @@ class DraftStorage {
       timestamp: draft.timestamp
     }
   }
-  
+
   // 清除草稿
   clear() {
     localStorage.removeItem(this.key)
   }
-  
+
   // 清理过期草稿
   clearExpiredDrafts() {
     const keys = Object.keys(localStorage)
-    
+
     keys.forEach(key => {
       if (key.startsWith('question_edit_draft_')) {
         try {
@@ -145,40 +148,41 @@ class DraftStorage {
       }
     })
   }
-  
+
   // 压缩数据（移除Base64图片）
   compressData(formData) {
     const compressed = { ...formData }
-    
+
     if (compressed.content) {
       compressed.content = compressed.content.replace(
         /<img[^>]+src="data:image\/[^"]+"/g,
         '<img src="[图片数据已压缩，请重新上传]"'
       )
     }
-    
+
     if (compressed.options) {
-      compressed.options = compressed.options.map(opt =>
-        opt?.replace(
-          /<img[^>]+src="data:image\/[^"]+"/g,
-          '<img src="[图片数据已压缩，请重新上传]"'
-        ) || opt
+      compressed.options = compressed.options.map(
+        opt =>
+          opt?.replace(
+            /<img[^>]+src="data:image\/[^"]+"/g,
+            '<img src="[图片数据已压缩，请重新上传]"'
+          ) || opt
       )
     }
-    
+
     return compressed
   }
-  
+
   // 版本迁移
   migrate(oldDraft) {
     const version = oldDraft.version || 1
-    
+
     // v1 -> v2 迁移
     if (version === 1) {
       this.clear()
       return null
     }
-    
+
     this.clear()
     return null
   }

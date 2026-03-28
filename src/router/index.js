@@ -6,11 +6,12 @@ const RouteErrorComponent = defineComponent({
   name: 'RouteError',
   setup() {
     const reload = () => location.reload()
-    return () => h('div', { class: 'route-error' }, [
-      h('h2', '页面加载失败'),
-      h('p', '抱歉，页面加载失败，请刷新重试'),
-      h('button', { onClick: reload }, '刷新页面')
-    ])
+    return () =>
+      h('div', { class: 'route-error' }, [
+        h('h2', '页面加载失败'),
+        h('p', '抱歉，页面加载失败，请刷新重试'),
+        h('button', { onClick: reload }, '刷新页面')
+      ])
   }
 })
 
@@ -18,19 +19,20 @@ const RouteErrorComponent = defineComponent({
 const NotFoundComponent = defineComponent({
   name: 'NotFound',
   setup() {
-    const goHome = () => location.href = '#/'
-    return () => h('div', { class: 'not-found' }, [
-      h('h2', '页面不存在'),
-      h('p', '您访问的页面不存在'),
-      h('a', { onClick: goHome, style: 'cursor: pointer;' }, '返回首页')
-    ])
+    const goHome = () => (location.href = '#/')
+    return () =>
+      h('div', { class: 'not-found' }, [
+        h('h2', '页面不存在'),
+        h('p', '您访问的页面不存在'),
+        h('a', { onClick: goHome, style: 'cursor: pointer;' }, '返回首页')
+      ])
   }
 })
 
 // 路由懒加载 - 带错误处理（文件扩展名必须是静态的）
-const lazyLoad = (viewName) => {
-  return () => import(`../views/${viewName}.vue`)
-    .catch(error => {
+const lazyLoad = viewName => {
+  return () =>
+    import(`../views/${viewName}.vue`).catch(error => {
       console.error(`[路由加载失败] ${viewName}:`, error)
       return { default: RouteErrorComponent }
     })
@@ -100,7 +102,7 @@ const router = createRouter({
 })
 
 // 全局路由错误处理
-router.onError((error) => {
+router.onError(error => {
   console.error('[路由错误]', error)
   // 可以在这里添加错误上报
 })
@@ -109,7 +111,7 @@ router.onError((error) => {
 router.beforeEach((to, from, next) => {
   // 检查用户是否已登录
   const isLoggedIn = !!localStorage.getItem('studentId')
-  
+
   // 允许访问后台管理页面和文档中心，不需要学生登录
   if (to.path === '/admin' || to.path === '/docs') {
     next()
@@ -125,7 +127,7 @@ router.beforeEach((to, from, next) => {
       next('/login')
       return
     }
-    
+
     // 检查会话是否超时（30分钟无活动）
     const lastActivity = sessionStorage.getItem('lastActivity')
     if (lastActivity && Date.now() - parseInt(lastActivity) > 30 * 60 * 1000) {
@@ -135,21 +137,21 @@ router.beforeEach((to, from, next) => {
       next('/login')
       return
     }
-    
+
     // 更新最后活动时间
     sessionStorage.setItem('lastActivity', Date.now())
-    
+
     // 如果要访问登录页面，重定向到首页
     if (to.path === '/login') {
       next('/home')
     } else {
       next()
     }
-  } 
+  }
   // 如果用户未登录且要访问非登录页面，重定向到登录页面
   else if (!isLoggedIn && to.path !== '/login') {
     next('/login')
-  } 
+  }
   // 其他情况正常导航
   else {
     next()

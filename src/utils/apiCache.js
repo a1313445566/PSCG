@@ -2,8 +2,8 @@
 
 class ApiCache {
   constructor() {
-    this.cache = new Map();
-    this.defaultTTL = 5 * 60 * 1000; // 默认缓存时间 5 分钟
+    this.cache = new Map()
+    this.defaultTTL = 5 * 60 * 1000 // 默认缓存时间 5 分钟
   }
 
   /**
@@ -13,12 +13,12 @@ class ApiCache {
    * @returns {string} 缓存键
    */
   generateKey(url, options = {}) {
-    const { method = 'GET', body } = options;
-    let key = `${method}:${url}`;
+    const { method = 'GET', body } = options
+    let key = `${method}:${url}`
     if (body) {
-      key += `:${typeof body === 'string' ? body : JSON.stringify(body)}`;
+      key += `:${typeof body === 'string' ? body : JSON.stringify(body)}`
     }
-    return key;
+    return key
   }
 
   /**
@@ -27,16 +27,16 @@ class ApiCache {
    * @returns {any|null} 缓存的数据，如果不存在或已过期则返回 null
    */
   get(key) {
-    const cachedItem = this.cache.get(key);
-    if (!cachedItem) return null;
+    const cachedItem = this.cache.get(key)
+    if (!cachedItem) return null
 
-    const { data, expiry } = cachedItem;
+    const { data, expiry } = cachedItem
     if (Date.now() > expiry) {
-      this.cache.delete(key);
-      return null;
+      this.cache.delete(key)
+      return null
     }
 
-    return data;
+    return data
   }
 
   /**
@@ -46,8 +46,8 @@ class ApiCache {
    * @param {number} ttl - 缓存时间（毫秒）
    */
   set(key, data, ttl = this.defaultTTL) {
-    const expiry = Date.now() + ttl;
-    this.cache.set(key, { data, expiry });
+    const expiry = Date.now() + ttl
+    this.cache.set(key, { data, expiry })
   }
 
   /**
@@ -55,24 +55,24 @@ class ApiCache {
    * @param {string} key - 缓存键
    */
   delete(key) {
-    this.cache.delete(key);
+    this.cache.delete(key)
   }
 
   /**
    * 清除所有缓存
    */
   clear() {
-    this.cache.clear();
+    this.cache.clear()
   }
 
   /**
    * 清除过期的缓存
    */
   clearExpired() {
-    const now = Date.now();
+    const now = Date.now()
     for (const [key, value] of this.cache.entries()) {
       if (now > value.expiry) {
-        this.cache.delete(key);
+        this.cache.delete(key)
       }
     }
   }
@@ -84,7 +84,7 @@ class ApiCache {
   clearPattern(pattern) {
     for (const key of this.cache.keys()) {
       if (key.includes(pattern)) {
-        this.cache.delete(key);
+        this.cache.delete(key)
       }
     }
   }
@@ -97,28 +97,28 @@ class ApiCache {
    * @returns {Promise<any>} 请求结果
    */
   async fetch(url, options = {}, ttl = this.defaultTTL) {
-    const key = this.generateKey(url, options);
-    
+    const key = this.generateKey(url, options)
+
     // 检查缓存
-    const cachedData = this.get(key);
+    const cachedData = this.get(key)
     if (cachedData) {
-      return cachedData;
+      return cachedData
     }
 
     // 发送请求
     try {
-      const response = await fetch(url, options);
+      const response = await fetch(url, options)
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
+        throw new Error(`HTTP error! status: ${response.status}`)
       }
-      const data = await response.json();
-      
+      const data = await response.json()
+
       // 缓存响应
-      this.set(key, data, ttl);
-      return data;
+      this.set(key, data, ttl)
+      return data
     } catch (error) {
       // console.error('Fetch error:', error);
-      throw error;
+      throw error
     }
   }
 
@@ -129,7 +129,7 @@ class ApiCache {
    * @returns {Promise<any>} 请求结果
    */
   async getCached(url, ttl = this.defaultTTL) {
-    return this.fetch(url, { method: 'GET' }, ttl);
+    return this.fetch(url, { method: 'GET' }, ttl)
   }
 
   /**
@@ -140,18 +140,22 @@ class ApiCache {
    * @returns {Promise<any>} 请求结果
    */
   async post(url, body, ttl = this.defaultTTL) {
-    return this.fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
+    return this.fetch(
+      url,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
       },
-      body: JSON.stringify(body)
-    }, ttl);
+      ttl
+    )
   }
 }
 
 // 导出单例
-export const apiCache = new ApiCache();
+export const apiCache = new ApiCache()
 
 // 导出缓存工具类
-export default ApiCache;
+export default ApiCache

@@ -11,9 +11,18 @@
         <div class="difficulty-tooltip">
           <div class="tooltip-title">难度说明</div>
           <div class="tooltip-content">
-            <div><strong>简单</strong>：适合初学者，题目较为基础</div>
-            <div><strong>中等</strong>：适合有一定基础的学生</div>
-            <div><strong>困难</strong>：适合挑战自我，题目较为复杂</div>
+            <div>
+              <strong>简单</strong>
+              ：适合初学者，题目较为基础
+            </div>
+            <div>
+              <strong>中等</strong>
+              ：适合有一定基础的学生
+            </div>
+            <div>
+              <strong>困难</strong>
+              ：适合挑战自我，题目较为复杂
+            </div>
           </div>
         </div>
       </div>
@@ -46,7 +55,7 @@ const props = defineProps({
 const emit = defineEmits(['select'])
 
 // 导入共享图标配置
-import { subjectIcons } from '../../config/iconConfig';
+import { subjectIcons } from '../../config/iconConfig'
 
 // 获取题目数量（优先使用后端统计）
 const questionCount = computed(() => {
@@ -74,7 +83,10 @@ const avgDifficulty = computed(() => {
     return qSubcategoryId === props.subcategory.id
   })
   if (subcategoryQuestions.length === 0) return 1
-  return subcategoryQuestions.reduce((sum, q) => sum + (q.difficulty || 1), 0) / subcategoryQuestions.length
+  return (
+    subcategoryQuestions.reduce((sum, q) => sum + (q.difficulty || 1), 0) /
+    subcategoryQuestions.length
+  )
 })
 
 // 获取难度等级
@@ -89,10 +101,14 @@ const difficultyLevel = computed(() => {
 const difficultyClass = computed(() => {
   const level = difficultyLevel.value
   switch (level) {
-    case '简单': return 'difficulty-easy'
-    case '中等': return 'difficulty-medium'
-    case '困难': return 'difficulty-hard'
-    default: return 'difficulty-easy'
+    case '简单':
+      return 'difficulty-easy'
+    case '中等':
+      return 'difficulty-medium'
+    case '困难':
+      return 'difficulty-hard'
+    default:
+      return 'difficulty-easy'
   }
 })
 
@@ -127,7 +143,7 @@ const selectSubcategory = () => {
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, #F5A623, #FFD166);
+  background: linear-gradient(90deg, #f5a623, #ffd166);
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
@@ -135,7 +151,7 @@ const selectSubcategory = () => {
 .subcategory-card:hover {
   transform: translateY(-8px) scale(1.02);
   box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  border-color: #F5A623;
+  border-color: #f5a623;
 }
 
 .subcategory-card:hover::before {
@@ -149,7 +165,7 @@ const selectSubcategory = () => {
 .subcategory-icon {
   font-size: 2.5rem;
   margin-bottom: 0.8rem;
-  color: #F5A623;
+  color: #f5a623;
   transition: all 0.3s ease;
 }
 
@@ -179,7 +195,7 @@ const selectSubcategory = () => {
 }
 
 .question-count {
-  background-color: #F0F4F8;
+  background-color: #f0f4f8;
   padding: 0.3rem 0.6rem;
   border-radius: 12px;
   font-size: 0.8rem;
@@ -195,18 +211,18 @@ const selectSubcategory = () => {
 }
 
 .difficulty-easy {
-  background-color: #E8F5E9;
-  color: #2E7D32;
+  background-color: #e8f5e9;
+  color: #2e7d32;
 }
 
 .difficulty-medium {
-  background-color: #FFF8E1;
-  color: #EF6C00;
+  background-color: #fff8e1;
+  color: #ef6c00;
 }
 
 .difficulty-hard {
-  background-color: #FFEBEE;
-  color: #C62828;
+  background-color: #ffebee;
+  color: #c62828;
 }
 
 /* 难度提示样式 */
@@ -257,7 +273,7 @@ const selectSubcategory = () => {
 .tooltip-title {
   font-weight: bold;
   margin-bottom: 5px;
-  color: #FFD166;
+  color: #ffd166;
 }
 
 .tooltip-content div {
@@ -270,11 +286,11 @@ const selectSubcategory = () => {
   .subcategory-card {
     padding: 1.2rem;
   }
-  
+
   .subcategory-icon {
     font-size: 2.5rem;
   }
-  
+
   .subcategory-name {
     font-size: 1rem;
   }
@@ -284,15 +300,15 @@ const selectSubcategory = () => {
   .subcategory-card {
     padding: 1rem;
   }
-  
+
   .subcategory-icon {
     font-size: 2rem;
   }
-  
+
   .subcategory-name {
     font-size: 0.9rem;
   }
-  
+
   .question-count,
   .difficulty {
     font-size: 0.7rem;

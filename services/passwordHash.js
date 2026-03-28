@@ -3,12 +3,12 @@
  * 使用 Node.js 内置 crypto 模块 (PBKDF2)
  */
 
-const crypto = require('crypto');
+const crypto = require('crypto')
 
-const ITERATIONS = 100000;
-const KEY_LENGTH = 64;
-const DIGEST = 'sha512';
-const SALT_LENGTH = 32;
+const ITERATIONS = 100000
+const KEY_LENGTH = 64
+const DIGEST = 'sha512'
+const SALT_LENGTH = 32
 
 /**
  * 生成密码哈希
@@ -16,14 +16,14 @@ const SALT_LENGTH = 32;
  * @returns {Promise<string>} - 格式: salt:hash
  */
 async function hashPassword(password) {
-  const salt = crypto.randomBytes(SALT_LENGTH).toString('hex');
+  const salt = crypto.randomBytes(SALT_LENGTH).toString('hex')
   const hash = await new Promise((resolve, reject) => {
     crypto.pbkdf2(password, salt, ITERATIONS, KEY_LENGTH, DIGEST, (err, derivedKey) => {
-      if (err) reject(err);
-      else resolve(derivedKey.toString('hex'));
-    });
-  });
-  return `${salt}:${hash}`;
+      if (err) reject(err)
+      else resolve(derivedKey.toString('hex'))
+    })
+  })
+  return `${salt}:${hash}`
 }
 
 /**
@@ -34,24 +34,24 @@ async function hashPassword(password) {
  */
 async function verifyPassword(password, storedHash) {
   try {
-    const [salt, hash] = storedHash.split(':');
-    if (!salt || !hash) return false;
-    
+    const [salt, hash] = storedHash.split(':')
+    if (!salt || !hash) return false
+
     const derivedKey = await new Promise((resolve, reject) => {
       crypto.pbkdf2(password, salt, ITERATIONS, KEY_LENGTH, DIGEST, (err, key) => {
-        if (err) reject(err);
-        else resolve(key.toString('hex'));
-      });
-    });
-    
+        if (err) reject(err)
+        else resolve(key.toString('hex'))
+      })
+    })
+
     // 使用时序安全比较
-    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(derivedKey, 'hex'));
+    return crypto.timingSafeEqual(Buffer.from(hash, 'hex'), Buffer.from(derivedKey, 'hex'))
   } catch (error) {
-    return false;
+    return false
   }
 }
 
 module.exports = {
   hashPassword,
   verifyPassword
-};
+}

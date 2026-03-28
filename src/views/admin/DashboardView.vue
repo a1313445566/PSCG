@@ -9,17 +9,17 @@
         </div>
         <div class="data-card-value">{{ stats.totalQuestions }}</div>
         <div class="data-card-footer">
-          <span class="data-card-trend up" v-if="stats.questionTrend > 0">
+          <span v-if="stats.questionTrend > 0" class="data-card-trend up">
             <el-icon><Top /></el-icon>
             较昨日 +{{ stats.questionTrend }}
           </span>
-          <span class="data-card-trend" v-else>
+          <span v-else class="data-card-trend">
             <el-icon><Minus /></el-icon>
             无变化
           </span>
         </div>
       </div>
-      
+
       <div class="data-card">
         <div class="data-card-header">
           <span class="data-card-title">用户总数</span>
@@ -27,17 +27,17 @@
         </div>
         <div class="data-card-value">{{ stats.totalUsers }}</div>
         <div class="data-card-footer">
-          <span class="data-card-trend up" v-if="stats.userTrend > 0">
+          <span v-if="stats.userTrend > 0" class="data-card-trend up">
             <el-icon><Top /></el-icon>
             较昨日 +{{ stats.userTrend }}
           </span>
-          <span class="data-card-trend" v-else>
+          <span v-else class="data-card-trend">
             <el-icon><Minus /></el-icon>
             无变化
           </span>
         </div>
       </div>
-      
+
       <div class="data-card">
         <div class="data-card-header">
           <span class="data-card-title">今日答题次数</span>
@@ -45,21 +45,21 @@
         </div>
         <div class="data-card-value">{{ stats.todayAttempts }}</div>
         <div class="data-card-footer">
-          <span class="data-card-trend up" v-if="stats.attemptTrend > 0">
+          <span v-if="stats.attemptTrend > 0" class="data-card-trend up">
             <el-icon><Top /></el-icon>
             较昨日 +{{ stats.attemptTrend }}%
           </span>
-          <span class="data-card-trend down" v-else-if="stats.attemptTrend < 0">
+          <span v-else-if="stats.attemptTrend < 0" class="data-card-trend down">
             <el-icon><Bottom /></el-icon>
             较昨日 {{ stats.attemptTrend }}%
           </span>
-          <span class="data-card-trend" v-else>
+          <span v-else class="data-card-trend">
             <el-icon><Minus /></el-icon>
             无变化
           </span>
         </div>
       </div>
-      
+
       <div class="data-card">
         <div class="data-card-header">
           <span class="data-card-title">平均正确率</span>
@@ -67,22 +67,22 @@
         </div>
         <div class="data-card-value">{{ stats.avgAccuracy }}%</div>
         <div class="data-card-footer">
-          <span class="data-card-trend up" v-if="stats.accuracyTrend > 0">
+          <span v-if="stats.accuracyTrend > 0" class="data-card-trend up">
             <el-icon><Top /></el-icon>
             较昨日 +{{ stats.accuracyTrend }}%
           </span>
-          <span class="data-card-trend down" v-else-if="stats.accuracyTrend < 0">
+          <span v-else-if="stats.accuracyTrend < 0" class="data-card-trend down">
             <el-icon><Bottom /></el-icon>
             较昨日 {{ stats.accuracyTrend }}%
           </span>
-          <span class="data-card-trend" v-else>
+          <span v-else class="data-card-trend">
             <el-icon><Minus /></el-icon>
             无变化
           </span>
         </div>
       </div>
     </div>
-    
+
     <!-- 图表区域 -->
     <div class="charts-container">
       <!-- 答题趋势图 -->
@@ -96,9 +96,9 @@
             </el-radio-group>
           </div>
         </template>
-        <div ref="trendChartRef" class="chart" v-loading="trendLoading"></div>
+        <div ref="trendChartRef" v-loading="trendLoading" class="chart"></div>
       </el-card>
-      
+
       <!-- 学科分布图 -->
       <el-card class="chart-card">
         <template #header>
@@ -106,10 +106,10 @@
             <span class="card-title">学科答题分布</span>
           </div>
         </template>
-        <div ref="subjectChartRef" class="chart" v-loading="subjectLoading"></div>
+        <div ref="subjectChartRef" v-loading="subjectLoading" class="chart"></div>
       </el-card>
     </div>
-    
+
     <!-- 最近活动 -->
     <el-card class="activity-card">
       <template #header>
@@ -121,15 +121,13 @@
           </el-button>
         </div>
       </template>
-      <el-table :data="recentActivities" stripe v-loading="activityLoading">
+      <el-table v-loading="activityLoading" :data="recentActivities" stripe>
         <el-table-column prop="student_name" label="学生" width="120" />
         <el-table-column prop="subject" label="学科" width="100" />
         <el-table-column prop="subcategory" label="题库" min-width="150" />
         <el-table-column label="得分" width="120">
           <template #default="{ row }">
-            <span :class="row.score >= 60 ? 'text-success' : 'text-danger'">
-              {{ row.score }}分
-            </span>
+            <span :class="row.score >= 60 ? 'text-success' : 'text-danger'">{{ row.score }}分</span>
           </template>
         </el-table-column>
         <el-table-column label="正确率" width="100">
@@ -152,8 +150,14 @@ import { api } from '../../utils/api'
 import { useLoading } from '../../composables/useLoading'
 import { useAdminLayout } from '../../composables/useAdminLayout'
 import {
-  Document, UserFilled, EditPen, TrendCharts,
-  Top, Bottom, Minus, ArrowRight
+  Document,
+  UserFilled,
+  EditPen,
+  TrendCharts,
+  Top,
+  Bottom,
+  Minus,
+  ArrowRight
 } from '@element-plus/icons-vue'
 import VChart from '@visactor/vchart'
 
@@ -249,28 +253,28 @@ const loadRecentActivities = async () => {
 }
 
 // 渲染趋势图表
-const renderTrendChart = (data) => {
+const renderTrendChart = data => {
   if (!trendChartRef.value) return
-  
+
   // 先释放旧图表
   if (trendChart) {
     trendChart.release()
     trendChart = null
   }
-  
+
   // 转换数据为 VChart 需要的格式
   const attemptsData = data.map(item => ({
     date: item.date,
     type: '答题次数',
     value: item.attempts
   }))
-  
+
   const accuracyData = data.map(item => ({
     date: item.date,
     type: '正确率 (%)',
     value: item.accuracy
   }))
-  
+
   const spec = {
     type: 'line',
     data: [
@@ -283,7 +287,7 @@ const renderTrendChart = (data) => {
     yField: 'value',
     seriesField: 'type',
     axes: [
-      { 
+      {
         orient: 'left',
         title: { visible: true, text: '答题次数 / 正确率' }
       }
@@ -307,13 +311,11 @@ const renderTrendChart = (data) => {
     tooltip: {
       visible: true,
       mark: {
-        content: [
-          { key: (d) => d.type, value: (d) => d.value }
-        ]
+        content: [{ key: d => d.type, value: d => d.value }]
       }
     }
   }
-  
+
   trendChart = new VChart(spec, {
     dom: trendChartRef.value,
     mode: 'desktop-browser'
@@ -322,18 +324,18 @@ const renderTrendChart = (data) => {
 }
 
 // 渲染学科分布图表
-const renderSubjectChart = (data) => {
+const renderSubjectChart = data => {
   if (!subjectChartRef.value) return
-  
+
   // 先释放旧图表
   if (subjectChart) {
     subjectChart.release()
     subjectChart = null
   }
-  
+
   // 过滤掉没有数据的学科
   const validData = data.filter(item => item.count > 0)
-  
+
   const spec = {
     type: 'pie',
     data: [
@@ -377,13 +379,13 @@ const renderSubjectChart = (data) => {
       visible: true,
       mark: {
         content: [
-          { key: '学科', value: (d) => d.name },
-          { key: '答题次数', value: (d) => d.value }
+          { key: '学科', value: d => d.name },
+          { key: '答题次数', value: d => d.value }
         ]
       }
     }
   }
-  
+
   subjectChart = new VChart(spec, {
     dom: subjectChartRef.value,
     mode: 'desktop-browser'
@@ -414,13 +416,8 @@ const releaseCharts = () => {
 // 初始化
 onMounted(async () => {
   await withLoading(async () => {
-    await Promise.all([
-      loadStats(),
-      loadTrendData(),
-      loadSubjectData(),
-      loadRecentActivities()
-    ])
-    
+    await Promise.all([loadStats(), loadTrendData(), loadSubjectData(), loadRecentActivities()])
+
     // 等待 DOM 更新后初始化图表
     await nextTick()
     window.addEventListener('resize', handleResize)
@@ -476,7 +473,7 @@ onUnmounted(() => {
 }
 
 .data-card-icon {
-  color: #409EFF;
+  color: #409eff;
 }
 
 .data-card-value {
@@ -498,11 +495,11 @@ onUnmounted(() => {
 }
 
 .data-card-trend.up {
-  color: #67C23A;
+  color: #67c23a;
 }
 
 .data-card-trend.down {
-  color: #F56C6C;
+  color: #f56c6c;
 }
 
 /* 图表区域 */
@@ -545,7 +542,7 @@ onUnmounted(() => {
   .stats-grid {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   .charts-container {
     grid-template-columns: 1fr;
   }
@@ -555,15 +552,15 @@ onUnmounted(() => {
   .stats-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .data-card {
     padding: 16px;
   }
-  
+
   .data-card-value {
     font-size: 24px;
   }
-  
+
   .chart {
     height: 250px;
   }

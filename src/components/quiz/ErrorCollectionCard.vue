@@ -3,7 +3,9 @@
     <div class="card-header">
       <h3 class="card-title">📝 {{ subjectName }}错题巩固题库</h3>
       <div class="question-count">
-        <span v-if="errorQuestions.length > 0" class="count-number">待巩固题目：{{ errorQuestions.length }}道</span>
+        <span v-if="errorQuestions.length > 0" class="count-number">
+          待巩固题目：{{ errorQuestions.length }}道
+        </span>
         <span v-else class="no-questions">暂无错题可巩固</span>
       </div>
     </div>
@@ -13,10 +15,10 @@
         <p>每道题累计正确3次后将自动移除，再次做错将重置已累计的正确次数。</p>
         <p>积分规则：每道题目累计答对3次+1分。</p>
       </div>
-      <button 
-        class="start-button" 
-        @click="startErrorCollectionQuiz" 
+      <button
+        class="start-button"
         :disabled="errorQuestions.length === 0"
+        @click="startErrorCollectionQuiz"
       >
         开始巩固练习
       </button>
@@ -63,12 +65,12 @@ const startErrorCollectionQuiz = () => {
 
 <style scoped>
 .error-collection-card {
-  background: linear-gradient(135deg, #FFF3F3 0%, #FFE6E6 100%);
+  background: linear-gradient(135deg, #fff3f3 0%, #ffe6e6 100%);
   border-radius: 20px;
   padding: 2rem;
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
   margin-bottom: 2rem;
-  border: 2px solid #FF6B6B;
+  border: 2px solid #ff6b6b;
 }
 
 .card-header {
@@ -95,7 +97,7 @@ const startErrorCollectionQuiz = () => {
 }
 
 .count-number {
-  background-color: #FF6B6B;
+  background-color: #ff6b6b;
   color: white;
   padding: 0.5rem 1rem;
   border-radius: 20px;
@@ -118,7 +120,7 @@ const startErrorCollectionQuiz = () => {
   background-color: rgba(255, 255, 255, 0.8);
   padding: 1.5rem;
   border-radius: 12px;
-  border-left: 4px solid #FF6B6B;
+  border-left: 4px solid #ff6b6b;
 }
 
 .card-description p {
@@ -129,7 +131,7 @@ const startErrorCollectionQuiz = () => {
 }
 
 .start-button {
-  background-color: #FF6B6B;
+  background-color: #ff6b6b;
   color: white;
   border: none;
   padding: 1rem 2rem;
@@ -142,14 +144,14 @@ const startErrorCollectionQuiz = () => {
 }
 
 .start-button:hover:not(:disabled) {
-  background-color: #FF5252;
+  background-color: #ff5252;
   transform: translateY(-2px);
   box-shadow: 0 4px 10px rgba(255, 107, 107, 0.3);
 }
 
 .start-button:disabled {
-  background-color: #E0E0E0;
-  color: #9E9E9E;
+  background-color: #e0e0e0;
+  color: #9e9e9e;
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -157,29 +159,29 @@ const startErrorCollectionQuiz = () => {
 
 /* 无错题状态的样式 */
 .error-collection-card.no-errors {
-  background: linear-gradient(135deg, #E8F5E9 0%, #C8E6C9 100%);
-  border-color: #4CAF50;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-color: #4caf50;
 }
 
 .error-collection-card.no-errors .card-title {
-  color: #2E7D32;
+  color: #2e7d32;
 }
 
 .error-collection-card.no-errors .no-questions {
-  color: #2E7D32;
+  color: #2e7d32;
   font-weight: bold;
   font-size: 1rem;
 }
 
 .error-collection-card.no-errors .card-description {
   background-color: rgba(255, 255, 255, 0.9);
-  border-left-color: #4CAF50;
+  border-left-color: #4caf50;
 }
 
 .error-collection-card.no-errors .start-button:disabled {
-  background-color: #C8E6C9;
-  color: #4CAF50;
-  border: 2px solid #4CAF50;
+  background-color: #c8e6c9;
+  color: #4caf50;
+  border: 2px solid #4caf50;
   cursor: not-allowed;
 }
 
@@ -188,17 +190,17 @@ const startErrorCollectionQuiz = () => {
   .error-collection-card {
     padding: 1.5rem;
   }
-  
+
   .card-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 1rem;
   }
-  
+
   .card-title {
     font-size: 1.3rem;
   }
-  
+
   .start-button {
     align-self: stretch;
     text-align: center;

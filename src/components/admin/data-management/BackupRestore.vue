@@ -164,7 +164,11 @@
       <el-card shadow="hover">
         <div class="progress-content">
           <h4 class="progress-title">备份进度</h4>
-          <el-progress :percentage="backupProgress" :status="backupStatus" :stroke-width="15"></el-progress>
+          <el-progress
+            :percentage="backupProgress"
+            :status="backupStatus"
+            :stroke-width="15"
+          ></el-progress>
           <p class="progress-message">{{ backupMessage }}</p>
         </div>
       </el-card>
@@ -172,18 +176,16 @@
 
     <!-- 操作提示 -->
     <div class="operation-tips">
-      <el-alert
-        title="操作提示"
-        type="info"
-        :closable="false"
-        show-icon
-      >
+      <el-alert title="操作提示" type="info" :closable="false" show-icon>
         <div class="tips-content">
           <p>• 备份数据：根据选择的内容保存系统数据，可选择完整备份或增量备份</p>
           <p>• 恢复数据：将覆盖当前系统的数据，请谨慎操作</p>
           <p>• 导出数据：导出系统数据为JSON文件，用于数据迁移或备份</p>
           <p>• 上传备份：通过备份文件恢复系统数据</p>
-          <p>• 备份内容：可选择题目、用户、答题记录、系统设置、学科、子分类、年级、班级、排行榜数据和分析数据</p>
+          <p>
+            •
+            备份内容：可选择题目、用户、答题记录、系统设置、学科、子分类、年级、班级、排行榜数据和分析数据
+          </p>
           <p>• 备份格式：支持JSON和DB格式</p>
         </div>
       </el-alert>
@@ -202,7 +204,9 @@
           <el-table-column prop="filename" label="文件名" min-width="200"></el-table-column>
           <el-table-column prop="type" label="类型" width="100">
             <template #default="{ row }">
-              <el-tag v-if="row" :type="row.type === 'full' ? 'primary' : 'success'">{{ row.type === 'full' ? '完整' : '增量' }}</el-tag>
+              <el-tag v-if="row" :type="row.type === 'full' ? 'primary' : 'success'">
+                {{ row.type === 'full' ? '完整' : '增量' }}
+              </el-tag>
             </template>
           </el-table-column>
           <el-table-column prop="size" label="大小" width="100"></el-table-column>
@@ -210,14 +214,16 @@
           <el-table-column label="操作" width="150">
             <template #default="{ row }">
               <template v-if="row">
-                <el-button type="primary" size="small" @click="downloadBackup(row.id)">下载</el-button>
+                <el-button type="primary" size="small" @click="downloadBackup(row.id)">
+                  下载
+                </el-button>
                 <el-button type="danger" size="small" @click="deleteBackup(row.id)">删除</el-button>
               </template>
             </template>
           </el-table-column>
         </el-table>
       </div>
-      <div v-else style="text-align: center; padding: 40px;">
+      <div v-else style="text-align: center; padding: 40px">
         <el-empty description="暂无备份历史"></el-empty>
       </div>
     </el-dialog>
@@ -225,10 +231,22 @@
 </template>
 
 <script setup>
-import { ref, defineProps } from 'vue';
-import { ElMessage, ElMessageBox } from 'element-plus';
-import { healthCheck, importLocalData as importLocalDataApi } from '../../../utils/database';
-import { DocumentCopy, Upload, Clock, Refresh, FolderOpened, Check, DataLine, View, Grid, Download, Files } from '@element-plus/icons-vue';
+import { ref, defineProps } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { healthCheck, importLocalData as importLocalDataApi } from '../../../utils/database'
+import {
+  DocumentCopy,
+  Upload,
+  Clock,
+  Refresh,
+  FolderOpened,
+  Check,
+  DataLine,
+  View,
+  Grid,
+  Download,
+  Files
+} from '@element-plus/icons-vue'
 
 // 定义props
 const props = defineProps({
@@ -236,27 +254,47 @@ const props = defineProps({
     type: Array,
     default: () => []
   }
-});
+})
 
 // 定义事件
-const emit = defineEmits(['backup-data', 'restore-data', 'export-data', 'upload-backup', 'download-backup', 'delete-backup', 'get-backup-history', 'verify-backup']);
+const emit = defineEmits([
+  'backup-data',
+  'restore-data',
+  'export-data',
+  'upload-backup',
+  'download-backup',
+  'delete-backup',
+  'get-backup-history',
+  'verify-backup'
+])
 
 // 备份设置
-const backupType = ref('full'); // full 或 incremental
-const backupFormat = ref('json'); // json 或 compressed
-const selectedDataTypes = ref(['questions', 'users', 'answers', 'settings', 'subjects', 'subcategories', 'grades', 'classes', 'leaderboard', 'analysis']);
+const backupType = ref('full') // full 或 incremental
+const backupFormat = ref('json') // json 或 compressed
+const selectedDataTypes = ref([
+  'questions',
+  'users',
+  'answers',
+  'settings',
+  'subjects',
+  'subcategories',
+  'grades',
+  'classes',
+  'leaderboard',
+  'analysis'
+])
 
 // 备份进度
-const isBackuping = ref(false);
-const backupProgress = ref(0);
-const backupStatus = ref('');
-const backupMessage = ref('');
+const isBackuping = ref(false)
+const backupProgress = ref(0)
+const backupStatus = ref('')
+const backupMessage = ref('')
 
 // 备份历史
-const backupHistoryVisible = ref(false);
+const backupHistoryVisible = ref(false)
 
 // 上传的文件
-const uploadedFile = ref(null);
+const uploadedFile = ref(null)
 
 // 备份数据
 const backupData = () => {
@@ -264,161 +302,175 @@ const backupData = () => {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'info'
-  }).then(() => {
-    // 开始备份
-    isBackuping.value = true;
-    backupProgress.value = 0;
-    backupStatus.value = '';
-    backupMessage.value = '正在准备备份...';
-    
-    // 模拟备份进度
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      backupProgress.value = progress;
-      
-      if (progress < 30) {
-        backupMessage.value = '正在收集数据...';
-      } else if (progress < 60) {
-        backupMessage.value = '正在处理数据...';
-      } else if (progress < 90) {
-        backupMessage.value = '正在生成备份文件...';
-      } else {
-        backupMessage.value = '备份完成，正在下载...';
-      }
-      
-      if (progress >= 100) {
-        clearInterval(interval);
-        backupStatus.value = 'success';
-        
-        // 触发备份事件，传递备份参数
-        emit('backup-data', {
-          type: backupType.value,
-          format: backupFormat.value,
-          dataTypes: selectedDataTypes.value
-        });
-        
-        // 延迟关闭进度显示
-        setTimeout(() => {
-          isBackuping.value = false;
-        }, 1000);
-      }
-    }, 300);
-  }).catch(() => {
-    // 取消备份
-  });
-};
+  })
+    .then(() => {
+      // 开始备份
+      isBackuping.value = true
+      backupProgress.value = 0
+      backupStatus.value = ''
+      backupMessage.value = '正在准备备份...'
+
+      // 模拟备份进度
+      let progress = 0
+      const interval = setInterval(() => {
+        progress += 10
+        backupProgress.value = progress
+
+        if (progress < 30) {
+          backupMessage.value = '正在收集数据...'
+        } else if (progress < 60) {
+          backupMessage.value = '正在处理数据...'
+        } else if (progress < 90) {
+          backupMessage.value = '正在生成备份文件...'
+        } else {
+          backupMessage.value = '备份完成，正在下载...'
+        }
+
+        if (progress >= 100) {
+          clearInterval(interval)
+          backupStatus.value = 'success'
+
+          // 触发备份事件，传递备份参数
+          emit('backup-data', {
+            type: backupType.value,
+            format: backupFormat.value,
+            dataTypes: selectedDataTypes.value
+          })
+
+          // 延迟关闭进度显示
+          setTimeout(() => {
+            isBackuping.value = false
+          }, 1000)
+        }
+      }, 300)
+    })
+    .catch(() => {
+      // 取消备份
+    })
+}
 
 // 恢复数据
 const restoreData = () => {
   if (!uploadedFile.value) {
-    ElMessage.error('请先上传备份文件');
-    return;
+    ElMessage.error('请先上传备份文件')
+    return
   }
-  
-  ElMessageBox.confirm('确定要使用上传的文件恢复数据吗？这将覆盖当前系统的所有数据，请谨慎操作！', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(() => {
-    // 显示恢复进度
-    isBackuping.value = true;
-    backupProgress.value = 0;
-    backupStatus.value = '';
-    backupMessage.value = '正在准备恢复...';
-    
-    // 模拟恢复进度
-    let progress = 0;
-    const interval = setInterval(() => {
-      progress += 10;
-      backupProgress.value = progress;
-      
-      if (progress < 30) {
-        backupMessage.value = '正在上传备份文件...';
-      } else if (progress < 60) {
-        backupMessage.value = '正在恢复数据...';
-      } else if (progress < 90) {
-        backupMessage.value = '正在验证数据...';
-      } else {
-        backupMessage.value = '恢复完成...';
-      }
-      
-      if (progress >= 100) {
-        clearInterval(interval);
-        backupStatus.value = 'success';
-      }
-    }, 300);
-    
-    // 触发恢复事件
-    emit('upload-backup', uploadedFile.value);
-    
-    // 延迟关闭进度显示
-    setTimeout(() => {
-      isBackuping.value = false;
-    }, 1500);
-  }).catch(() => {
-    // 取消恢复
-  });
-};
+
+  ElMessageBox.confirm(
+    '确定要使用上传的文件恢复数据吗？这将覆盖当前系统的所有数据，请谨慎操作！',
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  )
+    .then(() => {
+      // 显示恢复进度
+      isBackuping.value = true
+      backupProgress.value = 0
+      backupStatus.value = ''
+      backupMessage.value = '正在准备恢复...'
+
+      // 模拟恢复进度
+      let progress = 0
+      const interval = setInterval(() => {
+        progress += 10
+        backupProgress.value = progress
+
+        if (progress < 30) {
+          backupMessage.value = '正在上传备份文件...'
+        } else if (progress < 60) {
+          backupMessage.value = '正在恢复数据...'
+        } else if (progress < 90) {
+          backupMessage.value = '正在验证数据...'
+        } else {
+          backupMessage.value = '恢复完成...'
+        }
+
+        if (progress >= 100) {
+          clearInterval(interval)
+          backupStatus.value = 'success'
+        }
+      }, 300)
+
+      // 触发恢复事件
+      emit('upload-backup', uploadedFile.value)
+
+      // 延迟关闭进度显示
+      setTimeout(() => {
+        isBackuping.value = false
+      }, 1500)
+    })
+    .catch(() => {
+      // 取消恢复
+    })
+}
 
 // 导出数据
 const exportData = () => {
-  emit('export-data');
-};
+  emit('export-data')
+}
 
 // 处理文件上传
-const handleFileChange = (file) => {
+const handleFileChange = file => {
   // 检查文件扩展名
   if (!file.name.endsWith('.db')) {
-    ElMessage.error('请上传.db格式的备份文件');
-    return;
+    ElMessage.error('请上传.db格式的备份文件')
+    return
   }
-  
+
   // 存储上传的文件
-  uploadedFile.value = file;
-  ElMessage.success('备份文件上传成功，请点击"恢复数据"按钮执行恢复操作');
-};
+  uploadedFile.value = file
+  ElMessage.success('备份文件上传成功，请点击"恢复数据"按钮执行恢复操作')
+}
 
 // 健康检查
 const checkDatabaseHealth = async () => {
   try {
-    const result = await healthCheck();
+    const result = await healthCheck()
     if (result.status === 'ok') {
-      ElMessage.success('数据库健康状态良好');
+      ElMessage.success('数据库健康状态良好')
     } else {
-      ElMessage.error(`数据库健康检查失败: ${result.message}`);
+      ElMessage.error(`数据库健康检查失败: ${result.message}`)
     }
   } catch (error) {
-    ElMessage.error('健康检查失败，请稍后重试');
+    ElMessage.error('健康检查失败，请稍后重试')
   }
-};
+}
 
 // 导入本地数据
 const importLocalData = () => {
-  ElMessageBox.confirm('确定要从本地存储导入数据吗？这将覆盖当前系统的所有数据，请谨慎操作！', '警告', {
-    confirmButtonText: '确定',
-    cancelButtonText: '取消',
-    type: 'warning'
-  }).then(async () => {
-    try {
-      const result = await importLocalDataApi();
-      if (result.success) {
-        ElMessage.success('本地数据导入成功');
-      } else {
-        ElMessage.error(`导入失败: ${result.error}`);
-      }
-    } catch (error) {
-      ElMessage.error('导入失败，请稍后重试');
+  ElMessageBox.confirm(
+    '确定要从本地存储导入数据吗？这将覆盖当前系统的所有数据，请谨慎操作！',
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
     }
-  }).catch(() => {
-    // 取消导入
-  });
-};
+  )
+    .then(async () => {
+      try {
+        const result = await importLocalDataApi()
+        if (result.success) {
+          ElMessage.success('本地数据导入成功')
+        } else {
+          ElMessage.error(`导入失败: ${result.error}`)
+        }
+      } catch (error) {
+        ElMessage.error('导入失败，请稍后重试')
+      }
+    })
+    .catch(() => {
+      // 取消导入
+    })
+}
 
 // 检查数据库状态
 const checkDatabaseStatus = async () => {
   try {
-    const result = await healthCheck();
+    const result = await healthCheck()
     ElMessageBox.alert(
       `<div style="text-align: left;">
         <p><strong>数据库状态:</strong> ${result.status === 'ok' ? '正常' : '异常'}</p>
@@ -430,56 +482,60 @@ const checkDatabaseStatus = async () => {
         dangerouslyUseHTMLString: true,
         confirmButtonText: '确定'
       }
-    );
+    )
   } catch (error) {
-    ElMessage.error('获取数据库状态失败');
+    ElMessage.error('获取数据库状态失败')
   }
-};
+}
 
 // 显示备份历史
 const showBackupHistory = async () => {
   try {
     // 触发获取备份历史事件，更新父组件中的备份历史数据
-    await emit('get-backup-history');
+    await emit('get-backup-history')
   } catch (error) {
-    console.error('获取备份历史失败:', error);
+    console.error('获取备份历史失败:', error)
   }
   // 直接使用props中的备份历史数据
-  backupHistoryVisible.value = true;
-};
+  backupHistoryVisible.value = true
+}
 
 // 下载备份
-const downloadBackup = (backupId) => {
-  emit('download-backup', backupId);
-};
+const downloadBackup = backupId => {
+  emit('download-backup', backupId)
+}
 
 // 删除备份
-const deleteBackup = (backupId) => {
+const deleteBackup = backupId => {
   ElMessageBox.confirm('确定要删除此备份文件吗？', '删除确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(async () => {
-    emit('delete-backup', backupId);
-    // 重新获取备份历史数据
-    await emit('get-backup-history');
-  }).catch(() => {
-    // 取消删除
-  });
-};
+  })
+    .then(async () => {
+      emit('delete-backup', backupId)
+      // 重新获取备份历史数据
+      await emit('get-backup-history')
+    })
+    .catch(() => {
+      // 取消删除
+    })
+}
 
 // 处理备份文件验证
-const handleVerifyFileChange = (file) => {
+const handleVerifyFileChange = file => {
   ElMessageBox.confirm('确定要验证此备份文件吗？', '验证确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'info'
-  }).then(() => {
-    emit('verify-backup', file);
-  }).catch(() => {
-    // 取消验证
-  });
-};
+  })
+    .then(() => {
+      emit('verify-backup', file)
+    })
+    .catch(() => {
+      // 取消验证
+    })
+}
 </script>
 
 <style scoped>
@@ -681,15 +737,15 @@ const handleVerifyFileChange = (file) => {
   .data-management-container {
     padding: 10px;
   }
-  
+
   .action-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .setting-item {
     min-width: 100%;
   }
-  
+
   .setting-control {
     flex-direction: column;
     align-items: flex-start;

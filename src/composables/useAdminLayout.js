@@ -30,7 +30,7 @@ export function useAdminLayout() {
    * 设置当前激活菜单
    * @param {string} key - 菜单键
    */
-  const setActiveMenu = (key) => {
+  const setActiveMenu = key => {
     activeMenu.value = key
   }
 
@@ -38,14 +38,14 @@ export function useAdminLayout() {
    * 设置侧边栏宽度
    * @param {number} width - 宽度值
    */
-  const setSidebarWidth = (width) => {
+  const setSidebarWidth = width => {
     sidebarWidth.value = Math.max(180, Math.min(350, width))
   }
 
   /**
    * 设置学科筛选
    */
-  const setFilterSubject = (subjectId) => {
+  const setFilterSubject = subjectId => {
     filterSubjectId.value = subjectId
     filterSubcategoryId.value = ''
   }
@@ -73,22 +73,22 @@ export function useAdminLayout() {
   const collapsedWidth = 64
 
   // 当前实际宽度
-  const currentWidth = computed(() => isCollapse.value ? collapsedWidth : expandedWidth.value)
+  const currentWidth = computed(() => (isCollapse.value ? collapsedWidth : expandedWidth.value))
 
   // 当前菜单标题
   const currentMenuTitle = computed(() => {
     const titleMap = {
-      'dashboard': '数据概览',
-      'questions': '题目管理',
-      'subjects': '学科管理',
+      dashboard: '数据概览',
+      questions: '题目管理',
+      subjects: '学科管理',
       'grades-classes': '年级班级',
       'user-data': '用户数据',
       'user-stats': '用户答题统计',
       'recent-records': '最近答题记录',
       'user-management': '用户管理',
       'basic-settings': '基础设置',
-      'database': '数据库管理',
-      'security': '安全中心'
+      database: '数据库管理',
+      security: '安全中心'
     }
     return titleMap[activeMenu.value] || '数据概览'
   })

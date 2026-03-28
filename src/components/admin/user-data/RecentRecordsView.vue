@@ -2,23 +2,29 @@
   <div class="recent-records-view scroll-self-managed">
     <!-- 筛选区域 -->
     <AdminFilter
-      :filter-items="filterItems"
       v-model="filters"
+      :filter-items="filterItems"
       :show-tags="true"
       @search="applyFilters"
       @reset="resetFilters"
     />
-    
+
     <!-- 数据表格 -->
     <div class="table-wrapper">
       <el-table
+        v-loading="loading"
         :data="tableData"
         stripe
-        v-loading="loading"
         :header-cell-style="{ backgroundColor: '#f5f7fa', color: '#606266', fontWeight: '600' }"
         @sort-change="handleSortChange"
       >
-        <el-table-column label="学号" width="100" align="center" prop="student_id" sortable="custom">
+        <el-table-column
+          label="学号"
+          width="100"
+          align="center"
+          prop="student_id"
+          sortable="custom"
+        >
           <template #default="{ row }">
             {{ row.student_id || row.user_id || '未设置' }}
           </template>
@@ -43,25 +49,49 @@
             {{ row.subject_name || '未知' }}
           </template>
         </el-table-column>
-        <el-table-column label="答题数" width="80" align="center" prop="total_questions" sortable="custom">
+        <el-table-column
+          label="答题数"
+          width="80"
+          align="center"
+          prop="total_questions"
+          sortable="custom"
+        >
           <template #default="{ row }">
             {{ row.total_questions || 0 }}
           </template>
         </el-table-column>
-        <el-table-column label="正确数" width="80" align="center" prop="correct_count" sortable="custom">
+        <el-table-column
+          label="正确数"
+          width="80"
+          align="center"
+          prop="correct_count"
+          sortable="custom"
+        >
           <template #default="{ row }">
             {{ row.correct_count || 0 }}
           </template>
         </el-table-column>
-        <el-table-column label="正确率" min-width="120" align="center" prop="accuracy" sortable="custom">
+        <el-table-column
+          label="正确率"
+          min-width="120"
+          align="center"
+          prop="accuracy"
+          sortable="custom"
+        >
           <template #default="{ row }">
-            <el-progress 
-              :percentage="getAccuracy(row)" 
+            <el-progress
+              :percentage="getAccuracy(row)"
               :color="getProgressColor(getAccuracy(row))"
             />
           </template>
         </el-table-column>
-        <el-table-column label="答题时间" width="160" align="center" prop="created_at" sortable="custom">
+        <el-table-column
+          label="答题时间"
+          width="160"
+          align="center"
+          prop="created_at"
+          sortable="custom"
+        >
           <template #default="{ row }">
             {{ formatTime(row.created_at) }}
           </template>
@@ -73,7 +103,7 @@
         </el-table-column>
       </el-table>
     </div>
-    
+
     <!-- 分页 -->
     <div class="pagination-container">
       <el-pagination
@@ -86,21 +116,21 @@
         @current-change="handleCurrentChange"
       />
     </div>
-    
+
     <!-- 用户详情对话框 -->
     <UserDetailDialog
-      v-model:dialogVisible="dialogVisible"
-      :selectedUser="selectedUser"
-      :currentAnswerRecordId="selectedAnswerRecordId"
-      dialogSource="recentRecords"
-      :selectedUserRecords="[]"
-      :selectedUserQuestionAttempts="selectedUserQuestionAttempts"
+      v-model:dialog-visible="dialogVisible"
+      :selected-user="selectedUser"
+      :current-answer-record-id="selectedAnswerRecordId"
+      dialog-source="recentRecords"
+      :selected-user-records="[]"
+      :selected-user-question-attempts="selectedUserQuestionAttempts"
       @show-question-detail="showQuestionDetail"
     />
-    
+
     <!-- 题目详情对话框 -->
     <QuestionDetailDialog
-      v-model:dialogVisible="questionDetailVisible"
+      v-model:dialog-visible="questionDetailVisible"
       :question="selectedQuestion"
     />
   </div>
@@ -192,7 +222,14 @@ const tableData = ref([])
 const total = ref(0)
 
 // 使用分页 Hook（服务端分页）
-const { currentPage, pageSize, getServerParams, handleSizeChange, handleCurrentChange, reset: resetPagination } = usePagination(20, total)
+const {
+  currentPage,
+  pageSize,
+  getServerParams,
+  handleSizeChange,
+  handleCurrentChange,
+  reset: resetPagination
+} = usePagination(20, total)
 
 // 排序状态
 const sortProp = ref('')
@@ -209,7 +246,7 @@ const questionDetailVisible = ref(false)
 const selectedQuestion = ref(null)
 
 // 计算正确率
-const getAccuracy = (row) => {
+const getAccuracy = row => {
   const total = row.total_questions || 0
   const correct = row.correct_count || 0
   if (total === 0) return 0
@@ -217,14 +254,14 @@ const getAccuracy = (row) => {
 }
 
 // 获取进度条颜色
-const getProgressColor = (accuracy) => {
+const getProgressColor = accuracy => {
   if (accuracy >= 80) return '#67c23a'
   if (accuracy >= 60) return '#e6a23c'
   return '#f56c6c'
 }
 
 // 格式化时间
-const formatTime = (time) => {
+const formatTime = time => {
   if (!time) return '未知'
   const date = new Date(time)
   return date.toLocaleString('zh-CN', {
@@ -242,10 +279,10 @@ const loadData = async () => {
   try {
     const params = new URLSearchParams()
     const { page, limit } = getServerParams()
-    
+
     params.append('page', page)
     params.append('limit', limit)
-    
+
     if (filters.value.studentId) {
       params.append('student_id', filters.value.studentId)
     }
@@ -258,12 +295,12 @@ const loadData = async () => {
     if (filters.value.subject) {
       params.append('subjectId', filters.value.subject)
     }
-    
+
     // 时间范围处理
     if (filters.value.timeRange) {
       const now = new Date()
       let startDate, endDate
-      
+
       switch (filters.value.timeRange) {
         case 'today':
           startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
@@ -278,19 +315,19 @@ const loadData = async () => {
           endDate = new Date()
           break
       }
-      
+
       if (startDate && endDate) {
         params.append('startDate', startDate.toISOString().slice(0, 10))
         params.append('endDate', endDate.toISOString().slice(0, 10))
       }
     }
-    
+
     // 排序参数
     if (sortProp.value) {
       params.append('sortBy', sortProp.value)
       params.append('sortOrder', sortOrder.value || 'DESC')
     }
-    
+
     const response = await api.get(`/answer-records/all?${params.toString()}`)
     tableData.value = response.data || []
     total.value = response.total || 0
@@ -336,9 +373,9 @@ const handleSortChange = ({ prop, order }) => {
 }
 
 // 打开用户详情
-const openUserDetail = async (row) => {
+const openUserDetail = async row => {
   const userId = row.user_id || row.id
-  
+
   try {
     // 加载用户统计数据
     const statsData = await api.get(`/leaderboard/global?limit=1000&id=${userId}`)
@@ -353,23 +390,27 @@ const openUserDetail = async (row) => {
         class: row.class
       }
     }
-    
+
     selectedAnswerRecordId.value = row.id
-    
+
     // 加载做题记录
-    const attemptsData = await api.get(`/answer-records/question-attempts/${userId}?answerRecordId=${row.id}`)
+    const attemptsData = await api.get(
+      `/answer-records/question-attempts/${userId}?answerRecordId=${row.id}`
+    )
     if (attemptsData) {
       selectedUserQuestionAttempts.value = Array.isArray(attemptsData) ? attemptsData : []
     } else {
       // 尝试加载所有做题记录然后筛选
       const allAttemptsData = await api.get(`/answer-records/question-attempts/${userId}`)
       if (allAttemptsData) {
-        selectedUserQuestionAttempts.value = (Array.isArray(allAttemptsData) ? allAttemptsData : []).filter(attempt => {
+        selectedUserQuestionAttempts.value = (
+          Array.isArray(allAttemptsData) ? allAttemptsData : []
+        ).filter(attempt => {
           return String(attempt.answer_record_id) === String(row.id)
         })
       }
     }
-    
+
     dialogVisible.value = true
   } catch (error) {
     console.error('加载用户数据失败:', error)
@@ -386,13 +427,13 @@ const openUserDetail = async (row) => {
 }
 
 // 显示题目详情
-const showQuestionDetail = async (row) => {
+const showQuestionDetail = async row => {
   console.log('显示题目详情 - 原始数据:', row)
-  
+
   try {
     // 准备题目数据
     let questionData = null
-    
+
     // 如果已经有完整的题目数据
     if (row.content && row.options) {
       questionData = { ...row }
@@ -403,14 +444,14 @@ const showQuestionDetail = async (row) => {
         message.error('题目ID不存在')
         return
       }
-      
+
       questionData = await api.get(`/questions/${questionId}`)
       if (!questionData) {
         message.error('加载题目详情失败')
         return
       }
     }
-    
+
     // 解析选项
     let options = []
     if (questionData.options) {
@@ -426,7 +467,7 @@ const showQuestionDetail = async (row) => {
         options = questionData.options
       }
     }
-    
+
     selectedQuestion.value = {
       ...questionData,
       options,
@@ -437,7 +478,7 @@ const showQuestionDetail = async (row) => {
       subject_name: questionData.subject_name || row.subject_name,
       subcategory_name: questionData.subcategory_name || row.subcategory_name
     }
-    
+
     console.log('最终题目数据:', selectedQuestion.value)
     questionDetailVisible.value = true
   } catch (error) {

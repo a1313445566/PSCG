@@ -1,14 +1,17 @@
 <template>
   <div class="home-view">
     <AppHeader />
-    
+
     <div class="home-content">
       <div class="welcome-section">
         <div class="welcome-header">
-          <h2 class="welcome-title">欢迎回来，{{ currentUserGrade }}年级{{ currentUserClass }}班的 {{ currentUserName || (currentStudentId + '学号') }}同学！</h2>
+          <h2 class="welcome-title">
+            欢迎回来，{{ currentUserGrade }}年级{{ currentUserClass }}班的
+            {{ currentUserName || currentStudentId + '学号' }}同学！
+          </h2>
           <button class="logout-btn" @click="logout">退出登录</button>
         </div>
-        <div class="user-stats" v-if="userStats">
+        <div v-if="userStats" class="user-stats">
           <div class="stat-item">
             <span class="stat-label">答题次数:</span>
             <span class="stat-value">{{ userStats.totalSessions || 0 }}</span>
@@ -32,38 +35,38 @@
         </div>
         <div v-else class="user-stats-skeleton">
           <div v-for="i in 5" :key="i" class="stat-item">
-            <SkeletonLoader type="text" width="80px" height="16px" style="margin-bottom: 8px;" />
+            <SkeletonLoader type="text" width="80px" height="16px" style="margin-bottom: 8px" />
             <SkeletonLoader type="text" width="60px" height="20px" />
           </div>
         </div>
         <p class="welcome-message">选择一个学科开始学习之旅吧！</p>
       </div>
-      
+
       <div class="subject-section">
         <h3 class="section-title">📚 基础闯关</h3>
-        <div class="subject-grid" v-if="normalSubjects.length > 0">
-          <SubjectCard 
-            v-for="subject in normalSubjects" 
+        <div v-if="normalSubjects.length > 0" class="subject-grid">
+          <SubjectCard
+            v-for="subject in normalSubjects"
             :key="subject.id"
             :subject="subject"
             :questions="questions"
             @select="selectSubject"
           />
         </div>
-        <div class="subject-grid skeleton-grid" v-else-if="subjects.length === 0">
+        <div v-else-if="subjects.length === 0" class="subject-grid skeleton-grid">
           <SkeletonLoader v-for="i in 4" :key="i" type="subject-card" />
         </div>
         <div v-else class="empty-tip">
           <p>所有学科都已设置为历史机测</p>
         </div>
       </div>
-      
+
       <!-- 高级闯关卡片 -->
-      <div class="subject-section" v-if="historyQuizSubjects.length > 0">
+      <div v-if="historyQuizSubjects.length > 0" class="subject-section">
         <h3 class="section-title">📖 高级闯关</h3>
         <div class="subject-grid">
-          <SubjectCard 
-            v-for="subject in historyQuizSubjects" 
+          <SubjectCard
+            v-for="subject in historyQuizSubjects"
             :key="subject.id"
             :subject="subject"
             :questions="questions"
@@ -71,11 +74,11 @@
           />
         </div>
       </div>
-      
+
       <div class="leaderboard-preview">
         <div class="leaderboard-header-section">
           <h3 class="leaderboard-title">🏆 排行榜 Top 10</h3>
-          <div class="reset-countdown" v-if="countdown">
+          <div v-if="countdown" class="reset-countdown">
             <span class="countdown-label">重置倒计时：</span>
             <span class="countdown-time">{{ countdown }}</span>
           </div>
@@ -91,13 +94,19 @@
               </div>
               <div class="first-place-info">
                 <div class="first-place-user">
-                <div class="user-name">{{ leaderboardData[0].name || (leaderboardData[0].student_id + '学号') }}</div>
-                <div class="user-class">{{ leaderboardData[0].grade || '-' }}年级{{ leaderboardData[0].class || '-' }}班</div>
-              </div>
+                  <div class="user-name">
+                    {{ leaderboardData[0].name || leaderboardData[0].student_id + '学号' }}
+                  </div>
+                  <div class="user-class">
+                    {{ leaderboardData[0].grade || '-' }}年级{{ leaderboardData[0].class || '-' }}班
+                  </div>
+                </div>
                 <div class="first-place-stats">
                   <div class="stat-item">
                     <span class="stat-label">正确率</span>
-                    <span class="stat-value">{{ Math.round(leaderboardData[0].avg_accuracy || 0) }}%</span>
+                    <span class="stat-value">
+                      {{ Math.round(leaderboardData[0].avg_accuracy || 0) }}%
+                    </span>
                   </div>
                   <div class="stat-item">
                     <span class="stat-label">答题数</span>
@@ -115,14 +124,29 @@
               </div>
             </div>
             <div v-else class="first-place-skeleton">
-              <SkeletonLoader type="text" width="150px" height="24px" style="margin-bottom: 16px;" />
-              <SkeletonLoader type="circle" width="60px" height="60px" style="margin-bottom: 16px;" />
-              <SkeletonLoader type="text" width="80%" height="20px" style="margin-bottom: 8px;" />
-              <SkeletonLoader type="text" width="60%" height="16px" style="margin-bottom: 16px;" />
+              <SkeletonLoader type="text" width="150px" height="24px" style="margin-bottom: 16px" />
+              <SkeletonLoader
+                type="circle"
+                width="60px"
+                height="60px"
+                style="margin-bottom: 16px"
+              />
+              <SkeletonLoader type="text" width="80%" height="20px" style="margin-bottom: 8px" />
+              <SkeletonLoader type="text" width="60%" height="16px" style="margin-bottom: 16px" />
               <div class="skeleton-stats">
-                <SkeletonLoader type="rect" width="80px" height="60px" style="margin-right: 12px; border-radius: 8px;" />
-                <SkeletonLoader type="rect" width="80px" height="60px" style="margin-right: 12px; border-radius: 8px;" />
-                <SkeletonLoader type="rect" width="80px" height="60px" style="border-radius: 8px;" />
+                <SkeletonLoader
+                  type="rect"
+                  width="80px"
+                  height="60px"
+                  style="margin-right: 12px; border-radius: 8px"
+                />
+                <SkeletonLoader
+                  type="rect"
+                  width="80px"
+                  height="60px"
+                  style="margin-right: 12px; border-radius: 8px"
+                />
+                <SkeletonLoader type="rect" width="80px" height="60px" style="border-radius: 8px" />
               </div>
             </div>
             <!-- 排行榜规则和查看完整排行榜按钮 -->
@@ -146,7 +170,10 @@
           </div>
           <!-- 右侧分栏：排行榜表格 -->
           <div class="leaderboard-table-container">
-            <LeaderboardTable v-if="leaderboardData.length > 0" :leaderboardData="leaderboardData" />
+            <LeaderboardTable
+              v-if="leaderboardData.length > 0"
+              :leaderboard-data="leaderboardData"
+            />
             <div v-else class="leaderboard-skeleton">
               <SkeletonLoader v-for="i in 5" :key="i" type="leaderboard" />
             </div>
@@ -173,18 +200,18 @@ const questionStore = useQuestionStore()
 // 学科和题目数据
 const subjects = computed(() => {
   // 直接使用从数据库获取的排序（已在后端按sort_order排序）
-  return questionStore.subjects;
+  return questionStore.subjects
 })
 const questions = computed(() => questionStore.questions)
 
 // 普通学科（未设置显示在历史机测）
 const normalSubjects = computed(() => {
-  return subjects.value.filter(subject => subject.showInHistoryQuiz !== true);
+  return subjects.value.filter(subject => subject.showInHistoryQuiz !== true)
 })
 
 // 历史机测学科（筛选出设置了 showInHistoryQuiz 的学科）
 const historyQuizSubjects = computed(() => {
-  return subjects.value.filter(subject => subject.showInHistoryQuiz === true);
+  return subjects.value.filter(subject => subject.showInHistoryQuiz === true)
 })
 
 // 用户信息
@@ -202,23 +229,25 @@ const countdown = ref('')
 let countdownInterval = null
 
 // 调试：监控 subjects 数据变化
-watch(() => questionStore.subjects, (newSubjects) => {
-
-}, { deep: true, immediate: true })
+watch(
+  () => questionStore.subjects,
+  newSubjects => {},
+  { deep: true, immediate: true }
+)
 
 // 监控 questions 数据变化，确保新添加的题目能显示
-watch(() => questionStore.questions, (newQuestions) => {
-
-}, { deep: true })
+watch(
+  () => questionStore.questions,
+  newQuestions => {},
+  { deep: true }
+)
 
 // 获取排行榜数据
 const fetchLeaderboardData = async () => {
   try {
     const data = await api.get('/leaderboard/top10')
     leaderboardData.value = data
-  } catch (error) {
-
-  }
+  } catch (error) {}
 }
 
 // 计算到下周一00:00的时间差
@@ -236,7 +265,7 @@ const calculateTimeLeft = () => {
 }
 
 // 格式化倒计时
-const formatTimeLeft = (seconds) => {
+const formatTimeLeft = seconds => {
   const days = Math.floor(seconds / 86400)
   const hours = Math.floor((seconds % 86400) / 3600)
   const minutes = Math.floor((seconds % 3600) / 60)
@@ -249,17 +278,17 @@ const startCountdown = () => {
   if (countdownInterval) {
     clearInterval(countdownInterval)
   }
-  
+
   const updateCountdown = () => {
     const timeLeft = calculateTimeLeft()
     countdown.value = formatTimeLeft(timeLeft)
-    
+
     // 如果倒计时结束，重新加载排行榜
     if (timeLeft <= 0) {
       fetchLeaderboardData()
     }
   }
-  
+
   updateCountdown()
   countdownInterval = setInterval(updateCountdown, 1000)
 }
@@ -283,13 +312,11 @@ const fetchUserStats = async () => {
       data.points = userData.points || 0
       userStats.value = data
     }
-  } catch (error) {
-
-  }
+  } catch (error) {}
 }
 
 // 选择学科
-const selectSubject = (subjectId) => {
+const selectSubject = subjectId => {
   router.push(`/subcategory/${subjectId}`)
 }
 
@@ -306,16 +333,19 @@ onMounted(() => {
     router.push('/login')
     return
   }
-  
+
   // 后台加载数据，不阻塞渲染
-  questionStore.initialize().then(() => {
-    // 数据加载完成后再加载排行榜和用户统计
-    fetchLeaderboardData()
-    startCountdown()
-    fetchUserStats()
-  }).catch(error => {
-    console.error('加载数据失败:', error)
-  })
+  questionStore
+    .initialize()
+    .then(() => {
+      // 数据加载完成后再加载排行榜和用户统计
+      fetchLeaderboardData()
+      startCountdown()
+      fetchUserStats()
+    })
+    .catch(error => {
+      console.error('加载数据失败:', error)
+    })
 })
 
 onUnmounted(() => {
@@ -327,13 +357,11 @@ onUnmounted(() => {
 <style scoped>
 .home-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, #F8F9FA 0%, #E3F2FD 100%);
+  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
   background-repeat: repeat;
   padding-bottom: 2rem;
 }
-
-
 
 .home-content {
   max-width: 1200px;
@@ -384,18 +412,20 @@ onUnmounted(() => {
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: 0 4px 0 #D9534F;
+  box-shadow: 0 4px 0 #d9534f;
 }
 
 .logout-btn:hover {
   background-color: var(--primary-color);
   transform: translateY(-3px);
-  box-shadow: 0 7px 0 #D9534F, 0 10px 15px rgba(255, 107, 107, 0.4);
+  box-shadow:
+    0 7px 0 #d9534f,
+    0 10px 15px rgba(255, 107, 107, 0.4);
 }
 
 .logout-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #D9534F;
+  box-shadow: 0 2px 0 #d9534f;
 }
 
 .user-stats {
@@ -440,12 +470,8 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
 }
-
-
-
-
 
 .welcome-message {
   font-size: 1.1rem;
@@ -474,7 +500,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
 }
 
 .section-title {
@@ -523,7 +549,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, #7DD3F8 0%, #A8E6CF 50%, #FFD88B 100%);
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
 }
 
 .leaderboard-header {
@@ -568,13 +594,13 @@ onUnmounted(() => {
   .leaderboard-header {
     flex-wrap: wrap;
   }
-  
+
   .left-column,
   .leaderboard-table-container {
     flex: 1 1 100%;
     min-width: 100%;
   }
-  
+
   .left-column {
     max-width: 100%;
   }
@@ -631,7 +657,7 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 1px;
   border: 2px solid var(--primary-color);
-  box-shadow: 0 4px 0 #D9534F;
+  box-shadow: 0 4px 0 #d9534f;
   font-size: 1rem;
   margin-top: 0.5rem;
   width: fit-content;
@@ -668,7 +694,7 @@ onUnmounted(() => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.8rem 1.5rem;
-  background: linear-gradient(135deg, #FFD166 0%, #FF6B6B 100%);
+  background: linear-gradient(135deg, #ffd166 0%, #ff6b6b 100%);
   border-radius: 25px;
   box-shadow: 0 4px 15px rgba(255, 107, 107, 0.3);
   border: 2px solid var(--border-color);
@@ -697,8 +723,6 @@ onUnmounted(() => {
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
-
-
 
 .leaderboard-rules {
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
@@ -769,7 +793,7 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 1px;
   border: 2px solid var(--primary-color);
-  box-shadow: 0 4px 0 #D9534F;
+  box-shadow: 0 4px 0 #d9534f;
   font-size: 1rem;
   align-self: flex-start;
   margin-top: 0.5rem;
@@ -780,15 +804,15 @@ onUnmounted(() => {
 .view-full-link:hover {
   background-color: var(--primary-color);
   transform: translateY(-3px);
-  box-shadow: 0 7px 0 #D9534F, 0 10px 15px rgba(255, 107, 107, 0.4);
+  box-shadow:
+    0 7px 0 #d9534f,
+    0 10px 15px rgba(255, 107, 107, 0.4);
 }
 
 .view-full-link:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #D9534F;
+  box-shadow: 0 2px 0 #d9534f;
 }
-
-
 
 /* 第一名卡片样式 */
 .first-place-content {
@@ -823,7 +847,7 @@ onUnmounted(() => {
   font-family: var(--game-font);
   font-size: 1.8rem;
   font-weight: 900;
-  color: #FFD700;
+  color: #ffd700;
   margin: 0;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
 }
@@ -915,7 +939,7 @@ onUnmounted(() => {
 }
 
 .first-place-message p:first-child {
-  color: #FFD700;
+  color: #ffd700;
   font-size: 1.3rem;
   font-weight: 900;
 }
@@ -971,54 +995,52 @@ onUnmounted(() => {
   .home-content {
     padding: 1rem;
   }
-  
+
   .welcome-section,
   .subject-section,
   .leaderboard-preview {
     padding: 2rem;
   }
-  
+
   .welcome-header {
     flex-direction: column;
     align-items: center;
     text-align: center;
   }
-  
+
   .user-stats {
     gap: 1rem;
     padding: 1rem;
   }
-  
+
   .stat-item {
     gap: 0.3rem;
   }
-  
+
   .stat-label {
     font-size: 0.9rem;
   }
-  
+
   .stat-value {
     font-size: 1.2rem;
   }
-  
+
   .welcome-title {
     font-size: 1.8rem;
   }
-  
+
   .section-title {
     font-size: 1.5rem;
   }
-  
+
   .leaderboard-title {
     font-size: 1.8rem;
   }
-  
+
   .subject-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
     gap: 1.5rem;
   }
-  
-
 }
 
 @media (max-width: 768px) {
@@ -1026,12 +1048,12 @@ onUnmounted(() => {
     flex-direction: column;
     align-items: center;
   }
-  
+
   .reset-countdown {
     width: 100%;
     justify-content: center;
   }
-  
+
   .countdown-time {
     font-size: 1rem;
     min-width: 150px;
@@ -1044,35 +1066,35 @@ onUnmounted(() => {
     max-width: 100%;
     padding: 1.2rem;
   }
-  
+
   .first-place-title {
     font-size: 1.5rem;
   }
-  
+
   .first-place-badge {
     font-size: 2rem;
   }
-  
+
   .user-name {
     font-size: 1.8rem;
   }
-  
+
   .user-class {
     font-size: 1rem;
   }
-  
+
   .first-place-stats {
     gap: 0.6rem;
   }
-  
+
   .first-place-stats .stat-item {
     padding: 0.6rem;
   }
-  
+
   .first-place-stats .stat-label {
     font-size: 0.9rem;
   }
-  
+
   .first-place-stats .stat-value {
     font-size: 1.4rem;
   }
@@ -1084,85 +1106,85 @@ onUnmounted(() => {
   .leaderboard-preview {
     padding: 1.5rem;
   }
-  
+
   .welcome-title {
     font-size: 1.5rem;
   }
-  
+
   .welcome-message {
     font-size: 0.9rem;
   }
-  
+
   .section-title {
     font-size: 1.3rem;
   }
-  
+
   .leaderboard-title {
     font-size: 1.5rem;
   }
-  
+
   .subject-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .view-full-link {
     padding: 0.6rem 1.2rem;
     font-size: 0.9rem;
   }
-  
+
   .reset-countdown {
     padding: 0.6rem 1.2rem;
   }
-  
+
   .countdown-label {
     font-size: 0.9rem;
   }
-  
+
   .countdown-time {
     font-size: 0.9rem;
     min-width: 130px;
   }
-  
+
   .first-place-content {
     padding: 1rem;
   }
-  
+
   .first-place-title {
     font-size: 1.3rem;
   }
-  
+
   .first-place-badge {
     font-size: 1.8rem;
   }
-  
+
   .user-name {
     font-size: 1.5rem;
   }
-  
+
   .user-class {
     font-size: 0.9rem;
   }
-  
+
   .first-place-stats {
     gap: 0.5rem;
   }
-  
+
   .first-place-stats .stat-item {
     padding: 0.5rem;
   }
-  
+
   .first-place-stats .stat-label {
     font-size: 0.8rem;
   }
-  
+
   .first-place-stats .stat-value {
     font-size: 1.2rem;
   }
-  
+
   .first-place-message p {
     font-size: 1rem;
   }
-  
+
   .first-place-message p:first-child {
     font-size: 1.1rem;
   }

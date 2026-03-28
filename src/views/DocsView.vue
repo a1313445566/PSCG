@@ -7,7 +7,7 @@
         返回
       </button>
       <h1 class="docs-title">📚 文档中心</h1>
-      <div class="docs-stats" v-if="docsData.stats">
+      <div v-if="docsData.stats" class="docs-stats">
         <span>{{ docsData.stats.totalFiles }} 个文档</span>
       </div>
     </div>
@@ -30,7 +30,7 @@
         <button class="toggle-btn" @click="isSidebarCollapsed = !isSidebarCollapsed">
           {{ isSidebarCollapsed ? '展开' : '收起' }}
         </button>
-        <div class="tree-container" v-show="!isSidebarCollapsed">
+        <div v-show="!isSidebarCollapsed" class="tree-container">
           <el-tree
             ref="treeRef"
             :data="treeData"
@@ -67,7 +67,7 @@
             <h2 class="document-title">{{ selectedItem.title || selectedItem.name }}</h2>
             <span class="document-path">{{ selectedItem.path }}</span>
           </div>
-          
+
           <!-- 直接渲染预编译的 HTML -->
           <div class="document-body markdown-body" v-html="selectedItem.html"></div>
         </div>
@@ -106,11 +106,11 @@ function transformToTreeData(items) {
     const node = {
       id,
       type: item.type,
-      label: item.type === 'directory' ? item.name : (item.title || item.name),
+      label: item.type === 'directory' ? item.name : item.title || item.name,
       name: item.name,
       path: item.path,
       title: item.title,
-      html: item.html  // 预渲染的 HTML
+      html: item.html // 预渲染的 HTML
     }
     if (item.type === 'directory' && item.children) {
       node.children = transformToTreeData(item.children)
@@ -148,7 +148,7 @@ function handleResize() {
 }
 
 // 搜索过滤
-watch(searchQuery, (val) => {
+watch(searchQuery, val => {
   if (treeRef.value) {
     treeRef.value.filter(val)
   }
@@ -213,7 +213,9 @@ function goBack() {
   background: rgba(255, 255, 255, 0.3);
 }
 
-.back-icon { font-size: 1.2rem; }
+.back-icon {
+  font-size: 1.2rem;
+}
 
 .docs-title {
   flex: 1;
@@ -236,7 +238,9 @@ function goBack() {
   border-bottom: 1px solid #e0e0e0;
 }
 
-.search-input { max-width: 600px; }
+.search-input {
+  max-width: 600px;
+}
 
 .search-input :deep(.el-input__wrapper) {
   border-radius: 10px;
@@ -264,7 +268,9 @@ function goBack() {
   transition: width 0.2s;
 }
 
-.docs-sidebar.collapsed { width: 80px; }
+.docs-sidebar.collapsed {
+  width: 80px;
+}
 
 .toggle-btn {
   padding: 0.75rem;
@@ -276,7 +282,9 @@ function goBack() {
   color: #666;
 }
 
-.toggle-btn:hover { background: #e8e8e8; }
+.toggle-btn:hover {
+  background: #e8e8e8;
+}
 
 .tree-container {
   flex: 1;
@@ -308,7 +316,9 @@ function goBack() {
   font-size: 0.9rem;
 }
 
-.node-icon { font-size: 1.1rem; }
+.node-icon {
+  font-size: 1.1rem;
+}
 
 .node-label {
   overflow: hidden;
@@ -333,8 +343,13 @@ function goBack() {
   color: #999;
 }
 
-.empty-icon { font-size: 4rem; margin-bottom: 1rem; }
-.empty-text { font-size: 1.1rem; }
+.empty-icon {
+  font-size: 4rem;
+  margin-bottom: 1rem;
+}
+.empty-text {
+  font-size: 1.1rem;
+}
 
 /* 文档查看器 */
 .document-viewer {
@@ -372,9 +387,9 @@ function goBack() {
   overflow-y: auto;
   padding: 2rem;
   line-height: 1.8;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 
-               'Helvetica Neue', Arial, 'Noto Sans', 'Noto Sans SC',
-               'PingFang SC', 'Microsoft YaHei', sans-serif;
+  font-family:
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans',
+    'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', sans-serif;
   min-height: 0;
 }
 
@@ -491,31 +506,31 @@ function goBack() {
     padding: 1rem;
     flex-wrap: wrap;
   }
-  
+
   .docs-title {
     font-size: 1.2rem;
     order: -1;
     width: 100%;
     margin-bottom: 0.5rem;
   }
-  
+
   .docs-container {
     flex-direction: column;
     height: auto;
     min-height: calc(100vh - 130px);
   }
-  
+
   .docs-sidebar {
     width: 100%;
     max-height: 300px;
     border-right: none;
     border-bottom: 1px solid #e0e0e0;
   }
-  
+
   .document-viewer {
     margin: 0.5rem;
   }
-  
+
   .document-body {
     padding: 1rem;
   }

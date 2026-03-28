@@ -7,17 +7,17 @@
 
 /* 主题颜色变量 - 游戏风格 */
 :root {
-  --primary-color: #FF6B6B;
-  --secondary-color: #4ECDC4;
-  --accent-color: #FFD166;
-  --danger-color: #EF476F;
-  --success-color: #06D6A0;
-  --background-color: #F7FFF7;
-  --card-background: #FFFFFF;
-  --text-primary: #292F36;
-  --text-secondary: #4ECDC4;
+  --primary-color: #ff6b6b;
+  --secondary-color: #4ecdc4;
+  --accent-color: #ffd166;
+  --danger-color: #ef476f;
+  --success-color: #06d6a0;
+  --background-color: #f7fff7;
+  --card-background: #ffffff;
+  --text-primary: #292f36;
+  --text-secondary: #4ecdc4;
   --text-light: #848484;
-  --border-color: #FFD166;
+  --border-color: #ffd166;
   --shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
   --border-radius: 16px;
   --game-font: 'Comic Sans MS', 'Arial', sans-serif;
@@ -25,7 +25,9 @@
 
 /* 基础字体设置 */
 body {
-  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+  font-family:
+    'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial,
+    sans-serif;
   font-size: 14px;
   line-height: 1.5;
   color: #303133;
@@ -44,11 +46,11 @@ body:not(.admin-page) {
 }
 
 /* 标题样式 - 游戏风格 - 只应用于非后台页面 */
-body:not(.admin-page) h1, 
-body:not(.admin-page) h2, 
-body:not(.admin-page) h3, 
-body:not(.admin-page) h4, 
-body:not(.admin-page) h5, 
+body:not(.admin-page) h1,
+body:not(.admin-page) h2,
+body:not(.admin-page) h3,
+body:not(.admin-page) h4,
+body:not(.admin-page) h5,
 body:not(.admin-page) h6 {
   font-weight: 900;
   margin-bottom: 1rem;
@@ -128,51 +130,57 @@ body:not(.admin-page) .btn-primary {
   background-color: var(--primary-color);
   color: white;
   border-color: var(--primary-color);
-  box-shadow: 0 6px 0 #D9534F;
+  box-shadow: 0 6px 0 #d9534f;
 }
 
 body:not(.admin-page) .btn-primary:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 0 #D9534F, 0 15px 20px rgba(255, 107, 107, 0.3);
+  box-shadow:
+    0 10px 0 #d9534f,
+    0 15px 20px rgba(255, 107, 107, 0.3);
 }
 
 body:not(.admin-page) .btn-primary:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #D9534F;
+  box-shadow: 0 2px 0 #d9534f;
 }
 
 body:not(.admin-page) .btn-secondary {
   background-color: var(--secondary-color);
   color: white;
   border-color: var(--secondary-color);
-  box-shadow: 0 6px 0 #45B7AA;
+  box-shadow: 0 6px 0 #45b7aa;
 }
 
 body:not(.admin-page) .btn-secondary:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 0 #45B7AA, 0 15px 20px rgba(78, 205, 196, 0.3);
+  box-shadow:
+    0 10px 0 #45b7aa,
+    0 15px 20px rgba(78, 205, 196, 0.3);
 }
 
 body:not(.admin-page) .btn-secondary:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #45B7AA;
+  box-shadow: 0 2px 0 #45b7aa;
 }
 
 body:not(.admin-page) .btn-accent {
   background-color: var(--accent-color);
   color: var(--text-primary);
   border-color: var(--accent-color);
-  box-shadow: 0 6px 0 #E6BF50;
+  box-shadow: 0 6px 0 #e6bf50;
 }
 
 body:not(.admin-page) .btn-accent:hover {
   transform: translateY(-4px);
-  box-shadow: 0 10px 0 #E6BF50, 0 15px 20px rgba(255, 209, 102, 0.3);
+  box-shadow:
+    0 10px 0 #e6bf50,
+    0 15px 20px rgba(255, 209, 102, 0.3);
 }
 
 body:not(.admin-page) .btn-accent:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #E6BF50;
+  box-shadow: 0 2px 0 #e6bf50;
 }
 
 /* 卡片样式 - 游戏风格 - 只应用于非后台页面 */
@@ -195,7 +203,12 @@ body:not(.admin-page) .card::before {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color), var(--accent-color));
+  background: linear-gradient(
+    90deg,
+    var(--primary-color),
+    var(--secondary-color),
+    var(--accent-color)
+  );
 }
 
 body:not(.admin-page) .card:hover {
@@ -240,14 +253,16 @@ body:not(.admin-page) .form-input {
   font-size: 1.1rem;
   transition: all 0.3s ease;
   font-family: var(--game-font);
-  background-color: #FFF;
+  background-color: #fff;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 body:not(.admin-page) .form-input:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 5px rgba(255, 107, 107, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 0 5px rgba(255, 107, 107, 0.2),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
@@ -259,7 +274,7 @@ body:not(.admin-page) .form-select {
   font-size: 1.1rem;
   transition: all 0.3s ease;
   font-family: var(--game-font);
-  background-color: #FFF;
+  background-color: #fff;
   box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
   cursor: pointer;
 }
@@ -267,7 +282,9 @@ body:not(.admin-page) .form-select {
 body:not(.admin-page) .form-select:focus {
   outline: none;
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 5px rgba(255, 107, 107, 0.2), inset 0 2px 4px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 0 0 5px rgba(255, 107, 107, 0.2),
+    inset 0 2px 4px rgba(0, 0, 0, 0.1);
   transform: translateY(-2px);
 }
 
@@ -305,7 +322,11 @@ body:not(.admin-page) .form-select:focus {
 }
 
 @keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {
+  0%,
+  20%,
+  50%,
+  80%,
+  100% {
     transform: translateY(0);
   }
   40% {
@@ -326,7 +347,8 @@ body:not(.admin-page) .form-select:focus {
 }
 
 @keyframes shake {
-  0%, 100% {
+  0%,
+  100% {
     transform: translateX(0);
   }
   25% {
@@ -367,33 +389,33 @@ body:not(.admin-page) .form-select:focus {
   h1 {
     font-size: 20px;
   }
-  
+
   h2 {
     font-size: 18px;
   }
-  
+
   h3 {
     font-size: 16px;
   }
-  
+
   /* 游戏风格响应式样式 */
   body:not(.admin-page) h1 {
     font-size: 1.5rem;
   }
-  
+
   body:not(.admin-page) h2 {
     font-size: 1.25rem;
   }
-  
+
   body:not(.admin-page) h3 {
     font-size: 1.1rem;
   }
-  
+
   body:not(.admin-page) .btn {
     padding: 10px 20px;
     font-size: 0.9rem;
   }
-  
+
   body:not(.admin-page) .card {
     padding: 16px;
   }
@@ -452,8 +474,12 @@ body:not(.admin-page) .form-select:focus {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 /* 骨架屏样式 */
@@ -484,7 +510,7 @@ body:not(.admin-page) .form-select:focus {
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-  border: 2px solid #E8E8E8;
+  border: 2px solid #e8e8e8;
   margin-bottom: 20px;
 }
 
@@ -537,7 +563,7 @@ body:not(.admin-page) .form-select:focus {
   border-radius: 16px;
   padding: 20px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: 2px solid #E8E8E8;
+  border: 2px solid #e8e8e8;
 }
 
 .questions-skeleton {
@@ -568,7 +594,7 @@ body:not(.admin-page) .form-select:focus {
 }
 
 .route-error h2 {
-  color: #EF476F;
+  color: #ef476f;
   font-size: 24px;
   margin-bottom: 16px;
 }
@@ -580,7 +606,7 @@ body:not(.admin-page) .form-select:focus {
 
 .route-error button {
   padding: 12px 24px;
-  background: var(--primary-color, #FF6B6B);
+  background: var(--primary-color, #ff6b6b);
   color: white;
   border: none;
   border-radius: 8px;
@@ -609,7 +635,7 @@ body:not(.admin-page) .form-select:focus {
 }
 
 .not-found h2 {
-  color: var(--secondary-color, #4ECDC4);
+  color: var(--secondary-color, #4ecdc4);
   font-size: 24px;
   margin-bottom: 16px;
 }
@@ -620,11 +646,11 @@ body:not(.admin-page) .form-select:focus {
 }
 
 .not-found a {
-  color: var(--primary-color, #FF6B6B);
+  color: var(--primary-color, #ff6b6b);
   text-decoration: underline;
   font-size: 16px;
 }
 
 .not-found a:hover {
-  color: #D9534F;
+  color: #d9534f;
 }

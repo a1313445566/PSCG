@@ -1,6 +1,6 @@
 /**
  * Dashboard API 路由
- * 
+ *
  * 提供数据概览相关的 API 接口
  */
 const express = require('express')
@@ -17,11 +17,11 @@ router.get('/stats', adminAuth, async (req, res) => {
     // 获取题目总数
     const questionsResult = await db.get('SELECT COUNT(*) as count FROM questions')
     const totalQuestions = questionsResult?.count || 0
-    
+
     // 获取用户总数
     const usersResult = await db.get('SELECT COUNT(*) as count FROM users')
     const totalUsers = usersResult?.count || 0
-    
+
     // 获取今日答题次数
     const today = new Date().toISOString().split('T')[0]
     const todayAttemptsResult = await db.get(
@@ -29,13 +29,13 @@ router.get('/stats', adminAuth, async (req, res) => {
       [today]
     )
     const todayAttempts = todayAttemptsResult?.count || 0
-    
+
     // 获取平均正确率（计算公式：correct_count / total_questions * 100）
     const avgAccuracyResult = await db.get(
       `SELECT AVG(correct_count * 100.0 / NULLIF(total_questions, 0)) as avg FROM answer_records`
     )
     const avgAccuracy = avgAccuracyResult?.avg ? Math.round(avgAccuracyResult.avg) : 0
-    
+
     // 获取昨日的题目数量（用于计算趋势）
     const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0]
     const yesterdayQuestionsResult = await db.get(
@@ -44,7 +44,7 @@ router.get('/stats', adminAuth, async (req, res) => {
     )
     const yesterdayQuestions = yesterdayQuestionsResult?.count || 0
     const questionTrend = Math.max(0, totalQuestions - yesterdayQuestions)
-    
+
     // 获取昨日的用户数量
     const yesterdayUsersResult = await db.get(
       `SELECT COUNT(*) as count FROM users WHERE DATE(created_at) = ?`,
@@ -52,25 +52,28 @@ router.get('/stats', adminAuth, async (req, res) => {
     )
     const yesterdayUsers = yesterdayUsersResult?.count || 0
     const userTrend = Math.max(0, totalUsers - yesterdayUsers)
-    
+
     // 获取昨日的答题次数
     const yesterdayAttemptsResult = await db.get(
       `SELECT COUNT(*) as count FROM answer_records WHERE DATE(created_at) = ?`,
       [yesterday]
     )
     const yesterdayAttempts = yesterdayAttemptsResult?.count || 0
-    const attemptTrend = yesterdayAttempts > 0 
-      ? Math.round((todayAttempts - yesterdayAttempts) / yesterdayAttempts * 100)
-      : 0
-    
+    const attemptTrend =
+      yesterdayAttempts > 0
+        ? Math.round(((todayAttempts - yesterdayAttempts) / yesterdayAttempts) * 100)
+        : 0
+
     // 获取昨日的平均正确率
     const yesterdayAccuracyResult = await db.get(
       `SELECT AVG(correct_count * 100.0 / NULLIF(total_questions, 0)) as avg FROM answer_records WHERE DATE(created_at) = ?`,
       [yesterday]
     )
-    const yesterdayAccuracy = yesterdayAccuracyResult?.avg ? Math.round(yesterdayAccuracyResult.avg) : 0
+    const yesterdayAccuracy = yesterdayAccuracyResult?.avg
+      ? Math.round(yesterdayAccuracyResult.avg)
+      : 0
     const accuracyTrend = avgAccuracy - yesterdayAccuracy
-    
+
     res.json({
       totalQuestions,
       totalUsers,
@@ -95,14 +98,14 @@ router.get('/stats', adminAuth, async (req, res) => {
 router.get('/trend', adminAuth, async (req, res) => {
   try {
     const days = parseInt(req.query.days) || 7
-    
+
     // 生成日期数组
     const dates = []
     for (let i = days - 1; i >= 0; i--) {
       const date = new Date(Date.now() - i * 86400000)
       dates.push(date.toISOString().split('T')[0])
     }
-    
+
     // 查询每天的数据
     const trendData = []
     for (const date of dates) {
@@ -111,20 +114,20 @@ router.get('/trend', adminAuth, async (req, res) => {
         [date]
       )
       const attempts = attemptsResult?.count || 0
-      
+
       const accuracyResult = await db.get(
         `SELECT AVG(correct_count * 100.0 / NULLIF(total_questions, 0)) as avg FROM answer_records WHERE DATE(created_at) = ?`,
         [date]
       )
       const accuracy = accuracyResult?.avg ? Math.round(accuracyResult.avg) : 0
-      
+
       trendData.push({
         date: date.substring(5), // 只显示 MM-DD
         attempts,
         accuracy
       })
     }
-    
+
     res.json(trendData)
   } catch (error) {
     console.error('[Dashboard] 获取趋势数据失败:', error)
@@ -148,12 +151,12 @@ router.get('/subject-distribution', adminAuth, async (req, res) => {
       ORDER BY count DESC
       LIMIT 10
     `)
-    
+
     const distribution = result.map(item => ({
       name: item.name,
       count: item.count || 0
     }))
-    
+
     res.json(distribution)
   } catch (error) {
     console.error('[Dashboard] 获取学科分布失败:', error)
@@ -169,7 +172,7 @@ router.get('/subject-distribution', adminAuth, async (req, res) => {
 router.get('/recent-activities', adminAuth, async (req, res) => {
   try {
     const limit = Math.max(1, Math.min(parseInt(req.query.limit) || 10, 100)) // 限制范围 1-100
-    
+
     // MySQL prepared statement 不支持 LIMIT 参数化，直接拼接
     const records = await db.all(`
       SELECT 
@@ -191,7 +194,7 @@ router.get('/recent-activities', adminAuth, async (req, res) => {
       ORDER BY ar.created_at DESC
       LIMIT ${limit}
     `)
-    
+
     const activities = records.map(record => {
       const now = new Date()
       const createdAt = new Date(record.created_at)
@@ -199,7 +202,7 @@ router.get('/recent-activities', adminAuth, async (req, res) => {
       const diffMins = Math.floor(diffMs / 60000)
       const diffHours = Math.floor(diffMins / 60)
       const diffDays = Math.floor(diffHours / 24)
-      
+
       let timeText = '刚刚'
       if (diffDays > 0) {
         timeText = `${diffDays}天前`
@@ -208,7 +211,7 @@ router.get('/recent-activities', adminAuth, async (req, res) => {
       } else if (diffMins > 0) {
         timeText = `${diffMins}分钟前`
       }
-      
+
       return {
         id: record.id,
         student_name: record.student_name || '未知',
@@ -219,7 +222,7 @@ router.get('/recent-activities', adminAuth, async (req, res) => {
         time: timeText
       }
     })
-    
+
     res.json(activities)
   } catch (error) {
     console.error('[Dashboard] 获取最近活动失败:', error)

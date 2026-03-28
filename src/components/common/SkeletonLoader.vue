@@ -1,48 +1,107 @@
 <template>
   <div class="skeleton-loader" :class="{ 'skeleton--pulse': pulse }">
     <!-- 文本骨架 -->
-    <div v-if="type === 'text'" class="skeleton skeleton--text" :style="{ width, height, borderRadius }"></div>
-    
+    <div
+      v-if="type === 'text'"
+      class="skeleton skeleton--text"
+      :style="{ width, height, borderRadius }"
+    ></div>
+
     <!-- 圆形骨架 -->
-    <div v-else-if="type === 'circle'" class="skeleton skeleton--circle" :style="{ width, height, borderRadius: '50%' }"></div>
-    
+    <div
+      v-else-if="type === 'circle'"
+      class="skeleton skeleton--circle"
+      :style="{ width, height, borderRadius: '50%' }"
+    ></div>
+
     <!-- 矩形骨架 -->
-    <div v-else-if="type === 'rect'" class="skeleton skeleton--rect" :style="{ width, height, borderRadius }"></div>
-    
+    <div
+      v-else-if="type === 'rect'"
+      class="skeleton skeleton--rect"
+      :style="{ width, height, borderRadius }"
+    ></div>
+
     <!-- 卡片骨架 -->
     <div v-else-if="type === 'card'" class="skeleton-card">
-      <div class="skeleton skeleton--circle" style="width: 80px; height: 80px; margin-bottom: 16px;"></div>
-      <div class="skeleton skeleton--text" style="width: 80%; height: 20px; margin-bottom: 12px;"></div>
-      <div class="skeleton skeleton--text" style="width: 60%; height: 16px;"></div>
+      <div
+        class="skeleton skeleton--circle"
+        style="width: 80px; height: 80px; margin-bottom: 16px"
+      ></div>
+      <div
+        class="skeleton skeleton--text"
+        style="width: 80%; height: 20px; margin-bottom: 12px"
+      ></div>
+      <div class="skeleton skeleton--text" style="width: 60%; height: 16px"></div>
     </div>
-    
+
     <!-- 学科卡片骨架 -->
     <div v-else-if="type === 'subject-card'" class="skeleton-subject-card">
-      <div class="skeleton skeleton--circle" style="width: 80px; height: 80px; margin-bottom: 16px;"></div>
-      <div class="skeleton skeleton--text" style="width: 80%; height: 24px; margin-bottom: 16px;"></div>
-      <div class="skeleton skeleton--rect" style="width: 60%; height: 32px; border-radius: 20px;"></div>
+      <div
+        class="skeleton skeleton--circle"
+        style="width: 80px; height: 80px; margin-bottom: 16px"
+      ></div>
+      <div
+        class="skeleton skeleton--text"
+        style="width: 80%; height: 24px; margin-bottom: 16px"
+      ></div>
+      <div
+        class="skeleton skeleton--rect"
+        style="width: 60%; height: 32px; border-radius: 20px"
+      ></div>
     </div>
-    
+
     <!-- 题目卡片骨架 -->
     <div v-else-if="type === 'question-card'" class="skeleton-question-card">
-      <div class="skeleton skeleton--text" style="width: 100px; height: 20px; margin-bottom: 16px;"></div>
-      <div class="skeleton skeleton--text" style="width: 100%; height: 20px; margin-bottom: 8px;"></div>
-      <div class="skeleton skeleton--text" style="width: 90%; height: 20px; margin-bottom: 8px;"></div>
-      <div class="skeleton skeleton--text" style="width: 95%; height: 20px; margin-bottom: 16px;"></div>
-      <div class="skeleton skeleton--rect" style="width: 100%; height: 120px; margin-bottom: 16px;"></div>
+      <div
+        class="skeleton skeleton--text"
+        style="width: 100px; height: 20px; margin-bottom: 16px"
+      ></div>
+      <div
+        class="skeleton skeleton--text"
+        style="width: 100%; height: 20px; margin-bottom: 8px"
+      ></div>
+      <div
+        class="skeleton skeleton--text"
+        style="width: 90%; height: 20px; margin-bottom: 8px"
+      ></div>
+      <div
+        class="skeleton skeleton--text"
+        style="width: 95%; height: 20px; margin-bottom: 16px"
+      ></div>
+      <div
+        class="skeleton skeleton--rect"
+        style="width: 100%; height: 120px; margin-bottom: 16px"
+      ></div>
       <div class="skeleton-options">
-        <div v-for="i in 4" :key="i" class="skeleton skeleton--rect" style="width: 100%; height: 40px; margin-bottom: 8px; border-radius: 8px;"></div>
+        <div
+          v-for="i in 4"
+          :key="i"
+          class="skeleton skeleton--rect"
+          style="width: 100%; height: 40px; margin-bottom: 8px; border-radius: 8px"
+        ></div>
       </div>
     </div>
-    
+
     <!-- 排行榜骨架 -->
     <div v-else-if="type === 'leaderboard'" class="skeleton-leaderboard">
-      <div class="skeleton skeleton--text" style="width: 200px; height: 24px; margin-bottom: 20px;"></div>
+      <div
+        class="skeleton skeleton--text"
+        style="width: 200px; height: 24px; margin-bottom: 20px"
+      ></div>
       <div v-for="i in 5" :key="i" class="skeleton-leaderboard-row">
-        <div class="skeleton skeleton--rect" style="width: 30px; height: 30px; border-radius: 4px; margin-right: 12px;"></div>
-        <div class="skeleton skeleton--text" style="width: 150px; height: 16px; margin-right: 12px;"></div>
-        <div class="skeleton skeleton--text" style="width: 100px; height: 16px; margin-right: 12px;"></div>
-        <div class="skeleton skeleton--text" style="width: 80px; height: 16px;"></div>
+        <div
+          class="skeleton skeleton--rect"
+          style="width: 30px; height: 30px; border-radius: 4px; margin-right: 12px"
+        ></div>
+        <div
+          class="skeleton skeleton--text"
+          style="width: 150px; height: 16px; margin-right: 12px"
+        ></div>
+        <div
+          class="skeleton skeleton--text"
+          style="width: 100px; height: 16px; margin-right: 12px"
+        ></div>
+        <div class="skeleton skeleton--text" style="width: 80px; height: 16px"></div>
       </div>
     </div>
   </div>
@@ -55,8 +114,16 @@ const props = defineProps({
   type: {
     type: String,
     default: 'text',
-    validator: (value) => {
-      return ['text', 'circle', 'rect', 'card', 'subject-card', 'question-card', 'leaderboard'].includes(value)
+    validator: value => {
+      return [
+        'text',
+        'circle',
+        'rect',
+        'card',
+        'subject-card',
+        'question-card',
+        'leaderboard'
+      ].includes(value)
     }
   },
   width: {
@@ -129,7 +196,8 @@ const props = defineProps({
 }
 
 @keyframes skeleton-pulse {
-  0%, 100% {
+  0%,
+  100% {
     opacity: 1;
   }
   50% {

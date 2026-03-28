@@ -13,7 +13,7 @@ function parseChartConfig(configStr) {
       }
     } catch (jsonError) {
       // JSON 解析失败，尝试清理各种可能的问题
-      let cleanedStr = configStr
+      const cleanedStr = configStr
         // 清理函数表达式
         .replace(/"(\w+)":\s*\([^)]*\)\s*=>[^,}\]]*/g, '"$1": null')
         .replace(/"(\w+)":\s*function\s*\([^)]*\)\s*\{[^}]*\}/g, '"$1": null')
@@ -23,7 +23,7 @@ function parseChartConfig(configStr) {
         .replace(/[^\x00-\x7F]/g, '')
         // 确保属性名用双引号包围
         .replace(/([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1 "$2":')
-      
+
       // 再次尝试解析
       try {
         const config = JSON.parse(cleanedStr)
@@ -32,9 +32,8 @@ function parseChartConfig(configStr) {
         }
       } catch (secondError) {
         // 尝试更激进的清理 - 移除所有非 JSON 字符
-        let superCleaned = cleanedStr
-          .replace(/[^\{\}\[\]\",:0-9a-zA-Z\s]/g, '')
-        
+        const superCleaned = cleanedStr.replace(/[^\{\}\[\]\",:0-9a-zA-Z\s]/g, '')
+
         try {
           const config = JSON.parse(superCleaned)
           if (config.type && config.data) {
@@ -62,7 +61,7 @@ export function extractAllChartConfigs(analysisResult) {
   const regex = /```vchart\s*([\s\S]*?)```/g
   let match
   let index = 0
-  
+
   while ((match = regex.exec(analysisResult)) !== null) {
     const configStr = match[1].trim()
     const config = parseChartConfig(configStr)
@@ -71,7 +70,7 @@ export function extractAllChartConfigs(analysisResult) {
       index++
     }
   }
-  
+
   return configs
 }
 

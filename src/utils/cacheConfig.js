@@ -11,7 +11,7 @@ export const CACHE_KEYS = {
   // 前台缓存键
   CORE_DATA: `coreData_${CACHE_VERSION}`,
   CORE_DATA_EXPIRY: `coreDataExpiry_${CACHE_VERSION}`,
-  
+
   // 后台缓存键（独立，不影响前台）
   ADMIN_CORE_DATA: `adminCoreData_${CACHE_VERSION}`,
   ADMIN_CORE_DATA_EXPIRY: `adminCoreDataExpiry_${CACHE_VERSION}`
@@ -19,8 +19,8 @@ export const CACHE_KEYS = {
 
 // 缓存时间配置（毫秒）
 export const CACHE_TTL = {
-  ADMIN: 5 * 60 * 1000,          // 后台：5分钟
-  FRONTEND: 24 * 60 * 60 * 1000  // 前台：24小时
+  ADMIN: 5 * 60 * 1000, // 后台：5分钟
+  FRONTEND: 24 * 60 * 60 * 1000 // 前台：24小时
 }
 
 /**
@@ -36,14 +36,14 @@ export const isAdminPage = () => {
  * @returns {{ data: string, expiry: string }}
  */
 export const getCacheKeys = () => {
-  return isAdminPage() 
-    ? { 
-        data: CACHE_KEYS.ADMIN_CORE_DATA, 
-        expiry: CACHE_KEYS.ADMIN_CORE_DATA_EXPIRY 
+  return isAdminPage()
+    ? {
+        data: CACHE_KEYS.ADMIN_CORE_DATA,
+        expiry: CACHE_KEYS.ADMIN_CORE_DATA_EXPIRY
       }
-    : { 
-        data: CACHE_KEYS.CORE_DATA, 
-        expiry: CACHE_KEYS.CORE_DATA_EXPIRY 
+    : {
+        data: CACHE_KEYS.CORE_DATA,
+        expiry: CACHE_KEYS.CORE_DATA_EXPIRY
       }
 }
 
@@ -57,10 +57,10 @@ export const getCacheTTL = () => {
 
 /**
  * 安全的缓存读取（带损坏检测）
- * @param {string} key 
+ * @param {string} key
  * @returns {any|null}
  */
-export const getCacheSafely = (key) => {
+export const getCacheSafely = key => {
   try {
     const data = localStorage.getItem(key)
     if (!data) return null
@@ -74,8 +74,8 @@ export const getCacheSafely = (key) => {
 
 /**
  * 安全的缓存写入
- * @param {string} key 
- * @param {any} data 
+ * @param {string} key
+ * @param {any} data
  * @returns {boolean}
  */
 export const setCacheSafely = (key, data) => {
@@ -98,7 +98,11 @@ export const clearOldCache = () => {
   for (let i = 0; i < localStorage.length; i++) {
     const key = localStorage.key(i)
     // 清理不带版本号的旧缓存
-    if (key && (key.startsWith('coreData') || key.startsWith('adminCoreData')) && !key.includes(CACHE_VERSION)) {
+    if (
+      key &&
+      (key.startsWith('coreData') || key.startsWith('adminCoreData')) &&
+      !key.includes(CACHE_VERSION)
+    ) {
       keysToRemove.push(key)
     }
   }

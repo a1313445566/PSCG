@@ -1,0 +1,43 @@
+# 依赖
+node_modules
+dist
+dist-ssr
+*.local
+
+# 构建产物
+public
+
+# 环境配置
+.env
+.env.local
+.env.*.local
+
+# 日志
+*.log
+
+# 编辑器
+.vscode
+.idea
+.DS_Store
+
+# 临时文件
+*.tmp
+*.temp
+.cache
+
+# 数据文件
+*.sql
+*.xlsx
+*.xls
+
+# 上传文件
+uploads
+audio
+images
+
+# 文档
+DOCS
+
+# 不格式化的代码
+*.min.js
+*.min.css

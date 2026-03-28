@@ -6,7 +6,7 @@
       </div>
     </template>
     <div class="setting-content">
-      <el-input v-model="localInterfaceName" placeholder="输入界面名称" style="width: 300px;" />
+      <el-input v-model="localInterfaceName" placeholder="输入界面名称" style="width: 300px" />
       <el-button type="primary" @click="updateInterfaceName">更新界面名称</el-button>
       <span class="hint-text">修改后需要刷新页面才能看到效果</span>
     </div>
@@ -14,31 +14,34 @@
 </template>
 
 <script setup>
-import { ref, watch } from 'vue';
-import { ElMessage } from 'element-plus';
+import { ref, watch } from 'vue'
+import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   interfaceName: {
     type: String,
     default: ''
   }
-});
+})
 
-const emit = defineEmits(['update-interface-name']);
+const emit = defineEmits(['update-interface-name'])
 
-const localInterfaceName = ref(props.interfaceName);
+const localInterfaceName = ref(props.interfaceName)
 
-watch(() => props.interfaceName, (newValue) => {
-  localInterfaceName.value = newValue;
-});
+watch(
+  () => props.interfaceName,
+  newValue => {
+    localInterfaceName.value = newValue
+  }
+)
 
 const updateInterfaceName = () => {
   if (!localInterfaceName.value.trim()) {
-    ElMessage.warning('请输入界面名称');
-    return;
+    ElMessage.warning('请输入界面名称')
+    return
   }
-  emit('update-interface-name', localInterfaceName.value);
-};
+  emit('update-interface-name', localInterfaceName.value)
+}
 </script>
 
 <style scoped>

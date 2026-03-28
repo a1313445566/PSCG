@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
-import { 
-  initDatabase, 
-  addSubject, 
-  deleteSubject, 
-  addSubcategory, 
-  deleteSubcategory, 
-  addQuestion, 
-  updateQuestion, 
+import {
+  initDatabase,
+  addSubject,
+  deleteSubject,
+  addSubcategory,
+  deleteSubcategory,
+  addQuestion,
+  updateQuestion,
   deleteQuestion,
   importLocalData,
   updateSubject as updateSubjectApi,
@@ -21,10 +21,10 @@ import {
   deleteClass
 } from '../utils/database'
 import { api } from '../utils/api'
-import { 
-  getCacheKeys, 
-  getCacheTTL, 
-  getCacheSafely, 
+import {
+  getCacheKeys,
+  getCacheTTL,
+  getCacheSafely,
   setCacheSafely,
   clearCurrentCache
 } from '../utils/cacheConfig'
@@ -33,7 +33,7 @@ import {
 let _isAppMounted = true
 
 // 设置应用挂载状态
-export const setAppMountedState = (mounted) => {
+export const setAppMountedState = mounted => {
   _isAppMounted = mounted
 }
 
@@ -64,25 +64,25 @@ export const useQuestionStore = defineStore('question', {
     error: null
   }),
   getters: {
-    getQuestionsBySubject: (state) => (subjectId) => {
+    getQuestionsBySubject: state => subjectId => {
       return state.questions.filter(q => {
         const qSubjectId = q.subjectId || q.subject_id
         return qSubjectId === subjectId
       })
     },
-    getSubjectName: (state) => (subjectId) => {
+    getSubjectName: state => subjectId => {
       const subject = state.subjects.find(s => s.id === subjectId)
       return subject ? subject.name : ''
     },
-    getSubjectById: (state) => (subjectId) => {
+    getSubjectById: state => subjectId => {
       return state.subjects.find(s => s.id === subjectId) || null
     },
     // 获取错题巩固题库
-    getErrorCollection: (state) => (subjectId) => {
+    getErrorCollection: state => subjectId => {
       return state.errorCollections[subjectId] || []
     },
     // 获取错题的正确次数
-    getErrorQuestionCorrectCount: (state) => (questionId) => {
+    getErrorQuestionCorrectCount: state => questionId => {
       return state.errorCollectionStats[questionId]?.correctCount || 0
     }
   },
@@ -93,7 +93,7 @@ export const useQuestionStore = defineStore('question', {
       if (_isInitializing && _initPromise) {
         return _initPromise
       }
-      
+
       _isInitializing = true
       _initPromise = (async () => {
         try {
@@ -109,10 +109,10 @@ export const useQuestionStore = defineStore('question', {
           _isInitializing = false
         }
       })()
-      
+
       return _initPromise
     },
-    
+
     // 加载核心数据（学科、年级、班级、题目数量统计）
     async loadCoreData() {
       try {
@@ -128,13 +128,13 @@ export const useQuestionStore = defineStore('question', {
 
         // 检查缓存是否有效且包含统计数据（questionCount）
         const hasValidCache = cachedData && cacheExpiry && Date.now() < parseInt(cacheExpiry)
-        const hasQuestionCount = cachedData?.subjects?.length > 0 && 
-          cachedData.subjects[0].questionCount !== undefined
+        const hasQuestionCount =
+          cachedData?.subjects?.length > 0 && cachedData.subjects[0].questionCount !== undefined
 
         if (hasValidCache && hasQuestionCount) {
           // 检查应用是否仍然挂载
           if (!_isAppMounted) return
-          
+
           this.subjects = cachedData.subjects
           this.grades = cachedData.grades
           this.classes = cachedData.classes
@@ -169,14 +169,15 @@ export const useQuestionStore = defineStore('question', {
     // 获取并缓存数据
     async fetchAndCacheCoreData() {
       // 并行请求核心数据
-      const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] = await Promise.all([
-        api.get('/subjects').catch(() => []),
-        api.get('/grades').catch(() => []),
-        api.get('/classes').catch(() => []),
-        api.get('/subjects/stats').catch(() => []),
-        // 加载子分类统计
-        api.get('/questions/subcategories/stats').catch(() => ({}))
-      ])
+      const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] =
+        await Promise.all([
+          api.get('/subjects').catch(() => []),
+          api.get('/grades').catch(() => []),
+          api.get('/classes').catch(() => []),
+          api.get('/subjects/stats').catch(() => []),
+          // 加载子分类统计
+          api.get('/questions/subcategories/stats').catch(() => ({}))
+        ])
 
       // 检查应用是否仍然挂载
       if (!_isAppMounted) return
@@ -209,7 +210,7 @@ export const useQuestionStore = defineStore('question', {
       setCacheSafely(dataKey, coreData)
       localStorage.setItem(expiryKey, Date.now() + ttl)
     },
-    
+
     // 加载题目数据（支持服务端分页）
     async loadQuestions(params = {}) {
       try {
@@ -236,10 +237,10 @@ export const useQuestionStore = defineStore('question', {
         if (excludeContent) queryParams.excludeContent = true
 
         const result = await api.get('/questions', queryParams)
-        
+
         // 检查应用是否仍然挂载
         if (!_isAppMounted) return
-        
+
         // 适配新的 API 返回格式 { data, total, page, limit }
         if (result.data !== undefined) {
           // 新格式
@@ -252,7 +253,7 @@ export const useQuestionStore = defineStore('question', {
           return result
         } else {
           // 兼容旧格式（数组）
-          this.questions = Array.isArray(result) ? result : (result.questions || [])
+          this.questions = Array.isArray(result) ? result : result.questions || []
           this.pagination = {
             total: this.questions.length,
             page: page,
@@ -267,7 +268,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 加载子分类统计数据
     async loadSubcategoryStats(subjectId) {
       try {
@@ -279,17 +280,19 @@ export const useQuestionStore = defineStore('question', {
         return {}
       }
     },
-    
+
     // 获取用户在某题库的统计数据（用于智能选题）
     async loadUserSubcategoryStats(subcategoryId) {
       try {
         const userId = localStorage.getItem('studentId')
         if (!userId) return null
-        
-        const stats = await api.get(`/answer-records/user-subcategory-stats/${userId}/${subcategoryId}`)
-        this.userSubcategoryStats = { 
-          ...this.userSubcategoryStats, 
-          [subcategoryId]: stats 
+
+        const stats = await api.get(
+          `/answer-records/user-subcategory-stats/${userId}/${subcategoryId}`
+        )
+        this.userSubcategoryStats = {
+          ...this.userSubcategoryStats,
+          [subcategoryId]: stats
         }
         return stats
       } catch (error) {
@@ -297,26 +300,26 @@ export const useQuestionStore = defineStore('question', {
         return null
       }
     },
-    
+
     // 按题库加载题目（答题时按需加载）
     async loadQuestionsBySubcategory(subjectId, subcategoryId) {
       try {
         this.isLoading = true
         this.error = null
-        
-        const data = await api.get('/questions', { 
-          subjectId, 
-          subcategoryId, 
-          limit: 1000 
+
+        const data = await api.get('/questions', {
+          subjectId,
+          subcategoryId,
+          limit: 1000
         })
-        
+
         const questions = data.questions || data
-        
+
         // 合并到现有题目列表（去重）
         const existingIds = new Set(this.questions.map(q => q.id))
         const newQuestions = questions.filter(q => !existingIds.has(q.id))
         this.questions = [...this.questions, ...newQuestions]
-        
+
         return questions
       } catch (error) {
         this.error = error.message
@@ -325,34 +328,35 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 加载数据（仅在需要时调用，如从管理页面返回）
     async loadData() {
       try {
         this.isLoading = true
         this.error = null
-        
+
         // 并行加载数据和统计数据
-        const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] = await Promise.all([
-          api.get('/subjects').catch((error) => {
-            console.error('加载学科失败:', error)
-            return []
-          }),
-          api.get('/grades').catch((error) => {
-            console.error('加载年级失败:', error)
-            return []
-          }),
-          api.get('/classes').catch((error) => {
-            console.error('加载班级失败:', error)
-            return []
-          }),
-          api.get('/subjects/stats').catch(() => []),
-          api.get('/questions/subcategories/stats').catch(() => ({}))
-        ]);
-        
+        const [subjectsData, gradesData, classesData, subjectStatsData, subcategoryStatsData] =
+          await Promise.all([
+            api.get('/subjects').catch(error => {
+              console.error('加载学科失败:', error)
+              return []
+            }),
+            api.get('/grades').catch(error => {
+              console.error('加载年级失败:', error)
+              return []
+            }),
+            api.get('/classes').catch(error => {
+              console.error('加载班级失败:', error)
+              return []
+            }),
+            api.get('/subjects/stats').catch(() => []),
+            api.get('/questions/subcategories/stats').catch(() => ({}))
+          ])
+
         // 检查应用是否仍然挂载
         if (!_isAppMounted) return
-        
+
         // 合并题目数量统计（学科和子分类）
         this.subjects = subjectsData.map(subject => {
           const stat = subjectStatsData.find(s => s.id === subject.id)
@@ -367,7 +371,7 @@ export const useQuestionStore = defineStore('question', {
         })
         this.grades = gradesData
         this.classes = classesData
-        
+
         // 保留题目数据，避免影响正在使用的组件
         // 题目数据会在需要时通过 loadQuestions 或 loadQuestionsBySubcategory 重新加载
       } catch (error) {
@@ -400,7 +404,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 更新题目
     async updateQuestion(questionData) {
       try {
@@ -409,9 +413,7 @@ export const useQuestionStore = defineStore('question', {
         const updatedQuestion = await updateQuestion(questionData)
         if (updatedQuestion) {
           // 使用展开运算符创建新数组，确保响应式更新
-          this.questions = this.questions.map(q => 
-            q.id === questionData.id ? updatedQuestion : q
-          )
+          this.questions = this.questions.map(q => (q.id === questionData.id ? updatedQuestion : q))
           return updatedQuestion
         } else {
           throw new Error('更新题目失败')
@@ -424,7 +426,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 删除题目
     async deleteQuestion(id) {
       try {
@@ -437,12 +439,11 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 添加学科
     async addSubject(subjectName, iconIndex = 0) {
       try {
@@ -461,7 +462,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 更新学科
     async updateSubject(subjectId, subjectName, iconIndex = 0, showInHistoryQuiz = false) {
       try {
@@ -474,7 +475,12 @@ export const useQuestionStore = defineStore('question', {
         // 直接更新本地状态，避免重新加载所有数据
         const index = this.subjects.findIndex(s => s.id === subjectId)
         if (index !== -1) {
-          this.subjects[index] = { ...this.subjects[index], name: subjectName, iconIndex, showInHistoryQuiz }
+          this.subjects[index] = {
+            ...this.subjects[index],
+            name: subjectName,
+            iconIndex,
+            showInHistoryQuiz
+          }
         }
       } catch (error) {
         this.error = error.message
@@ -483,23 +489,23 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 删除学科
     async deleteSubject(id) {
       try {
         this.isLoading = true
         this.error = null
-        
+
         // 先删除该学科下的所有题目
         const subjectQuestions = this.questions.filter(q => {
           const qSubjectId = q.subjectId || q.subject_id
           return qSubjectId === id
         })
-        
+
         for (const question of subjectQuestions) {
           await this.deleteQuestion(question.id)
         }
-        
+
         // 然后删除该学科下的所有题库（子分类）
         const subject = this.subjects.find(s => s.id === id)
         if (subject && subject.subcategories) {
@@ -507,7 +513,7 @@ export const useQuestionStore = defineStore('question', {
             await this.deleteSubcategory(id, subcategory.id)
           }
         }
-        
+
         // 最后删除学科本身
         const result = await deleteSubject(id)
         if (!result) {
@@ -522,7 +528,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 添加子分类
     async addSubcategory(subjectId, name, iconIndex = 0, difficulty = 1) {
       try {
@@ -547,7 +553,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 更新子分类
     async updateSubcategory(subjectId, subcategoryId, name, iconIndex = 0, difficulty = 1) {
       try {
@@ -560,7 +566,9 @@ export const useQuestionStore = defineStore('question', {
         // 直接更新本地状态，避免重新加载所有数据
         const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
         if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
-          const subcategoryIndex = this.subjects[subjectIndex].subcategories.findIndex(sc => sc.id === subcategoryId)
+          const subcategoryIndex = this.subjects[subjectIndex].subcategories.findIndex(
+            sc => sc.id === subcategoryId
+          )
           if (subcategoryIndex !== -1) {
             this.subjects[subjectIndex].subcategories[subcategoryIndex] = {
               ...this.subjects[subjectIndex].subcategories[subcategoryIndex],
@@ -577,23 +585,23 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 删除子分类
     async deleteSubcategory(subjectId, id) {
       try {
         this.isLoading = true
         this.error = null
-        
+
         // 先删除该子分类下的所有题目
         const subcategoryQuestions = this.questions.filter(q => {
           const qSubcategoryId = q.subcategoryId || q.subcategory_id
           return qSubcategoryId === id
         })
-        
+
         for (const question of subcategoryQuestions) {
           await this.deleteQuestion(question.id)
         }
-        
+
         // 然后删除子分类本身
         const result = await deleteSubcategory(id)
         if (!result) {
@@ -602,7 +610,9 @@ export const useQuestionStore = defineStore('question', {
         // 直接从本地状态中删除，避免重新加载所有数据
         const subjectIndex = this.subjects.findIndex(s => s.id === subjectId)
         if (subjectIndex !== -1 && this.subjects[subjectIndex].subcategories) {
-          this.subjects[subjectIndex].subcategories = this.subjects[subjectIndex].subcategories.filter(sc => sc.id !== id)
+          this.subjects[subjectIndex].subcategories = this.subjects[
+            subjectIndex
+          ].subcategories.filter(sc => sc.id !== id)
         }
       } catch (error) {
         this.error = error.message
@@ -611,7 +621,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 更新学科列表
     async updateSubjects(updatedSubjects) {
       try {
@@ -621,12 +631,11 @@ export const useQuestionStore = defineStore('question', {
         await this.loadData()
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 导入本地数据到SQL数据库
     async importLocalData() {
       try {
@@ -646,7 +655,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 添加年级
     async addGrade(gradeName) {
       try {
@@ -659,12 +668,11 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 更新年级
     async updateGrade(gradeId, gradeName) {
       try {
@@ -680,12 +688,11 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 删除年级
     async deleteGrade(gradeId) {
       try {
@@ -698,12 +705,11 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 添加班级
     async addClass(className) {
       try {
@@ -716,12 +722,11 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 更新班级
     async updateClass(classId, className) {
       try {
@@ -737,12 +742,11 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 删除班级
     async deleteClass(classId) {
       try {
@@ -755,12 +759,11 @@ export const useQuestionStore = defineStore('question', {
         }
       } catch (error) {
         this.error = error.message
-
       } finally {
         this.isLoading = false
       }
     },
-    
+
     // 加载错题巩固题库
     async loadErrorCollection(subjectId) {
       try {
@@ -768,7 +771,7 @@ export const useQuestionStore = defineStore('question', {
         if (!subjectId) {
           return
         }
-        
+
         this.isLoading = true
         this.error = null
         const studentId = localStorage.getItem('studentId')
@@ -778,14 +781,14 @@ export const useQuestionStore = defineStore('question', {
           this.errorCollections[subjectId] = []
           return
         }
-        
+
         // 这里需要调用后端API获取错题巩固题库
         const data = await api.get(`/error-collection/${subjectId}`, {
           studentId,
           grade: userGrade,
           class: userClass
         })
-        
+
         // 处理题目数据，确保options和explanation字段正确
         this.errorCollections[subjectId] = (data.questions || []).map(question => {
           // 解析options字段
@@ -816,7 +819,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 更新错题的正确次数（在错题巩固题库中答对时）
     async updateErrorQuestionCorrectCount(questionId) {
       try {
@@ -828,12 +831,12 @@ export const useQuestionStore = defineStore('question', {
         if (!studentId || !userGrade || !userClass) {
           return
         }
-        
+
         // 增加正确次数
         const currentCount = this.errorCollectionStats[questionId]?.correctCount || 0
         const newCount = currentCount + 1
         this.errorCollectionStats[questionId] = { correctCount: newCount }
-        
+
         // 调用后端API更新正确次数
         await api.post('/error-collection/update', {
           studentId,
@@ -842,11 +845,13 @@ export const useQuestionStore = defineStore('question', {
           questionId,
           correctCount: newCount
         })
-        
+
         // 检查是否达到3次正确，若是则从所有错题巩固题库中移除
         if (newCount >= 3) {
           for (const subjectId in this.errorCollections) {
-            this.errorCollections[subjectId] = this.errorCollections[subjectId].filter(q => q.id !== questionId)
+            this.errorCollections[subjectId] = this.errorCollections[subjectId].filter(
+              q => q.id !== questionId
+            )
           }
         }
       } catch (error) {
@@ -855,7 +860,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 添加错题到错题巩固题库（普通题库中答错时）
     async addToErrorCollection(questionId) {
       try {
@@ -867,10 +872,10 @@ export const useQuestionStore = defineStore('question', {
         if (!studentId || !userGrade || !userClass) {
           return
         }
-        
+
         // 新错题，设置正确次数为0
         this.errorCollectionStats[questionId] = { correctCount: 0 }
-        
+
         // 调用后端API添加到错题巩固题库
         await api.post('/error-collection/update', {
           studentId,
@@ -887,7 +892,7 @@ export const useQuestionStore = defineStore('question', {
         this.isLoading = false
       }
     },
-    
+
     // 重置错题的正确次数（当用户再次做错时）
     async resetErrorQuestionCorrectCount(questionId) {
       try {
@@ -899,10 +904,10 @@ export const useQuestionStore = defineStore('question', {
         if (!studentId || !userGrade || !userClass) {
           return
         }
-        
+
         // 重置正确次数为0
         this.errorCollectionStats[questionId] = { correctCount: 0 }
-        
+
         // 调用后端API重置正确次数
         await api.post('/error-collection/reset', {
           studentId,
@@ -932,7 +937,7 @@ export const useQuizStore = defineStore('quiz', {
     correctQuestions: [], // 存储已经做对的题目ID
     startTime: null
   }),
-  
+
   // 持久化存储
   persist: {
     enabled: true,
@@ -945,8 +950,8 @@ export const useQuizStore = defineStore('quiz', {
     ]
   },
   getters: {
-    isQuizActive: (state) => state.currentQuestions.length > 0,
-    hasAnsweredAll: (state) => {
+    isQuizActive: state => state.currentQuestions.length > 0,
+    hasAnsweredAll: state => {
       if (state.currentQuestions.length === 0) return false
       return state.currentQuestions.every(question => {
         const answer = state.userAnswers[question.id]
@@ -964,11 +969,11 @@ export const useQuizStore = defineStore('quiz', {
       this.selectedSubcategoryId = null
       this.resetQuizState()
     },
-    
+
     selectSubcategory(subcategoryId) {
       this.selectedSubcategoryId = subcategoryId
     },
-    
+
     resetQuizState() {
       this.currentQuestions = []
       this.userAnswers = {}
@@ -977,7 +982,7 @@ export const useQuizStore = defineStore('quiz', {
       this.quizId = null
       this.expiresAt = null
     },
-    
+
     // 设置答题会话数据（由后端返回）
     setQuizSession(quizId, expiresAt, questions) {
       this.quizId = quizId
@@ -987,7 +992,7 @@ export const useQuizStore = defineStore('quiz', {
       this.score = null
       this.startTime = Date.now()
     },
-    
+
     // 提交答案（只存储，不验证）
     submitAnswer(questionId, answer, questionType = 'single') {
       if (questionType === 'multiple') {
@@ -1029,19 +1034,23 @@ export const useSettingsStore = defineStore('settings', {
     error: null
   }),
   getters: {
-    getRandomizeAnswers: (state) => state.settings.randomizeAnswers,
-    getRandomizeErrorCollectionAnswers: (state) => state.settings.randomizeErrorCollectionAnswers,
-    getFixedQuestionCount: (state) => state.settings.fixedQuestionCount,
-    getQuestionCount: (state) => {
+    getRandomizeAnswers: state => state.settings.randomizeAnswers,
+    getRandomizeErrorCollectionAnswers: state => state.settings.randomizeErrorCollectionAnswers,
+    getFixedQuestionCount: state => state.settings.fixedQuestionCount,
+    getQuestionCount: state => {
       if (state.settings.fixedQuestionCount) {
         return state.settings.fixedQuestionCountValue
       }
-      return Math.floor(Math.random() * (state.settings.maxQuestionCount - state.settings.minQuestionCount + 1)) + state.settings.minQuestionCount
+      return (
+        Math.floor(
+          Math.random() * (state.settings.maxQuestionCount - state.settings.minQuestionCount + 1)
+        ) + state.settings.minQuestionCount
+      )
     },
     // 根据学科ID获取题目数量
-    getQuestionCountForSubject: (state) => (subjectId) => {
+    getQuestionCountForSubject: state => subjectId => {
       const config = state.settings.subjectQuestionCounts?.[subjectId]
-      
+
       // 如果学科有独立配置且已启用
       if (config?.enabled) {
         if (config.fixed) {
@@ -1049,14 +1058,16 @@ export const useSettingsStore = defineStore('settings', {
         }
         return Math.floor(Math.random() * (config.max - config.min + 1)) + config.min
       }
-      
+
       // 否则使用全局默认
       if (state.settings.fixedQuestionCount) {
         return state.settings.fixedQuestionCountValue
       }
-      return Math.floor(Math.random() * 
-        (state.settings.maxQuestionCount - state.settings.minQuestionCount + 1)
-      ) + state.settings.minQuestionCount
+      return (
+        Math.floor(
+          Math.random() * (state.settings.maxQuestionCount - state.settings.minQuestionCount + 1)
+        ) + state.settings.minQuestionCount
+      )
     }
   },
   actions: {
@@ -1066,12 +1077,16 @@ export const useSettingsStore = defineStore('settings', {
         this.isLoading = true
         this.error = null
         const settings = await api.get('/settings')
-        this.settings.randomizeAnswers = settings.randomizeAnswers === 'true' || settings.randomizeAnswers === true
-        this.settings.randomizeErrorCollectionAnswers = settings.randomizeErrorCollectionAnswers === 'true' || settings.randomizeErrorCollectionAnswers === true
+        this.settings.randomizeAnswers =
+          settings.randomizeAnswers === 'true' || settings.randomizeAnswers === true
+        this.settings.randomizeErrorCollectionAnswers =
+          settings.randomizeErrorCollectionAnswers === 'true' ||
+          settings.randomizeErrorCollectionAnswers === true
         this.settings.fixedQuestionCount = settings.fixedQuestionCount === 'true'
         this.settings.minQuestionCount = parseInt(settings.minQuestionCount?.replace(/'/g, '')) || 3
         this.settings.maxQuestionCount = parseInt(settings.maxQuestionCount?.replace(/'/g, '')) || 5
-        this.settings.fixedQuestionCountValue = parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+        this.settings.fixedQuestionCountValue =
+          parseInt(settings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
         // 加载学科独立题目数量配置
         if (settings.subjectQuestionCounts) {
           try {
@@ -1096,7 +1111,7 @@ export const useSettingsStore = defineStore('settings', {
         this.isLoading = false
       }
     },
-    
+
     // 更新设置
     async updateSettings(newSettings) {
       try {
@@ -1104,18 +1119,25 @@ export const useSettingsStore = defineStore('settings', {
         this.error = null
         await api.post('/settings', newSettings)
         // 更新本地状态
-        this.settings.randomizeAnswers = newSettings.randomizeAnswers === 'true' || newSettings.randomizeAnswers === true
-        this.settings.randomizeErrorCollectionAnswers = newSettings.randomizeErrorCollectionAnswers === 'true' || newSettings.randomizeErrorCollectionAnswers === true
+        this.settings.randomizeAnswers =
+          newSettings.randomizeAnswers === 'true' || newSettings.randomizeAnswers === true
+        this.settings.randomizeErrorCollectionAnswers =
+          newSettings.randomizeErrorCollectionAnswers === 'true' ||
+          newSettings.randomizeErrorCollectionAnswers === true
         this.settings.fixedQuestionCount = newSettings.fixedQuestionCount === 'true'
-        this.settings.minQuestionCount = parseInt(newSettings.minQuestionCount?.replace(/'/g, '')) || 3
-        this.settings.maxQuestionCount = parseInt(newSettings.maxQuestionCount?.replace(/'/g, '')) || 5
-        this.settings.fixedQuestionCountValue = parseInt(newSettings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
+        this.settings.minQuestionCount =
+          parseInt(newSettings.minQuestionCount?.replace(/'/g, '')) || 3
+        this.settings.maxQuestionCount =
+          parseInt(newSettings.maxQuestionCount?.replace(/'/g, '')) || 5
+        this.settings.fixedQuestionCountValue =
+          parseInt(newSettings.fixedQuestionCountValue?.replace(/'/g, '')) || 3
         // 更新学科独立题目数量配置
         if (newSettings.subjectQuestionCounts) {
           try {
-            const parsed = typeof newSettings.subjectQuestionCounts === 'string' 
-              ? newSettings.subjectQuestionCounts.replace(/'/g, '')
-              : JSON.stringify(newSettings.subjectQuestionCounts)
+            const parsed =
+              typeof newSettings.subjectQuestionCounts === 'string'
+                ? newSettings.subjectQuestionCounts.replace(/'/g, '')
+                : JSON.stringify(newSettings.subjectQuestionCounts)
             this.settings.subjectQuestionCounts = JSON.parse(parsed)
           } catch (e) {
             this.settings.subjectQuestionCounts = {}
@@ -1129,7 +1151,7 @@ export const useSettingsStore = defineStore('settings', {
         this.isLoading = false
       }
     },
-    
+
     // 更新界面名称
     async updateInterfaceName(newName) {
       try {

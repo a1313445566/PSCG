@@ -3,9 +3,9 @@
  * 用于前端请求时携带 CSRF Token
  */
 
-let cachedToken = null;
-let tokenExpiry = 0;
-const TOKEN_REFRESH_INTERVAL = 1.5 * 60 * 60 * 1000; // 1.5小时刷新
+let cachedToken = null
+let tokenExpiry = 0
+const TOKEN_REFRESH_INTERVAL = 1.5 * 60 * 60 * 1000 // 1.5小时刷新
 
 /**
  * 获取 CSRF Token
@@ -14,31 +14,31 @@ const TOKEN_REFRESH_INTERVAL = 1.5 * 60 * 60 * 1000; // 1.5小时刷新
 export async function getCSRFToken() {
   // 检查缓存的 Token 是否有效
   if (cachedToken && Date.now() < tokenExpiry) {
-    return cachedToken;
+    return cachedToken
   }
-  
+
   try {
     const response = await fetch('/api/csrf-token', {
       credentials: 'same-origin'
-    });
-    
+    })
+
     if (!response.ok) {
-      console.error('获取CSRF Token失败:', response.status);
-      return null;
+      console.error('获取CSRF Token失败:', response.status)
+      return null
     }
-    
-    const data = await response.json();
-    
+
+    const data = await response.json()
+
     if (data.success && data.csrfToken) {
-      cachedToken = data.csrfToken;
-      tokenExpiry = Date.now() + TOKEN_REFRESH_INTERVAL;
-      return cachedToken;
+      cachedToken = data.csrfToken
+      tokenExpiry = Date.now() + TOKEN_REFRESH_INTERVAL
+      return cachedToken
     }
-    
-    return null;
+
+    return null
   } catch (error) {
-    console.error('获取CSRF Token失败:', error);
-    return null;
+    console.error('获取CSRF Token失败:', error)
+    return null
   }
 }
 
@@ -50,24 +50,24 @@ export async function getCSRFToken() {
  */
 export async function secureFetch(url, options = {}) {
   // GET 请求不需要 CSRF Token
-  const method = (options.method || 'GET').toUpperCase();
+  const method = (options.method || 'GET').toUpperCase()
   if (['GET', 'HEAD', 'OPTIONS'].includes(method)) {
-    return fetch(url, options);
+    return fetch(url, options)
   }
-  
-  const token = await getCSRFToken();
-  
-  const headers = new Headers(options.headers || {});
-  
+
+  const token = await getCSRFToken()
+
+  const headers = new Headers(options.headers || {})
+
   if (token) {
-    headers.set('X-CSRF-Token', token);
+    headers.set('X-CSRF-Token', token)
   }
-  
+
   return fetch(url, {
     ...options,
     headers,
     credentials: 'same-origin'
-  });
+  })
 }
 
 /**
@@ -86,9 +86,9 @@ export async function secureJSON(url, data = {}, options = {}) {
       ...options.headers
     },
     body: JSON.stringify(data)
-  });
-  
-  return response.json();
+  })
+
+  return response.json()
 }
 
 /**
@@ -103,15 +103,15 @@ export async function secureFormData(url, formData, options = {}) {
     ...options,
     method: options.method || 'POST',
     body: formData
-  });
+  })
 }
 
 /**
  * 清除缓存的 Token
  */
 export function clearCSRFToken() {
-  cachedToken = null;
-  tokenExpiry = 0;
+  cachedToken = null
+  tokenExpiry = 0
 }
 
 export default {
@@ -120,4 +120,4 @@ export default {
   secureJSON,
   secureFormData,
   clearCSRFToken
-};
+}
