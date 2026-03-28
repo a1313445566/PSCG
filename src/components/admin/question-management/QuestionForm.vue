@@ -78,25 +78,8 @@
           <QuillEditor
             :key="editorKey"
             v-model="form.content"
+            toolbar-mode="full"
             :options="{
-              theme: 'snow',
-              modules: {
-                toolbar: [
-                  ['bold', 'italic', 'underline', 'strike'],
-                  ['blockquote', 'code-block'],
-                  [{ header: 1 }, { header: 2 }],
-                  [{ list: 'ordered' }, { list: 'bullet' }],
-                  [{ indent: '-1' }, { indent: '+1' }],
-                  [{ direction: 'rtl' }],
-                  [{ size: ['small', false, 'large', 'huge'] }],
-                  [{ header: [1, 2, 3, 4, 5, 6, false] }],
-                  [{ color: [] }, { background: [] }],
-                  [{ font: [] }],
-                  [{ align: [] }],
-                  ['clean'],
-                  ['image']
-                ]
-              },
               placeholder: '输入题目内容'
             }"
             style="width: 100%; height: 100%"

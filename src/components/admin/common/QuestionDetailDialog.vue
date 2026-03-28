@@ -28,7 +28,7 @@
       <!-- 题目内容 -->
       <div class="content-section">
         <h3>题目内容</h3>
-        <div class="content-html" v-html="question.content"></div>
+        <div class="content-html rich-text-content size-xlarge" v-html="question.content"></div>
       </div>
 
       <!-- 选项 -->
@@ -45,7 +45,10 @@
             }"
           >
             <span class="option-letter">{{ String.fromCharCode(65 + index) }}.</span>
-            <span class="option-text" v-html="formatOption(option)"></span>
+            <span
+              class="option-text rich-text-content size-medium"
+              v-html="formatOption(option)"
+            ></span>
             <el-tag
               v-if="isCorrectOption(index)"
               type="success"
@@ -245,6 +248,8 @@ const isUserCorrect = computed(() => {
 </script>
 
 <style scoped>
+@import '@/styles/rich-text.css';
+
 .question-detail {
   max-height: 70vh;
   overflow-y: auto;
@@ -276,12 +281,6 @@ const isUserCorrect = computed(() => {
   padding: 15px;
   background-color: #f5f7fa;
   border-radius: 8px;
-  line-height: 1.8;
-}
-
-.content-html :deep(img) {
-  max-width: 100%;
-  height: auto;
 }
 
 .options-list {
@@ -319,7 +318,6 @@ const isUserCorrect = computed(() => {
 
 .option-text {
   flex: 1;
-  line-height: 1.6;
 }
 
 .answer-section {

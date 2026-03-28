@@ -3,7 +3,10 @@
     <QuillEditor
       ref="quillRef"
       v-model="localValue"
-      :options="editorOptions"
+      toolbar-mode="basic"
+      :options="{
+        placeholder: placeholder
+      }"
       class="quill-editor"
       @ready="onQuillReady"
     />
@@ -32,36 +35,24 @@ const emit = defineEmits(['update:modelValue'])
 const localValue = ref(props.modelValue || '')
 const quillRef = ref(null)
 
-const editorOptions = {
-  placeholder: props.placeholder,
-  modules: {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],
-      [{ color: [] }, { background: [] }],
-      [{ script: 'sub' }, { script: 'super' }], // 上下标
-      ['image'], // 图片
-      ['clean']
-    ]
-  },
-  theme: 'snow'
-}
-
 // Quill 编辑器准备就绪
 const onQuillReady = quill => {
   // 添加图片上传处理（工具栏按钮）
   const toolbar = quill.getModule('toolbar')
-  toolbar.addHandler('image', function () {
-    const input = document.createElement('input')
-    input.type = 'file'
-    input.accept = 'image/*'
-    input.onchange = async function () {
-      const file = input.files[0]
-      if (file) {
-        await insertImageToEditor(quill, file)
+  if (toolbar.controls.image) {
+    toolbar.controls.image[0].addEventListener('click', () => {
+      const input = document.createElement('input')
+      input.type = 'file'
+      input.accept = 'image/*'
+      input.onchange = async function () {
+        const file = input.files[0]
+        if (file) {
+          await insertImageToEditor(quill, file)
+        }
       }
-    }
-    input.click()
-  })
+      input.click()
+    })
+  }
 
   // 添加粘贴上传处理
   quill.root.addEventListener('paste', async e => {

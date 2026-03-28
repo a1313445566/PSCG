@@ -1,0 +1,301 @@
+/**
+ * 富文本内容公共样式
+ * 用于题目内容、答案选项等富文本显示
+ */
+
+/* 基础容器 */
+.rich-text-content {
+  word-wrap: break-word;
+  word-break: break-word;
+  line-height: 1.6;
+}
+
+/* 段落 */
+.rich-text-content :deep(p) {
+  margin: 0 0 8px 0;
+}
+
+.rich-text-content :deep(p:last-child) {
+  margin-bottom: 0;
+}
+
+/* 文本格式 */
+.rich-text-content :deep(strong),
+.rich-text-content :deep(b) {
+  font-weight: bold;
+}
+
+.rich-text-content :deep(em),
+.rich-text-content :deep(i) {
+  font-style: italic;
+}
+
+.rich-text-content :deep(u) {
+  text-decoration: underline;
+}
+
+.rich-text-content :deep(s),
+.rich-text-content :deep(del) {
+  text-decoration: line-through;
+}
+
+/* 图片 - 基础样式 */
+.rich-text-content :deep(img) {
+  max-width: 100%;
+  height: auto;
+  border-radius: 8px;
+  margin: 8px 0;
+  display: block;
+}
+
+/* 图片 - 小尺寸（用于列表、表格等紧凑场景） */
+.rich-text-content.size-small :deep(img) {
+  max-height: 80px;
+  margin: 4px 0;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+/* 图片 - 中等尺寸（用于选项、预览） */
+.rich-text-content.size-medium :deep(img) {
+  max-height: 150px;
+}
+
+/* 图片 - 大尺寸（用于题目内容） */
+.rich-text-content.size-large :deep(img) {
+  max-height: 300px;
+}
+
+/* 图片 - 超大尺寸（用于详情对话框） */
+.rich-text-content.size-xlarge :deep(img) {
+  max-height: 400px;
+}
+
+/* 列表 */
+.rich-text-content :deep(ul),
+.rich-text-content :deep(ol) {
+  margin: 8px 0;
+  padding-left: 24px;
+}
+
+.rich-text-content :deep(li) {
+  margin: 4px 0;
+}
+
+/* 引用块 */
+.rich-text-content :deep(blockquote) {
+  margin: 12px 0;
+  padding: 8px 16px;
+  border-left: 4px solid #ddd;
+  background-color: #f9f9f9;
+  color: #666;
+}
+
+/* 代码 */
+.rich-text-content :deep(code) {
+  background-color: #f5f5f5;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 0.9em;
+}
+
+.rich-text-content :deep(pre) {
+  margin: 12px 0;
+  padding: 12px;
+  background-color: #f5f5f5;
+  border-radius: 8px;
+  overflow-x: auto;
+}
+
+.rich-text-content :deep(pre code) {
+  background-color: transparent;
+  padding: 0;
+}
+
+/* 上下标 */
+.rich-text-content :deep(sub),
+.rich-text-content :deep(sup) {
+  font-size: 0.8em;
+  vertical-align: baseline;
+  position: relative;
+}
+
+.rich-text-content :deep(sup) {
+  top: -0.5em;
+}
+
+.rich-text-content :deep(sub) {
+  bottom: -0.25em;
+}
+
+/* 标题 */
+.rich-text-content :deep(h1),
+.rich-text-content :deep(h2),
+.rich-text-content :deep(h3),
+.rich-text-content :deep(h4),
+.rich-text-content :deep(h5),
+.rich-text-content :deep(h6) {
+  margin: 12px 0 8px 0;
+  font-weight: bold;
+  color: #333;
+}
+
+.rich-text-content :deep(h1) {
+  font-size: 1.5em;
+}
+
+.rich-text-content :deep(h2) {
+  font-size: 1.3em;
+}
+
+.rich-text-content :deep(h3) {
+  font-size: 1.2em;
+}
+
+.rich-text-content :deep(h4) {
+  font-size: 1.1em;
+}
+
+/* 表格 */
+.rich-text-content :deep(table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+}
+
+.rich-text-content :deep(th),
+.rich-text-content :deep(td) {
+  border: 1px solid #ddd;
+  padding: 8px;
+  text-align: left;
+}
+
+.rich-text-content :deep(th) {
+  background-color: #f5f5f5;
+  font-weight: bold;
+}
+
+/* 链接 */
+.rich-text-content :deep(a) {
+  color: #409eff;
+  text-decoration: none;
+}
+
+.rich-text-content :deep(a:hover) {
+  text-decoration: underline;
+}
+
+/* 分隔线 */
+.rich-text-content :deep(hr) {
+  border: none;
+  border-top: 1px solid #ddd;
+  margin: 16px 0;
+}
+
+/* ========== 对齐方式 ========== */
+
+/* 左对齐（默认） */
+.rich-text-content :deep(.ql-align-left),
+.rich-text-content :deep(p.ql-align-left) {
+  text-align: left;
+}
+
+/* 居中对齐 */
+.rich-text-content :deep(.ql-align-center),
+.rich-text-content :deep(p.ql-align-center) {
+  text-align: center;
+}
+
+/* 右对齐 */
+.rich-text-content :deep(.ql-align-right),
+.rich-text-content :deep(p.ql-align-right) {
+  text-align: right;
+}
+
+/* 两端对齐 */
+.rich-text-content :deep(.ql-align-justify),
+.rich-text-content :deep(p.ql-align-justify) {
+  text-align: justify;
+}
+
+/* ========== 缩进 ========== */
+
+/* 缩进级别 1 */
+.rich-text-content :deep(.ql-indent-1),
+.rich-text-content :deep(p.ql-indent-1) {
+  padding-left: 2em;
+}
+
+/* 缩进级别 2 */
+.rich-text-content :deep(.ql-indent-2),
+.rich-text-content :deep(p.ql-indent-2) {
+  padding-left: 4em;
+}
+
+/* 缩进级别 3 */
+.rich-text-content :deep(.ql-indent-3),
+.rich-text-content :deep(p.ql-indent-3) {
+  padding-left: 6em;
+}
+
+/* 缩进级别 4 */
+.rich-text-content :deep(.ql-indent-4),
+.rich-text-content :deep(p.ql-indent-4) {
+  padding-left: 8em;
+}
+
+/* 缩进级别 5 */
+.rich-text-content :deep(.ql-indent-5),
+.rich-text-content :deep(p.ql-indent-5) {
+  padding-left: 10em;
+}
+
+/* 缩进级别 6 */
+.rich-text-content :deep(.ql-indent-6),
+.rich-text-content :deep(p.ql-indent-6) {
+  padding-left: 12em;
+}
+
+/* 缩进级别 7 */
+.rich-text-content :deep(.ql-indent-7),
+.rich-text-content :deep(p.ql-indent-7) {
+  padding-left: 14em;
+}
+
+/* 缩进级别 8 */
+.rich-text-content :deep(.ql-indent-8),
+.rich-text-content :deep(p.ql-indent-8) {
+  padding-left: 16em;
+}
+
+/* ========== 特定场景的样式变体 ========== */
+
+/* 紧凑型（用于表格、列表项） */
+.rich-text-compact {
+  line-height: 1.4;
+}
+
+.rich-text-compact :deep(p) {
+  margin: 0;
+}
+
+.rich-text-compact :deep(ul),
+.rich-text-compact :deep(ol) {
+  margin: 4px 0;
+  padding-left: 20px;
+}
+
+.rich-text-compact :deep(li) {
+  margin: 2px 0;
+}
+
+/* 可点击图片（用于图片预览） */
+.rich-text-clickable :deep(img) {
+  cursor: pointer;
+  transition: transform 0.2s;
+}
+
+.rich-text-clickable :deep(img:hover) {
+  transform: scale(1.02);
+}

@@ -176,16 +176,8 @@
                     v-if="splitEditData.content !== undefined"
                     :key="'content-' + editingQuestionId"
                     v-model="splitEditData.content"
+                    toolbar-mode="full"
                     :options="{
-                      modules: {
-                        toolbar: [
-                          ['bold', 'italic', 'underline'],
-                          [{ color: [] }, { background: [] }],
-                          [{ list: 'ordered' }, { list: 'bullet' }],
-                          ['clean'],
-                          ['image']
-                        ]
-                      },
                       placeholder: '输入题目内容'
                     }"
                   />
@@ -203,7 +195,7 @@
                 </label>
                 <div class="options-grid">
                   <div
-                    v-for="(option, index) in splitEditData.options"
+                    v-for="(_option, index) in splitEditData.options"
                     :key="index"
                     class="quick-option-item"
                   >
@@ -697,9 +689,6 @@ import {
   Document,
   FolderOpened,
   Refresh,
-  Folder,
-  Reading,
-  Notebook,
   View,
   Edit,
   Microphone,
@@ -794,8 +783,9 @@ const batchMoveSubjectId = ref('')
 const batchMoveSubcategoryId = ref('')
 
 // Tree ref
-const treeRef = ref(null)
-const tableRef = ref(null)
+// Refs（预留用于未来的功能扩展）
+const _treeRef = ref(null) // 预留：题目分类树
+const _tableRef = ref(null) // 预留：题目表格引用
 
 // 删除撤销相关
 const pendingDeletes = ref(new Map()) // 存储待删除的题目
@@ -1413,13 +1403,12 @@ const saveSplitEdit = async () => {
       audio: splitEditData.value.audio || null
     }
 
-    let response
     if (editMode.value === 'add') {
       // 添加新题目
-      response = await api.post('/questions', requestBody)
+      await api.post('/questions', requestBody)
     } else {
       // 编辑现有题目
-      response = await api.put(`/questions/${editingQuestionId.value}`, requestBody)
+      await api.put(`/questions/${editingQuestionId.value}`, requestBody)
     }
 
     ElMessage.success(editMode.value === 'add' ? '添加成功' : '保存成功')
@@ -1461,8 +1450,8 @@ const onSplitEditSubjectChange = () => {
   splitEditData.value.subcategoryId = null
 }
 
-// 分屏编辑 Quill 准备
-const onSplitQuillReady = quill => {
+// 分屏编辑 Quill 准备（预留用于未来的富文本编辑器增强功能）
+const _onSplitQuillReady = quill => {
   splitEditQuill.value = quill
 }
 
@@ -1694,7 +1683,8 @@ let isPanelResizing = false
 let startPanelY = 0
 let startPanelHeight = 0
 
-const startPanelResize = e => {
+// 面板调整大小功能（预留用于未来的 UI 交互增强）
+const _startPanelResize = e => {
   isPanelResizing = true
   startPanelY = e.clientY
   startPanelHeight = editPanelHeight.value
@@ -1730,7 +1720,8 @@ let isResizing = false
 let startX = 0
 let startWidth = 0
 
-const startResize = e => {
+// 侧边栏调整大小功能（预留用于未来的 UI 交互增强）
+const _startResize = e => {
   isResizing = true
   startX = e.clientX
   startWidth = sidebarWidth.value
@@ -2248,6 +2239,7 @@ defineExpose({
   text-overflow: ellipsis;
   display: -webkit-box;
   -webkit-line-clamp: 3;
+  line-clamp: 3;
   -webkit-box-orient: vertical;
   width: 100%;
 }

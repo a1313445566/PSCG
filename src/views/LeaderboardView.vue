@@ -274,7 +274,7 @@
                     <div class="score-col">正确率</div>
                   </div>
                   <div
-                    v-for="(item, index) in userStats.subjectStats"
+                    v-for="item in userStats.subjectStats"
                     :key="item.subject_id"
                     class="leaderboard-row"
                   >
@@ -298,7 +298,7 @@
                     <div class="time-col">时间</div>
                   </div>
                   <div
-                    v-for="(item, index) in recentRecords"
+                    v-for="item in recentRecords"
                     :key="item.id"
                     class="leaderboard-row"
                     style="cursor: pointer"
@@ -388,7 +388,7 @@
           <div class="accuracy-col">正确率</div>
           <div class="time-col">时间</div>
         </div>
-        <div v-for="(item, index) in selectedUserRecords" :key="item.id" class="leaderboard-row">
+        <div v-for="item in selectedUserRecords" :key="item.id" class="leaderboard-row">
           <div class="subject-col">{{ item.subject_name || '未知' }}</div>
           <div class="subcategory-col">{{ item.subcategory_name || '全部' }}</div>
           <div class="score-col">{{ item.correct_count }} / {{ item.total_questions }}</div>
@@ -465,11 +465,11 @@
               <span v-else style="color: red; font-weight: bold">✗ 错误</span>
             </div>
           </div>
-          <div class="question-content" v-html="item.content"></div>
+          <div class="question-content rich-text-content size-medium" v-html="item.content"></div>
           <div v-if="item.options && item.options.length > 0" class="question-options">
             <div v-for="(option, optIndex) in item.options" :key="optIndex" class="option-item">
               <span class="option-letter">{{ String.fromCharCode(65 + optIndex) }}.</span>
-              <span class="option-text" v-html="option"></span>
+              <span class="option-text rich-text-content size-medium" v-html="option"></span>
             </div>
           </div>
           <div class="question-answers">
@@ -900,6 +900,8 @@ watch(activeTab, newTab => {
 </script>
 
 <style scoped>
+@import '@/styles/rich-text.css';
+
 .leaderboard-view {
   min-height: 100vh;
   background: var(--header-gradient);
@@ -1631,7 +1633,6 @@ watch(activeTab, newTab => {
   padding: 10px;
   background: #f8f9fa;
   border-radius: 8px;
-  line-height: 1.5;
   font-size: 1rem;
 }
 
@@ -1661,7 +1662,6 @@ watch(activeTab, newTab => {
 
 .option-text {
   flex: 1;
-  line-height: 1.4;
   font-size: 0.95rem;
 }
 

@@ -101,7 +101,7 @@
     <div class="question-content">
       <div
         ref="contentRef"
-        class="question-text"
+        class="question-text rich-text-content size-large rich-text-clickable"
         @click="handleContentClick"
         v-html="safeContent"
       ></div>
@@ -120,7 +120,11 @@
         >
           <div class="option-content">
             <div class="option-label">{{ String.fromCharCode(65 + index) }}</div>
-            <div class="option-text" @click="handleContentClick" v-html="option"></div>
+            <div
+              class="option-text rich-text-content size-medium"
+              @click="handleContentClick"
+              v-html="option"
+            ></div>
           </div>
           <div v-if="showResult" class="option-feedback">
             <span
@@ -544,6 +548,8 @@ onMounted(() => {
 </script>
 
 <style scoped>
+@import '@/styles/rich-text.css';
+
 /* 听力音频播放器样式 */
 .audio-section {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -826,7 +832,6 @@ onMounted(() => {
 
 .question-text {
   font-size: 1.1rem;
-  line-height: 1.5;
   color: #333;
   margin: 0;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
@@ -896,9 +901,7 @@ onMounted(() => {
   font-size: 1rem;
   color: #333;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-  word-wrap: break-word;
   min-width: 0;
-  line-height: 1.4;
 }
 
 /* 网格布局下的选项项 */

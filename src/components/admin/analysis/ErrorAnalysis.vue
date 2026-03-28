@@ -58,7 +58,10 @@
         <el-table-column prop="subject_name" label="学科" width="120" align="center" />
         <el-table-column label="题目内容" min-width="300">
           <template #default="{ row }">
-            <div class="question-content" v-html="sanitizeHtml(row.content)"></div>
+            <div
+              class="question-content rich-text-content rich-text-compact size-small"
+              v-html="sanitizeHtml(row.content)"
+            ></div>
           </template>
         </el-table-column>
         <el-table-column label="错误次数" width="120" align="center">
@@ -107,7 +110,10 @@
         </div>
         <div class="preview-item">
           <label>题目内容：</label>
-          <div class="preview-content-box" v-html="previewData.content"></div>
+          <div
+            class="preview-content-box rich-text-content size-large"
+            v-html="previewData.content"
+          ></div>
         </div>
         <div v-if="previewData.image" class="preview-item">
           <label>题目图片：</label>
@@ -297,6 +303,8 @@ const getTypeName = type => {
 </script>
 
 <style scoped>
+@import '@/styles/rich-text.css';
+
 .error-analysis {
   margin-bottom: 20px;
 }
@@ -376,8 +384,6 @@ const getTypeName = type => {
 
 .preview-content-box {
   flex: 1;
-  line-height: 1.6;
-  word-break: break-word;
 }
 
 .preview-options {
