@@ -5,8 +5,8 @@
 | 项目 | 内容 |
 |------|------|
 | **项目名称** | PSCG 智能题库系统 |
-| **文档版本** | v2.0 |
-| **更新日期** | 2026-03-25 |
+| **文档版本** | v2.2 |
+| **更新日期** | 2026-03-28 |
 | **API 版本** | v1 |
 
 ---
@@ -1089,6 +1089,309 @@ curl -X POST "http://localhost:3001/api/quiz/start" \
 ```bash
 curl -X GET "http://localhost:3001/api/error-collection/1?studentId=01&grade=1&class=1"
 ```
+
+---
+
+## 25. AI 功能 API
+
+### 25.1 自然语言数据分析
+- **请求方法**：POST
+- **API路径**：`/api/ai/analyze`
+- **功能**：使用 AI 进行自然语言数据分析
+- **认证**：需要管理员 Token
+
+**请求体**：
+```json
+{
+  "question": "分析一下最近一周的学生答题情况",
+  "filters": {
+    "grade": "1",
+    "class": "1",
+    "subjectId": 1
+  }
+}
+```
+
+**响应**：
+```json
+{
+  "success": true,
+  "analysis": "AI 分析结果...",
+  "timestamp": "2026-03-28T10:00:00.000Z"
+}
+```
+
+---
+
+### 25.2 错题智能分析
+- **请求方法**：POST
+- **API路径**：`/api/ai/error-analysis`
+- **功能**：对指定题目进行 AI 错题分析
+
+**请求体**：
+```json
+{
+  "questionIds": [1, 2, 3]
+}
+```
+
+---
+
+### 25.3 生成题目解析
+- **请求方法**：POST
+- **API路径**：`/api/ai/explanation`
+- **功能**：使用 AI 生成题目解析
+
+**请求体**：
+```json
+{
+  "questionId": 1
+}
+```
+
+---
+
+### 25.4 批量分析任务
+- **请求方法**：POST
+- **API路径**：`/api/ai/batch`
+- **功能**：创建批量分析任务
+
+**请求体**：
+```json
+{
+  "questionIds": [1, 2, 3, 4, 5],
+  "title": "批量题目分析",
+  "analysisType": "deep"
+}
+```
+
+---
+
+### 25.5 AI 分析历史
+- **请求方法**：GET
+- **API路径**：`/api/ai/history`
+- **功能**：获取 AI 分析历史列表（分页）
+
+**查询参数**：
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| page | number | 否 | 页码，默认 1 |
+| limit | number | 否 | 每页数量，默认 20 |
+
+---
+
+### 25.6 题目质量评估
+- **请求方法**：POST
+- **API路径**：`/api/ai/question-quality`
+- **功能**：评估题目质量（支持图片答案）
+
+**请求体**：
+```json
+{
+  "questionId": 1,
+  "includeStats": true
+}
+```
+
+---
+
+## 26. 答题行为 API
+
+### 26.1 批量提交答题行为
+- **请求方法**：POST
+- **API路径**：`/api/answer-behavior/batch`
+- **功能**：批量提交答题行为数据（优化性能）
+
+**请求体**：
+```json
+{
+  "behaviors": [
+    {
+      "userId": 1,
+      "questionId": 1,
+      "answerTime": 30,
+      "answerModifications": 2,
+      "isFirstAnswerCorrect": false,
+      "finalAnswer": "B",
+      "isCorrect": true,
+      "hesitationTime": 5,
+      "skippedAndReturned": false,
+      "sessionId": "uuid-string"
+    }
+  ]
+}
+```
+
+**响应**：
+```json
+{
+  "success": true,
+  "insertedCount": 1,
+  "skippedCount": 0
+}
+```
+
+---
+
+### 26.2 获取用户学习风格分析
+- **请求方法**：GET
+- **API路径**：`/api/answer-behavior/user-style/:userId`
+- **功能**：获取用户学习风格分析结果
+
+---
+
+### 26.3 重新分析学习风格
+- **请求方法**：POST
+- **API路径**：`/api/answer-behavior/analyze-style`
+- **功能**：将学习风格分析任务添加到队列
+
+**请求体**：
+```json
+{
+  "userId": 1,
+  "priority": 5
+}
+```
+
+---
+
+### 26.4 获取用户答题行为统计
+- **请求方法**：GET
+- **API路径**：`/api/answer-behavior/statistics/:userId`
+- **功能**：获取用户答题行为统计数据
+
+**查询参数**：
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| days | number | 否 | 统计天数，默认 30 |
+
+---
+
+## 27. 题目语义分析 API
+
+### 27.1 分析单个题目
+- **请求方法**：POST
+- **API路径**：`/api/question-semantic/analyze`
+- **功能**：将题目添加到语义分析队列
+
+**请求体**：
+```json
+{
+  "questionId": 1
+}
+```
+
+---
+
+### 27.2 批量分析题目
+- **请求方法**：POST
+- **API路径**：`/api/question-semantic/batch-analyze`
+- **功能**：批量添加题目到语义分析队列
+
+**请求体**：
+```json
+{
+  "questionIds": [1, 2, 3],
+  "priority": 5
+}
+```
+
+---
+
+### 27.3 查找相似题目
+- **请求方法**：GET
+- **API路径**：`/api/question-semantic/similar/:questionId`
+- **功能**：根据语义分析结果查找相似题目
+
+**查询参数**：
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| limit | number | 否 | 返回数量，默认 5 |
+
+---
+
+### 27.4 获取题目标签统计
+- **请求方法**：GET
+- **API路径**：`/api/question-semantic/tags`
+- **功能**：获取题目标签使用统计
+
+---
+
+## 28. Dashboard API
+
+### 28.1 获取统计数据
+- **请求方法**：GET
+- **API路径**：`/api/dashboard/stats`
+- **功能**：获取后台仪表盘统计数据
+- **认证**：需要管理员 Token
+
+**响应**：
+```json
+{
+  "totalQuestions": 1000,
+  "totalUsers": 50,
+  "todayAttempts": 120,
+  "avgAccuracy": 85,
+  "questionTrend": 10,
+  "userTrend": 2,
+  "attemptTrend": 15,
+  "accuracyTrend": 3
+}
+```
+
+---
+
+### 28.2 获取答题趋势数据
+- **请求方法**：GET
+- **API路径**：`/api/dashboard/trend`
+- **功能**：获取答题趋势数据
+
+**查询参数**：
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| days | number | 否 | 天数，默认 7 |
+
+---
+
+### 28.3 获取学科答题分布
+- **请求方法**：GET
+- **API路径**：`/api/dashboard/subject-distribution`
+- **功能**：获取各学科答题次数分布
+
+---
+
+### 28.4 获取最近答题记录
+- **请求方法**：GET
+- **API路径**：`/api/dashboard/recent-activities`
+- **功能**：获取最近答题活动记录
+
+**查询参数**：
+| 参数 | 类型 | 必填 | 说明 |
+|------|------|------|------|
+| limit | number | 否 | 数量限制，默认 10，最大 100 |
+
+---
+
+## 29. 文件管理 API
+
+### 29.1 获取孤儿文件统计
+- **请求方法**：GET
+- **API路径**：`/api/upload/orphan-stats`
+- **功能**：获取未被引用的文件统计
+
+---
+
+### 29.2 清理孤儿文件
+- **请求方法**：POST
+- **API路径**：`/api/upload/cleanup-orphans`
+- **功能**：清理未被引用的文件
+
+---
+
+### 29.3 取消上传清理
+- **请求方法**：POST
+- **API路径**：`/api/upload/cancel-upload`
+- **功能**：清理未保存的上传文件
 
 ---
 
