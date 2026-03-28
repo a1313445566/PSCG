@@ -97,6 +97,12 @@
       :selectedUserQuestionAttempts="[]"
       @show-question-detail="showQuestionDetail"
     />
+    
+    <!-- 题目详情对话框 -->
+    <QuestionDetailDialog
+      v-model:dialogVisible="questionDetailVisible"
+      :question="selectedQuestion"
+    />
   </div>
 </template>
 
@@ -104,6 +110,7 @@
 import { ref, computed, onMounted, inject } from 'vue'
 import AdminFilter from '../common/AdminFilter.vue'
 import UserDetailDialog from '../common/UserDetailDialog.vue'
+import QuestionDetailDialog from '../common/QuestionDetailDialog.vue'
 import api from '../../../utils/api'
 import message from '../../../utils/message'
 import { usePagination } from '../../../composables/usePagination'
@@ -181,6 +188,10 @@ const sortOrder = ref('')
 const dialogVisible = ref(false)
 const selectedUser = ref(null)
 const selectedUserRecords = ref([])
+
+// 题目详情对话框
+const questionDetailVisible = ref(false)
+const selectedQuestion = ref(null)
 
 // 获取进度条颜色
 const getProgressColor = (accuracy) => {
@@ -294,8 +305,64 @@ const openUserDetail = async (user) => {
 }
 
 // 显示题目详情（占位）
-const showQuestionDetail = () => {
-  // 子组件可能触发的事件
+const showQuestionDetail = async (row) => {
+  console.log('显示题目详情 - 原始数据:', row)
+  
+  try {
+    // 准备题目数据
+    let questionData = null
+    
+    // 如果已经有完整的题目数据
+    if (row.content && row.options) {
+      questionData = { ...row }
+    } else {
+      // 否则从数据库加载题目详情
+      const questionId = row.question_id || row.questionId || row.id
+      if (!questionId) {
+        message.error('题目ID不存在')
+        return
+      }
+      
+      questionData = await api.get(`/questions/${questionId}`)
+      if (!questionData) {
+        message.error('加载题目详情失败')
+        return
+      }
+    }
+    
+    // 解析选项
+    let options = []
+    if (questionData.options) {
+      if (typeof questionData.options === 'string') {
+        try {
+          options = JSON.parse(questionData.options)
+          console.log('解析后的选项:', options)
+        } catch (e) {
+          console.error('解析选项失败:', e, questionData.options)
+          options = [questionData.options] // 如果解析失败，作为单个选项
+        }
+      } else if (Array.isArray(questionData.options)) {
+        options = questionData.options
+      }
+    }
+    
+    selectedQuestion.value = {
+      ...questionData,
+      options,
+      // 确保字段名统一
+      correctAnswer: questionData.correctAnswer || questionData.correct_answer,
+      userAnswer: questionData.userAnswer || questionData.user_answer || row.user_answer,
+      isCorrect: questionData.isCorrect || questionData.is_correct || row.is_correct,
+      subject_name: questionData.subject_name || row.subject_name,
+      subcategory_name: questionData.subcategory_name || row.subcategory_name
+    }
+    
+    console.log('最终题目数据:', selectedQuestion.value)
+    questionDetailVisible.value = true
+  } catch (error) {
+    console.error('加载题目详情失败:', error)
+    message.error('加载题目详情失败')
+  }
 }
 
 // 暴露方法

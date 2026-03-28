@@ -81,18 +81,21 @@ class AIQueueService {
    */
   async addBatchTasks(tasks) {
     try {
-      const values = tasks.map(t => [
+      // 批量插入任务 - 使用正确的占位符语法
+      const placeholders = tasks.map(() => '(?, ?, ?, ?, ?)').join(', ');
+      const values = tasks.flatMap(t => [
         t.taskType,
         t.targetId,
         t.priority || 5,
-        'pending'
+        'pending',
+        new Date()
       ]);
       
       await db.query(
         `INSERT INTO ai_analysis_queue 
          (task_type, target_id, priority, status, created_at)
-         VALUES ?`,
-        [values]
+         VALUES ${placeholders}`,
+        values
       );
       
       console.log(`[AI队列] 批量添加 ${tasks.length} 个任务`);
