@@ -63,13 +63,48 @@ const onQuillReady = quill => {
     if (!items) return
 
     for (const item of items) {
+      // 处理图片文件粘贴
       if (item.type.startsWith('image/')) {
         e.preventDefault()
         const file = item.getAsFile()
         if (file) {
           await insertImageToEditor(quill, file)
         }
+        return
       }
+    }
+
+    // 处理 HTML 内容中的 base64 图片（从网页复制图片的情况）
+    const htmlItem = Array.from(items).find(item => item.type === 'text/html')
+    if (htmlItem) {
+      e.preventDefault()
+      htmlItem.getAsString(async html => {
+        // 提取 base64 图片
+        const base64Regex = /<img[^>]+src=["'](data:image\/[^"']+)["']/gi
+        const matches = [...html.matchAll(base64Regex)]
+
+        if (matches.length > 0) {
+          for (const match of matches) {
+            const base64Data = match[1]
+            try {
+              // 将 base64 转换为文件
+              const file = await base64ToFile(base64Data)
+              if (file) {
+                await insertImageToEditor(quill, file)
+              }
+            } catch (error) {
+              console.error('Base64 图片转换失败:', error)
+              // 如果转换失败，直接插入原始 HTML
+              const range = quill.getSelection(true)
+              quill.clipboard.dangerouslyPasteHTML(range.index, match[0])
+            }
+          }
+        } else {
+          // 没有 base64 图片，正常粘贴 HTML
+          const range = quill.getSelection(true)
+          quill.clipboard.dangerouslyPasteHTML(range.index, html)
+        }
+      })
     }
   })
 
@@ -109,6 +144,38 @@ async function insertImageToEditor(quill, file) {
     ElMessage.error(error.message || '图片上传失败')
   } finally {
     loading.close()
+  }
+}
+
+// 将 base64 转换为 File 对象
+async function base64ToFile(base64Data) {
+  try {
+    // 提取 MIME 类型和数据
+    const matches = base64Data.match(/^data:image\/(\w+);base64,(.+)$/)
+    if (!matches) return null
+
+    const extension = matches[1] === 'jpeg' ? 'jpg' : matches[1]
+    const mimeType = `image/${matches[1]}`
+    const base64 = matches[2]
+
+    // 将 base64 转换为 Blob
+    const byteCharacters = atob(base64)
+    const byteNumbers = new Array(byteCharacters.length)
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i)
+    }
+    const byteArray = new Uint8Array(byteNumbers)
+    const blob = new Blob([byteArray], { type: mimeType })
+
+    // 创建 File 对象
+    const file = new File([blob], `pasted-image-${Date.now()}.${extension}`, {
+      type: mimeType
+    })
+
+    return file
+  } catch (error) {
+    console.error('Base64 转换错误:', error)
+    return null
   }
 }
 
