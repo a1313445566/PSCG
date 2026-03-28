@@ -117,8 +117,8 @@ class CacheService {
   
   // 添加排行榜缓存键生成方法
   generateLeaderboardKey(params) {
-    const { subjectId, grade, className, limit, id, student_id } = params;
-    return `${this.CACHE_KEYS.LEADERBOARD}_${subjectId || ''}_${grade || ''}_${className || ''}_${limit || 100}_${id || ''}_${student_id || ''}`;
+    const { subjectId, subcategoryId, grade, className, limit, page, id, student_id } = params;
+    return `${this.CACHE_KEYS.LEADERBOARD}_${subjectId || ''}_${subcategoryId || ''}_${grade || ''}_${className || ''}_${limit || 100}_${page || 1}_${id || ''}_${student_id || ''}`;
   }
   
   // 添加用户统计缓存键生成方法

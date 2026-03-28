@@ -88,7 +88,7 @@
           </el-tab-pane>
           <el-tab-pane label="学科排行榜" name="subject">
             <div class="filter-section">
-              <el-select v-model="selectedSubjectId" placeholder="选择学科" @change="async (value) => { await loadSubcategories(value); loadSubjectLeaderboard(); }">
+              <el-select v-model="selectedSubjectId" placeholder="选择学科" @change="handleSubjectChange">
                 <el-option 
                   v-for="subject in subjects" 
                   :key="subject.id"
@@ -96,7 +96,7 @@
                   :value="subject.id"
                 ></el-option>
               </el-select>
-              <el-select v-model="selectedSubcategoryId" placeholder="选择题库" @change="loadSubjectLeaderboard" :disabled="!selectedSubjectId">
+              <el-select v-model="selectedSubcategoryId" placeholder="选择题库" @change="handleSubcategoryChange" :disabled="!selectedSubjectId">
                 <el-option label="全部题库" :value="null"></el-option>
                 <el-option 
                   v-for="subcategory in subcategories" 
@@ -109,7 +109,7 @@
                 <el-option label="全部年级" :value="null"></el-option>
                 <el-option v-for="grade in grades" :key="grade" :label="grade + '年级'" :value="grade"></el-option>
               </el-select>
-              <el-select v-model="selectedClass" placeholder="选择班级" @change="loadSubjectLeaderboard">
+              <el-select v-model="selectedClass" placeholder="选择班级" @change="handleSubjectClassChange">
                 <el-option label="全部班级" :value="null"></el-option>
                 <el-option v-for="classNum in classes" :key="classNum" :label="classNum + '班'" :value="classNum"></el-option>
               </el-select>
@@ -363,7 +363,7 @@
 import { ref, onMounted, watch } from 'vue'
 import { ElButton, ElTabs, ElTabPane, ElSelect, ElOption, ElDialog } from 'element-plus'
 import 'element-plus/dist/index.css'
-import { getApiBaseUrl } from '../utils/database'
+import { api } from '../utils/api'
 import { formatDate } from '../utils/dateUtils'
 import AppHeader from '../components/common/AppHeader.vue'
 
@@ -396,49 +396,38 @@ const selectedAnswerQuestions = ref([])
 
 const loadGradesAndClasses = async () => {
   try {
-    const gradesResponse = await fetch(`${getApiBaseUrl()}/grades`)
-    if (gradesResponse.ok) {
-      const serverGrades = await gradesResponse.json()
-      if (Array.isArray(serverGrades) && serverGrades.length > 0) {
-        grades.value = serverGrades.map(grade => {
-          if (typeof grade === 'object' && grade.name) {
-            const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
-            return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
-          } else if (typeof grade === 'number') {
-            return grade
-          } else {
-            return 1
-          }
-        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
-      } else {
-        grades.value = []
-      }
+    const serverGrades = await api.get('/grades')
+    if (Array.isArray(serverGrades) && serverGrades.length > 0) {
+      grades.value = serverGrades.map(grade => {
+        if (typeof grade === 'object' && grade.name) {
+          const gradeNum = parseInt(grade.name.match(/\d+/)?.[0] || '')
+          return isNaN(gradeNum) ? parseInt(grade.id) || 1 : gradeNum
+        } else if (typeof grade === 'number') {
+          return grade
+        } else {
+          return 1
+        }
+      }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
     } else {
       grades.value = []
     }
     
-    const classesResponse = await fetch(`${getApiBaseUrl()}/classes`)
-    if (classesResponse.ok) {
-      const serverClasses = await classesResponse.json()
-      if (Array.isArray(serverClasses) && serverClasses.length > 0) {
-        classes.value = serverClasses.map(classItem => {
-          if (typeof classItem === 'object' && classItem.name) {
-            const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
-            return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
-          } else if (typeof classItem === 'number') {
-            return classItem
-          } else {
-            return 1
-          }
-        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
-      } else {
-        classes.value = []
-      }
+    const serverClasses = await api.get('/classes')
+    if (Array.isArray(serverClasses) && serverClasses.length > 0) {
+      classes.value = serverClasses.map(classItem => {
+        if (typeof classItem === 'object' && classItem.name) {
+          const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+          return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+        } else if (typeof classItem === 'number') {
+          return classItem
+        } else {
+          return 1
+        }
+      }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
     } else {
       classes.value = []
     }
   } catch (error) {
-    // console.error('加载年级和班级数据失败:', error)
     grades.value = []
     classes.value = []
   }
@@ -446,23 +435,18 @@ const loadGradesAndClasses = async () => {
 
 const handleGradeChange = async () => {
   try {
-    const classesResponse = await fetch(`${getApiBaseUrl()}/classes?grade=${selectedGrade.value}`)
-    if (classesResponse.ok) {
-      const serverClasses = await classesResponse.json()
-      if (Array.isArray(serverClasses) && serverClasses.length > 0) {
-        classes.value = serverClasses.map(classItem => {
-          if (typeof classItem === 'object' && classItem.name) {
-            const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
-            return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
-          } else if (typeof classItem === 'number') {
-            return classItem
-          } else {
-            return 1
-          }
-        }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
-      } else {
-        classes.value = []
-      }
+    const data = await api.get(`/classes?grade=${selectedGrade.value}`)
+    if (Array.isArray(data) && data.length > 0) {
+      classes.value = data.map(classItem => {
+        if (typeof classItem === 'object' && classItem.name) {
+          const classNum = parseInt(classItem.name.match(/\d+/)?.[0] || '')
+          return isNaN(classNum) ? parseInt(classItem.id) || 1 : classNum
+        } else if (typeof classItem === 'number') {
+          return classItem
+        } else {
+          return 1
+        }
+      }).filter((value, index, self) => self.indexOf(value) === index).sort((a, b) => a - b)
     } else {
       classes.value = []
     }
@@ -482,12 +466,8 @@ const handleGradeChange = async () => {
 
 const loadSubjects = async () => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/subjects`)
-    if (response.ok) {
-      subjects.value = await response.json()
-    }
+    subjects.value = await api.get('/subjects')
   } catch (error) {
-    // console.error('加载学科失败:', error)
   }
 }
 
@@ -499,15 +479,9 @@ const loadSubcategories = async (subjectId) => {
       selectedSubcategoryId.value = null
       return
     }
-    const response = await fetch(`${getApiBaseUrl()}/subjects/${subjectId}/subcategories`)
-    if (response.ok) {
-      subcategories.value = await response.json()
-    } else {
-      subcategories.value = []
-    }
+    subcategories.value = await api.get(`/subjects/${subjectId}/subcategories`)
     selectedSubcategoryId.value = null
   } catch (error) {
-    // console.error('加载子分类失败:', error)
     subcategories.value = []
     selectedSubcategoryId.value = null
   }
@@ -518,49 +492,31 @@ const globalCurrentPage = ref(1)
 const globalPageSize = ref(20)
 const globalTotal = ref(0)
 
-const loadGlobalLeaderboard = async () => {
+const loadGlobalLeaderboard = async (page = globalCurrentPage.value, size = globalPageSize.value) => {
   try {
-    let url = `${getApiBaseUrl()}/leaderboard/global`
-    const params = new URLSearchParams()
-    
-    if (selectedGrade.value) {
-      params.append('grade', selectedGrade.value)
+    const params = {
+      grade: selectedGrade.value || undefined,
+      class: selectedClass.value || undefined,
+      limit: size,
+      page: page
     }
     
-    if (selectedClass.value) {
-      params.append('class', selectedClass.value)
-    }
-    
-    // 添加分页参数
-    params.append('limit', globalPageSize.value)
-    params.append('page', globalCurrentPage.value)
-    
-    if (params.toString()) {
-      url += '?' + params.toString()
-    }
-    
-    const response = await fetch(url)
-    if (response.ok) {
-      const data = await response.json()
-      globalLeaderboard.value = data.data || data
-      // 假设后端返回total字段，否则根据实际情况调整
-      globalTotal.value = data.total || data.length
-    }
+    const data = await api.get('/leaderboard/global', params)
+    globalLeaderboard.value = data.data || data
+    globalTotal.value = data.total || data.length
   } catch (error) {
-    // console.error('加载全局排行榜失败:', error)
+    console.error('加载全局排行榜失败:', error)
   }
 }
 
 // 处理全局排行榜分页
 const handleGlobalPageChange = (current) => {
-  globalCurrentPage.value = current
-  loadGlobalLeaderboard()
+  loadGlobalLeaderboard(current, globalPageSize.value)
 }
 
 const handleGlobalSizeChange = (size) => {
-  globalPageSize.value = size
   globalCurrentPage.value = 1
-  loadGlobalLeaderboard()
+  loadGlobalLeaderboard(1, size)
 }
 
 // 学科排行榜分页参数
@@ -568,70 +524,65 @@ const subjectCurrentPage = ref(1)
 const subjectPageSize = ref(20)
 const subjectTotal = ref(0)
 
-const loadSubjectLeaderboard = async () => {
+const loadSubjectLeaderboard = async (page = subjectCurrentPage.value, size = subjectPageSize.value) => {
   if (!selectedSubjectId.value) {
     subjectLeaderboard.value = []
     return
   }
   
   try {
-    let url = `${getApiBaseUrl()}/leaderboard/subject/${selectedSubjectId.value}`
-    const params = new URLSearchParams()
-    
-    if (selectedSubcategoryId.value) {
-      params.append('subcategoryId', selectedSubcategoryId.value)
+    const params = {
+      subcategoryId: selectedSubcategoryId.value || undefined,
+      grade: selectedGrade.value || undefined,
+      class: selectedClass.value || undefined,
+      limit: size,
+      page: page
     }
     
-    if (selectedGrade.value) {
-      params.append('grade', selectedGrade.value)
-    }
-    
-    if (selectedClass.value) {
-      params.append('class', selectedClass.value)
-    }
-    
-    // 添加分页参数
-    params.append('limit', subjectPageSize.value)
-    params.append('page', subjectCurrentPage.value)
-    
-    if (params.toString()) {
-      url += '?' + params.toString()
-    }
-    
-    const response = await fetch(url)
-    if (response.ok) {
-      const data = await response.json()
-      subjectLeaderboard.value = data.data || data
-      // 假设后端返回total字段，否则根据实际情况调整
-      subjectTotal.value = data.total || data.length
-    }
+    const data = await api.get(`/leaderboard/subject/${selectedSubjectId.value}`, params)
+    subjectLeaderboard.value = data.data || data
+    subjectTotal.value = data.total || data.length
   } catch (error) {
-    // console.error('加载学科排行榜失败:', error)
+    console.error('加载学科排行榜失败:', error)
   }
 }
 
 // 处理学科排行榜分页
 const handleSubjectPageChange = (current) => {
-  subjectCurrentPage.value = current
-  loadSubjectLeaderboard()
+  console.log('学科分页变化:', current)  // 调试日志
+  loadSubjectLeaderboard(current, subjectPageSize.value)
 }
 
 const handleSubjectSizeChange = (size) => {
-  subjectPageSize.value = size
   subjectCurrentPage.value = 1
-  loadSubjectLeaderboard()
+  loadSubjectLeaderboard(1, size)
+}
+
+// 处理子分类变化
+const handleSubcategoryChange = () => {
+  subjectCurrentPage.value = 1
+  loadSubjectLeaderboard(1, subjectPageSize.value)
+}
+
+// 处理学科变化
+const handleSubjectChange = async (value) => {
+  await loadSubcategories(value)
+  subjectCurrentPage.value = 1
+  loadSubjectLeaderboard(1, subjectPageSize.value)
+}
+
+// 处理学科排行榜的班级筛选变化
+const handleSubjectClassChange = () => {
+  subjectCurrentPage.value = 1
+  loadSubjectLeaderboard(1, subjectPageSize.value)
 }
 
 const loadUserStats = async () => {
   if (!currentUserId.value) return
   
   try {
-    const response = await fetch(`${getApiBaseUrl()}/users/stats/${currentUserId.value}`)
-    if (response.ok) {
-      userStats.value = await response.json()
-    }
+    userStats.value = await api.get(`/users/stats/${currentUserId.value}`)
   } catch (error) {
-    // console.error('加载用户统计失败:', error)
   }
 }
 
@@ -642,35 +593,16 @@ const loadRecentRecords = async () => {
   }
   
   try {
-    let url = `${getApiBaseUrl()}/answer-records/all`
-    const params = new URLSearchParams()
-    
-    // 添加用户ID筛选
-    params.append('userId', currentUserId.value)
-    
-    // 添加年级和班级筛选
-    if (selectedGrade.value) {
-      params.append('grade', selectedGrade.value)
-    }
-    if (selectedClass.value) {
-      params.append('class', selectedClass.value)
+    const params = {
+      userId: currentUserId.value,
+      grade: selectedGrade.value || undefined,
+      class: selectedClass.value || undefined
     }
     
-    if (params.toString().length > 0) {
-      url += `?${params.toString()}`
-    }
-    
-    const response = await fetch(url)
-    
-    if (response.ok) {
-      const data = await response.json()
-      recentRecords.value = data
-    } else {
-      // console.error('加载答题记录失败，响应状态:', response.status)
-      recentRecords.value = []
-    }
+    const data = await api.get('/answer-records/all', params)
+    recentRecords.value = data.data || data
   } catch (error) {
-    // console.error('加载答题记录失败:', error)
+    console.error('加载答题记录失败:', error)
     recentRecords.value = []
   }
 }
@@ -678,18 +610,10 @@ const loadRecentRecords = async () => {
 // 加载用户的答题记录
 const loadUserRecords = async (userId) => {
   try {
-    const url = `${getApiBaseUrl()}/answer-records/${userId}`
-    const response = await fetch(url)
-    
-    if (response.ok) {
-      const data = await response.json()
-      selectedUserRecords.value = data
-    } else {
-      // console.error('加载用户答题记录失败，响应状态:', response.status)
-      selectedUserRecords.value = []
-    }
+    const data = await api.get(`/answer-records/${userId}`)
+    selectedUserRecords.value = data.data || data
   } catch (error) {
-    // console.error('加载用户答题记录失败:', error)
+    console.error('加载用户答题记录失败:', error)
     selectedUserRecords.value = []
   }
 }
@@ -706,103 +630,92 @@ const openUserDetailDialog = async (user) => {
 // 加载答题详情
 const loadAnswerQuestions = async (recordId) => {
   try {
-    const url = `${getApiBaseUrl()}/answer-records/question-attempts/${currentUserId.value}?answerRecordId=${recordId}`
-    const response = await fetch(url)
-    
-    if (response.ok) {
-      const data = await response.json()
+    const data = await api.get(`/answer-records/question-attempts/${currentUserId.value}`, { answerRecordId: recordId })
 
-      // 解析题目数据
-      const parsedData = data.map(item => {
-        // 解析题目内容
-        let content = item.content
-        try {
-          const parsedContent = JSON.parse(item.content)
-          if (typeof parsedContent === 'string') {
-            content = parsedContent
-          }
-        } catch (e) {
-          // 解析失败，使用原始值
+    // 解析题目数据
+    const parsedData = data.map(item => {
+      // 解析题目内容
+      let content = item.content
+      try {
+        const parsedContent = JSON.parse(item.content)
+        if (typeof parsedContent === 'string') {
+          content = parsedContent
         }
-        
-        // 解析用户答案
-        let userAnswer = item.user_answer
-        try {
-          const parsedAnswer = JSON.parse(item.user_answer)
-          if (Array.isArray(parsedAnswer)) {
-            userAnswer = parsedAnswer.join(', ')
-          } else if (typeof parsedAnswer === 'string') {
-            userAnswer = parsedAnswer
-          }
-        } catch (e) {
-          // 解析失败，使用原始值
+      } catch (e) {
+        // 解析失败，使用原始值
+      }
+      
+      // 解析用户答案
+      let userAnswer = item.user_answer
+      try {
+        const parsedAnswer = JSON.parse(item.user_answer)
+        if (Array.isArray(parsedAnswer)) {
+          userAnswer = parsedAnswer.join(', ')
+        } else if (typeof parsedAnswer === 'string') {
+          userAnswer = parsedAnswer
         }
-        
-        // 解析正确答案
-        let correctAnswer = item.correct_answer
-        try {
-          const parsedAnswer = JSON.parse(item.correct_answer)
-          if (Array.isArray(parsedAnswer)) {
-            correctAnswer = parsedAnswer.join(', ')
-          } else if (typeof parsedAnswer === 'string') {
-            correctAnswer = parsedAnswer
-          }
-        } catch (e) {
-          // 解析失败，使用原始值
+      } catch (e) {
+        // 解析失败，使用原始值
+      }
+      
+      // 解析正确答案
+      let correctAnswer = item.correct_answer
+      try {
+        const parsedAnswer = JSON.parse(item.correct_answer)
+        if (Array.isArray(parsedAnswer)) {
+          correctAnswer = parsedAnswer.join(', ')
+        } else if (typeof parsedAnswer === 'string') {
+          correctAnswer = parsedAnswer
         }
-        
-        // 解析选项 - 使用原始选项，因为 user_answer 和 correct_answer 都保存的是原始位置
-        let options = []
-        try {
-          if (item.options) {
-            const parsedOptions = JSON.parse(item.options)
-            if (Array.isArray(parsedOptions)) {
-              options = parsedOptions
-            }
+      } catch (e) {
+        // 解析失败，使用原始值
+      }
+      
+      // 解析选项 - 使用原始选项，因为 user_answer 和 correct_answer 都保存的是原始位置
+      let options = []
+      try {
+        if (item.options) {
+          const parsedOptions = JSON.parse(item.options)
+          if (Array.isArray(parsedOptions)) {
+            options = parsedOptions
           }
-        } catch (e) {
-          // 解析失败，使用空数组
         }
-        
-        // 解析题目解析
-        let explanation = item.explanation
-        try {
-          if (item.explanation) {
-            // 直接使用原始值，因为后端已经返回了正确的解析字符串
-            explanation = String(item.explanation)
-          } else {
-            explanation = ''
-          }
-        } catch (e) {
-          // 解析失败，使用空字符串
+      } catch (e) {
+        // 解析失败，使用空数组
+      }
+      
+      // 解析题目解析
+      let explanation = item.explanation
+      try {
+        if (item.explanation) {
+          // 直接使用原始值，因为后端已经返回了正确的解析字符串
+          explanation = String(item.explanation)
+        } else {
           explanation = ''
         }
-        
-        // 确保explanation是字符串类型
-        if (explanation === null || explanation === undefined) {
-          explanation = ''
-        } else if (typeof explanation !== 'string') {
-          explanation = String(explanation)
-        }
-        
-
-        
-        return {
-          ...item,
-          content,
-          user_answer: userAnswer,
-          correct_answer: correctAnswer,
-          options,
-          explanation
-        }
-      })
-      selectedAnswerQuestions.value = parsedData
-    } else {
-      // console.error('加载答题详情失败，响应状态:', response.status)
-      selectedAnswerQuestions.value = []
-    }
+      } catch (e) {
+        // 解析失败，使用空字符串
+        explanation = ''
+      }
+      
+      // 确保explanation是字符串类型
+      if (explanation === null || explanation === undefined) {
+        explanation = ''
+      } else if (typeof explanation !== 'string') {
+        explanation = String(explanation)
+      }
+      
+      return {
+        ...item,
+        content,
+        user_answer: userAnswer,
+        correct_answer: correctAnswer,
+        options,
+        explanation
+      }
+    })
+    selectedAnswerQuestions.value = parsedData
   } catch (error) {
-    // console.error('加载答题详情失败:', error)
     selectedAnswerQuestions.value = []
   }
 }

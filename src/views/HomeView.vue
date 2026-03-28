@@ -165,7 +165,7 @@ import SubjectCard from '../components/subject/SubjectCard.vue'
 import LeaderboardTable from '../components/leaderboard/LeaderboardTable.vue'
 import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import { useQuestionStore } from '../stores/questionStore'
-import { getApiBaseUrl } from '../utils/database'
+import { api } from '../utils/api'
 
 const router = useRouter()
 const questionStore = useQuestionStore()
@@ -214,11 +214,8 @@ watch(() => questionStore.questions, (newQuestions) => {
 // 获取排行榜数据
 const fetchLeaderboardData = async () => {
   try {
-    const response = await fetch(`${getApiBaseUrl()}/leaderboard/top10`)
-    if (response.ok) {
-      const data = await response.json()
-      leaderboardData.value = data
-    }
+    const data = await api.get('/leaderboard/top10')
+    leaderboardData.value = data
   } catch (error) {
 
   }
@@ -280,17 +277,11 @@ const fetchUserStats = async () => {
   try {
     const userId = localStorage.getItem('userId')
     if (userId) {
-      const response = await fetch(`${getApiBaseUrl()}/users/stats/${userId}`)
-      if (response.ok) {
-        const data = await response.json()
-        // 获取用户积分
-        const userResponse = await fetch(`${getApiBaseUrl()}/users/${userId}`)
-        if (userResponse.ok) {
-          const userData = await userResponse.json()
-          data.points = userData.points || 0
-        }
-        userStats.value = data
-      }
+      const data = await api.get(`/users/stats/${userId}`)
+      // 获取用户积分
+      const userData = await api.get(`/users/${userId}`)
+      data.points = userData.points || 0
+      userStats.value = data
     }
   } catch (error) {
 
