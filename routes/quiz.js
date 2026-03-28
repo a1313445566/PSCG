@@ -725,6 +725,47 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
     // 更新用户积分
     await db.run('UPDATE users SET points = COALESCE(points, 0) + ? WHERE id = ?', [points, userId])
 
+    // 自动更新学习进度（仅限普通题库，错题巩固题库不更新）
+    if (session.subcategory_id !== null) {
+      // 计算本次答题统计
+      const subjectId = session.subject_id
+      const subcategoryId = session.subcategory_id
+
+      // 获取该子分类的累计数据
+      const stats = await db.get(
+        `SELECT 
+          COUNT(*) as total_attempts,
+          SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_attempts
+        FROM question_attempts 
+        WHERE user_id = ? AND subject_id = ? AND subcategory_id = ?`,
+        [userId, subjectId, subcategoryId]
+      )
+
+      if (stats && stats.total_attempts > 0) {
+        const masteryLevel = Math.round((stats.correct_attempts / stats.total_attempts) * 100)
+
+        // 更新或插入学习进度
+        await db.run(
+          `INSERT INTO learning_progress 
+            (user_id, subject_id, subcategory_id, mastery_level, total_attempts, correct_attempts, last_practiced)
+          VALUES (?, ?, ?, ?, ?, ?, NOW())
+          ON DUPLICATE KEY UPDATE 
+            mastery_level = VALUES(mastery_level),
+            total_attempts = VALUES(total_attempts),
+            correct_attempts = VALUES(correct_attempts),
+            last_practiced = NOW()`,
+          [
+            userId,
+            subjectId,
+            subcategoryId,
+            masteryLevel,
+            stats.total_attempts,
+            stats.correct_attempts
+          ]
+        )
+      }
+    }
+
     // 准备返回数据
     const responseData = {
       score: correctCount,

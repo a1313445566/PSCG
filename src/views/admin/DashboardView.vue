@@ -264,15 +264,15 @@ const renderTrendChart = data => {
 
   // 转换数据为 VChart 需要的格式
   const attemptsData = data.map(item => ({
-    date: item.date,
+    date: String(item.date || '').substring(0, 10),
     type: '答题次数',
-    value: item.attempts
+    value: Number(item.attempts || 0)
   }))
 
   const accuracyData = data.map(item => ({
-    date: item.date,
+    date: String(item.date || '').substring(0, 10),
     type: '正确率 (%)',
-    value: item.accuracy
+    value: Number(item.accuracy || 0)
   }))
 
   const spec = {
@@ -342,8 +342,8 @@ const renderSubjectChart = data => {
       {
         id: 'data',
         values: validData.map(item => ({
-          name: item.name,
-          value: item.count
+          name: String(item.name || ''),
+          value: Number(item.count || 0)
         }))
       }
     ],

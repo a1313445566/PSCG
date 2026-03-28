@@ -397,6 +397,53 @@ router.get('/stats/:userId', async (req, res) => {
   }
 })
 
+// 用户排名API
+router.get('/:id/rank', async (req, res) => {
+  try {
+    const { id } = req.params
+
+    // 获取用户信息
+    const user = await db.get('SELECT id, points, grade, class FROM users WHERE id = ?', [id])
+
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' })
+    }
+
+    // 获取同年级同班级的所有用户排名
+    const rankQuery = `
+      SELECT 
+        id,
+        points,
+        RANK() OVER (ORDER BY points DESC, id ASC) as \`rank\`
+      FROM users
+      WHERE grade = ? AND class = ?
+    `
+
+    const rankings = await db.all(rankQuery, [user.grade, user.class])
+
+    // 找到当前用户的排名
+    const userRank = rankings.find(r => r.id === parseInt(id))
+    const totalStudents = rankings.length
+
+    // 计算百分位
+    const percentile =
+      totalStudents > 0
+        ? Math.round((1 - (userRank?.rank || totalStudents) / totalStudents) * 100)
+        : 0
+
+    res.json({
+      userId: parseInt(id),
+      rank: userRank?.rank || totalStudents,
+      totalStudents,
+      points: user.points || 0,
+      percentile
+    })
+  } catch (error) {
+    console.error('获取用户排名失败:', error)
+    res.status(500).json({ error: '获取用户排名失败' })
+  }
+})
+
 // 用户登录API
 router.post('/login', async (req, res) => {
   try {

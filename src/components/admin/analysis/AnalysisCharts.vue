@@ -123,8 +123,8 @@ const initSubjectChart = () => {
       {
         id: 'data',
         values: data.map(item => ({
-          subject: item.subject,
-          accuracy: item.accuracy || 0
+          subject: String(item.subject || ''),
+          accuracy: Number(item.accuracy || 0)
         }))
       }
     ],
@@ -229,11 +229,8 @@ const initTimeChart = () => {
       {
         id: 'data',
         values: data.map(item => ({
-          date:
-            item.date && typeof item.date === 'string'
-              ? item.date.split('T')[0].split(' ')[0]
-              : item.date,
-          accuracy: item.accuracy || 0
+          date: String(item.date || '').substring(0, 10),
+          accuracy: Number(item.accuracy || 0)
         }))
       }
     ],
@@ -295,8 +292,8 @@ const initClassChart = () => {
       {
         id: 'data',
         values: data.map(item => ({
-          classNum: item.class_name || (item.class_num ? `${item.class_num}班` : '未知'),
-          accuracy: item.accuracy || 0
+          classNum: String(item.class_name || (item.class_num ? `${item.class_num}班` : '未知')),
+          accuracy: Number(item.accuracy || 0)
         }))
       }
     ],
@@ -340,8 +337,8 @@ const initTimeSpentChart = () => {
       {
         id: 'data',
         values: data.map(item => ({
-          timeRange: item.time_range || '未知',
-          count: item.sessions || item.count || 0
+          timeRange: String(item.time_range || '未知'),
+          count: Number(item.sessions || item.count || 0)
         }))
       }
     ],
@@ -391,10 +388,10 @@ const initSubcategoryChart = () => {
         id: 'data',
         values: data
           .map(item => ({
-            name: item.subcategory
-              ? `${item.subject} - ${item.subcategory}`
-              : item.subject || '未分类',
-            accuracy: item.accuracy || 0
+            name: String(
+              item.subcategory ? `${item.subject} - ${item.subcategory}` : item.subject || '未分类'
+            ),
+            accuracy: Number(item.accuracy || 0)
           }))
           .reverse()
       }

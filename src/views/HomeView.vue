@@ -9,7 +9,10 @@
             欢迎回来，{{ currentUserGrade }}年级{{ currentUserClass }}班的
             {{ currentUserName || currentStudentId + '学号' }}同学！
           </h2>
-          <button class="logout-btn" @click="logout">退出登录</button>
+          <div class="header-actions">
+            <button class="profile-btn" @click="goToProfile">👤 个人中心</button>
+            <button class="logout-btn" @click="logout">退出登录</button>
+          </div>
         </div>
         <div v-if="userStats" class="user-stats">
           <div class="stat-item">
@@ -320,6 +323,11 @@ const selectSubject = subjectId => {
   router.push(`/subcategory/${subjectId}`)
 }
 
+// 跳转到个人中心
+const goToProfile = () => {
+  router.push('/profile')
+}
+
 // 退出登录
 const logout = () => {
   localStorage.clear()
@@ -399,6 +407,37 @@ onUnmounted(() => {
   text-transform: uppercase;
   letter-spacing: 2px;
   text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
+}
+
+.header-actions {
+  display: flex;
+  gap: 1rem;
+}
+
+.profile-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 0.8rem 1.5rem;
+  border-radius: 25px;
+  border: none;
+  font-weight: 900;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  box-shadow: 0 4px 0 #5568d3;
+}
+
+.profile-btn:hover {
+  transform: translateY(-3px);
+  box-shadow:
+    0 7px 0 #5568d3,
+    0 10px 15px rgba(102, 126, 234, 0.4);
+}
+
+.profile-btn:active {
+  transform: translateY(2px);
+  box-shadow: 0 2px 0 #5568d3;
 }
 
 .logout-btn {

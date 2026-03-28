@@ -183,4 +183,80 @@ router.post('/reset', async (req, res) => {
   }
 })
 
+// 获取用户错题统计（用户维度）
+router.get('/stats/:userId', async (req, res) => {
+  try {
+    const userId = parseInt(req.params.userId, 10)
+    const { studentId, grade, class: className } = req.query
+
+    // 参数验证
+    if (isNaN(userId) || userId <= 0) {
+      return res.status(400).json({ error: '用户ID格式错误' })
+    }
+
+    // 权限验证：通过 studentId/grade/class 确认身份
+    if (studentId && grade && className) {
+      const requester = await db.get(
+        'SELECT id FROM users WHERE student_id = ? AND grade = ? AND class = ?',
+        [studentId, grade, className]
+      )
+      if (!requester || requester.id !== userId) {
+        return res.status(403).json({ error: '无权访问该用户数据' })
+      }
+    }
+
+    // 验证用户是否存在
+    const user = await db.get('SELECT id FROM users WHERE id = ?', [userId])
+    if (!user) {
+      return res.status(404).json({ error: '用户不存在' })
+    }
+
+    // 统计用户错题总数
+    const totalQuery = `
+      SELECT COUNT(DISTINCT question_id) as total
+      FROM error_collection
+      WHERE user_id = ?
+    `
+    const totalResult = await db.get(totalQuery, [userId])
+    const total = totalResult?.total || 0
+
+    // 按学科分组统计
+    const bySubjectQuery = `
+      SELECT 
+        q.subject_id as subjectId,
+        s.name as subjectName,
+        COUNT(DISTINCT ec.question_id) as count
+      FROM error_collection ec
+      INNER JOIN questions q ON ec.question_id = q.id
+      INNER JOIN subjects s ON q.subject_id = s.id
+      WHERE ec.user_id = ?
+      GROUP BY q.subject_id
+      ORDER BY count DESC
+    `
+    const bySubject = await db.all(bySubjectQuery, [userId])
+
+    // 统计已掌握（累计正确>=3次）
+    const masteredQuery = `
+      SELECT COUNT(*) as mastered
+      FROM error_collection
+      WHERE user_id = ? AND correct_count >= 3
+    `
+    const masteredResult = await db.get(masteredQuery, [userId])
+    const mastered = masteredResult?.mastered || 0
+
+    // 统计学习中
+    const learning = total - mastered
+
+    res.json({
+      total,
+      bySubject,
+      mastered,
+      learning
+    })
+  } catch (error) {
+    console.error('获取错题统计失败:', error)
+    res.status(500).json({ error: '获取错题统计失败' })
+  }
+})
+
 module.exports = router

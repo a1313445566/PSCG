@@ -80,6 +80,31 @@ const routes = [
     component: lazyLoad('LeaderboardView')
   },
   {
+    path: '/profile',
+    name: 'Profile',
+    component: lazyLoad('ProfileView')
+  },
+  {
+    path: '/learning-progress',
+    name: 'LearningProgress',
+    component: lazyLoad('LearningProgressView')
+  },
+  {
+    path: '/error-book',
+    name: 'ErrorBook',
+    component: lazyLoad('ErrorBookView')
+  },
+  {
+    path: '/learning-report',
+    name: 'LearningReport',
+    component: lazyLoad('LearningReportView')
+  },
+  {
+    path: '/answer-history',
+    name: 'AnswerHistory',
+    component: lazyLoad('AnswerHistoryView')
+  },
+  {
     path: '/docs',
     name: 'Docs',
     component: lazyLoad('DocsView')

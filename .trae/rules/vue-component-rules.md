@@ -1,0 +1,361 @@
+---
+
+description: Vue 3 组件开发规范和最佳实践
+alwaysApply: false
+enabled: true
+updatedAt: 2026-03-28T00:00:00.000Z
+provider:
+
+---
+
+# Vue 3 组件开发规范
+
+## 组件结构
+
+### 使用 `<script setup>` 语法
+
+```vue
+<template>
+  <!-- 模板内容 -->
+</template>
+
+<script setup>
+import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { useQuestionStore } from '@/stores/questionStore'
+import { api } from '@/utils/api'
+
+// Props
+const props = defineProps({
+  title: {
+    type: String,
+    required: true
+  }
+})
+
+// Emits
+const emit = defineEmits(['update', 'delete'])
+
+// 响应式数据
+const loading = ref(false)
+const dataList = ref([])
+
+// 计算属性
+const filteredList = computed(() => {
+  return dataList.value.filter(item => item.active)
+})
+
+// 方法
+const handleClick = () => {
+  emit('update', props.title)
+}
+
+// 生命周期
+onMounted(async () => {
+  await loadData()
+})
+
+// 清理资源
+onUnmounted(() => {
+  // 清理定时器、事件监听器等
+})
+</script>
+
+<style scoped>
+/* 组件样式 */
+</style>
+```
+
+## Pinia Store 规范
+
+### 标准结构
+
+```javascript
+import { defineStore } from 'pinia'
+import { api } from '@/utils/api'
+
+export const useXxxStore = defineStore('xxx', {
+  state: () => ({
+    items: [],
+    loading: false,
+    error: null
+  }),
+
+  getters: {
+    getItemById: state => id => {
+      return state.items.find(item => item.id === id)
+    }
+  },
+
+  actions: {
+    async fetchData() {
+      try {
+        this.loading = true
+        this.error = null
+        // 使用 api.js 调用 API
+        this.items = await api.get('/xxx')
+      } catch (error) {
+        this.error = error.message
+        throw error // 向上抛出，让调用者处理
+      } finally {
+        this.loading = false
+      }
+    }
+  }
+})
+```
+
+## API 调用
+
+### 推荐方式 (使用 api.js)
+
+```javascript
+import { api } from '@/utils/api'
+
+// GET 请求
+const data = await api.get('/subjects')
+
+// POST 请求
+const result = await api.post('/questions', questionData)
+
+// PUT 请求
+await api.put('/questions/1', updateData)
+
+// DELETE 请求
+await api.delete('/questions/1')
+
+// 带配置的请求
+await api.get('/data', {
+  retry: 3, // 重试次数
+  timeout: 5000, // 超时时间
+  debounce: 300 // 防抖延迟
+})
+```
+
+### 错误处理
+
+```javascript
+import { success, error } from '@/utils/message'
+
+try {
+  loading.value = true
+  await api.post('/questions', data)
+  success('操作成功')
+} catch (err) {
+  error(err.message || '操作失败')
+  throw err // 如果需要上层处理
+} finally {
+  loading.value = false
+}
+```
+
+### 文件上传
+
+```javascript
+import { uploadImage } from '@/utils/imageUpload'
+
+// 上传单个图片
+const url = await uploadImage(file)
+
+// 使用队列上传（支持并发控制）
+import { uploadQueue } from '@/utils/imageUpload'
+
+const url = await uploadQueue.add(file)
+```
+
+## 命名约定
+
+| 类型       | 命名方式            | 示例               |
+| ---------- | ------------------- | ------------------ |
+| 组件文件   | PascalCase          | `QuestionCard.vue` |
+| 组件名称   | PascalCase          | `<QuestionCard />` |
+| Store 文件 | camelCase           | `questionStore.js` |
+| Store 名称 | camelCase + use前缀 | `useQuestionStore` |
+| 路由文件   | camelCase           | `index.js`         |
+| 工具函数   | camelCase           | `dateUtils.js`     |
+| CSS 类名   | kebab-case          | `.question-card`   |
+
+## Element Plus 使用
+
+### 常用组件
+
+- 表单: `el-form`, `el-form-item`, `el-input`, `el-select`
+- 表格: `el-table`, `el-table-column`
+- 按钮: `el-button`
+- 对话框: `el-dialog`
+- 消息: `ElMessage.success()`, `ElMessage.error()`
+- 加载: `v-loading` 指令
+
+### 按需引入
+
+项目已配置 Element Plus 全局注册，可直接使用组件。
+
+## 性能优化
+
+### 1. 路由懒加载
+
+```javascript
+const AdminView = () => import('@/views/AdminView.vue')
+```
+
+### 2. 组件按需加载
+
+```javascript
+const HeavyComponent = defineAsyncComponent(() => import('@/components/HeavyComponent.vue'))
+```
+
+### 3. 列表渲染使用 key
+
+```vue
+<!-- ✅ 正确 -->
+<div v-for="item in list" :key="item.id">
+
+<!-- ❌ 错误 -->
+<div v-for="(item, index) in list" :key="index">
+```
+
+### 4. computed 缓存计算结果
+
+```javascript
+const expensiveValue = computed(() => {
+  // 复杂计算
+})
+```
+
+### 5. 及时清理资源
+
+```javascript
+onUnmounted(() => {
+  clearTimeout(timer)
+  clearInterval(interval)
+  eventBus.off('event', handler)
+})
+```
+
+## 安全措施
+
+### XSS 防护
+
+```javascript
+import xssFilter from '@/utils/xss-filter'
+
+// 富文本内容过滤
+const safeContent = xssFilter.sanitize(userInput)
+```
+
+### CSRF 防护
+
+```javascript
+// api.js 已自动处理 CSRF Token，无需手动添加
+import { api } from '@/utils/api'
+
+// 自动添加 CSRF Token
+await api.post('/questions', data)
+```
+
+## 已实现的公共工具
+
+### Composables (组合式函数)
+
+项目已实现以下 Composables，可在组件中直接使用：
+
+| 文件                  | 功能         | 典型用途                 |
+| --------------------- | ------------ | ------------------------ |
+| `usePagination.js`    | 分页逻辑     | 列表分页、前后端分页切换 |
+| `useLoading.js`       | 加载状态管理 | 异步操作加载提示         |
+| `useAdminLayout.js`   | 后台布局工具 | 后台页面布局配置         |
+| `useChartRenderer.js` | 图表渲染     | ECharts 图表渲染与销毁   |
+| `useUserFilters.js`   | 用户筛选     | 用户列表筛选逻辑         |
+
+#### 使用示例
+
+**usePagination - 分页**
+
+```javascript
+import { usePagination } from '@/composables/usePagination'
+
+const {
+  currentPage,
+  pageSize,
+  paginatedData,
+  handlePageChange,
+  handleSizeChange
+} = usePagination(allData, { pageSize: 10 })
+
+// 模板中使用
+<el-pagination
+  :current-page="currentPage"
+  :page-size="pageSize"
+  @current-change="handlePageChange"
+  @size-change="handleSizeChange"
+/>
+```
+
+**useLoading - 加载状态**
+
+```javascript
+import { useLoading } from '@/composables/useLoading'
+
+const { loading, withLoading } = useLoading()
+
+// 自动管理加载状态
+await withLoading(async () => {
+  await fetchData()
+})
+```
+
+### 工具函数
+
+| 文件                | 功能           | 主要方法                                            |
+| ------------------- | -------------- | --------------------------------------------------- |
+| `api.js`            | API 客户端封装 | `get()`, `post()`, `put()`, `delete()`              |
+| `message.js`        | 消息提示封装   | `success()`, `error()`, `warning()`, `info()`       |
+| `format.js`         | 数据格式化     | `formatPercent()`, `formatNumber()`, `formatTime()` |
+| `dateUtils.js`      | 日期处理       | `formatDate()`, `parseDate()`                       |
+| `xss-filter.js`     | XSS 过滤       | `sanitize()`                                        |
+| `csrf.js`           | CSRF 防护      | `getCSRFToken()`                                    |
+| `apiCache.js`       | API 缓存       | `getCache()`, `setCache()`                          |
+| `draftStorage.js`   | 草稿存储       | `saveDraft()`, `loadDraft()`                        |
+| `imageUpload.js`    | 图片上传       | `uploadImage()`, `uploadQueue`                      |
+| `markdown.js`       | Markdown 渲染  | `renderMarkdown()`                                  |
+| `chartGenerator.js` | 图表生成       | 图表配置生成                                        |
+| `shuffleOptions.js` | 选项打乱       | 随机排序                                            |
+
+#### API 调用最佳实践
+
+**推荐方式 (使用 api.js)**
+
+```javascript
+import { api } from '@/utils/api'
+
+// 自动处理 CSRF、错误、重试
+const data = await api.get('/subjects')
+await api.post('/questions', questionData)
+await api.delete(`/questions/${id}`)
+
+// 支持配置
+await api.get('/data', {
+  retry: 3, // 重试次数
+  timeout: 5000, // 超时时间
+  debounce: 300 // 防抖延迟
+})
+```
+
+**消息提示**
+
+```javascript
+import { success, error, warning } from '@/utils/message'
+
+success('操作成功')
+error('操作失败: ' + error.message)
+warning('请注意数据格式')
+```
+
+**数据格式化**
+
+```javascript
+import { formatPercent, formatNumber, formatTime } from '@/utils/format'
+
+const accuracy = formatPercent(85.6) // "86%"
+const count = formatNumber(12345) // "12,345"
+const time = formatTime(90) // "1分30秒"
+```

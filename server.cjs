@@ -83,6 +83,8 @@ const dashboardRoutes = require('./routes/dashboard')
 const aiRoutes = require('./routes/ai')
 const questionSemanticRoutes = require('./routes/question-semantic')
 const answerBehaviorRoutes = require('./routes/answer-behavior')
+const learningProgressRoutes = require('./routes/learning-progress')
+const userStatsRoutes = require('./routes/user-stats')
 
 const db = require('./services/database')
 const cacheService = require('./services/cache')
@@ -214,6 +216,8 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/ai', aiRoutes)
 app.use('/api/question-semantic', questionSemanticRoutes)
 app.use('/api/answer-behavior', answerBehaviorRoutes)
+app.use('/api/learning-progress', learningProgressRoutes)
+app.use('/api/user-stats', userStatsRoutes)
 
 // CSRF Token 接口
 app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {

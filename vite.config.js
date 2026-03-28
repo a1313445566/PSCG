@@ -20,7 +20,8 @@ export default defineConfig({
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],
           'element-plus': ['element-plus'],
-          quill: ['quill']
+          quill: ['quill'],
+          'vchart-all': ['@visactor/vchart']
         },
         chunkFileNames: 'assets/[name]-[hash].js',
         entryFileNames: 'assets/[name]-[hash].js',
