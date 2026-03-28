@@ -37,21 +37,24 @@ const quillRef = ref(null)
 
 // Quill 编辑器准备就绪
 const onQuillReady = quill => {
-  // 添加图片上传处理（工具栏按钮）
-  const toolbar = quill.getModule('toolbar')
-  if (toolbar.controls.image) {
-    toolbar.controls.image[0].addEventListener('click', () => {
-      const input = document.createElement('input')
-      input.type = 'file'
-      input.accept = 'image/*'
-      input.onchange = async function () {
-        const file = input.files[0]
-        if (file) {
-          await insertImageToEditor(quill, file)
+  // 监听工具栏图片按钮点击（自定义工具栏）
+  const toolbarContainer = quill.container.previousElementSibling
+  if (toolbarContainer) {
+    const imageButton = toolbarContainer.querySelector('.ql-image')
+    if (imageButton) {
+      imageButton.addEventListener('click', () => {
+        const input = document.createElement('input')
+        input.type = 'file'
+        input.accept = 'image/*'
+        input.onchange = async function () {
+          const file = input.files[0]
+          if (file) {
+            await insertImageToEditor(quill, file)
+          }
         }
-      }
-      input.click()
-    })
+        input.click()
+      })
+    }
   }
 
   // 添加粘贴上传处理
