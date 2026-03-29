@@ -80,8 +80,6 @@ const errorCollectionRoutes = require('./routes/error-collection')
 const adminRoutes = require('./routes/admin')
 const uploadRoutes = require('./routes/upload')
 const dashboardRoutes = require('./routes/dashboard')
-const aiRoutes = require('./routes/ai')
-const questionSemanticRoutes = require('./routes/question-semantic')
 const answerBehaviorRoutes = require('./routes/answer-behavior')
 const learningProgressRoutes = require('./routes/learning-progress')
 const userStatsRoutes = require('./routes/user-stats')
@@ -213,8 +211,6 @@ app.use('/api/error-collection', errorCollectionRoutes)
 app.use('/api/admin', adminRoutes)
 app.use('/api/upload', uploadRoutes)
 app.use('/api/dashboard', dashboardRoutes)
-app.use('/api/ai', aiRoutes)
-app.use('/api/question-semantic', questionSemanticRoutes)
 app.use('/api/answer-behavior', answerBehaviorRoutes)
 app.use('/api/learning-progress', learningProgressRoutes)
 app.use('/api/user-stats', userStatsRoutes)
@@ -440,83 +436,6 @@ const isValidIP = ip => {
 }
 
 /**
- * 创建 AI 分析缓存表
- */
-const createAICacheTable = async () => {
-  const createTableSQL = `
-    CREATE TABLE IF NOT EXISTS ai_analysis_cache (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      query_hash VARCHAR(64) NOT NULL COMMENT '查询哈希',
-      query_text TEXT NOT NULL COMMENT '查询原文',
-      result_text TEXT NOT NULL COMMENT 'AI分析结果',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-      expires_at DATETIME DEFAULT (DATE_ADD(NOW(), INTERVAL 1 HOUR)) COMMENT '过期时间',
-      INDEX idx_hash (query_hash),
-      INDEX idx_expires (expires_at)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI分析结果缓存'
-  `
-
-  try {
-    await db.run(createTableSQL)
-    console.log('✅ AI分析缓存表已准备就绪')
-  } catch (error) {
-    console.error('❌ 创建AI分析缓存表失败:', error)
-  }
-}
-
-/**
- * 创建 AI 分析历史记录表
- */
-const createAIHistoryTable = async () => {
-  const createTableSQL = `
-    CREATE TABLE IF NOT EXISTS ai_analysis_history (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL COMMENT '用户ID',
-      question TEXT NOT NULL COMMENT '问题内容',
-      result TEXT NOT NULL COMMENT 'AI分析结果',
-      filters JSON COMMENT '筛选条件',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-      INDEX idx_user_id (user_id),
-      INDEX idx_created_at (created_at)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI分析历史记录'
-  `
-
-  try {
-    await db.run(createTableSQL)
-    console.log('✅ AI分析历史记录表已准备就绪')
-  } catch (error) {
-    console.error('❌ 创建AI分析历史记录表失败:', error)
-  }
-}
-
-/**
- * 创建 AI 批量分析表
- */
-const createAIBatchAnalysisTable = async () => {
-  const createTableSQL = `
-    CREATE TABLE IF NOT EXISTS ai_batch_analysis (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      user_id INT NOT NULL COMMENT '用户ID',
-      title VARCHAR(255) COMMENT '批量分析标题',
-      question_ids JSON COMMENT '题目ID列表',
-      results JSON COMMENT '批量分析结果',
-      status ENUM('pending', 'processing', 'completed', 'failed') DEFAULT 'pending' COMMENT '状态',
-      created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
-      completed_at DATETIME COMMENT '完成时间',
-      INDEX idx_user_id (user_id),
-      INDEX idx_status (status)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='AI批量分析记录'
-  `
-
-  try {
-    await db.run(createTableSQL)
-    console.log('✅ AI批量分析表已准备就绪')
-  } catch (error) {
-    console.error('❌ 创建AI批量分析表失败:', error)
-  }
-}
-
-/**
  * 获取操作日志（分页）
  * GET /api/security/logs
  */
@@ -648,15 +567,6 @@ async function startServer() {
 
     // 创建安全监控操作日志表
     await createSecurityLogsTable()
-
-    // 创建 AI 分析缓存表
-    await createAICacheTable()
-
-    // 创建 AI 分析历史记录表
-    await createAIHistoryTable()
-
-    // 创建 AI 批量分析表
-    await createAIBatchAnalysisTable()
 
     // 初始化限流器（设置数据库实例并加载持久化数据）
     globalLimiter.setDatabase(db)
