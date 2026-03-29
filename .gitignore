@@ -37,6 +37,7 @@ add-*.js
 *.7z
 *.bak
 *.db
+*.sql
 
 # Environment variables
 .env
@@ -64,3 +65,4 @@ models.json
 
 # CodeBuddy data
 .codebuddy/
+.trae/
