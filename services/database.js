@@ -209,6 +209,117 @@ class Database {
           created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
           INDEX idx_file_hash (file_hash),
           INDEX idx_file_type (file_type)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建管理员凭证表（如果不存在）
+        `CREATE TABLE IF NOT EXISTS admin_credentials (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          username VARCHAR(50) NOT NULL UNIQUE,
+          password VARCHAR(255) NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建AI模型配置表
+        `CREATE TABLE IF NOT EXISTS ai_models (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          name VARCHAR(50) NOT NULL COMMENT '模型名称',
+          provider VARCHAR(50) NOT NULL COMMENT '提供商',
+          model_id VARCHAR(100) NOT NULL COMMENT '模型标识',
+          api_url VARCHAR(255) NOT NULL COMMENT 'API 地址',
+          api_key_encrypted TEXT COMMENT '加密后的 API Key',
+          is_primary TINYINT(1) DEFAULT 0 COMMENT '是否主力模型',
+          is_enabled TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+          priority INT DEFAULT 0 COMMENT '优先级',
+          max_tokens INT DEFAULT 4096 COMMENT '最大 Token',
+          temperature DECIMAL(3,2) DEFAULT 0.7 COMMENT '温度参数',
+          cost_per_1k_input DECIMAL(10,6) DEFAULT 0 COMMENT '输入成本/1k tokens',
+          cost_per_1k_output DECIMAL(10,6) DEFAULT 0 COMMENT '输出成本/1k tokens',
+          config JSON COMMENT '其他配置',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_provider (provider),
+          INDEX idx_priority (priority)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建聊天会话表
+        `CREATE TABLE IF NOT EXISTS chat_sessions (
+          id VARCHAR(36) PRIMARY KEY,
+          admin_id INT NOT NULL COMMENT '管理员ID，关联 admin_credentials.id',
+          title VARCHAR(100) COMMENT '会话标题',
+          model_name VARCHAR(50) COMMENT '使用的模型',
+          total_tokens INT DEFAULT 0,
+          total_cost DECIMAL(10,4) DEFAULT 0,
+          message_count INT DEFAULT 0,
+          status ENUM('active', 'archived') DEFAULT 'active',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          expires_at DATETIME COMMENT '过期时间',
+          INDEX idx_admin_id (admin_id),
+          INDEX idx_status (status),
+          INDEX idx_created_at (created_at),
+          FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建聊天消息表
+        `CREATE TABLE IF NOT EXISTS chat_messages (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          session_id VARCHAR(36) NOT NULL,
+          role ENUM('user', 'assistant', 'system') NOT NULL,
+          content TEXT NOT NULL,
+          tokens INT DEFAULT 0,
+          tools_used JSON COMMENT '使用的工具',
+          query_result JSON COMMENT '查询结果',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_session_id (session_id),
+          INDEX idx_created_at (created_at),
+          FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建聊天摘要表
+        `CREATE TABLE IF NOT EXISTS chat_summaries (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          session_id VARCHAR(36) NOT NULL,
+          message_start_id INT NOT NULL,
+          message_end_id INT NOT NULL,
+          summary TEXT NOT NULL,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_session_id (session_id),
+          FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建Token使用记录表
+        `CREATE TABLE IF NOT EXISTS token_usage (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          admin_id INT NOT NULL COMMENT '管理员ID，关联 admin_credentials.id',
+          session_id VARCHAR(36) NOT NULL,
+          model_name VARCHAR(50) NOT NULL,
+          input_tokens INT DEFAULT 0,
+          output_tokens INT DEFAULT 0,
+          total_tokens INT DEFAULT 0,
+          cost DECIMAL(10,6) DEFAULT 0,
+          query_type VARCHAR(50) COMMENT '查询类型',
+          cached TINYINT(1) DEFAULT 0 COMMENT '是否命中缓存',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          INDEX idx_admin_id (admin_id),
+          INDEX idx_session_id (session_id),
+          INDEX idx_created_at (created_at),
+          INDEX idx_model_name (model_name),
+          FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建缓存命中记录表
+        `CREATE TABLE IF NOT EXISTS cache_hits (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          query_hash VARCHAR(64) NOT NULL,
+          query_text TEXT NOT NULL,
+          response_hash VARCHAR(64) NOT NULL,
+          hit_count INT DEFAULT 1,
+          tokens_saved INT DEFAULT 0,
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+          last_hit_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+          INDEX idx_query_hash (query_hash),
+          INDEX idx_hit_count (hit_count)
         ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
       ]
 
@@ -291,41 +402,113 @@ class Database {
     }
   }
 
-  // 执行查询
+  // 执行查询（带自动重连）
   async query(sql, params = []) {
     try {
+      // 检查连接状态
+      if (!this.pool) {
+        console.log('⚠️ 数据库未连接，尝试重新连接...')
+        await this.connect()
+      }
+
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
       const safeParams = params.map(param => (param === undefined ? null : param))
+      
+      // ✅ 如果没有参数，使用 query() 方法（不使用 prepared statement）
+      // 这样可以避免 MySQL 对某些 SQL 语法的限制
+      if (safeParams.length === 0) {
+        const [rows] = await this.pool.query(sql)
+        return rows
+      }
+      
+      // ✅ 有参数时，使用 execute() 方法（prepared statement）
       const [rows] = await this.pool.execute(sql, safeParams)
       return rows
     } catch (error) {
       console.error('查询失败:', error)
+
+      // 如果是连接错误，尝试重连一次
+      if (error.code === 'PROTOCOL_CONNECTION_LOST' || error.code === 'ECONNREFUSED') {
+        console.log('🔄 数据库连接丢失，尝试重连...')
+        try {
+          await this.connect()
+          const safeParams = params.map(param => (param === undefined ? null : param))
+          const [rows] = await this.pool.execute(sql, safeParams)
+          return rows
+        } catch (retryError) {
+          console.error('❌ 重连失败:', retryError)
+          throw retryError
+        }
+      }
+
       throw error
     }
   }
 
-  // 获取单个结果
+  // 获取单个结果（带自动重连）
   async get(sql, params = []) {
     try {
+      // 检查连接状态
+      if (!this.pool) {
+        console.log('⚠️ 数据库未连接，尝试重新连接...')
+        await this.connect()
+      }
+
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
       const safeParams = params.map(param => (param === undefined ? null : param))
       const [rows] = await this.pool.execute(sql, safeParams)
       return rows[0] || null
     } catch (error) {
       console.error('获取单个结果失败:', error)
+
+      // 如果是连接错误，尝试重连一次
+      if (error.code === 'PROTOCOL_CONNECTION_LOST' || error.code === 'ECONNREFUSED') {
+        console.log('🔄 数据库连接丢失，尝试重连...')
+        try {
+          await this.connect()
+          const safeParams = params.map(param => (param === undefined ? null : param))
+          const [rows] = await this.pool.execute(sql, safeParams)
+          return rows[0] || null
+        } catch (retryError) {
+          console.error('❌ 重连失败:', retryError)
+          throw retryError
+        }
+      }
+
       throw error
     }
   }
 
-  // 获取多个结果
+  // 获取多个结果（带自动重连）
   async all(sql, params = []) {
     try {
+      // 检查连接状态
+      if (!this.pool) {
+        console.log('⚠️ 数据库未连接，尝试重新连接...')
+        await this.connect()
+      }
+
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
       const safeParams = params.map(param => (param === undefined ? null : param))
       const [rows] = await this.pool.execute(sql, safeParams)
       return rows
     } catch (error) {
       console.error('获取多个结果失败:', error)
+
+      // 如果是连接错误，尝试重连一次
+      if (error.code === 'PROTOCOL_CONNECTION_LOST' || error.code === 'ECONNREFUSED') {
+        console.log('🔄 数据库连接连接丢失，尝试重连...')
+        try {
+          await this.connect()
+          const safeParams = params.map(param => (param === undefined ? null : param))
+          const [rows] = await this.pool.execute(sql, safeParams)
+          return rows
+        } catch (retryError) {
+          console.error('❌ 重连失败:', retryError)
+          throw retryError
+        }
+      }
+
       throw error
     }
   }

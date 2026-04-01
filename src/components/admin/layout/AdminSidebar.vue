@@ -94,7 +94,9 @@ import {
   FolderOpened,
   Histogram,
   Clock,
-  TrendCharts
+  TrendCharts,
+  ChatDotRound,
+  Cpu
 } from '@element-plus/icons-vue'
 
 const {
@@ -132,7 +134,9 @@ const iconMap = {
   FolderOpened,
   Histogram,
   Clock,
-  TrendCharts
+  TrendCharts,
+  ChatDotRound,
+  Cpu
 }
 
 // 获取图标组件
@@ -149,6 +153,8 @@ const topLevelNodes = computed(() => [
   { key: 'user-data', label: '答题数据', icon: 'UserFilled' },
   { key: 'user-management', label: '用户管理', icon: 'User' },
   { key: 'data-analysis', label: '数据分析', icon: 'TrendCharts' },
+  { key: 'ai-chat', label: 'AI 助手', icon: 'ChatDotRound' },
+  { key: 'ai-models', label: '模型管理', icon: 'Cpu' },
   { key: 'basic-settings', label: '基础设置', icon: 'Tools' },
   { key: 'database', label: '数据库管理', icon: 'Coin' },
   { key: 'security', label: '安全中心', icon: 'Lock' }
@@ -273,6 +279,18 @@ const menuTreeData = computed(() => {
       id: 'data-analysis',
       label: '数据分析',
       icon: 'TrendCharts',
+      isMenu: true
+    },
+    {
+      id: 'ai-chat',
+      label: 'AI 助手',
+      icon: 'ChatDotRound',
+      isMenu: true
+    },
+    {
+      id: 'ai-models',
+      label: '模型管理',
+      icon: 'Cpu',
       isMenu: true
     },
     {

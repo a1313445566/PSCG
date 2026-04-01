@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps, defineEmits, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '../../../utils/api'
 

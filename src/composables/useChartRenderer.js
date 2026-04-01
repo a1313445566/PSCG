@@ -1,12 +1,17 @@
 import { ref, onUnmounted } from 'vue'
 import { extractAllChartConfigs, VChart } from '@/utils/chartGenerator'
+import { registerChart, unregisterChart, observeContainer, unobserveContainer } from '@/utils/chartResize'
+
+// 图表ID计数器
+let chartIdCounter = 0
 
 /**
  * 图表渲染 Composable
  * 封装图表渲染逻辑，支持多个图表实例管理
+ * ✅ 使用全局图表自适应管理器
  */
 export function useChartRenderer() {
-  // 图表实例存储
+  // 图表实例存储（本地引用，用于清理）
   const chartInstances = ref([])
 
   /**
@@ -33,14 +38,29 @@ export function useChartRenderer() {
       placeholder.replaceWith(chartWrapper)
 
       try {
-        const instance = new VChart(chartConfig.config, {
+        // ✅ 确保 autoFit 在 spec 配置中（关键！）
+        const spec = {
+          ...chartConfig.config,
+          autoFit: true // 必须在 spec 中启用自动适应
+        }
+
+        const instance = new VChart(spec, {
           dom: chartWrapper,
           mode: 'desktop-browser',
           animation: true,
           theme: 'light'
         })
         instance.renderAsync()
-        chartInstances.value.push(instance)
+
+        // ✅ 生成唯一ID
+        const chartId = `chart-${chartIdCounter++}`
+
+        // ✅ 注册到全局自适应管理器
+        registerChart(chartId, instance, chartWrapper)
+        observeContainer(chartWrapper)
+
+        // ✅ 保存实例和容器引用（用于本地清理）
+        chartInstances.value.push({ id: chartId, instance, container: chartWrapper })
         renderedCount++
       } catch (error) {
         console.error(`[图表] 渲染失败:`, error)
@@ -55,27 +75,18 @@ export function useChartRenderer() {
    * 清理所有图表实例
    */
   const clearCharts = () => {
-    chartInstances.value.forEach(instance => {
+    chartInstances.value.forEach(({ id, instance, container }) => {
       try {
+        // 从全局管理器注销
+        unregisterChart(id)
+        unobserveContainer(container)
+        // 释放实例
         instance?.release()
       } catch (e) {
         // 忽略释放错误
       }
     })
     chartInstances.value = []
-  }
-
-  /**
-   * 调整所有图表大小
-   */
-  const resizeCharts = () => {
-    chartInstances.value.forEach(instance => {
-      try {
-        instance?.resize()
-      } catch (e) {
-        // 忽略调整错误
-      }
-    })
   }
 
   // 组件卸载时自动清理
@@ -86,7 +97,6 @@ export function useChartRenderer() {
   return {
     chartInstances,
     renderCharts,
-    clearCharts,
-    resizeCharts
+    clearCharts
   }
 }

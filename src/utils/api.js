@@ -254,6 +254,81 @@ class ApiClient {
   async delete(endpoint, config = {}) {
     return this.request(endpoint, { method: 'DELETE' }, config)
   }
+
+  /**
+   * SSE 流式请求
+   * @param {string} endpoint - API 端点
+   * @param {Object} data - 请求数据
+   * @param {function} onMessage - 消息回调 (event: Object) => void
+   * @param {Object} config - 配置 { timeout, signal }
+   * @returns {Promise<void>}
+   *
+   * @example
+   * await api.stream('/api/chat/sessions/123/messages', { content: '你好' }, (event) => {
+   *   if (event.type === 'content') console.log(event.content)
+   * })
+   */
+  async stream(endpoint, data, onMessage, config = {}) {
+    const { timeout = 60000, signal: externalSignal } = config
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+    // 获取 CSRF Token
+    const csrfToken = await getCSRFToken()
+
+    // 获取认证 Token (管理员或用户)
+    const adminToken = sessionStorage.getItem('adminToken')
+    const userToken = localStorage.getItem('token')
+    const authToken = adminToken || userToken
+
+    try {
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        body: JSON.stringify(data),
+        signal: externalSignal
+          ? AbortSignal.any([controller.signal, externalSignal])
+          : controller.signal
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(errorData.error || `HTTP ${response.status}`)
+      }
+
+      const reader = response.body.getReader()
+      const decoder = new TextDecoder()
+      let buffer = ''
+
+      while (true) {
+        const { done, value } = await reader.read()
+        if (done) break
+
+        buffer += decoder.decode(value, { stream: true })
+        const lines = buffer.split('\n')
+        buffer = lines.pop() || ''
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const payload = line.slice(6).trim()
+            if (payload === '[DONE]') return
+            try {
+              const event = JSON.parse(payload)
+              onMessage(event)
+            } catch (e) {
+              console.warn('Failed to parse SSE event:', e)
+            }
+          }
+        }
+      }
+    } finally {
+      clearTimeout(timeoutId)
+    }
+  }
 }
 
 // 导出单例实例

@@ -83,6 +83,9 @@ const dashboardRoutes = require('./routes/dashboard')
 const answerBehaviorRoutes = require('./routes/answer-behavior')
 const learningProgressRoutes = require('./routes/learning-progress')
 const userStatsRoutes = require('./routes/user-stats')
+const chatRoutes = require('./routes/chat')
+const healthRoutes = require('./routes/health') // 健康检查路由
+const toolsRoutes = require('./routes/tools') // 工具元数据路由
 
 const db = require('./services/database')
 const cacheService = require('./services/cache')
@@ -214,6 +217,9 @@ app.use('/api/dashboard', dashboardRoutes)
 app.use('/api/answer-behavior', answerBehaviorRoutes)
 app.use('/api/learning-progress', learningProgressRoutes)
 app.use('/api/user-stats', userStatsRoutes)
+app.use('/api/chat', chatRoutes)
+app.use('/api/health', healthRoutes)
+app.use('/api/tools', toolsRoutes)
 
 // CSRF Token 接口
 app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {

@@ -316,6 +316,12 @@ const renderTrendChart = data => {
     }
   }
 
+  // ✅ 添加 autoFit 到 spec 中
+  spec.autoFit = true
+
+  // ✅ 调试：检查容器尺寸
+  console.log('[Dashboard] 渲染趋势图，容器尺寸:', trendChartRef.value?.offsetWidth, 'x', trendChartRef.value?.offsetHeight)
+
   trendChart = new VChart(spec, {
     dom: trendChartRef.value,
     mode: 'desktop-browser'
@@ -386,6 +392,9 @@ const renderSubjectChart = data => {
     }
   }
 
+  // ✅ 添加 autoFit 到 spec 中
+  spec.autoFit = true
+
   subjectChart = new VChart(spec, {
     dom: subjectChartRef.value,
     mode: 'desktop-browser'
@@ -397,12 +406,6 @@ const renderSubjectChart = data => {
 const viewAllRecords = () => {
   setActiveMenu('user-data')
   router.push('/admin')
-}
-
-// 窗口大小变化时重绘图表
-const handleResize = () => {
-  trendChart?.resize()
-  subjectChart?.resize()
 }
 
 // 释放图表实例
@@ -420,13 +423,34 @@ onMounted(async () => {
 
     // 等待 DOM 更新后初始化图表
     await nextTick()
-    window.addEventListener('resize', handleResize)
+
+    // ✅ 注册到全局自适应管理器
+    const { registerChart, observeContainer } = await import('../../utils/chartResize')
+    if (trendChart) {
+      registerChart('dashboard-trend', trendChart, trendChartRef.value)
+      // ✅ 同时监听图表容器和其父元素（el-card__body）
+      observeContainer(trendChartRef.value)
+      const parentEl = trendChartRef.value?.closest('.el-card__body')
+      if (parentEl) observeContainer(parentEl)
+    }
+    if (subjectChart) {
+      registerChart('dashboard-subject', subjectChart, subjectChartRef.value)
+      observeContainer(subjectChartRef.value)
+      const parentEl = subjectChartRef.value?.closest('.el-card__body')
+      if (parentEl) observeContainer(parentEl)
+    }
   }, '正在加载数据概览...')
 })
 
 // 清理
-onUnmounted(() => {
-  window.removeEventListener('resize', handleResize)
+onUnmounted(async () => {
+  // ✅ 从全局管理器注销
+  const { unregisterChart, unobserveContainer } = await import('../../utils/chartResize')
+  unregisterChart('dashboard-trend')
+  unregisterChart('dashboard-subject')
+  unobserveContainer(trendChartRef.value)
+  unobserveContainer(subjectChartRef.value)
+
   releaseCharts()
   cleanup()
 })
@@ -507,10 +531,13 @@ onUnmounted(() => {
   display: grid;
   grid-template-columns: 3fr 2fr;
   gap: 20px;
+  width: 100%; /* ✅ 确保容器宽度跟随父元素 */
 }
 
 .chart-card {
   border-radius: 12px;
+  width: 100%; /* ✅ 确保卡片宽度填满 */
+  overflow: hidden; /* ✅ 防止内容溢出 */
 }
 
 .chart-card :deep(.el-card__header) {

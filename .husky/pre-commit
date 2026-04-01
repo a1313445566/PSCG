@@ -1,2 +1,0 @@
-# Pre-commit hook - 自动检查和格式化暂存区的文件
-npx lint-staged

@@ -93,6 +93,12 @@
     <!-- 数据分析 -->
     <DataAnalysis v-else-if="activeMenu === 'data-analysis'" />
 
+    <!-- AI 助手 -->
+    <ChatContainer v-else-if="activeMenu === 'ai-chat'" />
+
+    <!-- 模型管理 -->
+    <ModelManager v-else-if="activeMenu === 'ai-models'" />
+
     <!-- 默认显示数据概览 -->
     <DashboardView v-else />
 
@@ -174,6 +180,14 @@ const SubcategoryDialog = defineAsyncComponent(
 )
 const DataAnalysis = defineAsyncComponent(
   () => import('../components/admin/analysis/DataAnalysis.vue')
+)
+
+// AI 对话和模型管理组件
+const ChatContainer = defineAsyncComponent(
+  () => import('../components/admin/chat/ChatContainer.vue')
+)
+const ModelManager = defineAsyncComponent(
+  () => import('../components/admin/models/ModelManager.vue')
 )
 
 const questionStore = useQuestionStore()

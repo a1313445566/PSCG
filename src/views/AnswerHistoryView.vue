@@ -311,6 +311,9 @@ const renderHourlyChart = () => {
       }
     }
 
+    // ✅ 添加 autoFit 到 spec 中
+    spec.autoFit = true
+
     hourlyChartInstance = new VChart(spec, {
       dom: hourlyChartRef.value,
       mode: 'desktop-browser'
@@ -374,6 +377,9 @@ const renderDailyChart = () => {
       }
     }
 
+    // ✅ 添加 autoFit 到 spec 中
+    spec.autoFit = true
+
     dailyChartInstance = new VChart(spec, {
       dom: dailyChartRef.value,
       mode: 'desktop-browser'
@@ -426,6 +432,9 @@ const renderRadarChart = () => {
       ]
     }
 
+    // ✅ 添加 autoFit 到 spec 中
+    spec.autoFit = true
+
     radarChartInstance = new VChart(spec, {
       dom: radarChartRef.value,
       mode: 'desktop-browser'
@@ -443,11 +452,26 @@ onMounted(async () => {
   })
 
   // 延迟渲染图表
-  setTimeout(() => {
+  setTimeout(async () => {
     renderHourlyChart()
     renderDailyChart()
     renderRadarChart()
-  }, 100)
+
+    // ✅ 注册到全局自适应管理器
+    const { registerChart, observeContainer } = await import('@/utils/chartResize')
+    if (hourlyChartInstance) {
+      registerChart('answer-hourly', hourlyChartInstance, hourlyChartRef.value)
+      observeContainer(hourlyChartRef.value)
+    }
+    if (dailyChartInstance) {
+      registerChart('answer-daily', dailyChartInstance, dailyChartRef.value)
+      observeContainer(dailyChartRef.value)
+    }
+    if (radarChartInstance) {
+      registerChart('answer-radar', radarChartInstance, radarChartRef.value)
+      observeContainer(radarChartRef.value)
+    }
+  }, 150)
 })
 </script>
 

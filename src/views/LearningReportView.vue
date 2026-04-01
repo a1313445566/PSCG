@@ -403,6 +403,9 @@ const renderRadarChart = () => {
       }
     }
 
+    // ✅ 添加 autoFit 到 spec 中（关键！）
+    spec.autoFit = true
+
     radarChartInstance = new VChart(spec, {
       dom: radarChartRef.value,
       mode: 'desktop-browser'
@@ -485,6 +488,9 @@ const renderTrendChart = () => {
       }
     }
 
+    // ✅ 添加 autoFit 到 spec 中
+    spec.autoFit = true
+
     trendChartInstance = new VChart(spec, {
       dom: trendChartRef.value,
       mode: 'desktop-browser'
@@ -510,10 +516,21 @@ onMounted(async () => {
   await withLoading(fetchReport)
 
   // 延迟渲染图表，确保 DOM 已挂载
-  setTimeout(() => {
+  setTimeout(async () => {
     renderRadarChart()
     renderTrendChart()
-  }, 100)
+
+    // ✅ 注册到全局自适应管理器
+    const { registerChart, observeContainer } = await import('@/utils/chartResize')
+    if (radarChartInstance) {
+      registerChart('learning-radar', radarChartInstance, radarChartRef.value)
+      observeContainer(radarChartRef.value)
+    }
+    if (trendChartInstance) {
+      registerChart('learning-trend', trendChartInstance, trendChartRef.value)
+      observeContainer(trendChartRef.value)
+    }
+  }, 150)
 })
 </script>
 

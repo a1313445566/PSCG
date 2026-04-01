@@ -1,129 +1,34 @@
 import { ref } from 'vue'
-import { ElLoading } from 'element-plus'
 
-/**
- * Loading 状态管理 Hook
- *
- * 用于管理全局 Loading 动画，避免实例管理错误和内存泄漏
- *
- * @example
- * ```js
- * const { showLoading, hideLoading, withLoading, cleanup } = useLoading()
- *
- * // 在组件卸载时调用清理
- * onUnmounted(cleanup)
- *
- * // 方式1：手动控制
- * showLoading('加载中...')
- * await fetchData()
- * hideLoading()
- *
- * // 方式2：自动包装（推荐）
- * await withLoading(async () => {
- *   await fetchData()
- * }, '加载中...')
- * ```
- */
 export function useLoading() {
-  // Loading 实例引用
-  const loadingInstance = ref(null)
+  const loading = ref(false)
 
-  // 组件挂载状态
-  let isMounted = true
-
-  /**
-   * 显示 Loading 动画
-   * @param {string} text - Loading 提示文本，默认"加载中..."
-   */
-  const showLoading = (text = '加载中...') => {
-    if (!isMounted) {
-      return
-    }
-
-    // 先关闭已有实例，避免重复实例
-    if (loadingInstance.value) {
-      try {
-        loadingInstance.value.close()
-      } catch (e) {
-        // 忽略关闭错误
-      }
-    }
-
-    // 创建新的 Loading 实例
-    try {
-      loadingInstance.value = ElLoading.service({
-        lock: true, // 锁定屏幕滚动
-        text,
-        background: 'rgba(255, 255, 255, 0.7)' // 半透明白色背景
-      })
-    } catch (e) {
-      console.error('[useLoading] 创建 Loading 实例失败:', e)
-      loadingInstance.value = null
-    }
+  function startLoading() {
+    loading.value = true
   }
 
-  /**
-   * 隐藏 Loading 动画
-   */
-  const hideLoading = () => {
-    if (!isMounted) {
-      return
-    }
-
-    if (loadingInstance.value) {
-      try {
-        loadingInstance.value.close()
-      } catch (e) {
-        // 忽略关闭错误
-      } finally {
-        loadingInstance.value = null // 清空引用，避免内存泄漏
-      }
-    }
+  function stopLoading() {
+    loading.value = false
   }
 
-  /**
-   * 包装异步函数，自动显示和隐藏 Loading
-   * @param {Function} fn - 要执行的异步函数
-   * @param {string} text - Loading 提示文本，默认"加载中..."
-   * @returns {Promise} 异步函数的执行结果
-   *
-   * @example
-   * const result = await withLoading(
-   *   () => fetchData(),
-   *   '正在加载数据...'
-   * )
-   */
-  const withLoading = async (fn, text = '加载中...') => {
-    if (!isMounted) {
-      return
-    }
+  function cleanup() {
+    loading.value = false
+  }
 
-    showLoading(text)
+  async function withLoading(callback) {
     try {
-      const result = await fn()
-      return result
-    } catch (error) {
-      // 记录错误但向上抛出让调用者处理
-      console.error('[useLoading] 异步操作失败:', error)
-      throw error
+      startLoading()
+      return await callback()
     } finally {
-      // 无论成功还是失败，都确保关闭 Loading
-      hideLoading()
+      stopLoading()
     }
-  }
-
-  /**
-   * 清理资源（组件卸载时手动调用）
-   */
-  const cleanup = () => {
-    isMounted = false
-    hideLoading()
   }
 
   return {
-    showLoading,
-    hideLoading,
-    withLoading,
-    cleanup
+    loading,
+    startLoading,
+    stopLoading,
+    cleanup,
+    withLoading
   }
 }

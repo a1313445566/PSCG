@@ -231,7 +231,7 @@
 </template>
 
 <script setup>
-import { ref, defineProps } from 'vue'
+import { ref } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { healthCheck, importLocalData as importLocalDataApi } from '../../../utils/database'
 import {
