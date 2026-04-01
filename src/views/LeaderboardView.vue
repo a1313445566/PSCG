@@ -26,7 +26,7 @@
               <el-select
                 v-model="selectedClass"
                 placeholder="选择班级"
-                @change="loadGlobalLeaderboard"
+                @change="handleGlobalClassChange"
               >
                 <el-option label="全部班级" :value="null"></el-option>
                 <el-option
@@ -600,6 +600,9 @@ const handleGradeChange = async () => {
       classes.value = []
     }
     selectedClass.value = null
+    // 重置页码
+    globalCurrentPage.value = 1
+    subjectCurrentPage.value = 1
     if (activeTab.value === 'global') {
       await loadGlobalLeaderboard()
     } else if (activeTab.value === 'subject' && selectedSubjectId.value) {
@@ -609,6 +612,12 @@ const handleGradeChange = async () => {
     // console.error('加载班级数据失败:', error)
     classes.value = []
   }
+}
+
+// 处理全局排行榜的班级筛选变化
+const handleGlobalClassChange = () => {
+  globalCurrentPage.value = 1
+  loadGlobalLeaderboard()
 }
 
 const loadSubjects = async () => {

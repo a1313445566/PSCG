@@ -16,6 +16,7 @@ class Database {
         password: process.env.DB_PASSWORD,
         database: process.env.DB_NAME || 'pscg',
         charset: 'utf8mb4',
+        timezone: '+08:00', // 设置为东八区，解决日期时区问题
         waitForConnections: true,
         connectionLimit: 20,
         queueLimit: 100
