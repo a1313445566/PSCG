@@ -259,12 +259,12 @@ async function getTokenStats(adminId, period = 'month') {
   const stats = await db.get(sql, [adminId])
 
   return {
-    totalInput: stats?.total_input || 0,
-    totalOutput: stats?.total_output || 0,
-    totalTokens: stats?.total_tokens || 0,
-    totalCost: stats?.total_cost || 0,
-    cachedCount: stats?.cached_count || 0,
-    requestCount: stats?.request_count || 0,
+    totalInput: parseInt(stats?.total_input) || 0,
+    totalOutput: parseInt(stats?.total_output) || 0,
+    totalTokens: parseInt(stats?.total_tokens) || 0,
+    totalCost: parseFloat(stats?.total_cost) || 0,
+    cachedCount: parseInt(stats?.cached_count) || 0,
+    requestCount: parseInt(stats?.request_count) || 0,
     period
   }
 }

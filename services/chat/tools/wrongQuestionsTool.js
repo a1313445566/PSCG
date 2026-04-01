@@ -36,7 +36,7 @@ const wrongQuestionsTool = defineTool({
       const params = []
 
       if (studentName) {
-        sql += ' AND COALESCE(NULLIF(u.name, \'\'), u.student_id) LIKE ?'
+        sql += " AND COALESCE(NULLIF(u.name, ''), u.student_id) LIKE ?"
         params.push(`%${studentName}%`)
       }
       if (subjectId) {
