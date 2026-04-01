@@ -16,24 +16,33 @@
 
     <!-- 右侧：快捷操作 -->
     <div class="header-right">
-      <el-button
-        type="primary"
-        :icon="Refresh"
-        :loading="refreshing"
-        circle
-        title="刷新数据"
-        @click="handleRefresh"
-      />
-      <el-button type="info" :icon="House" circle title="返回首页" @click="handleBackHome" />
+      <el-tooltip content="刷新数据" placement="bottom">
+        <el-button
+          type="primary"
+          :icon="Refresh"
+          :loading="refreshing"
+          circle
+          @click="handleRefresh"
+        />
+      </el-tooltip>
+      <el-tooltip content="返回首页" placement="bottom">
+        <el-button type="info" :icon="House" circle @click="handleBackHome" />
+      </el-tooltip>
       <el-dropdown trigger="click" @command="handleCommand">
-        <el-button type="danger" :icon="SwitchButton" circle title="退出登录" />
+        <div class="user-info">
+          <el-avatar :size="32" class="user-avatar">
+            <el-icon><User /></el-icon>
+          </el-avatar>
+          <span class="user-name">管理员</span>
+          <el-icon class="dropdown-icon"><ArrowDown /></el-icon>
+        </div>
         <template #dropdown>
           <el-dropdown-menu>
             <el-dropdown-item command="profile">
               <el-icon><User /></el-icon>
               个人信息
             </el-dropdown-item>
-            <el-dropdown-item command="password">
+   <el-dropdown-item command="password">
               <el-icon><Lock /></el-icon>
               修改密码
             </el-dropdown-item>
@@ -95,7 +104,7 @@ import { useRouter } from 'vue-router'
 import { useAdminLayout } from '../../../composables/useAdminLayout'
 import { api } from '../../../utils/api'
 import message from '../../../utils/message'
-import { Refresh, House, SwitchButton, User, Lock } from '@element-plus/icons-vue'
+import { Refresh, House, SwitchButton, User, Lock, ArrowDown } from '@element-plus/icons-vue'
 
 const props = defineProps({
   systemTitle: {
@@ -248,6 +257,40 @@ const handleLogout = () => {
 
 .header-right .el-button.is-circle {
   padding: 8px;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: background-color 0.3s;
+}
+
+.user-info:hover {
+  background-color: #f5f7fa;
+}
+
+.user-avatar {
+  background-color: #409eff;
+}
+
+.user-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.dropdown-icon {
+  font-size: 12px;
+  color: #909399;
+  transition: transform 0.3s;
+}
+
+.user-info:hover .dropdown-icon {
+  transform: rotate(180deg);
 }
 
 /* 响应式 */

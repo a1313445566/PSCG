@@ -6,9 +6,10 @@
         ? `${selectedUser.name}的记录 (ID: ${currentAnswerRecordId || '未知'})`
         : `${selectedUser?.grade || '-'}年级${selectedUser?.class || '-'}班的${selectedUser?.student_id || selectedUser?.user_id || '未知'}的记录 (ID: ${currentAnswerRecordId || '未知'})`
     "
-    width="900px"
-    top="5vh"
+    width="85%"
+    top="3vh"
     :destroy-on-close="true"
+    class="user-detail-dialog"
     @update:model-value="value => emit('update:dialogVisible', value)"
   >
     <div class="dialog-content">
@@ -134,7 +135,7 @@
                     {{ row.subcategory_name || '全部' }}
                   </template>
                 </el-table-column>
-                <el-table-column prop="content" label="题目内容" min-width="200" align="center">
+                <el-table-column prop="content" label="题目内容" min-width="180" align="center">
                   <template #default="{ row }">
                     <el-tooltip :content="row.content" placement="top" effect="dark">
                       <div class="question-content-preview">
@@ -144,7 +145,7 @@
                     </el-tooltip>
                   </template>
                 </el-table-column>
-                <el-table-column label="用户答案" width="100" align="center">
+                <el-table-column label="用户答案" width="80" align="center">
                   <template #default="{ row }">
                     <span
                       :class="{
@@ -161,7 +162,7 @@
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="正确答案" width="100" align="center">
+                <el-table-column label="正确答案" width="80" align="center">
                   <template #default="{ row }">
                     <span class="correct-answer">
                       {{
@@ -173,19 +174,19 @@
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="结果" width="80" align="center">
+                <el-table-column label="结果" width="60" align="center">
                   <template #default="{ row }">
                     <el-tag :type="row.isCorrect || row.is_correct ? 'success' : 'danger'">
                       {{ row.isCorrect || row.is_correct ? '正确' : '错误' }}
                     </el-tag>
                   </template>
                 </el-table-column>
-                <el-table-column prop="created_at" label="时间" width="180" align="center">
+                <el-table-column prop="created_at" label="时间" width="150" align="center">
                   <template #default="{ row }">
                     {{ formatDate(row.created_at) }}
                   </template>
                 </el-table-column>
-                <el-table-column label="操作" width="120" align="center">
+                <el-table-column label="操作" width="80" align="center">
                   <template #default="{ row }">
                     <el-button type="primary" size="small" @click="showQuestionDetail(row)">
                       查看详情
@@ -316,8 +317,14 @@ const showQuestionDetail = row => {
 
 <style scoped>
 .dialog-content {
-  max-height: 70vh;
+  max-height: 82vh;
   overflow-y: auto;
+}
+
+/* 弹窗样式优化 */
+:deep(.el-dialog__body) {
+  padding: 10px 20px;
+  overflow: hidden;
 }
 
 .correct-answer {

@@ -379,8 +379,8 @@ const openUserDetail = async row => {
   try {
     // 加载用户统计数据
     const statsData = await api.get(`/leaderboard/global?limit=1000&id=${userId}`)
-    if (statsData && statsData.length > 0) {
-      selectedUser.value = statsData[0]
+    if (statsData && statsData.data && statsData.data.length > 0) {
+      selectedUser.value = statsData.data[0]
     } else {
       selectedUser.value = {
         id: row.user_id,
