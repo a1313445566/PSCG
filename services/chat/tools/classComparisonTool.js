@@ -99,7 +99,7 @@ const classComparisonTool = defineTool({
 
         // 4. TOP5 学生
         const topStudents = await db.query(`
-          SELECT u.name, u.points,
+          SELECT COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.points,
             COUNT(DISTINCT ar.id) as sessions,
             ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2) as accuracy
           FROM users u

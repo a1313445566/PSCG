@@ -33,7 +33,15 @@ class XSSFilter {
       'code',
       'sub',
       'sup',
-      'img'
+      'img',
+      // 表格相关标签
+      'table',
+      'thead',
+      'tbody',
+      'tr',
+      'th',
+      'td',
+      'caption'
     ])
 
     // 允许的属性
@@ -41,6 +49,9 @@ class XSSFilter {
       span: ['style', 'class'],
       img: ['src', 'alt', 'style', 'class'],
       p: ['style', 'class'],
+      table: ['style', 'class', 'border'],
+      td: ['style', 'class', 'colspan', 'rowspan'],
+      th: ['style', 'class', 'colspan', 'rowspan'],
       '*': ['class'] // 所有标签允许 class
     }
 

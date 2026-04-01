@@ -24,7 +24,7 @@ const learningPathTool = defineTool({
       // 1. 学生基本信息
       const studentInfo = await db.get(`
         SELECT 
-          u.id, u.name, u.grade, u.class, u.points,
+          u.id, COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.grade, u.class, u.points,
           COUNT(DISTINCT ar.id) as total_sessions,
           SUM(ar.total_questions) as total_questions,
           SUM(ar.correct_count) as total_correct,

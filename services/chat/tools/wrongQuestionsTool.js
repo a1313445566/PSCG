@@ -24,7 +24,7 @@ const wrongQuestionsTool = defineTool({
           q.correct_answer,
           LEFT(q.explanation, 100) as explanation,
           s.name as subject,
-          u.name as student,
+          COALESCE(NULLIF(u.name, ''), u.student_id) as student,
           qa.user_answer,
           qa.created_at as answered_at
         FROM question_attempts qa
@@ -36,7 +36,7 @@ const wrongQuestionsTool = defineTool({
       const params = []
 
       if (studentName) {
-        sql += ' AND u.name LIKE ?'
+        sql += ' AND COALESCE(NULLIF(u.name, \'\'), u.student_id) LIKE ?'
         params.push(`%${studentName}%`)
       }
       if (subjectId) {

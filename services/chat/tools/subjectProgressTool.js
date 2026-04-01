@@ -15,7 +15,7 @@ const subjectProgressTool = defineTool({
       let sql = `
         SELECT 
           u.id as student_id,
-          u.name as student_name,
+          COALESCE(NULLIF(u.name, ''), u.student_id) as student_name,
           s.id as subject_id,
           s.name as subject_name,
           COUNT(DISTINCT ar.id) as total_sessions,
@@ -45,7 +45,7 @@ const subjectProgressTool = defineTool({
         params.push(subjectId)
       }
 
-      sql += ' GROUP BY u.id, u.name, s.id, s.name ORDER BY accuracy DESC'
+      sql += ' GROUP BY u.id, s.id, s.name ORDER BY accuracy DESC'
 
       const results = await db.query(sql, params)
 

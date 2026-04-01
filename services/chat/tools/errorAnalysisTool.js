@@ -20,7 +20,7 @@ const errorAnalysisTool = defineTool({
           s.name as subject_name,
           q.difficulty,
           COUNT(DISTINCT qa.user_id) as error_count,
-          GROUP_CONCAT(DISTINCT u.name) as error_students
+          GROUP_CONCAT(DISTINCT COALESCE(NULLIF(u.name, ''), u.student_id) as name) as error_students
         FROM questions q
         JOIN question_attempts qa ON q.id = qa.question_id
         JOIN users u ON qa.user_id = u.id

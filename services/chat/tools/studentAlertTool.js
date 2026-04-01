@@ -29,7 +29,7 @@ const studentAlertTool = defineTool({
         const errorThreshold = threshold || 3
         const errorSQL = `
           SELECT 
-            u.id, u.name, u.grade, u.class,
+            u.id, COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.grade, u.class,
             COUNT(*) as consecutive_errors,
             MAX(qa.created_at) as last_error_time,
             GROUP_CONCAT(DISTINCT s.name) as error_subjects
@@ -85,7 +85,7 @@ const studentAlertTool = defineTool({
         const dropThreshold = threshold || 20
         const dropSQL = `
           SELECT 
-            u.id, u.name, u.grade, u.class,
+            u.id, COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.grade, u.class,
             recent.accuracy as recent_accuracy,
             previous.accuracy as previous_accuracy,
             (previous.accuracy - recent.accuracy) as accuracy_drop,
@@ -149,7 +149,7 @@ const studentAlertTool = defineTool({
         const inactiveThreshold = threshold || 3
         const inactiveSQL = `
           SELECT 
-            u.id, u.name, u.grade, u.class, u.points,
+            u.id, COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.grade, u.class, u.points,
             MAX(ar.created_at) as last_active_time,
             DATEDIFF(NOW(), MAX(ar.created_at)) as inactive_days
           FROM users u
@@ -195,7 +195,7 @@ const studentAlertTool = defineTool({
       if (alertType === 'all' || alertType === 'low_activity') {
         const activitySQL = `
           SELECT 
-            u.id, u.name, u.grade, u.class,
+            u.id, COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.grade, u.class,
             COUNT(DISTINCT ar.id) as sessions,
             SUM(ar.total_questions) as total_questions,
             avg_stats.avg_sessions,

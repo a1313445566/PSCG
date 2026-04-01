@@ -18,19 +18,16 @@
       </div>
 
       <!-- 树结构 -->
-      <div
-        class="tree-container"
-        style="border: 1px solid #e4e7ed; border-radius: 8px; overflow: hidden"
-      >
+      <div class="tree-container">
         <el-tree
           v-if="treeVisible"
           ref="treeRef"
-          :lazy="true"
-          :load="loadNode"
+          :data="treeData"
           :props="treeProps"
           :expand-on-click-node="true"
           node-key="id"
           :expanded-keys="expandedKeys"
+          :default-expand-all="false"
           draggable
           :allow-drop="allowDrop"
           :loading="loading"
@@ -263,60 +260,36 @@ const treeProps = {
   isLeaf: data => data.type === 'subcategory'
 }
 
-// 加载节点数据
-const loadNode = async (node, resolve) => {
-  if (node.level === 0) {
-    // 加载根节点（学科）
-    try {
-      // 只在数据为空时才重新加载
-      if (questionStore.subjects.length === 0) {
-        await questionStore.loadData()
-      }
+// 树数据（预加载模式）
+const treeData = ref([])
 
-      // 使用从数据库获取的排序（已在后端按sort_order排序）
-      const orderedSubjects = [...questionStore.subjects]
+// 构建树数据
+const buildTreeData = () => {
+  const orderedSubjects = [...questionStore.subjects]
 
-      const formattedSubjects = orderedSubjects.map(subject => ({
-        id: subject.id,
-        label: subject.name,
-        icon: subjectIcons[subject.iconIndex || 0],
-        type: 'subject',
-        showInHistoryQuiz: subject.showInHistoryQuiz || false,
-        hasChildren: subject.subcategories && subject.subcategories.length > 0
-      }))
+  return orderedSubjects.map(subject => ({
+    id: subject.id,
+    label: subject.name,
+    icon: subjectIcons[subject.iconIndex || 0],
+    type: 'subject',
+    showInHistoryQuiz: subject.showInHistoryQuiz || false,
+    children: (subject.subcategories || []).map(subcategory => ({
+      id: subcategory.id,
+      label: subcategory.name,
+      icon: subjectIcons[subcategory.iconIndex || 0],
+      type: 'subcategory',
+      difficulty: subcategory.difficulty || 1,
+      subjectId: subject.id
+    }))
+  }))
+}
 
-      resolve(formattedSubjects)
-    } catch (error) {
-      console.error('加载学科失败:', error)
-      resolve([])
-    }
-  } else if (node.data.type === 'subject') {
-    // 加载学科的子节点（题库）
-    try {
-      const subjectId = node.data.id
-      const subject = questionStore.subjects.find(s => s.id === subjectId)
-      if (subject && subject.subcategories) {
-        // 使用从数据库获取的排序（已在后端按sort_order排序）
-        const orderedSubcategories = [...subject.subcategories]
-
-        const formattedSubcategories = orderedSubcategories.map(subcategory => ({
-          id: subcategory.id,
-          label: subcategory.name,
-          icon: subjectIcons[subcategory.iconIndex || 0],
-          type: 'subcategory',
-          difficulty: subcategory.difficulty || 1,
-          subjectId: subjectId,
-          hasChildren: false
-        }))
-        resolve(formattedSubcategories)
-      } else {
-        resolve([])
-      }
-    } catch (error) {
-      console.error('加载题库失败:', error)
-      resolve([])
-    }
+// 加载树数据
+const loadTreeData = async () => {
+  if (questionStore.subjects.length === 0) {
+    await questionStore.loadData()
   }
+  treeData.value = buildTreeData()
 }
 
 // 编辑状态
@@ -359,6 +332,7 @@ const refreshTree = async () => {
   loading.value = true
   try {
     await questionStore.loadData()
+    treeData.value = buildTreeData()
     // 强制刷新树组件
     treeVisible.value = false
     // 等待DOM更新
@@ -378,6 +352,11 @@ const refreshTree = async () => {
     loading.value = false
   }
 }
+
+// 组件挂载时加载树数据
+onMounted(async () => {
+  await loadTreeData()
+})
 
 // 添加学科
 const addSubject = () => {
@@ -401,6 +380,7 @@ const confirmAddSubject = async () => {
   } finally {
     // 无论成功还是失败，都重新加载数据并强制刷新树
     await questionStore.loadData()
+    treeData.value = buildTreeData()
     // 强制刷新树组件
     treeVisible.value = false
     // 等待DOM更新
@@ -446,6 +426,7 @@ const confirmAddSubcategory = async () => {
   } finally {
     // 无论成功还是失败，都重新加载数据并强制刷新树
     await questionStore.loadData()
+    treeData.value = buildTreeData()
     // 强制刷新树组件
     treeVisible.value = false
     // 等待DOM更新
@@ -513,6 +494,8 @@ const saveEdit = async () => {
     if (editingData.value && editingData.value.nodeRef) {
       editingData.value.nodeRef.isEditing = false
     }
+    // 更新树数据
+    treeData.value = buildTreeData()
     // 强制刷新树组件
     treeVisible.value = false
     // 等待DOM更新
@@ -650,6 +633,8 @@ const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
     }
   }
 
+  // 更新树数据
+  treeData.value = buildTreeData()
   ElMessage.success('排序调整成功')
 }
 
@@ -681,6 +666,7 @@ const deleteNode = async data => {
       } finally {
         // 无论成功还是失败，都重新加载数据并强制刷新树
         await questionStore.loadData()
+        treeData.value = buildTreeData()
         // 强制刷新树组件
         treeVisible.value = false
         // 等待DOM更新
@@ -730,10 +716,10 @@ onUnmounted(() => {
 
 .tree-container {
   min-height: 400px;
-  max-height: none;
-  height: auto;
+  max-height: calc(100vh - 280px);
   overflow-y: auto;
   background-color: #fafafa;
+  border: 1px solid #e4e7ed;
   border-radius: 8px;
 }
 

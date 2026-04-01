@@ -29,7 +29,7 @@ const knowledgePointMasteryTool = defineTool({
         const masterySQL = `
           SELECT 
             u.id as student_id,
-            u.name as student_name,
+            COALESCE(NULLIF(u.name, ''), u.student_id) as student_name,
             s.id as subject_id,
             s.name as subject_name,
             sc.id as subcategory_id,
@@ -205,7 +205,7 @@ const knowledgePointMasteryTool = defineTool({
       if (subcategoryId) {
         const detailSQL = `
           SELECT 
-            u.id, u.name, u.grade, u.class,
+            u.id, , u.grade, u.class,
             lp.mastery_level,
             lp.progress_percentage,
             lp.total_attempts,

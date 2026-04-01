@@ -117,14 +117,22 @@ function generateSystemPrompt() {
 
 ## 🔧 工具选择指南（重要！）
 
+### ⚠️ 优先级规则（严格按此顺序判断）
+1. **提到学生姓名** → 立即使用 \`query_student_stats\` 工具（无需先查询学科）
+2. **提到班级** → 使用 \`query_class_analysis\` 或 \`query_class_full_analysis\` 工具
+3. **提到学科名称** → 先使用 \`get_subject_list\` 获取学科ID
+4. **通用查询** → 根据问题关键词选择对应工具
+
 ### 题库相关查询
 - **"有哪些题库/学科？"** → 使用 \`get_subject_list\` 工具
 - **"XX学科详情分析"** → 使用 \`get_subject_detail\` 工具（需要学科ID）
 - **"XX学科有哪些题目？"** → 使用 \`get_subject_questions\` 工具
 - **"题目X的答案分析"** → 使用 \`get_question_answer_analysis\` 工具
 
-### 学生相关查询
+### 学生相关查询（最高优先级！）
 - **"学生XX的学习情况"** → 使用 \`query_student_stats\` 工具
+- **"分析一下 XX 同学"** → 使用 \`query_student_stats\` 工具
+- **"XX 同学这周/今天/本月的情况"** → 使用 \`query_student_stats\` 工具
 - **"学生XX的答题详情"** → 使用 \`get_student_answer_detail\` 工具
 - **"需要关注的学生"** → 使用 \`query_student_alerts\` 工具
 
@@ -134,8 +142,9 @@ function generateSystemPrompt() {
 
 ### 重要提示
 1. **不要猜测ID** - 如果用户只说"语文"、"数学"等学科名称，先调用 \`get_subject_list\` 获取学科ID
-2. **避免多工具并行** - 一次只调用一个工具，避免参数冲突
-3. **分步查询** - 复杂问题拆分为多个简单问题，逐步查询
+2. **识别学生姓名** - 如果用户提到具体学生姓名（如"郭梓阳"、"张三"），直接使用 \`query_student_stats\`，无需先查询学科
+3. **避免多工具并行** - 一次只调用一个工具，避免参数冲突
+4. **分步查询** - 复杂问题拆分为多个简单问题，逐步查询
 
 ---
 
@@ -191,6 +200,31 @@ function generateSystemPrompt() {
 
 ## 📝 输出格式规范(教育专业化表达)
 
+### ⚠️ 强制要求：必须生成图表
+**每次分析都必须包含至少一个图表**，使用以下格式：
+
+\`\`\`markdown
+### 📈 可视化分析
+
+\`\`\`vchart
+{
+  "type": "bar",
+  "data": [{
+    "id": "data1",
+    "values": [
+      { "x": "类别1", "y": 数值1 },
+      { "x": "类别2", "y": 数值2 }
+    ]
+  }],
+  "title": { "text": "图表标题" },
+  "axes": [
+    { "orient": "bottom", "title": "X轴标题" },
+    { "orient": "left", "title": "Y轴标题" }
+  ]
+}
+\`\`\`
+\`\`\`
+
 ### 1. 数据概览表格(简洁直观)
 \`\`\`markdown
 ### 📊 学生学习情况概览
@@ -208,7 +242,7 @@ function generateSystemPrompt() {
 \`\`\`markdown
 ### 📈 可视化分析
 
-\`\`\`json-chart
+\`\`\`vchart
 {
   "type": "bar",
   "data": [{
@@ -497,6 +531,8 @@ async function streamAgentResponse(agent, messages, onChunk) {
 
       onChunk({ type: 'thinking', message: '生成回答中...' })
 
+      console.log('[Agent] 开始第二次 API 调用（生成回答）')
+
       // 第二次调用:生成回答(流式 + 包含 usage)
       const stream = await agent.client.chat.completions.create({
         model: agent.modelId,
@@ -506,6 +542,8 @@ async function streamAgentResponse(agent, messages, onChunk) {
         stream: true,
         stream_options: { include_usage: true } // ⭐ 关键:包含 Token 使用统计
       })
+
+      console.log('[Agent] 流式响应已建立')
 
       let fullContent = ''
       for await (const chunk of stream) {
@@ -521,6 +559,9 @@ async function streamAgentResponse(agent, messages, onChunk) {
           tokenUsage.output += chunk.usage.completion_tokens || 0
         }
       }
+
+      console.log('[Agent] 流式响应完成，内容长度:', fullContent.length)
+      console.log('[Agent] 完整内容（前500字符）:', fullContent.substring(0, 500))
 
       onChunk({ type: 'done', tokens: tokenUsage })
       return { content: fullContent, tokens: tokenUsage }
@@ -538,6 +579,7 @@ async function streamAgentResponse(agent, messages, onChunk) {
     return { content: '', tokens: tokenUsage }
   } catch (error) {
     console.error('[Agent] 调用失败:', error)
+    console.error('[Agent] 错误堆栈:', error.stack)
     onChunk({ type: 'error', message: error.message || 'AI 调用失败' })
     throw error
   }

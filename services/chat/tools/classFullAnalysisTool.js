@@ -83,7 +83,9 @@ const classFullAnalysisTool = defineTool({
           // 2. TOP 5 学生
           db.query(
             `
-          SELECT u.name, u.points, 
+          SELECT 
+            COALESCE(NULLIF(u.name, ''), u.student_id) as name, 
+            u.points, 
             COUNT(DISTINCT ar.id) as sessions,
             ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2) as accuracy
           FROM users u
@@ -99,7 +101,8 @@ const classFullAnalysisTool = defineTool({
           // 3. 需关注学生（正确率<70% 或 答题<3次）
           db.query(
             `
-          SELECT u.name, 
+          SELECT 
+            COALESCE(NULLIF(u.name, ''), u.student_id) as name, 
             COUNT(DISTINCT ar.id) as sessions,
             ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2) as accuracy
           FROM users u
