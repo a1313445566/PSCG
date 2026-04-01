@@ -180,9 +180,25 @@ migrate_database() {
         log_warning "检测到数据库迁移脚本"
         log_info "正在执行数据库迁移..."
         
+        # 执行迁移脚本
         mysql -u root "$DB_NAME" < migrations/migrate_to_aittest.sql
         
-        log_success "数据库迁移完成"
+        if [ $? -eq 0 ]; then
+            log_success "数据库迁移完成"
+            
+            # 验证表是否创建成功
+            local tables_count=$(mysql -u root "$DB_NAME" -e "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema='$DB_NAME' AND table_name IN ('ai_models', 'chat_sessions', 'chat_messages', 'token_usage', 'cache_hits')" -s)
+            
+            if [ "$tables_count" -eq 5 ]; then
+                log_success "数据库表验证通过（5/5）"
+            else
+                log_warning "数据库表验证异常，实际创建 $tables_count 个表"
+            fi
+        else
+            log_error "数据库迁移失败！"
+            log_warning "请检查迁移脚本或手动执行迁移"
+            return 1
+        fi
     else
         log_info "无数据库迁移脚本，跳过"
     fi
