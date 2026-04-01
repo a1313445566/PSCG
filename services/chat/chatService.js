@@ -195,7 +195,7 @@ async function deleteSession(sessionId, adminId) {
 async function recordTokenUsage(
   adminId,
   sessionId,
-  modelId,
+  modelName,
   inputTokens,
   outputTokens,
   cached = false
@@ -207,14 +207,14 @@ async function recordTokenUsage(
 
   const sql = `
     INSERT INTO token_usage 
-    (admin_id, session_id, model_id, input_tokens, output_tokens, total_tokens, cost, cached, created_at)
+    (admin_id, session_id, model_name, input_tokens, output_tokens, total_tokens, cost, cached, created_at)
     VALUES (?, ?, ?, ?, ?, ?, ?, ?, NOW())
   `
 
   await db.run(sql, [
     adminId,
     sessionId,
-    modelId,
+    modelName,
     inputTokens,
     outputTokens,
     totalTokens,

@@ -44,7 +44,7 @@ const questionInfoTool = defineTool({
           COUNT(*) as total_attempts,
           SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_count,
           ROUND(SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as accuracy
-        FROM answer_records
+        FROM question_attempts
         WHERE question_id = ?
       `
 

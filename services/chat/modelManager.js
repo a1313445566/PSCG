@@ -18,10 +18,10 @@ function mapModelFields(dbModel) {
   return {
     ...dbModel,
     // 字段映射（兼容性处理）
-    base_url: dbModel.base_url,
-    api_key: dbModel.api_key,
-    is_default: dbModel.is_default || 0,
-    is_active: dbModel.is_active !== undefined ? dbModel.is_active : 1,
+    base_url: dbModel.api_url, // 数据库中是api_url，映射为base_url
+    api_key: dbModel.api_key_encrypted, // 数据库中是api_key_encrypted，映射为api_key
+    is_default: dbModel.is_primary || 0, // 数据库中是is_primary，映射为is_default
+    is_active: dbModel.is_enabled !== undefined ? dbModel.is_enabled : 1, // 数据库中是is_enabled，映射为is_active
     // 成本字段（可选）
     max_tokens: dbModel.max_tokens || 4096,
     temperature: dbModel.temperature || 0.7,
@@ -35,7 +35,7 @@ function mapModelFields(dbModel) {
  */
 function encryptApiKey(apiKey) {
   if (!apiKey) return apiKey
-  
+
   try {
     const algorithm = 'aes-256-cbc'
     // ✅ 使用与 adminAuth.js 相同的 JWT_SECRET 默认值
@@ -43,10 +43,10 @@ function encryptApiKey(apiKey) {
     const key = crypto.scryptSync(secret, 'salt', 32)
     const iv = crypto.randomBytes(16)
     const cipher = crypto.createCipheriv(algorithm, key, iv)
-    
+
     let encrypted = cipher.update(apiKey, 'utf8', 'hex')
     encrypted += cipher.final('hex')
-    
+
     return iv.toString('hex') + ':' + encrypted
   } catch (error) {
     console.error('[ModelManager] 加密失败:', error)
@@ -59,33 +59,33 @@ function encryptApiKey(apiKey) {
  */
 function decryptApiKey(encryptedKey) {
   if (!encryptedKey) return encryptedKey
-  
+
   try {
     const algorithm = 'aes-256-cbc'
     // ✅ 使用与 adminAuth.js 相同的 JWT_SECRET 默认值
     const secret = process.env.JWT_SECRET || 'pscg-admin-secret-key-change-in-production'
     const key = crypto.scryptSync(secret, 'salt', 32)
-    
+
     // ✅ 只按第一个冒号分割（加密数据可能包含冒号）
     const colonIndex = encryptedKey.indexOf(':')
     if (colonIndex === -1) {
       console.warn('[ModelManager] API Key 未加密或格式错误')
       return encryptedKey // 未加密
     }
-    
+
     const iv = Buffer.from(encryptedKey.substring(0, colonIndex), 'hex')
     const encrypted = encryptedKey.substring(colonIndex + 1)
     const decipher = crypto.createDecipheriv(algorithm, key, iv)
-    
+
     let decrypted = decipher.update(encrypted, 'hex', 'utf8')
     decrypted += decipher.final('utf8')
-    
+
     // ✅ 验证解密后的 API key 格式
     if (!decrypted || decrypted.length < 10) {
       console.error('[ModelManager] 解密后的 API Key 格式无效')
       return null
     }
-    
+
     return decrypted
   } catch (error) {
     console.error('[ModelManager] 解密失败:', error.message)
@@ -104,23 +104,23 @@ async function getModels(page = 1, limit = 12) {
 
   // 使用模板字符串拼接 SQL（避免 prepared statement 对 LIMIT/OFFSET 的限制）
   const sql = `
-    SELECT 
-      id, name, provider, 
-      base_url,
-      model_id, 
-      is_default,
-      is_active,
+    SELECT
+      id, name, provider,
+      api_url,
+      model_id,
+      is_primary,
+      is_enabled,
       IFNULL(max_tokens, 4096) as max_tokens,
       IFNULL(temperature, 0.7) as temperature,
       IFNULL(cost_per_1k_input, 0) as cost_per_1k_input,
       IFNULL(cost_per_1k_output, 0) as cost_per_1k_output,
-      config, 
+      config,
       created_at, updated_at
-    FROM ai_models 
-    ORDER BY is_default DESC, created_at DESC 
+    FROM ai_models
+    ORDER BY is_primary DESC, created_at DESC
     LIMIT ${safeLimit} OFFSET ${offset}
   `
-  
+
   const models = await db.query(sql)
 
   // 统计总数
@@ -150,13 +150,13 @@ async function getModel(modelId) {
   }
 
   const sql = `
-    SELECT 
+    SELECT
       *,
       IFNULL(max_tokens, 4096) as max_tokens,
       IFNULL(temperature, 0.7) as temperature,
       IFNULL(cost_per_1k_input, 0) as cost_per_1k_input,
       IFNULL(cost_per_1k_output, 0) as cost_per_1k_output
-    FROM ai_models 
+    FROM ai_models
     WHERE id = ?
   `
   const model = await db.get(sql, [modelId])
@@ -191,14 +191,14 @@ async function getDefaultModel() {
 
   // ✅ 使用数据库实际字段名
   const sql = `
-    SELECT 
+    SELECT
       *,
       IFNULL(max_tokens, 4096) as max_tokens,
       IFNULL(temperature, 0.7) as temperature,
       IFNULL(cost_per_1k_input, 0) as cost_per_1k_input,
       IFNULL(cost_per_1k_output, 0) as cost_per_1k_output
-    FROM ai_models 
-    WHERE is_default = 1 AND is_active = 1 
+    FROM ai_models
+    WHERE is_primary = 1 AND is_enabled = 1
     LIMIT 1
   `
   const model = await db.get(sql)
@@ -209,9 +209,15 @@ async function getDefaultModel() {
   const mappedModel = mapModelFields(model)
 
   // 解密 API Key
-  console.log('[ModelManager] getDefaultModel - 加密的 API Key (前30字符):', mappedModel.api_key?.substring(0, 30))
+  console.log(
+    '[ModelManager] getDefaultModel - 加密的 API Key (前30字符):',
+    mappedModel.api_key?.substring(0, 30)
+  )
   mappedModel.api_key = decryptApiKey(mappedModel.api_key)
-  console.log('[ModelManager] getDefaultModel - 解密后的 API Key (前20字符):', mappedModel.api_key?.substring(0, 20))
+  console.log(
+    '[ModelManager] getDefaultModel - 解密后的 API Key (前20字符):',
+    mappedModel.api_key?.substring(0, 20)
+  )
 
   // 保存缓存
   modelCache.set(cacheKey, {
@@ -248,15 +254,15 @@ async function saveModel(modelData) {
   if (id) {
     // 更新模型
     const sql = `
-      UPDATE ai_models SET 
-        name = ?, 
-        provider = ?, 
-        base_url = ?, 
-        api_key = ?, 
-        model_id = ?, 
+      UPDATE ai_models SET
+        name = ?,
+        provider = ?,
+        api_url = ?,
+        api_key_encrypted = ?,
+        model_id = ?,
         config = ?,
-        is_active = ?,
-        is_default = ?,
+        is_enabled = ?,
+        is_primary = ?,
         max_tokens = ?,
         temperature = ?,
         cost_per_1k_input = ?,
@@ -265,7 +271,11 @@ async function saveModel(modelData) {
       WHERE id = ?
     `
     await db.run(sql, [
-      name, provider, base_url, encryptedKey, model_id,
+      name,
+      provider,
+      base_url,
+      encryptedKey,
+      model_id,
       JSON.stringify(config || {}),
       is_active !== undefined ? is_active : 1,
       is_default !== undefined ? is_default : 0,
@@ -284,11 +294,15 @@ async function saveModel(modelData) {
   } else {
     // 添加模型
     const sql = `
-      INSERT INTO ai_models (name, provider, base_url, api_key, model_id, config, is_active, is_default, max_tokens, temperature, cost_per_1k_input, cost_per_1k_output)
+      INSERT INTO ai_models (name, provider, api_url, api_key_encrypted, model_id, config, is_enabled, is_primary, max_tokens, temperature, cost_per_1k_input, cost_per_1k_output)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `
     const result = await db.run(sql, [
-      name, provider, base_url, encryptedKey, model_id,
+      name,
+      provider,
+      base_url,
+      encryptedKey,
+      model_id,
       JSON.stringify(config || {}),
       is_active !== undefined ? is_active : 1,
       is_default !== undefined ? is_default : 0,
@@ -322,10 +336,10 @@ async function deleteModel(modelId) {
  */
 async function setDefaultModel(modelId) {
   // 清除所有默认
-  await db.run('UPDATE ai_models SET is_default = 0')
-  
+  await db.run('UPDATE ai_models SET is_primary = 0')
+
   // 设置新默认
-  await db.run('UPDATE ai_models SET is_default = 1 WHERE id = ?', [modelId])
+  await db.run('UPDATE ai_models SET is_primary = 1 WHERE id = ?', [modelId])
 
   // 清除缓存
   modelCache.delete('default_model')
@@ -351,11 +365,11 @@ async function testModelConnection(modelId) {
     // 简单的连接测试
     const testUrl = `${model.base_url}/models`
     console.log('[ModelManager] 测试 URL:', testUrl)
-    
+
     const response = await fetch(testUrl, {
       method: 'GET',
       headers: {
-        'Authorization': `Bearer ${model.api_key}`
+        Authorization: `Bearer ${model.api_key}`
       }
     })
 
@@ -368,16 +382,16 @@ async function testModelConnection(modelId) {
     } else {
       const errorText = await response.text()
       console.error('[ModelManager] 测试失败:', response.status, errorText)
-      return { 
-        success: false, 
+      return {
+        success: false,
         message: `连接失败: ${response.status} ${response.statusText}`,
         details: errorText
       }
     }
   } catch (error) {
     console.error('[ModelManager] 连接测试异常:', error)
-    return { 
-      success: false, 
+    return {
+      success: false,
       message: `连接异常: ${error.message}`,
       details: error.stack
     }
@@ -402,10 +416,10 @@ async function calculateModelCost(modelId, inputTokens, outputTokens) {
  */
 async function getModelStats() {
   const totalSQL = 'SELECT COUNT(*) as total FROM ai_models'
-  
+
   // ✅ 使用数据库实际字段名
-  const activeSQL = 'SELECT COUNT(*) as active FROM ai_models WHERE is_active = 1'
-  const defaultSQL = 'SELECT name FROM ai_models WHERE is_default = 1 LIMIT 1'
+  const activeSQL = 'SELECT COUNT(*) as active FROM ai_models WHERE is_enabled = 1'
+  const defaultSQL = 'SELECT name FROM ai_models WHERE is_primary = 1 LIMIT 1'
 
   const [total, active, defaultModel] = await Promise.all([
     db.get(totalSQL),

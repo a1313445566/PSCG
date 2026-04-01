@@ -8,6 +8,40 @@ const { z } = require('zod')
 const { defineTool } = require('./toolUtils')
 const db = require('../../database')
 
+// 缓存配置
+const analysisCache = new Map()
+const CACHE_TTL = 5 * 60 * 1000 // 5分钟缓存
+
+/**
+ * 生成缓存键
+ */
+function getCacheKey(grade, classNum) {
+  return `class_analysis:${grade}:${classNum}`
+}
+
+/**
+ * 从缓存获取数据
+ */
+function getFromCache(key) {
+  const cached = analysisCache.get(key)
+  if (cached && Date.now() < cached.expiry) {
+    console.log(`[classFullAnalysisTool] 命中缓存: ${key}`)
+    return cached.data
+  }
+  return null
+}
+
+/**
+ * 设置缓存数据
+ */
+function setToCache(key, data) {
+  analysisCache.set(key, {
+    data,
+    expiry: Date.now() + CACHE_TTL
+  })
+  console.log(`[classFullAnalysisTool] 已缓存: ${key}`)
+}
+
 const classFullAnalysisTool = defineTool({
   name: 'query_class_full_analysis',
   description: '班级全面分析。返回：学生统计、TOP5学生、需关注学生、学科表现、高频错题。',
@@ -18,6 +52,14 @@ const classFullAnalysisTool = defineTool({
   handler: async args => {
     try {
       const { grade, classNum } = args
+
+      // 检查缓存
+      const cacheKey = getCacheKey(grade, classNum)
+      const cachedData = getFromCache(cacheKey)
+      
+      if (cachedData) {
+        return cachedData
+      }
 
       // 并行查询所有数据
       const [basicStats, topStudents, weakStudents, subjectPerf, topWrong, accuracyDist] =
@@ -141,7 +183,7 @@ const classFullAnalysisTool = defineTool({
         ])
 
       // 压缩返回数据
-      return JSON.stringify({
+      const result = JSON.stringify({
         success: true,
         data: {
           basic: {
@@ -157,6 +199,11 @@ const classFullAnalysisTool = defineTool({
           distribution: accuracyDist || []
         }
       })
+
+      // 存入缓存
+      setToCache(cacheKey, result)
+
+      return result
     } catch (error) {
       console.error('[classFullAnalysisTool] 查询失败:', error)
       return JSON.stringify({ success: false, error: error.message })

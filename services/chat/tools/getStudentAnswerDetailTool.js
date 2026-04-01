@@ -35,16 +35,16 @@ const getStudentAnswerDetailTool = defineTool({
       }
 
       // 构建查询条件
-      let whereClause = 'WHERE ar.user_id = ?'
+      let whereClause = 'WHERE qa.user_id = ?'
       const params = [studentId]
 
       if (questionId) {
-        whereClause += ' AND ar.question_id = ?'
+        whereClause += ' AND qa.question_id = ?'
         params.push(questionId)
       }
 
       if (subjectId) {
-        whereClause += ' AND ar.subject_id = ?'
+        whereClause += ' AND qa.subject_id = ?'
         params.push(subjectId)
       }
 
@@ -53,22 +53,22 @@ const getStudentAnswerDetailTool = defineTool({
       // 查询答题记录
       const answerRecords = await db.query(`
         SELECT 
-          ar.id as record_id,
-          ar.question_id,
+          qa.id as record_id,
+          qa.question_id,
           q.title as question_title,
           q.difficulty,
-          ar.subject_id,
+          qa.subject_id,
           s.name as subject_name,
-          ar.selected_answer,
+          qa.user_answer as selected_answer,
           q.answer as correct_answer,
-          ar.is_correct,
-          ar.time_spent,
-          ar.created_at as answer_time
-        FROM answer_records ar
-        LEFT JOIN questions q ON ar.question_id = q.id
-        LEFT JOIN subjects s ON ar.subject_id = s.id
-        ${whereClause}
-        ORDER BY ar.created_at DESC
+          qa.is_correct,
+          qa.time_spent,
+          qa.created_at as answer_time
+        FROM question_attempts qa
+        LEFT JOIN questions q ON qa.question_id = q.id
+        LEFT JOIN subjects s ON qa.subject_id = s.id
+        ${whereClause.replace(/ar\./g, 'qa.')}
+        ORDER BY qa.created_at DESC
         LIMIT ?
       `, params)
 
@@ -76,12 +76,12 @@ const getStudentAnswerDetailTool = defineTool({
       const overviewSQL = `
         SELECT 
           COUNT(*) as total_attempts,
-          SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) as correct_count,
-          ROUND(SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as accuracy,
-          ROUND(AVG(ar.time_spent), 2) as avg_time
-        FROM answer_records ar
-        ${whereClause.replace('LIMIT ?', '')
-      }`
+          SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) as correct_count,
+          ROUND(SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as accuracy,
+          ROUND(AVG(qa.time_spent), 2) as avg_time
+        FROM question_attempts qa
+        ${whereClause.replace(/ar\./g, 'qa.').replace('LIMIT ?', '')}
+      `
 
       const overview = await db.get(overviewSQL, params.slice(0, -1))
 

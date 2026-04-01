@@ -604,9 +604,9 @@ async function startServer() {
       }
     })
 
-    server.timeout = 30000
-    server.keepAliveTimeout = 55000
-    server.headersTimeout = 56000
+    server.timeout = 120000
+    server.keepAliveTimeout = 125000
+    server.headersTimeout = 126000
   } catch (error) {
     console.error('服务器启动失败:', error)
     process.exit(1)

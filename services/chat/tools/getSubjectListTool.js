@@ -24,8 +24,8 @@ const getSubjectListTool = defineTool({
           COUNT(DISTINCT ar.id) as total_attempts,
           COALESCE(
             ROUND(
-              SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / 
-              NULLIF(COUNT(ar.id), 0), 
+              SUM(ar.correct_count) * 100.0 / 
+              NULLIF(SUM(ar.total_questions), 0), 
               2
             ), 
             0

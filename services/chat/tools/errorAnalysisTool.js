@@ -19,19 +19,19 @@ const errorAnalysisTool = defineTool({
           q.subject_id,
           s.name as subject_name,
           q.difficulty,
-          COUNT(DISTINCT ar.user_id) as error_count,
+          COUNT(DISTINCT qa.user_id) as error_count,
           GROUP_CONCAT(DISTINCT u.name) as error_students
         FROM questions q
-        JOIN answer_records ar ON q.id = ar.question_id
-        JOIN users u ON ar.user_id = u.id
+        JOIN question_attempts qa ON q.id = qa.question_id
+        JOIN users u ON qa.user_id = u.id
         JOIN subjects s ON q.subject_id = s.id
-        WHERE ar.is_correct = 0
+        WHERE qa.is_correct = 0
       `
 
       const params = []
 
       if (studentId) {
-        sql += ' AND ar.user_id = ?'
+        sql += ' AND qa.user_id = ?'
         params.push(studentId)
       }
 

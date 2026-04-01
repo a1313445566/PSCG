@@ -312,7 +312,7 @@ router.post('/sessions/:id/messages', adminAuth, async (req, res) => {
       await chatService.recordTokenUsage(
         adminId,
         sessionId,
-        model.id,
+        model.name,
         tokenUsage.input,
         tokenUsage.output
       )

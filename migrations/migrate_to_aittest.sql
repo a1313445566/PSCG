@@ -8,244 +8,277 @@
 
 USE pscg_db;
 
--- ==================== 1. AI 模型配置表 ====================
+-- 创建存储过程来执行迁移
+DELIMITER //
 
--- 检查表是否存在
-SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables 
-    WHERE table_schema = 'pscg_db' AND table_name = 'ai_models');
+CREATE PROCEDURE migrate_to_aittest()
+BEGIN
+    -- ==================== 1. 管理员凭证表 ====================
+    -- 检查表是否存在
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'admin_credentials');
 
--- 如果表不存在则创建
-SET @create_ai_models = IF(@table_exists = 0,
-    'CREATE TABLE ai_models (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        name VARCHAR(50) NOT NULL COMMENT ''模型名称'',
-        provider VARCHAR(50) NOT NULL COMMENT ''提供商（openai/anthropic等）'',
-        base_url VARCHAR(255) NOT NULL COMMENT ''API 基础地址'',
-        api_key TEXT COMMENT ''加密后的 API Key'',
-        model_id VARCHAR(100) NOT NULL COMMENT ''模型标识'',
-        is_default TINYINT(1) DEFAULT 0 COMMENT ''是否默认模型'',
-        is_active TINYINT(1) DEFAULT 1 COMMENT ''是否启用'',
-        max_tokens INT DEFAULT 4096 COMMENT ''最大 Token'',
-        temperature DECIMAL(3,2) DEFAULT 0.7 COMMENT ''温度参数'',
-        cost_per_1k_input DECIMAL(10,6) DEFAULT 0.0000 COMMENT ''输入成本/1k tokens'',
-        cost_per_1k_output DECIMAL(10,6) DEFAULT 0.0000 COMMENT ''输出成本/1k tokens'',
-        config JSON COMMENT ''其他配置'',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_provider (provider),
-        INDEX idx_is_default (is_default),
-        INDEX idx_is_active (is_active)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=''AI模型配置表''',
-    'SELECT ''ai_models 表已存在'' AS message'
-);
+    -- 如果表不存在则创建
+    IF @table_exists = 0 THEN
+        CREATE TABLE admin_credentials (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            username VARCHAR(50) NOT NULL UNIQUE COMMENT '用户名',
+            password VARCHAR(255) NOT NULL COMMENT '密码',
+            name VARCHAR(100) COMMENT '管理员姓名',
+            role ENUM('admin', 'operator') DEFAULT 'operator' COMMENT '角色',
+            is_active TINYINT(1) DEFAULT 1 COMMENT '是否激活',
+            last_login_at DATETIME COMMENT '最后登录时间',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_username (username),
+            INDEX idx_is_active (is_active)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='管理员凭证表';
+        SELECT 'admin_credentials 表创建成功' AS message;
+    ELSE
+        SELECT 'admin_credentials 表已存在' AS message;
+    END IF;
 
-PREPARE stmt FROM @create_ai_models;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+    -- ==================== 2. AI 模型配置表 ====================
+    -- 检查表是否存在
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'ai_models');
 
--- ==================== 2. 聊天会话表 ====================
+    -- 如果表不存在则创建
+    IF @table_exists = 0 THEN
+        CREATE TABLE ai_models (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            name VARCHAR(50) NOT NULL COMMENT '模型名称',
+            provider VARCHAR(50) NOT NULL COMMENT '提供商（openai/anthropic等）',
+            base_url VARCHAR(255) NOT NULL COMMENT 'API 基础地址',
+            api_key TEXT COMMENT '加密后的 API Key',
+            model_id VARCHAR(100) NOT NULL COMMENT '模型标识',
+            is_default TINYINT(1) DEFAULT 0 COMMENT '是否默认模型',
+            is_active TINYINT(1) DEFAULT 1 COMMENT '是否启用',
+            max_tokens INT DEFAULT 4096 COMMENT '最大 Token',
+            temperature DECIMAL(3,2) DEFAULT 0.7 COMMENT '温度参数',
+            cost_per_1k_input DECIMAL(10,6) DEFAULT 0.0000 COMMENT '输入成本/1k tokens',
+            cost_per_1k_output DECIMAL(10,6) DEFAULT 0.0000 COMMENT '输出成本/1k tokens',
+            config JSON COMMENT '其他配置',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_provider (provider),
+            INDEX idx_is_default (is_default),
+            INDEX idx_is_active (is_active)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='AI模型配置表';
+        SELECT 'ai_models 表创建成功' AS message;
+    ELSE
+        SELECT 'ai_models 表已存在' AS message;
+    END IF;
 
-SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables 
-    WHERE table_schema = 'pscg_db' AND table_name = 'chat_sessions');
+    -- ==================== 3. 聊天会话表 ====================
+    -- 检查表是否存在
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'chat_sessions');
 
-SET @create_chat_sessions = IF(@table_exists = 0,
-    'CREATE TABLE chat_sessions (
-        id VARCHAR(36) PRIMARY KEY COMMENT ''会话 UUID'',
-        admin_id INT NOT NULL COMMENT ''管理员ID'',
-        model_id INT COMMENT ''使用的模型ID'',
-        title VARCHAR(100) COMMENT ''会话标题'',
-        total_tokens INT DEFAULT 0 COMMENT ''总 Token 数'',
-        total_cost DECIMAL(10,4) DEFAULT 0.0000 COMMENT ''总成本'',
-        message_count INT DEFAULT 0 COMMENT ''消息数量'',
-        status ENUM(''active'', ''archived'') DEFAULT ''active'' COMMENT ''状态'',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        expires_at DATETIME COMMENT ''过期时间'',
-        INDEX idx_admin_id (admin_id),
-        INDEX idx_model_id (model_id),
-        INDEX idx_status (status),
-        INDEX idx_created_at (created_at),
-        FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE,
-        FOREIGN KEY (model_id) REFERENCES ai_models(id) ON DELETE SET NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=''聊天会话表''',
-    'SELECT ''chat_sessions 表已存在'' AS message'
-);
+    -- 如果表不存在则创建
+    IF @table_exists = 0 THEN
+        CREATE TABLE chat_sessions (
+            id VARCHAR(36) PRIMARY KEY COMMENT '会话 UUID',
+            admin_id INT NOT NULL COMMENT '管理员ID',
+            model_id INT COMMENT '使用的模型ID',
+            title VARCHAR(100) COMMENT '会话标题',
+            total_tokens INT DEFAULT 0 COMMENT '总 Token 数',
+            total_cost DECIMAL(10,4) DEFAULT 0.0000 COMMENT '总成本',
+            message_count INT DEFAULT 0 COMMENT '消息数量',
+            status ENUM('active', 'archived') DEFAULT 'active' COMMENT '状态',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            expires_at DATETIME COMMENT '过期时间',
+            INDEX idx_admin_id (admin_id),
+            INDEX idx_model_id (model_id),
+            INDEX idx_status (status),
+            INDEX idx_created_at (created_at),
+            FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE,
+            FOREIGN KEY (model_id) REFERENCES ai_models(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='聊天会话表';
+        SELECT 'chat_sessions 表创建成功' AS message;
+    ELSE
+        SELECT 'chat_sessions 表已存在' AS message;
+    END IF;
 
-PREPARE stmt FROM @create_chat_sessions;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+    -- ==================== 4. 聊天消息表 ====================
+    -- 检查表是否存在
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'chat_messages');
 
--- ==================== 3. 聊天消息表 ====================
+    -- 如果表不存在则创建
+    IF @table_exists = 0 THEN
+        CREATE TABLE chat_messages (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            session_id VARCHAR(36) NOT NULL COMMENT '会话ID',
+            admin_id INT NOT NULL COMMENT '管理员ID',
+            model_id INT COMMENT '模型ID',
+            role ENUM('user', 'assistant', 'system') NOT NULL COMMENT '角色',
+            content TEXT NOT NULL COMMENT '消息内容',
+            tokens INT DEFAULT 0 COMMENT 'Token 数量',
+            tools_used JSON COMMENT '使用的工具',
+            query_result JSON COMMENT '查询结果',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_session_id (session_id),
+            INDEX idx_admin_id (admin_id),
+            INDEX idx_model_id (model_id),
+            INDEX idx_created_at (created_at),
+            FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
+            FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE,
+            FOREIGN KEY (model_id) REFERENCES ai_models(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='聊天消息表';
+        SELECT 'chat_messages 表创建成功' AS message;
+    ELSE
+        SELECT 'chat_messages 表已存在' AS message;
+    END IF;
 
-SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables 
-    WHERE table_schema = 'pscg_db' AND table_name = 'chat_messages');
+    -- ==================== 5. Token 使用记录表 ====================
+    -- 检查表是否存在
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'token_usage');
 
-SET @create_chat_messages = IF(@table_exists = 0,
-    'CREATE TABLE chat_messages (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        session_id VARCHAR(36) NOT NULL COMMENT ''会话ID'',
-        admin_id INT NOT NULL COMMENT ''管理员ID'',
-        model_id INT COMMENT ''模型ID'',
-        role ENUM(''user'', ''assistant'', ''system'') NOT NULL COMMENT ''角色'',
-        content TEXT NOT NULL COMMENT ''消息内容'',
-        tokens INT DEFAULT 0 COMMENT ''Token 数量'',
-        tools_used JSON COMMENT ''使用的工具'',
-        query_result JSON COMMENT ''查询结果'',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_session_id (session_id),
-        INDEX idx_admin_id (admin_id),
-        INDEX idx_model_id (model_id),
-        INDEX idx_created_at (created_at),
-        FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE CASCADE,
-        FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE,
-        FOREIGN KEY (model_id) REFERENCES ai_models(id) ON DELETE SET NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=''聊天消息表''',
-    'SELECT ''chat_messages 表已存在'' AS message'
-);
+    -- 如果表不存在则创建
+    IF @table_exists = 0 THEN
+        CREATE TABLE token_usage (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            admin_id INT NOT NULL COMMENT '管理员ID',
+            session_id VARCHAR(36) COMMENT '会话ID',
+            model_id INT COMMENT '模型ID',
+            input_tokens INT DEFAULT 0 COMMENT '输入 Token',
+            output_tokens INT DEFAULT 0 COMMENT '输出 Token',
+            total_tokens INT DEFAULT 0 COMMENT '总 Token',
+            cost DECIMAL(10,6) DEFAULT 0.000000 COMMENT '成本',
+            query_type VARCHAR(50) COMMENT '查询类型',
+            cached TINYINT(1) DEFAULT 0 COMMENT '是否命中缓存',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_admin_id (admin_id),
+            INDEX idx_session_id (session_id),
+            INDEX idx_model_id (model_id),
+            INDEX idx_created_at (created_at),
+            FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE,
+            FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE SET NULL,
+            FOREIGN KEY (model_id) REFERENCES ai_models(id) ON DELETE SET NULL
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='Token使用记录表';
+        SELECT 'token_usage 表创建成功' AS message;
+    ELSE
+        SELECT 'token_usage 表已存在' AS message;
+    END IF;
 
-PREPARE stmt FROM @create_chat_messages;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+    -- ==================== 6. 缓存命中记录表 ====================
+    -- 检查表是否存在
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'cache_hits');
 
--- ==================== 4. Token 使用记录表 ====================
+    -- 如果表不存在则创建
+    IF @table_exists = 0 THEN
+        CREATE TABLE cache_hits (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            query_hash VARCHAR(64) NOT NULL COMMENT '查询哈希',
+            query_text TEXT NOT NULL COMMENT '查询文本',
+            response_hash VARCHAR(64) NOT NULL COMMENT '响应哈希',
+            hit_count INT DEFAULT 1 COMMENT '命中次数',
+            tokens_saved INT DEFAULT 0 COMMENT '节省的 Token',
+            created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+            last_hit_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_query_hash (query_hash),
+            INDEX idx_hit_count (hit_count)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT='缓存命中记录表';
+        SELECT 'cache_hits 表创建成功' AS message;
+    ELSE
+        SELECT 'cache_hits 表已存在' AS message;
+    END IF;
 
-SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables 
-    WHERE table_schema = 'pscg_db' AND table_name = 'token_usage');
+    -- ==================== 7. 学科表字段扩展 ====================
+    -- 检查并添加 show_in_history_quiz 字段
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'subjects');
 
-SET @create_token_usage = IF(@table_exists = 0,
-    'CREATE TABLE token_usage (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        admin_id INT NOT NULL COMMENT ''管理员ID'',
-        session_id VARCHAR(36) COMMENT ''会话ID'',
-        model_id INT COMMENT ''模型ID'',
-        input_tokens INT DEFAULT 0 COMMENT ''输入 Token'',
-        output_tokens INT DEFAULT 0 COMMENT ''输出 Token'',
-        total_tokens INT DEFAULT 0 COMMENT ''总 Token'',
-        cost DECIMAL(10,6) DEFAULT 0.000000 COMMENT ''成本'',
-        query_type VARCHAR(50) COMMENT ''查询类型'',
-        cached TINYINT(1) DEFAULT 0 COMMENT ''是否命中缓存'',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        INDEX idx_admin_id (admin_id),
-        INDEX idx_session_id (session_id),
-        INDEX idx_model_id (model_id),
-        INDEX idx_created_at (created_at),
-        FOREIGN KEY (admin_id) REFERENCES admin_credentials(id) ON DELETE CASCADE,
-        FOREIGN KEY (session_id) REFERENCES chat_sessions(id) ON DELETE SET NULL,
-        FOREIGN KEY (model_id) REFERENCES ai_models(id) ON DELETE SET NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=''Token使用记录表''',
-    'SELECT ''token_usage 表已存在'' AS message'
-);
+    IF @table_exists > 0 THEN
+        SET @column_exists = (SELECT COUNT(*) FROM information_schema.columns
+            WHERE table_schema = 'pscg_db'
+            AND table_name = 'subjects'
+            AND column_name = 'show_in_history_quiz');
 
-PREPARE stmt FROM @create_token_usage;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+        IF @column_exists = 0 THEN
+            ALTER TABLE subjects ADD COLUMN show_in_history_quiz TINYINT(1) DEFAULT 0 COMMENT '是否在历史测验中显示';
+            SELECT 'show_in_history_quiz 字段添加成功' AS message;
+        ELSE
+            SELECT 'show_in_history_quiz 字段已存在' AS message;
+        END IF;
+    ELSE
+        SELECT 'subjects 表不存在，跳过字段添加' AS message;
+    END IF;
 
--- ==================== 5. 缓存命中记录表 ====================
+    -- ==================== 8. 性能优化索引 ====================
+    -- 检查并添加 questions 表索引
+    SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables
+        WHERE table_schema = 'pscg_db' AND table_name = 'questions');
 
-SET @table_exists = (SELECT COUNT(*) FROM information_schema.tables 
-    WHERE table_schema = 'pscg_db' AND table_name = 'cache_hits');
+    IF @table_exists > 0 THEN
+        -- 检查并添加 questions 表 type 索引
+        SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+            WHERE table_schema = 'pscg_db'
+            AND table_name = 'questions'
+            AND index_name = 'idx_questions_type');
 
-SET @create_cache_hits = IF(@table_exists = 0,
-    'CREATE TABLE cache_hits (
-        id INT PRIMARY KEY AUTO_INCREMENT,
-        query_hash VARCHAR(64) NOT NULL COMMENT ''查询哈希'',
-        query_text TEXT NOT NULL COMMENT ''查询文本'',
-        response_hash VARCHAR(64) NOT NULL COMMENT ''响应哈希'',
-        hit_count INT DEFAULT 1 COMMENT ''命中次数'',
-        tokens_saved INT DEFAULT 0 COMMENT ''节省的 Token'',
-        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-        last_hit_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        UNIQUE INDEX idx_query_hash (query_hash),
-        INDEX idx_hit_count (hit_count)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci COMMENT=''缓存命中记录表''',
-    'SELECT ''cache_hits 表已存在'' AS message'
-);
+        IF @index_exists = 0 THEN
+            CREATE INDEX idx_questions_type ON questions (type);
+            SELECT 'idx_questions_type 索引创建成功' AS message;
+        ELSE
+            SELECT 'idx_questions_type 索引已存在' AS message;
+        END IF;
 
-PREPARE stmt FROM @create_cache_hits;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+        -- 检查并添加 questions 表 created_at 索引
+        SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+            WHERE table_schema = 'pscg_db'
+            AND table_name = 'questions'
+            AND index_name = 'idx_questions_created');
 
--- ==================== 6. 学科表字段扩展 ====================
+        IF @index_exists = 0 THEN
+            CREATE INDEX idx_questions_created ON questions (created_at);
+            SELECT 'idx_questions_created 索引创建成功' AS message;
+        ELSE
+            SELECT 'idx_questions_created 索引已存在' AS message;
+        END IF;
 
--- 检查并添加 show_in_history_quiz 字段
-SET @column_exists = (SELECT COUNT(*) FROM information_schema.columns 
-    WHERE table_schema = 'pscg_db' 
-    AND table_name = 'subjects' 
-    AND column_name = 'show_in_history_quiz');
+        -- 检查并添加 questions 表复合索引
+        SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics
+            WHERE table_schema = 'pscg_db'
+            AND table_name = 'questions'
+            AND index_name = 'idx_questions_filter');
 
-SET @add_column = IF(@column_exists = 0,
-    'ALTER TABLE subjects ADD COLUMN show_in_history_quiz TINYINT(1) DEFAULT 0 COMMENT ''是否在历史测验中显示''',
-    'SELECT ''show_in_history_quiz 字段已存在'' AS message'
-);
+        IF @index_exists = 0 THEN
+            CREATE INDEX idx_questions_filter ON questions (subject_id, subcategory_id, type);
+            SELECT 'idx_questions_filter 索引创建成功' AS message;
+        ELSE
+            SELECT 'idx_questions_filter 索引已存在' AS message;
+        END IF;
+    ELSE
+        SELECT 'questions 表不存在，跳过索引添加' AS message;
+    END IF;
 
-PREPARE stmt FROM @add_column;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+    -- ==================== 9. 插入默认 AI 模型配置 ====================
+    -- 检查是否有默认模型
+    SET @model_count = (SELECT COUNT(*) FROM ai_models WHERE is_default = 1);
 
--- ==================== 7. 性能优化索引 ====================
+    -- 如果没有默认模型，插入一个示例配置（需要后续手动配置 API Key）
+    IF @model_count = 0 THEN
+        INSERT INTO ai_models (name, provider, base_url, model_id, is_default, is_active, max_tokens, temperature)
+         VALUES ('GPT-3.5 Turbo', 'openai', 'https://api.openai.com/v1', 'gpt-3.5-turbo', 1, 0, 4096, 0.7);
+        SELECT '默认模型配置插入成功' AS message;
+    ELSE
+        SELECT '默认模型已存在' AS message;
+    END IF;
 
--- 检查并添加 questions 表索引
-SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
-    WHERE table_schema = 'pscg_db' 
-    AND table_name = 'questions' 
-    AND index_name = 'idx_questions_type');
+    -- ==================== 完成 ====================
+    SELECT '✅ AItest 分支数据库迁移完成！' AS message;
+    SELECT '⚠️  请在后台配置 AI 模型的 API Key' AS reminder;
+END //
 
-SET @add_index = IF(@index_exists = 0,
-    'CREATE INDEX idx_questions_type ON questions (type)',
-    'SELECT ''idx_questions_type 索引已存在'' AS message'
-);
+DELIMITER ;
 
-PREPARE stmt FROM @add_index;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+-- 执行迁移存储过程
+CALL migrate_to_aittest();
 
--- 检查并添加 idx_questions_created 索引
-SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
-    WHERE table_schema = 'pscg_db' 
-    AND table_name = 'questions' 
-    AND index_name = 'idx_questions_created');
-
-SET @add_index = IF(@index_exists = 0,
-    'CREATE INDEX idx_questions_created ON questions (created_at)',
-    'SELECT ''idx_questions_created 索引已存在'' AS message'
-);
-
-PREPARE stmt FROM @add_index;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
--- 检查并添加 idx_questions_filter 复合索引
-SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
-    WHERE table_schema = 'pscg_db' 
-    AND table_name = 'questions' 
-    AND index_name = 'idx_questions_filter');
-
-SET @add_index = IF(@index_exists = 0,
-    'CREATE INDEX idx_questions_filter ON questions (subject_id, subcategory_id, type)',
-    'SELECT ''idx_questions_filter 索引已存在'' AS message'
-);
-
-PREPARE stmt FROM @add_index;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
--- ==================== 8. 插入默认 AI 模型配置 ====================
-
--- 检查是否有默认模型
-SET @model_count = (SELECT COUNT(*) FROM ai_models WHERE is_default = 1);
-
--- 如果没有默认模型，插入一个示例配置（需要后续手动配置 API Key）
-SET @insert_default = IF(@model_count = 0,
-    'INSERT INTO ai_models (name, provider, base_url, model_id, is_default, is_active, max_tokens, temperature) 
-     VALUES (''GPT-3.5 Turbo'', ''openai'', ''https://api.openai.com/v1'', ''gpt-3.5-turbo'', 1, 0, 4096, 0.7)',
-    'SELECT ''默认模型已存在'' AS message'
-);
-
-PREPARE stmt FROM @insert_default;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
-
--- ==================== 完成 ====================
-
-SELECT '✅ AItest 分支数据库迁移完成！' AS message;
-SELECT '⚠️  请在后台配置 AI 模型的 API Key' AS reminder;
+-- 删除存储过程
+DROP PROCEDURE IF EXISTS migrate_to_aittest;

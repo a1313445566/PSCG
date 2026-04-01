@@ -25,10 +25,9 @@ const getSubjectDetailTool = defineTool({
           COUNT(DISTINCT q.id) as total_questions,
           COUNT(DISTINCT ar.user_id) as student_count,
           COUNT(DISTINCT ar.id) as total_attempts,
-          ROUND(
-            SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / 
-            NULLIF(COUNT(ar.id), 0), 
-            2
+          COALESCE(
+            ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2),
+            0
           ) as avg_accuracy
         FROM subjects s
         LEFT JOIN questions q ON s.id = q.subject_id
@@ -70,12 +69,12 @@ const getSubjectDetailTool = defineTool({
         SELECT 
           u.id as student_id,
           u.username as student_name,
-          COUNT(ar.id) as attempt_count,
-          ROUND(SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(ar.id), 2) as accuracy,
+          COUNT(DISTINCT ar.id) as attempt_count,
+          COALESCE(ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2), 0) as accuracy,
           CASE 
-            WHEN SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(ar.id) >= 90 THEN '优秀'
-            WHEN SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(ar.id) >= 70 THEN '良好'
-            WHEN SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(ar.id) >= 60 THEN '及格'
+            WHEN COALESCE(ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2), 0) >= 90 THEN '优秀'
+            WHEN COALESCE(ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2), 0) >= 70 THEN '良好'
+            WHEN COALESCE(ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2), 0) >= 60 THEN '及格'
             ELSE '需加强'
           END as performance_level
         FROM users u
@@ -92,11 +91,11 @@ const getSubjectDetailTool = defineTool({
           q.id as question_id,
           q.title,
           q.difficulty,
-          COUNT(ar.id) as attempt_count,
-          SUM(CASE WHEN ar.is_correct = 0 THEN 1 ELSE 0 END) as wrong_count,
-          ROUND(SUM(CASE WHEN ar.is_correct = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(ar.id), 2) as wrong_rate
+          COUNT(qa.id) as attempt_count,
+          SUM(CASE WHEN qa.is_correct = 0 THEN 1 ELSE 0 END) as wrong_count,
+          ROUND(SUM(CASE WHEN qa.is_correct = 0 THEN 1 ELSE 0 END) * 100.0 / COUNT(qa.id), 2) as wrong_rate
         FROM questions q
-        JOIN answer_records ar ON q.id = ar.question_id
+        JOIN question_attempts qa ON q.id = qa.question_id
         WHERE q.subject_id = ?
         GROUP BY q.id, q.title, q.difficulty
         HAVING wrong_count > 0

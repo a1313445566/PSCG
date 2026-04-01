@@ -17,11 +17,11 @@ const weakPointsTool = defineTool({
         SELECT 
           q.difficulty,
           COUNT(*) as total_attempts,
-          SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) as correct_count,
-          ROUND(SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as accuracy
-        FROM answer_records ar
-        JOIN questions q ON ar.question_id = q.id
-        WHERE ar.user_id = ?
+          SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) as correct_count,
+          ROUND(SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as accuracy
+        FROM question_attempts qa
+        JOIN questions q ON qa.question_id = q.id
+        WHERE qa.user_id = ?
         ${subjectId ? ' AND q.subject_id = ?' : ''}
         GROUP BY q.difficulty
         ORDER BY q.difficulty
@@ -38,10 +38,10 @@ const weakPointsTool = defineTool({
           q.difficulty,
           s.name as subject_name,
           COUNT(*) as error_count
-        FROM answer_records ar
-        JOIN questions q ON ar.question_id = q.id
+        FROM question_attempts qa
+        JOIN questions q ON qa.question_id = q.id
         JOIN subjects s ON q.subject_id = s.id
-        WHERE ar.user_id = ? AND ar.is_correct = 0
+        WHERE qa.user_id = ? AND qa.is_correct = 0
         ${subjectId ? ' AND q.subject_id = ?' : ''}
         GROUP BY q.id, q.title, q.difficulty, s.name
         ORDER BY error_count DESC

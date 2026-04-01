@@ -99,12 +99,12 @@ router.get('/backup', async (req, res) => {
         if (requestedTypes.length === 0 || requestedTypes.includes('leaderboard')) {
           // 排行榜数据可以从answer_records中计算
           backupData.data.leaderboard = await db.all(`
-            SELECT 
-              u.id, 
-              u.student_id, 
-              u.name, 
-              u.grade, 
-              u.class, 
+            SELECT
+              u.id,
+              u.student_id,
+              u.name,
+              u.grade,
+              u.class,
               SUM(ar.total_questions) as total_questions,
               SUM(ar.correct_count) as correct_count,
               CASE WHEN SUM(ar.total_questions) > 0 THEN
@@ -340,8 +340,12 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
 
     // 先检查数据库是否存在
     try {
-      const checkDbCommand = `mysql -h ${dbConfig.host} -u ${dbConfig.user} -p${dbConfig.password} -e "CREATE DATABASE IF NOT EXISTS ${dbConfig.database};"`
-      execSync(checkDbCommand)
+      // 使用环境变量传递密码，避免明文暴露
+      const env = Object.assign({}, process.env, {
+        MYSQL_PWD: dbConfig.password
+      })
+      const checkDbCommand = `mysql -h ${dbConfig.host} -u ${dbConfig.user} -e "CREATE DATABASE IF NOT EXISTS ${dbConfig.database};"`
+      execSync(checkDbCommand, { env })
       console.log('数据库检查/创建成功')
     } catch (checkError) {
       console.error('数据库检查失败:', checkError)
@@ -349,10 +353,14 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
       return res.status(500).json({ error: '数据库连接失败，请检查配置' })
     }
 
-    const command = `mysql -h ${dbConfig.host} -u ${dbConfig.user} -p${dbConfig.password} ${dbConfig.database} < ${backupFilePath}`
+    // 使用环境变量传递密码，避免明文暴露
+    const env = Object.assign({}, process.env, {
+      MYSQL_PWD: dbConfig.password
+    })
+    const command = `mysql -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} < ${backupFilePath}`
 
     try {
-      execSync(command)
+      execSync(command, { env })
       console.log('数据恢复命令执行成功')
     } catch (execError) {
       console.error('恢复数据命令执行失败:', execError)

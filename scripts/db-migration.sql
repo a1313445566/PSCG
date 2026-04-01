@@ -113,23 +113,84 @@ CREATE TABLE IF NOT EXISTS cache_hits (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 8. 检查并添加 subjects 表的 show_in_history_quiz 字段
-ALTER TABLE subjects ADD COLUMN IF NOT EXISTS show_in_history_quiz TINYINT(1) DEFAULT 0;
+-- 先检查字段是否存在，不存在则添加
+SET @col_exists = (SELECT COUNT(*) FROM information_schema.columns 
+                  WHERE table_schema = DATABASE() AND table_name = 'subjects' 
+                  AND column_name = 'show_in_history_quiz');
+
+SET @sql = IF(@col_exists = 0, 
+              'ALTER TABLE subjects ADD COLUMN show_in_history_quiz TINYINT(1) DEFAULT 0;', 
+              'SELECT "Column already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 9. 添加 questions 表性能优化索引
 -- 检查并添加 idx_questions_type 索引
-CREATE INDEX IF NOT EXISTS idx_questions_type ON questions (type);
+SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
+                    WHERE table_schema = DATABASE() AND table_name = 'questions' 
+                    AND index_name = 'idx_questions_type');
+
+SET @sql = IF(@index_exists = 0, 
+              'CREATE INDEX idx_questions_type ON questions (type);', 
+              'SELECT "Index already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 检查并添加 idx_questions_created 索引
-CREATE INDEX IF NOT EXISTS idx_questions_created ON questions (created_at);
+SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
+                    WHERE table_schema = DATABASE() AND table_name = 'questions' 
+                    AND index_name = 'idx_questions_created');
+
+SET @sql = IF(@index_exists = 0, 
+              'CREATE INDEX idx_questions_created ON questions (created_at);', 
+              'SELECT "Index already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 检查并添加 idx_questions_filter 索引
-CREATE INDEX IF NOT EXISTS idx_questions_filter ON questions (subject_id, subcategory_id, type);
+SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
+                    WHERE table_schema = DATABASE() AND table_name = 'questions' 
+                    AND index_name = 'idx_questions_filter');
+
+SET @sql = IF(@index_exists = 0, 
+              'CREATE INDEX idx_questions_filter ON questions (subject_id, subcategory_id, type);', 
+              'SELECT "Index already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 10. 添加 quiz_sessions 表的 idx_user_created 索引
-CREATE INDEX IF NOT EXISTS idx_user_created ON quiz_sessions (user_id, created_at);
+SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
+                    WHERE table_schema = DATABASE() AND table_name = 'quiz_sessions' 
+                    AND index_name = 'idx_user_created');
+
+SET @sql = IF(@index_exists = 0, 
+              'CREATE INDEX idx_user_created ON quiz_sessions (user_id, created_at);', 
+              'SELECT "Index already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 11. 添加 quiz_attempts 表的 idx_quiz_question 索引
-CREATE INDEX IF NOT EXISTS idx_quiz_question ON quiz_attempts (quiz_session_id, question_id);
+SET @index_exists = (SELECT COUNT(*) FROM information_schema.statistics 
+                    WHERE table_schema = DATABASE() AND table_name = 'quiz_attempts' 
+                    AND index_name = 'idx_quiz_question');
+
+SET @sql = IF(@index_exists = 0, 
+              'CREATE INDEX idx_quiz_question ON quiz_attempts (quiz_session_id, question_id);', 
+              'SELECT "Index already exists"');
+
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 迁移完成
 SELECT '数据库迁移完成' AS message;

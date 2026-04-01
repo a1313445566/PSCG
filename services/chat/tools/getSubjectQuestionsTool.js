@@ -47,16 +47,15 @@ const getSubjectQuestionsTool = defineTool({
           q.id,
           q.title,
           q.difficulty,
-          COUNT(DISTINCT ar.id) as attempt_count,
-          COUNT(DISTINCT ar.user_id) as student_count,
-          ROUND(
-            SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / 
-            NULLIF(COUNT(ar.id), 0), 
-            2
+          COUNT(DISTINCT qa.id) as attempt_count,
+          COUNT(DISTINCT qa.user_id) as student_count,
+          COALESCE(
+            ROUND(SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / NULLIF(COUNT(qa.id), 0), 2),
+            0
           ) as accuracy,
-          SUM(CASE WHEN ar.is_correct = 0 THEN 1 ELSE 0 END) as wrong_count
+          SUM(CASE WHEN qa.is_correct = 0 THEN 1 ELSE 0 END) as wrong_count
         FROM questions q
-        LEFT JOIN answer_records ar ON q.id = ar.question_id
+        LEFT JOIN question_attempts qa ON q.id = qa.question_id
         WHERE q.subject_id = ?
         GROUP BY q.id, q.title, q.difficulty
         ${orderClause}

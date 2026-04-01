@@ -51,12 +51,12 @@ const getQuestionAnswerAnalysisTool = defineTool({
       // 2. 查询每个选项的选择统计
       const optionStats = await db.query(`
         SELECT 
-          ar.selected_answer,
+          qa.user_answer as selected_answer,
           COUNT(*) as select_count,
-          ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM answer_records WHERE question_id = ?), 2) as select_percentage
-        FROM answer_records ar
-        WHERE ar.question_id = ?
-        GROUP BY ar.selected_answer
+          ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM question_attempts WHERE question_id = ?), 2) as select_percentage
+        FROM question_attempts qa
+        WHERE qa.question_id = ?
+        GROUP BY qa.user_answer
         ORDER BY select_count DESC
       `, [questionId, questionId])
 
@@ -64,10 +64,10 @@ const getQuestionAnswerAnalysisTool = defineTool({
       const correctStats = await db.get(`
         SELECT 
           COUNT(*) as total_attempts,
-          SUM(CASE WHEN ar.selected_answer = ? THEN 1 ELSE 0 END) as correct_count,
-          ROUND(SUM(CASE WHEN ar.selected_answer = ? THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as correct_rate
-        FROM answer_records ar
-        WHERE ar.question_id = ?
+          SUM(CASE WHEN qa.user_answer = ? THEN 1 ELSE 0 END) as correct_count,
+          ROUND(SUM(CASE WHEN qa.user_answer = ? THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as correct_rate
+        FROM question_attempts qa
+        WHERE qa.question_id = ?
       `, [question.answer, question.answer, questionId])
 
       // 4. 查询选择错误答案的学生（典型错误案例）
@@ -76,12 +76,12 @@ const getQuestionAnswerAnalysisTool = defineTool({
           u.id as student_id,
           u.username as student_name,
           u.grade,
-          ar.selected_answer,
-          ar.created_at as answer_time
+          qa.user_answer as selected_answer,
+          qa.created_at as answer_time
         FROM users u
-        JOIN answer_records ar ON u.id = ar.user_id
-        WHERE ar.question_id = ? AND ar.selected_answer != ?
-        ORDER BY ar.created_at DESC
+        JOIN question_attempts qa ON u.id = qa.user_id
+        WHERE qa.question_id = ? AND qa.user_answer != ?
+        ORDER BY qa.created_at DESC
         LIMIT 10
       `, [questionId, question.answer])
 
@@ -89,20 +89,20 @@ const getQuestionAnswerAnalysisTool = defineTool({
       const timeDistribution = await db.query(`
         SELECT 
           CASE 
-            WHEN ar.time_spent <= 30 THEN '快速 (<30秒)'
-            WHEN ar.time_spent <= 60 THEN '正常 (30-60秒)'
-            WHEN ar.time_spent <= 120 THEN '较慢 (1-2分钟)'
+            WHEN qa.time_spent <= 30 THEN '快速 (<30秒)'
+            WHEN qa.time_spent <= 60 THEN '正常 (30-60秒)'
+            WHEN qa.time_spent <= 120 THEN '较慢 (1-2分钟)'
             ELSE '很慢 (>2分钟)'
           END as time_range,
           COUNT(*) as count,
-          ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM answer_records WHERE question_id = ?), 2) as percentage,
-          ROUND(AVG(ar.time_spent), 2) as avg_time,
+          ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM question_attempts WHERE question_id = ?), 2) as percentage,
+          ROUND(AVG(qa.time_spent), 2) as avg_time,
           ROUND(
-            SUM(CASE WHEN ar.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 
+            SUM(CASE WHEN qa.is_correct = 1 THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 
             2
           ) as accuracy_in_range
-        FROM answer_records ar
-        WHERE ar.question_id = ?
+        FROM question_attempts qa
+        WHERE qa.question_id = ?
         GROUP BY time_range
         ORDER BY 
           CASE time_range
