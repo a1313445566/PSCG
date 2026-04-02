@@ -8,271 +8,65 @@ provider:
 
 # PSCG 智能题库系统 - 项目规则
 
-## 技术栈与架构
+## 一、技术栈强制规范
+1. 前端：Vue3 + <script setup> + Element Plus + Pinia + Vite
+2. 后端：Express + MySQL2 + JWT + Multer + Sharp
+3. 数据库：严格使用 MySQL 语法（AUTO_INCREMENT、VARCHAR、INT），禁止 SQLite 写法
+4. 图表：@visactor/vchart、VMind；富文本：Quill
+5. API 封装：必须使用 `src/utils/api.js`，禁止原生 fetch/axios
+6. 消息提示：必须使用 `@/utils/message`，禁止直接使用 ElMessage
 
-### 技术栈
-- **前端**: Vue 3 + Composition API + Pinia + Vue Router 4 + Element Plus + Vite 5
-- **图表**: ECharts | 富文本: Quill
-- **后端**: Express 4.x + MySQL 8.0 (mysql2) + JWT + Multer + PM2
-- **强制要求**:
-  - API调用必须使用 `src/utils/api.js`，禁止原生 fetch/axios
-  - 消息提示必须使用 `@/utils/message`，禁止直接使用 ElMessage
+## 二、项目结构强制遵守
+1. 前端：src/components、src/views、src/stores、src/composables
+2. 后端：routes → middleware → services → database
+3. 配置：config/；工具：utils/；中间件：middleware/
+4. 禁止新增顶层目录，禁止修改现有目录结构
 
-### 项目结构
-```
-PSCG/
-├── src/              # 前端: views, components, stores, composables, utils, router, styles
-├── routes/           # 后端 API 路由
-├── middleware/       # Express 中间件
-├── services/         # 后端服务层
-├── config/           # 配置文件
-├── utils/            # 后端工具
-└── DOCS/             # 项目文档
-```
+## 三、代码规范（强制）
+1. Vue 文件：必须使用 <script setup>，props 必须定义类型
+2. 命名：组件/页面 PascalCase；变量/方法 camelCase；常量 UPPER_SNAKE_CASE
+3. 样式：必须 scoped，缩进 2 空格，支持 SCSS
+4. 注释：关键逻辑必须加中文注释，禁止冗余代码
 
-## 编码规范（强制）
+## 四、大数据/高并发约束
+1. 所有列表接口必须分页（使用 usePagination）
+2. 数据库查询禁止 SELECT *，必须指定字段
+3. 接口默认防抖、30 秒超时、自动重试 2 次
+4. 批量操作分批执行，每次 ≤ 1000 条
 
-### 通用规范
-- **命名**: 组件/页面 PascalCase，变量/方法 camelCase，常量 UPPER_SNAKE_CASE
-- **注释**: 关键逻辑加中文注释，禁止冗余代码
-- **后端**: 使用 CommonJS，文件扩展名 `.cjs`
-- **前端**: 使用 ES Modules，`<script setup>` 语法
+## 五、安全规范
+1. 管理员接口必须通过 `middleware/adminAuth.js` 验证
+2. 所有入参必须校验，防 SQL 注入、XSS
+3. AI 接口启用速率限制（rateLimit）
+4. 敏感信息不上传 Git，使用环境变量
 
-### Vue 组件
-```vue
-<script setup>
-// Props 必须定义类型
-const props = defineProps({
-  title: { type: String, required: true }
-})
+## 六、工具使用强制
+1. 加载状态：必须使用 useLoading，组件卸载执行 cleanup
+2. 分页：必须使用 usePagination，传入 total ref
+3. Element Plus 图标：必须显式导入 `@element-plus/icons-vue`
+4. 错误处理：所有异步请求必须 try/catch，统一错误提示
 
-// Emits
-const emit = defineEmits(['update'])
+## 七、交互与输出规范
+1. 所有回答必须使用中文，技术问题附带原理说明 + 可直接运行的代码示例
+2. 代码输出必须格式化，语法高亮，关键逻辑加中文注释
+3. 代码行数 > 20 行时，拆分函数/组件，保持颗粒度合理
+4. 遇到模糊需求时，先确认细节，不自行假设
+5. 提供 Windows 终端命令，适配本地开发环境
 
-// 响应式数据
-const loading = ref(false)
-</script>
+## 八、开发流程规范
+1. 开发顺序：需求确认 → 接口设计 → 数据库设计 → 前端页面 → 测试
+2. 提交前必须执行：npm run lint + npm run format
+3. 所有代码必须可直接运行，无语法错误、无崩溃风险
+4. 功能开发完成后，同步更新项目文档
 
-<style scoped>
-/* 必须 scoped */
-</style>
-```
+## 九、代码质量规范
+1. 前端：props 必须定义类型 + 默认值；空值安全使用 ?.、??
+2. 后端：所有异步方法加 try/catch；接口返回统一格式 {code, msg, data}
+3. 禁止硬编码，所有配置使用环境变量或配置文件，或储存在数据库中
+4. 大数据场景：无内存泄漏、无卡顿、接口响应时间 < 500ms
 
-### Pinia Store
-```javascript
-export const useXxxStore = defineStore('xxx', {
-  state: () => ({ items: [], loading: false }),
-  getters: {},
-  actions: {
-    async fetchData() {
-      try {
-        this.loading = true
-        this.items = await api.get('/xxx')  // 使用 api.js
-      } catch (error) {
-        throw error  // 向上抛出
-      } finally {
-        this.loading = false
-      }
-    }
-  }
-})
-```
-
-### 后端规范
-- **路由层**: 参数验证 → 调用服务层 → 返回响应
-- **服务层**: 数据库操作 + 业务逻辑 + 错误处理
-- **中间件**: 请求预处理 + 权限验证 + 日志记录
-- **响应格式**: `{ code, msg, data }` 或 `{ error: '错误信息' }`
-
-## 已实现的公共工具（强制使用）
-
-### Composables（组合式函数）
-| 文件 | 功能 | 使用场景 |
-|------|------|----------|
-| `usePagination.js` | 分页逻辑 | 所有列表页面 |
-| `useLoading.js` | 加载状态管理 | 所有异步操作 |
-| `useAdminLayout.js` | 后台布局状态 | 后台页面共享 |
-| `useChartRenderer.js` | 图表渲染 | 数据分析页面 |
-| `useUserFilters.js` | 用户筛选 | 用户相关页面 |
-
-**使用示例**:
-```javascript
-// ✅ 正确
-import { usePagination } from '@/composables/usePagination'
-const { currentPage, handlePageChange } = usePagination()
-
-// ❌ 错误：重复实现
-const currentPage = ref(1)
-```
-
-### 工具函数
-| 文件 | 功能 | 主要方法 |
-|------|------|----------|
-| `api.js` | API 客户端封装 | `get()`, `post()`, `put()`, `delete()` |
-| `message.js` | 消息提示封装 | `success()`, `error()`, `warning()` |
-| `format.js` | 数据格式化 | `formatPercent()`, `formatNumber()` |
-| `xss-filter.js` | XSS 防护 | `sanitize()` |
-| `imageUpload.js` | 图片上传 | `uploadImage()` |
-| `dateUtils.js` | 日期处理 | `formatDate()` |
-
-### 公共样式
-- `global.css` - 全局基础样式
-- `common.css` - 后台管理公共样式
-- `rich-text.css` - 富文本内容样式
-
-## 技术约束（强制）
-
-### API 调用规范
-```javascript
-// ✅ 正确：使用封装的 API 客户端
-import { api } from '@/utils/api'
-const data = await api.get('/subjects')
-
-// ❌ 错误：直接使用 fetch
-const response = await fetch(`${getApiBaseUrl()}/subjects`)  // 禁止
-```
-
-### Store 设计约束
-- 单个 Store 文件不超过 500 行
-- 每个 Store 只负责一个核心领域
-- Store 内也必须使用 `api.js`
-
-### 响应式数据规范
-```javascript
-// ❌ 禁止直接修改 props
-props.data.push(newItem)
-
-// ✅ 正确
-const localData = ref([...props.data])
-emit('update', localData.value)
-
-// ✅ 清理资源
-onUnmounted(() => {
-  clearTimeout(timer)
-})
-```
-
-### 大数据/高并发约束
-- 所有列表接口必须分页（使用 usePagination）
-- 数据库查询禁止 SELECT *，必须指定字段
-- 批量操作分批执行，每次 ≤ 1000 条
-
-## 新建文件规则
-
-### 前端文件
-- **组件**: `src/components/` 或 `src/views/`，PascalCase 命名
-- **Composable**: `src/composables/`，`useXxx.js` 命名
-- **工具**: `src/utils/`，camelCase 命名
-
-### 后端文件
-- **路由**: `routes/`，RESTful 风格
-- **服务**: `services/`，`xxxService.js` 命名
-- **中间件**: `middleware/`，功能描述命名
-
-## 安全规范
-
-### 前端安全
-```javascript
-// XSS 防护
-import xssFilter from '@/utils/xss-filter'
-const safeContent = xssFilter.sanitize(userInput)
-
-// CSRF 防护（api.js 自动处理）
-import { api } from '@/utils/api'
-await api.post('/questions', data)
-```
-
-### 后端安全
-```javascript
-// SQL 注入防护
-await db.query('SELECT * FROM users WHERE id = ?', [userId])
-
-// 输入验证
-const { validateSubjectId } = require('../services/validationService')
-if (!validateSubjectId(subjectId)) {
-  return res.status(400).json({ error: '学科ID格式错误' })
-}
-
-// 管理员接口必须通过 adminAuth.js 验证
-```
-
-## 性能优化
-
-### 前端
-- 路由懒加载: `const AdminView = () => import('@/views/AdminView.vue')`
-- 列表渲染使用唯一 key: `:key="item.id"`
-- computed 缓存计算结果
-
-### 后端
-- 数据库查询使用索引和分页（LIMIT）
-- 连接池复用
-- 批量操作分批执行
-
-### 缓存与限流
-```javascript
-// 前端缓存
-CACHE_TTL = {
-  ADMIN: 5 * 60 * 1000,          // 5分钟
-  FRONTEND: 24 * 60 * 60 * 1000  // 24小时
-}
-
-// 限流配置
-globalLimiter: 500 次/分钟
-apiLimiter: 150 次/分钟
-submitLimiter: 20 次/分钟
-```
-
-## 文件管理
-
-### 文件上传
-- **图片**: 使用 `imageUpload.js`，限制 2MB，支持 JPG/PNG/GIF/WebP
-- **音频**: 限制 10MB，支持 MP3/WAV/OGG/M4A
-
-### 文件引用管理
-- 保存/更新/删除题目时自动维护引用计数
-- 引用计数归零时自动删除物理文件
-- 清理接口: `POST /upload/cleanup-orphans`
-
-## 常用命令
-
-```bash
-# 开发
-npm run dev          # 前端开发服务器 (端口 5173)
-npm run server       # 后端服务器 (端口 3001)
-
-# 构建部署
-npm run build        # 构建生产版本
-pm2 restart 0        # 重启服务器
-
-# 提交前检查
-npm run lint
-npm run format
-```
-
-## 后端中间件与服务
-
-### 已实现中间件
-- `adminAuth.js` - 管理员认证（JWT）
-- `csrf.js` - CSRF 防护
-- `rateLimit.js` - IP/用户限流
-- `validationService.js` - 输入验证服务
-
-### 已实现服务
-- `database.js` - 数据库连接
-- `aiService.js` - AI 功能
-- `difficultyService.js` - 难度计算
-- `fileReferenceService.js` - 文件引用管理
-- `cache.js` - 缓存服务
-
-## 开发流程
-
-1. 需求确认 → 接口设计 → 数据库设计 → 前端页面 → 测试
-2. 提交前执行: `npm run lint` + `npm run format`
-3. 所有代码必须可直接运行，无语法错误
-4. 功能开发完成后同步更新文档
-
-## 交付标准
-
-- 代码可直接部署生产
-- 无 BUG、无冗余
-- 适配大数据场景（无内存泄漏、无卡顿、接口响应 < 500ms）
+## 十、性能与交付规范
+1. 数据库：高频查询字段加索引；分页查询必加 LIMIT
+2. 前端：组件按需加载，路由懒加载；大列表使用虚拟滚动
+3. 后端：连接池复用；批量操作分批执行
+4. 交付：代码可直接部署生产，无 BUG、无冗余、适配大数据
