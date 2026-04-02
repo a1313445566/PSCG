@@ -171,10 +171,12 @@ function handleClearTool() {
  * 格式化问题预览
  */
 function formatQuestionPreview(question) {
-  return question
-    .replace(/\{[^}]+\}/g, '___')
-    .replace(/查看|分析|查询/g, '')
-    .substring(0, 15) + '...'
+  return (
+    question
+      .replace(/\{[^}]+\}/g, '___')
+      .replace(/查看|分析|查询/g, '')
+      .substring(0, 15) + '...'
+  )
 }
 
 onMounted(() => {

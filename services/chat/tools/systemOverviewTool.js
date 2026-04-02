@@ -10,7 +10,7 @@ const systemOverviewTool = defineTool({
   name: 'query_system_overview',
   description: '系统概览：用户数、题目数、答题统计、学科分布。',
   schema: z.object({}),
-  handler: async (args) => {
+  handler: async args => {
     try {
       const [users, questions, records, subjects] = await Promise.all([
         db.get(`

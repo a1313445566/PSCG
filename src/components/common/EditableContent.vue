@@ -207,15 +207,25 @@ watch(
 .quill-editor {
   border: 1px solid #dcdfe6;
   border-radius: 4px;
-  min-height: 100px;
 }
 
 ::deep(.ql-container) {
-  min-height: 100px;
+  min-height: 60px;
 }
 
 ::deep(.ql-editor) {
-  min-height: 80px;
+  min-height: 40px;
+  padding: 8px 12px;
+}
+
+::deep(.ql-editor p) {
+  margin: 0;
+  line-height: 1.5;
+}
+
+::deep(.ql-editor.ql-blank::before) {
+  font-style: normal;
+  color: #a8abb2;
 }
 
 /* 图片在编辑器中的样式 */

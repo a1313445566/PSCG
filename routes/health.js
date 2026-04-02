@@ -34,7 +34,7 @@ router.get('/database', async (req, res) => {
   try {
     // 测试数据库连接
     await db.query('SELECT 1 as test')
-    
+
     res.json({
       status: 'ok',
       database: 'connected',

@@ -113,6 +113,40 @@ class XSSFilter {
 
     return clean
   }
+
+  /**
+   * 递归清理对象/数组中的所有字符串字段
+   * 用于阅读理解题等嵌套 JSON 结构的 XSS 过滤
+   * @param {*} data - 任意数据（字符串、数组、对象）
+   * @returns {*} - 清理后的数据
+   */
+  recursiveSanitize(data) {
+    // 处理 null 和 undefined
+    if (data === null || data === undefined) {
+      return data
+    }
+
+    // 处理字符串：直接清理
+    if (typeof data === 'string') {
+      return this.deepSanitize(data)
+    }
+
+    // 处理数组：递归处理每个元素
+    if (Array.isArray(data)) {
+      return data.map(item => this.recursiveSanitize(item))
+    }
+
+    // 处理对象：递归处理每个属性
+    if (typeof data === 'object') {
+      return Object.keys(data).reduce((acc, key) => {
+        acc[key] = this.recursiveSanitize(data[key])
+        return acc
+      }, {})
+    }
+
+    // 其他类型直接返回（数字、布尔值等）
+    return data
+  }
 }
 
 module.exports = new XSSFilter()

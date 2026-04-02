@@ -153,6 +153,9 @@
                   <el-option label="单选" value="single" />
                   <el-option label="多选" value="multiple" />
                   <el-option label="判断" value="judgment" />
+                  <el-option label="听力" value="listening" />
+                  <el-option label="阅读" value="reading" />
+                  <el-option label="看图" value="image" />
                 </el-select>
                 <el-select
                   v-model="splitEditData.difficulty"
@@ -184,8 +187,8 @@
                 </div>
               </div>
 
-              <!-- 选项 -->
-              <div class="quick-edit-section">
+              <!-- 普通题目选项 -->
+              <div v-if="splitEditData.type !== 'reading'" class="quick-edit-section">
                 <label class="section-label">
                   答案选项
                   <el-button type="primary" size="small" text @click="addSplitEditOption">
@@ -225,6 +228,133 @@
                     </el-button>
                   </div>
                 </div>
+              </div>
+
+              <!-- 阅读理解题小题列表（折叠面板） -->
+              <div v-else class="quick-edit-section">
+                <label class="section-label">
+                  小题列表
+                  <el-button type="primary" size="small" text @click="addReadingSubQuestion">
+                    <el-icon><Plus /></el-icon>
+                    添加小题（{{ splitEditData.readingSubQuestions?.length || 0 }}/20）
+                  </el-button>
+                </label>
+                <!-- 阅读理解题提示 -->
+                <div class="reading-tip">
+                  <el-icon><Reading /></el-icon>
+                  <span>上方"题目内容"为阅读材料，下方为小题列表。每道小题支持富文本编辑。</span>
+                </div>
+                <!-- 折叠面板 -->
+                <el-collapse
+                  v-model="activeReadingSubQuestion"
+                  accordion
+                  class="reading-sub-collapse"
+                >
+                  <el-collapse-item
+                    v-for="(sq, sqIndex) in splitEditData.readingSubQuestions"
+                    :key="sqIndex"
+                    :name="sqIndex"
+                  >
+                    <template #title>
+                      <div class="sub-collapse-title">
+                        <span class="sub-collapse-order">第 {{ sqIndex + 1 }} 题</span>
+                        <el-tag v-if="sq.answer" type="success" size="small" class="sub-answer-tag">
+                          答案: {{ sq.answer }}
+                        </el-tag>
+                        <el-tag v-else type="info" size="small">未设答案</el-tag>
+                      </div>
+                    </template>
+                    <div class="sub-collapse-content">
+                      <!-- 小题题目（富文本） -->
+                      <div class="sub-field sub-field-content">
+                        <label class="sub-label">小题题目</label>
+                        <QuillEditor
+                          v-model="sq.content"
+                          toolbar-mode="simple"
+                          :options="{ placeholder: '输入小题题目...' }"
+                          style="height: 150px"
+                        />
+                      </div>
+                      <!-- 小题选项 -->
+                      <div class="sub-field sub-field-options">
+                        <label class="sub-label">
+                          选项
+                          <el-button
+                            type="primary"
+                            size="small"
+                            text
+                            @click.stop="addReadingSubOption(sqIndex)"
+                          >
+                            添加选项
+                          </el-button>
+                        </label>
+                        <div class="sub-options-grid">
+                          <div
+                            v-for="(_opt, optIdx) in sq.options"
+                            :key="optIdx"
+                            class="sub-option-row"
+                            :class="{
+                              'is-selected': sq.answer === String.fromCharCode(65 + optIdx)
+                            }"
+                          >
+                            <el-radio v-model="sq.answer" :label="String.fromCharCode(65 + optIdx)">
+                              {{ String.fromCharCode(65 + optIdx) }}
+                            </el-radio>
+                            <EditableContent
+                              v-model="sq.options[optIdx]"
+                              :placeholder="`选项 ${String.fromCharCode(65 + optIdx)}`"
+                              class="sub-option-editor"
+                            />
+                            <el-button
+                              v-if="sq.options.length > 2"
+                              type="danger"
+                              size="small"
+                              text
+                              @click.stop="removeReadingSubOption(sqIndex, optIdx)"
+                            >
+                              <el-icon><Delete /></el-icon>
+                            </el-button>
+                          </div>
+                        </div>
+                      </div>
+                      <!-- 小题解析 -->
+                      <div class="sub-field sub-field-explanation">
+                        <label class="sub-label">解析（可选）</label>
+                        <QuillEditor
+                          v-model="sq.explanation"
+                          toolbar-mode="simple"
+                          :options="{ placeholder: '输入小题解析...' }"
+                          style="height: 100px"
+                        />
+                      </div>
+                      <!-- 小题操作按钮 -->
+                      <div class="sub-actions">
+                        <el-button
+                          size="small"
+                          :disabled="sqIndex === 0"
+                          @click="moveReadingSubQuestion(sqIndex, -1)"
+                        >
+                          上移
+                        </el-button>
+                        <el-button
+                          size="small"
+                          :disabled="sqIndex === splitEditData.readingSubQuestions.length - 1"
+                          @click="moveReadingSubQuestion(sqIndex, 1)"
+                        >
+                          下移
+                        </el-button>
+                        <el-button
+                          type="danger"
+                          size="small"
+                          :disabled="splitEditData.readingSubQuestions.length <= 1"
+                          @click="removeReadingSubQuestion(sqIndex)"
+                        >
+                          删除小题
+                        </el-button>
+                      </div>
+                    </div>
+                  </el-collapse-item>
+                </el-collapse>
               </div>
 
               <!-- 解析 -->
@@ -579,12 +709,46 @@
         </div>
         <div v-if="previewData.options && previewData.options.length > 0" class="preview-item">
           <label>选项：</label>
-          <div class="preview-options">
-            <div v-for="(option, index) in previewData.options" :key="index" class="preview-option">
-              <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
-              <span class="option-content" v-html="option"></span>
+          <!-- 阅读理解题显示小题列表 -->
+          <template v-if="previewData.type === 'reading' && isReadingOptions(previewData.options)">
+            <div class="preview-reading-options">
+              <div
+                v-for="(sq, sqIndex) in previewData.options"
+                :key="sqIndex"
+                class="preview-sub-question"
+              >
+                <div class="sub-question-header">
+                  <span class="sub-question-order">第 {{ sq.order || sqIndex + 1 }} 题</span>
+                  <el-tag type="success" size="small">答案: {{ sq.answer }}</el-tag>
+                </div>
+                <div class="sub-question-content" v-html="sq.content"></div>
+                <div class="sub-question-options">
+                  <div
+                    v-for="(opt, optIndex) in sq.options"
+                    :key="optIndex"
+                    class="preview-option"
+                    :class="{ 'is-correct': sq.answer === String.fromCharCode(65 + optIndex) }"
+                  >
+                    <span class="option-label">{{ String.fromCharCode(65 + optIndex) }}.</span>
+                    <span class="option-content" v-html="opt"></span>
+                  </div>
+                </div>
+              </div>
             </div>
-          </div>
+          </template>
+          <!-- 普通题目显示选项列表 -->
+          <template v-else>
+            <div class="preview-options">
+              <div
+                v-for="(option, index) in previewData.options"
+                :key="index"
+                class="preview-option"
+              >
+                <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
+                <span class="option-content" v-html="option"></span>
+              </div>
+            </div>
+          </template>
         </div>
         <div class="preview-item">
           <label>正确答案：</label>
@@ -699,7 +863,8 @@ import {
   VideoPlay,
   VideoPause,
   DArrowLeft,
-  DArrowRight
+  DArrowRight,
+  Reading
 } from '@element-plus/icons-vue'
 import { useQuestionStore } from '../../../stores/questionStore'
 import { useAdminLayout } from '../../../composables/useAdminLayout'
@@ -719,12 +884,7 @@ const props = defineProps({
 })
 
 // Emits
-const emit = defineEmits([
-  'edit-question',
-  'delete-question',
-  'show-add-dialog',
-  'show-batch-add-dialog'
-])
+const emit = defineEmits(['delete-question', 'show-batch-add-dialog'])
 
 // Store
 const questionStore = useQuestionStore()
@@ -798,6 +958,7 @@ const splitEditData = ref(null)
 const splitEditSaving = ref(false)
 const editPanelHeight = ref(800)
 const splitEditQuill = ref(null)
+const activeReadingSubQuestion = ref(0) // 当前展开的阅读理解小题
 
 // 音频播放器相关
 const audioPlayerRef = ref(null)
@@ -1292,7 +1453,16 @@ const openAddPanel = () => {
     options: ['', '', '', ''],
     selectedAnswers: [],
     explanation: '',
-    audio: null
+    audio: null,
+    // 阅读理解题专用字段
+    readingSubQuestions: [
+      {
+        content: '',
+        options: ['', '', '', ''],
+        answer: 'A',
+        explanation: ''
+      }
+    ]
   }
 }
 
@@ -1328,6 +1498,33 @@ const openSplitEdit = async row => {
       }
     }
 
+    // 阅读理解题：解析小题数据
+    let readingSubQuestions = []
+    if (data.type === 'reading') {
+      // options 是小题数组
+      if (Array.isArray(options) && options.length > 0) {
+        readingSubQuestions = options.map((sq, idx) => ({
+          content: sq.content || '',
+          options: Array.isArray(sq.options) ? sq.options : ['', '', '', ''],
+          answer: sq.answer || 'A',
+          explanation: sq.explanation || ''
+        }))
+      }
+      // 解析答案对象 { "1": "A", "2": "B" }
+      if (typeof answer === 'string') {
+        try {
+          const answerObj = JSON.parse(answer)
+          if (typeof answerObj === 'object') {
+            readingSubQuestions.forEach((sq, idx) => {
+              sq.answer = answerObj[String(idx + 1)] || 'A'
+            })
+          }
+        } catch (e) {
+          // 答案不是 JSON，忽略
+        }
+      }
+    }
+
     // 设置数据
     splitEditData.value = {
       subjectId: data.subjectId || data.subject_id,
@@ -1335,10 +1532,22 @@ const openSplitEdit = async row => {
       type: data.type,
       difficulty: data.difficulty || 1,
       content: data.content || '',
-      options: options,
+      options: data.type === 'reading' ? [] : options,
       selectedAnswers: selectedAnswers,
       explanation: data.explanation || '',
-      audio: data.audio_url || data.audio || null
+      audio: data.audio_url || data.audio || null,
+      // 阅读理解题专用字段
+      readingSubQuestions:
+        readingSubQuestions.length > 0
+          ? readingSubQuestions
+          : [
+              {
+                content: '',
+                options: ['', '', '', ''],
+                answer: 'A',
+                explanation: ''
+              }
+            ]
     }
   } catch (error) {
     console.error('获取题目详情失败:', error)
@@ -1373,23 +1582,69 @@ const saveSplitEdit = async () => {
     ElMessage.warning('请输入题目内容')
     return
   }
-  if (splitEditData.value.selectedAnswers.length === 0) {
-    ElMessage.warning('请选择正确答案')
-    return
-  }
-  // 验证选项内容
-  if (splitEditData.value.options.some(opt => !opt || (typeof opt === 'string' && !opt.trim()))) {
-    ElMessage.warning('请填写所有选项内容')
-    return
+
+  // 阅读理解题验证
+  if (splitEditData.value.type === 'reading') {
+    if (
+      !splitEditData.value.readingSubQuestions ||
+      splitEditData.value.readingSubQuestions.length === 0
+    ) {
+      ElMessage.warning('请添加至少一个小题')
+      return
+    }
+    // 验证每个小题
+    for (let i = 0; i < splitEditData.value.readingSubQuestions.length; i++) {
+      const sq = splitEditData.value.readingSubQuestions[i]
+      if (!sq.content || !sq.content.trim()) {
+        ElMessage.warning(`请输入第 ${i + 1} 小题内容`)
+        return
+      }
+      if (sq.options.some(opt => !opt || (typeof opt === 'string' && !opt.trim()))) {
+        ElMessage.warning(`请填写第 ${i + 1} 小题的所有选项`)
+        return
+      }
+    }
+  } else {
+    // 普通题目验证
+    if (splitEditData.value.selectedAnswers.length === 0) {
+      ElMessage.warning('请选择正确答案')
+      return
+    }
+    // 验证选项内容
+    if (splitEditData.value.options.some(opt => !opt || (typeof opt === 'string' && !opt.trim()))) {
+      ElMessage.warning('请填写所有选项内容')
+      return
+    }
   }
 
   splitEditSaving.value = true
 
   try {
-    const answer =
-      splitEditData.value.type === 'multiple'
-        ? splitEditData.value.selectedAnswers.join('')
-        : splitEditData.value.selectedAnswers[0]
+    let answer, options
+
+    if (splitEditData.value.type === 'reading') {
+      // 阅读理解题：构造小题数据和答案对象
+      options = splitEditData.value.readingSubQuestions.map((sq, idx) => ({
+        order: idx + 1,
+        content: sq.content,
+        options: sq.options,
+        answer: sq.answer,
+        explanation: sq.explanation || ''
+      }))
+      // 答案格式: { "1": "A", "2": "B" }
+      const answerObj = {}
+      splitEditData.value.readingSubQuestions.forEach((sq, idx) => {
+        answerObj[String(idx + 1)] = sq.answer
+      })
+      answer = JSON.stringify(answerObj)
+    } else {
+      // 普通题目
+      answer =
+        splitEditData.value.type === 'multiple'
+          ? splitEditData.value.selectedAnswers.join('')
+          : splitEditData.value.selectedAnswers[0]
+      options = splitEditData.value.options
+    }
 
     const requestBody = {
       subjectId: splitEditData.value.subjectId,
@@ -1397,7 +1652,7 @@ const saveSplitEdit = async () => {
       type: splitEditData.value.type,
       difficulty: splitEditData.value.difficulty,
       content: splitEditData.value.content,
-      options: splitEditData.value.options,
+      options: options,
       answer: answer,
       explanation: splitEditData.value.explanation,
       audio: splitEditData.value.audio || null
@@ -1475,6 +1730,76 @@ const removeSplitEditOption = index => {
   splitEditData.value.selectedAnswers = splitEditData.value.selectedAnswers.filter(
     a => a !== letter
   )
+}
+
+// ========== 阅读理解题辅助函数 ==========
+// 添加阅读理解小题
+const addReadingSubQuestion = () => {
+  if (!splitEditData.value) return
+  if (splitEditData.value.readingSubQuestions.length >= 10) {
+    ElMessage.warning('最多添加10个小题')
+    return
+  }
+  splitEditData.value.readingSubQuestions.push({
+    content: '',
+    options: ['', '', '', ''],
+    answer: 'A',
+    explanation: ''
+  })
+}
+
+// 删除阅读理解小题
+const removeReadingSubQuestion = index => {
+  if (!splitEditData.value) return
+  if (splitEditData.value.readingSubQuestions.length <= 1) {
+    ElMessage.warning('至少保留一个小题')
+    return
+  }
+  splitEditData.value.readingSubQuestions.splice(index, 1)
+}
+
+// 添加阅读理解小题选项
+const addReadingSubOption = sqIndex => {
+  if (!splitEditData.value) return
+  const subQ = splitEditData.value.readingSubQuestions[sqIndex]
+  if (!subQ) return
+  if (subQ.options.length >= 6) {
+    ElMessage.warning('每个小题最多6个选项')
+    return
+  }
+  subQ.options.push('')
+}
+
+// 删除阅读理解小题选项
+const removeReadingSubOption = (sqIndex, optIndex) => {
+  if (!splitEditData.value) return
+  const subQ = splitEditData.value.readingSubQuestions[sqIndex]
+  if (!subQ) return
+  if (subQ.options.length <= 2) {
+    ElMessage.warning('每个小题至少2个选项')
+    return
+  }
+  subQ.options.splice(optIndex, 1)
+  // 如果删除的选项是当前答案，重置答案为第一个选项
+  const removedLetter = String.fromCharCode(65 + optIndex)
+  if (subQ.answer === removedLetter) {
+    subQ.answer = 'A'
+  }
+}
+
+// 移动阅读理解小题
+const moveReadingSubQuestion = (index, direction) => {
+  if (!splitEditData.value) return
+  const newIndex = index + direction
+  if (newIndex < 0 || newIndex >= splitEditData.value.readingSubQuestions.length) return
+
+  // 交换位置
+  const temp = splitEditData.value.readingSubQuestions[index]
+  splitEditData.value.readingSubQuestions[index] = splitEditData.value.readingSubQuestions[newIndex]
+  splitEditData.value.readingSubQuestions[newIndex] = temp
+
+  // 更新展开的小题索引
+  activeReadingSubQuestion.value = newIndex
 }
 
 // 处理音频文件上传
@@ -1801,6 +2126,13 @@ const getTypeTagType = type => {
     judgment: 'warning'
   }
   return typeMap[type] || 'info'
+}
+
+// 判断是否为阅读理解题格式的小题数组
+const isReadingOptions = options => {
+  if (!Array.isArray(options) || options.length === 0) return false
+  const first = options[0]
+  return typeof first === 'object' && first !== null && 'order' in first
 }
 
 const getRowClassName = ({ row }) => {
@@ -2176,6 +2508,226 @@ defineExpose({
 .quick-option-input :deep(.ql-editor) {
   font-size: 13px;
   padding: 8px;
+  min-height: 24px;
+}
+
+.quick-option-input :deep(.ql-editor p) {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 阅读理解题编辑样式 */
+.reading-tip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
+  border-radius: 8px;
+  margin-bottom: 16px;
+  font-size: 13px;
+  color: #2e7d32;
+}
+
+.reading-tip .el-icon {
+  font-size: 18px;
+}
+
+.reading-sub-collapse {
+  border: 1px solid #e4e7ed;
+  border-radius: 8px;
+  overflow: visible;
+}
+
+.reading-sub-collapse :deep(.el-collapse-item) {
+  position: relative;
+  z-index: 1;
+}
+
+.reading-sub-collapse :deep(.el-collapse-item.is-active) {
+  z-index: 10;
+}
+
+.reading-sub-collapse :deep(.el-collapse-item__header) {
+  background-color: #f8fafc;
+  border-bottom: 1px solid #e4e7ed;
+  padding: 0 16px;
+  height: 48px;
+  line-height: 48px;
+  position: relative;
+  z-index: 2;
+}
+
+.reading-sub-collapse :deep(.el-collapse-item__wrap) {
+  border-bottom: none;
+  position: relative;
+  z-index: 1;
+}
+
+.reading-sub-collapse :deep(.el-collapse-item__content) {
+  padding: 16px;
+  background-color: white;
+  position: relative;
+  z-index: 1;
+}
+
+.sub-collapse-title {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sub-collapse-order {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.sub-answer-tag {
+  margin-left: 8px;
+}
+
+.sub-collapse-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+  z-index: 1;
+}
+
+.sub-field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.sub-field-content {
+  margin-bottom: 8px;
+  overflow: visible;
+}
+
+.sub-field-content :deep(.quill-editor) {
+  overflow: visible;
+}
+
+.sub-field-content :deep(.ql-toolbar) {
+  position: relative;
+  z-index: 20;
+}
+
+.sub-field-content :deep(.ql-container) {
+  min-height: 100px;
+}
+
+.sub-field-options {
+  overflow: visible;
+}
+
+.sub-field-explanation {
+  overflow: visible;
+}
+
+.sub-field-explanation :deep(.ql-container) {
+  min-height: 60px;
+}
+
+/* 富文本编辑器容器 */
+.sub-field :deep(.quill-editor) {
+  position: relative;
+}
+
+.sub-field :deep(.ql-toolbar) {
+  position: relative;
+  z-index: 10;
+}
+
+.sub-field :deep(.ql-container) {
+  position: relative;
+  z-index: 5;
+}
+
+.sub-label {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 14px;
+  font-weight: 500;
+  color: #475569;
+}
+
+.sub-options-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 12px;
+}
+
+.sub-option-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background-color: #f8fafc;
+  border: 1px solid #e4e7ed;
+  border-radius: 6px;
+  transition: all 0.2s;
+}
+
+.sub-option-row:hover {
+  border-color: #409eff;
+}
+
+.sub-option-row.is-selected {
+  background-color: #f0f9eb;
+  border-color: #67c23a;
+}
+
+.sub-option-row .el-radio {
+  flex-shrink: 0;
+}
+
+.sub-option-editor {
+  flex: 1;
+  min-height: 32px;
+}
+
+.sub-option-editor :deep(.ql-container) {
+  min-height: 32px;
+  border: none;
+}
+
+.sub-option-editor :deep(.ql-editor) {
+  padding: 4px 8px;
+  font-size: 13px;
+  min-height: 24px;
+}
+
+.sub-option-editor :deep(.ql-editor p) {
+  margin: 0;
+  line-height: 1.5;
+}
+
+/* 选项编辑器工具栏样式 - 聚焦时显示 */
+.sub-option-editor :deep(.ql-toolbar) {
+  display: none;
+  position: absolute;
+  top: -40px;
+  left: 0;
+  z-index: 100;
+  background: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+}
+
+.sub-option-editor:focus-within :deep(.ql-toolbar) {
+  display: block;
+}
+
+.sub-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 8px;
+  border-top: 1px solid #e4e7ed;
 }
 
 .breadcrumb-bar {
@@ -2425,6 +2977,50 @@ defineExpose({
   max-height: 100px;
   border-radius: 4px;
   margin: 4px 0;
+}
+
+/* 阅读理解题预览样式 */
+.preview-reading-options {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.preview-sub-question {
+  padding: 12px;
+  background-color: #f8fafc;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+}
+
+.preview-sub-question .sub-question-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 8px;
+}
+
+.preview-sub-question .sub-question-order {
+  font-weight: 600;
+  color: #303133;
+}
+
+.preview-sub-question .sub-question-content {
+  padding: 8px;
+  background-color: white;
+  border-radius: 4px;
+  margin-bottom: 8px;
+}
+
+.preview-sub-question .sub-question-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.preview-sub-question .preview-option.is-correct {
+  background-color: #f0f9ff;
+  border-color: #67c23a;
 }
 
 /* Element Plus 样式覆盖 */

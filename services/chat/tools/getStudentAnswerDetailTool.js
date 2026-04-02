@@ -10,22 +10,36 @@ const db = require('../../database')
 
 const getStudentAnswerDetailTool = defineTool({
   name: 'get_student_answer_detail',
-  description: '查询学生在特定题目或学科的详细答题记录，包括答题时间、选择答案、是否正确等信息，帮助教师了解学生的答题过程。',
+  description:
+    '查询学生在特定题目或学科的详细答题记录，包括答题时间、选择答案、是否正确等信息，帮助教师了解学生的答题过程。',
   schema: z.object({
     studentId: z.number().int().positive().describe('学生ID'),
-    questionId: z.number().int().positive().optional().describe('题目ID（可选，不提供则查询该学生所有答题记录）'),
-    subjectId: z.number().int().positive().optional().describe('学科ID（可选，不提供则查询所有学科）'),
+    questionId: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe('题目ID（可选，不提供则查询该学生所有答题记录）'),
+    subjectId: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe('学科ID（可选，不提供则查询所有学科）'),
     limit: z.number().int().min(1).max(100).default(20).describe('返回记录数量限制，默认20')
   }),
-  handler: async (args) => {
+  handler: async args => {
     const { studentId, questionId, subjectId, limit = 20 } = args
     try {
       // 验证学生是否存在
-      const student = await db.get(`
+      const student = await db.get(
+        `
         SELECT id, username, grade
         FROM users
         WHERE id = ?
-      `, [studentId])
+      `,
+        [studentId]
+      )
 
       if (!student) {
         return JSON.stringify({
@@ -51,7 +65,8 @@ const getStudentAnswerDetailTool = defineTool({
       params.push(limit)
 
       // 查询答题记录
-      const answerRecords = await db.query(`
+      const answerRecords = await db.query(
+        `
         SELECT 
           qa.id as record_id,
           qa.question_id,
@@ -70,7 +85,9 @@ const getStudentAnswerDetailTool = defineTool({
         ${whereClause.replace(/ar\./g, 'qa.')}
         ORDER BY qa.created_at DESC
         LIMIT ?
-      `, params)
+      `,
+        params
+      )
 
       // 统计概览
       const overviewSQL = `

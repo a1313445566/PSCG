@@ -10,15 +10,17 @@ const db = require('../../database')
 
 const getQuestionAnswerAnalysisTool = defineTool({
   name: 'get_question_answer_analysis',
-  description: '分析特定题目的答案分布，包括每个选项的选择人数、正确率、典型错误学生等，帮助教师了解学生的答题思路和常见错误。',
+  description:
+    '分析特定题目的答案分布，包括每个选项的选择人数、正确率、典型错误学生等，帮助教师了解学生的答题思路和常见错误。',
   schema: z.object({
     questionId: z.number().int().positive().describe('题目ID')
   }),
-  handler: async (args) => {
+  handler: async args => {
     const { questionId } = args
     try {
       // 1. 查询题目基本信息
-      const question = await db.get(`
+      const question = await db.get(
+        `
         SELECT 
           q.id,
           q.title,
@@ -31,7 +33,9 @@ const getQuestionAnswerAnalysisTool = defineTool({
         FROM questions q
         LEFT JOIN subjects s ON q.subject_id = s.id
         WHERE q.id = ?
-      `, [questionId])
+      `,
+        [questionId]
+      )
 
       if (!question) {
         return JSON.stringify({
@@ -49,7 +53,8 @@ const getQuestionAnswerAnalysisTool = defineTool({
       }
 
       // 2. 查询每个选项的选择统计
-      const optionStats = await db.query(`
+      const optionStats = await db.query(
+        `
         SELECT 
           qa.user_answer as selected_answer,
           COUNT(*) as select_count,
@@ -58,20 +63,26 @@ const getQuestionAnswerAnalysisTool = defineTool({
         WHERE qa.question_id = ?
         GROUP BY qa.user_answer
         ORDER BY select_count DESC
-      `, [questionId, questionId])
+      `,
+        [questionId, questionId]
+      )
 
       // 3. 查询正确答案的选择情况
-      const correctStats = await db.get(`
+      const correctStats = await db.get(
+        `
         SELECT 
           COUNT(*) as total_attempts,
           SUM(CASE WHEN qa.user_answer = ? THEN 1 ELSE 0 END) as correct_count,
           ROUND(SUM(CASE WHEN qa.user_answer = ? THEN 1 ELSE 0 END) * 100.0 / COUNT(*), 2) as correct_rate
         FROM question_attempts qa
         WHERE qa.question_id = ?
-      `, [question.answer, question.answer, questionId])
+      `,
+        [question.answer, question.answer, questionId]
+      )
 
       // 4. 查询选择错误答案的学生（典型错误案例）
-      const wrongStudents = await db.query(`
+      const wrongStudents = await db.query(
+        `
         SELECT 
           u.id as student_id,
           u.username as student_name,
@@ -83,10 +94,13 @@ const getQuestionAnswerAnalysisTool = defineTool({
         WHERE qa.question_id = ? AND qa.user_answer != ?
         ORDER BY qa.created_at DESC
         LIMIT 10
-      `, [questionId, question.answer])
+      `,
+        [questionId, question.answer]
+      )
 
       // 5. 查询答题时间分布（分析题目难度）
-      const timeDistribution = await db.query(`
+      const timeDistribution = await db.query(
+        `
         SELECT 
           CASE 
             WHEN qa.time_spent <= 30 THEN '快速 (<30秒)'
@@ -111,7 +125,9 @@ const getQuestionAnswerAnalysisTool = defineTool({
             WHEN '较慢 (1-2分钟)' THEN 3
             WHEN '很慢 (>2分钟)' THEN 4
           END
-      `, [questionId, questionId])
+      `,
+        [questionId, questionId]
+      )
 
       return JSON.stringify({
         success: true,

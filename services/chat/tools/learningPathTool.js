@@ -15,14 +15,19 @@ const learningPathTool = defineTool({
   schema: z.object({
     studentId: z.number().int().positive().describe('学生ID'),
     days: z.number().int().positive().optional().default(30).describe('追踪天数（默认30天）'),
-    detail: z.enum(['summary', 'timeline', 'trend', 'all']).optional().default('all').describe('详情级别: summary=概要, timeline=时间线, trend=趋势, all=全部')
+    detail: z
+      .enum(['summary', 'timeline', 'trend', 'all'])
+      .optional()
+      .default('all')
+      .describe('详情级别: summary=概要, timeline=时间线, trend=趋势, all=全部')
   }),
   handler: async args => {
     try {
       const { studentId, days = 30, detail } = args
 
       // 1. 学生基本信息
-      const studentInfo = await db.get(`
+      const studentInfo = await db.get(
+        `
         SELECT 
           u.id, COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.grade, u.class, u.points,
           COUNT(DISTINCT ar.id) as total_sessions,
@@ -33,7 +38,9 @@ const learningPathTool = defineTool({
         LEFT JOIN answer_records ar ON u.id = ar.user_id
         WHERE u.id = ?
         GROUP BY u.id
-      `, [studentId])
+      `,
+        [studentId]
+      )
 
       if (!studentInfo) {
         return JSON.stringify({ success: false, error: '学生不存在' })
@@ -82,7 +89,11 @@ const learningPathTool = defineTool({
         ORDER BY date DESC
       `
 
-      const classAverage = await db.query(classAverageSQL, [studentInfo.grade, studentInfo.class, days])
+      const classAverage = await db.query(classAverageSQL, [
+        studentInfo.grade,
+        studentInfo.class,
+        days
+      ])
 
       // 4. 进步曲线（按周）
       const weeklyTrendSQL = `
@@ -149,7 +160,8 @@ const learningPathTool = defineTool({
       const subjectPerformance = await db.query(subjectPerformanceSQL, [studentId, days])
 
       // 7. 生成学习评语
-      const avgAccuracy = dailyPath.reduce((sum, d) => sum + (d.accuracy || 0), 0) / dailyPath.length
+      const avgAccuracy =
+        dailyPath.reduce((sum, d) => sum + (d.accuracy || 0), 0) / dailyPath.length
       const totalDays = dailyPath.length
       const avgQuestionsPerDay = studentInfo.total_questions / days
 
@@ -193,7 +205,10 @@ const learningPathTool = defineTool({
             accuracy: d.accuracy,
             subjects: d.subjects,
             class_avg_accuracy: classAverage.find(c => c.date === d.date)?.class_avg_accuracy || 0,
-            vs_class: d.accuracy > (classAverage.find(c => c.date === d.date)?.class_avg_accuracy || 0) ? '高于平均' : '低于平均'
+            vs_class:
+              d.accuracy > (classAverage.find(c => c.date === d.date)?.class_avg_accuracy || 0)
+                ? '高于平均'
+                : '低于平均'
           })),
           weekly_trend: weeklyTrend.map(w => ({
             week_start: w.week_start,
@@ -219,11 +234,21 @@ const learningPathTool = defineTool({
           })),
           evaluation: {
             avg_accuracy: Math.round(avgAccuracy),
-            grade: avgAccuracy >= 90 ? 'A' : avgAccuracy >= 80 ? 'B' : avgAccuracy >= 70 ? 'C' : avgAccuracy >= 60 ? 'D' : 'E',
+            grade:
+              avgAccuracy >= 90
+                ? 'A'
+                : avgAccuracy >= 80
+                  ? 'B'
+                  : avgAccuracy >= 70
+                    ? 'C'
+                    : avgAccuracy >= 60
+                      ? 'D'
+                      : 'E',
             comment: evaluation,
-            suggestions: avgAccuracy >= 80 
-              ? ['继续保持良好的学习习惯', '适当挑战难题，拓展思维']
-              : ['增加练习量', '重点复习薄弱知识点', '及时向老师请教问题']
+            suggestions:
+              avgAccuracy >= 80
+                ? ['继续保持良好的学习习惯', '适当挑战难题，拓展思维']
+                : ['增加练习量', '重点复习薄弱知识点', '及时向老师请教问题']
           },
           recommendation: `${studentInfo.name} 最近${days}天学习${totalDays}天，平均正确率${Math.round(avgAccuracy)}%，${evaluation}`
         }

@@ -414,14 +414,14 @@ class Database {
 
       // 确保所有参数都不是 undefined，将 undefined 转换为 null
       const safeParams = params.map(param => (param === undefined ? null : param))
-      
+
       // ✅ 如果没有参数，使用 query() 方法（不使用 prepared statement）
       // 这样可以避免 MySQL 对某些 SQL 语法的限制
       if (safeParams.length === 0) {
         const [rows] = await this.pool.query(sql)
         return rows
       }
-      
+
       // ✅ 有参数时，使用 execute() 方法（prepared statement）
       const [rows] = await this.pool.execute(sql, safeParams)
       return rows

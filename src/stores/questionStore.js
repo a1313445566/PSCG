@@ -995,7 +995,10 @@ export const useQuizStore = defineStore('quiz', {
 
     // 提交答案（只存储，不验证）
     submitAnswer(questionId, answer, questionType = 'single') {
-      if (questionType === 'multiple') {
+      if (questionType === 'reading') {
+        // 阅读理解题：存储小题答案对象 { 小题索引: 答案 }
+        this.userAnswers[questionId] = answer
+      } else if (questionType === 'multiple') {
         // 对于多选题，使用数组存储多个答案
         if (!this.userAnswers[questionId]) {
           this.userAnswers[questionId] = []

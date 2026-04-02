@@ -15,17 +15,26 @@
       />
 
       <div v-if="currentQuestions.length > 0" class="questions-section">
-        <h3 class="section-title">{{ isErrorCollection ? '📝 巩固题目' : '📝 错题回顾' }}</h3>
-        <QuestionCard
-          v-for="(question, index) in currentQuestions"
-          :key="question.id"
-          :question="question"
-          :question-number="index + 1"
-          :user-answer="formatUserAnswer(question.id, question.type)"
-          :show-result="true"
-          :is-error-collection="isErrorCollection"
-          :error-collection-progress="getQuestionProgress(question.id)"
-        />
+        <h3 class="section-title">{{ isErrorCollection ? '📝 巩固题目' : '📝 题目回顾' }}</h3>
+        <!-- 普通题目 -->
+        <template v-for="(question, index) in currentQuestions" :key="question.id">
+          <QuestionCard
+            v-if="question.type !== 'reading'"
+            :question="question"
+            :question-number="index + 1"
+            :user-answer="formatUserAnswer(question.id, question.type)"
+            :show-result="true"
+            :is-error-collection="isErrorCollection"
+            :error-collection-progress="getQuestionProgress(question.id)"
+          />
+          <!-- 阅读理解题结果卡片 -->
+          <ReadingResultCard
+            v-else
+            :question="question"
+            :question-number="index + 1"
+            :result="getReadingResult(question.id)"
+          />
+        </template>
       </div>
     </div>
   </div>
@@ -37,6 +46,7 @@ import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import ResultCard from '../components/quiz/ResultCard.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
+import ReadingResultCard from '../components/quiz/ReadingResultCard.vue'
 import { useQuestionStore } from '../stores/questionStore'
 
 const router = useRouter()
@@ -59,6 +69,14 @@ const quizData = ref(null)
 const score = computed(() => quizData.value?.score || 0)
 const currentQuestions = computed(() => quizData.value?.currentQuestions || [])
 const userAnswers = computed(() => quizData.value?.userAnswers || {})
+
+// 阅读理解题结果存储
+const readingResults = ref({})
+
+// 获取阅读理解题结果
+const getReadingResult = questionId => {
+  return readingResults.value[questionId] || null
+}
 
 // 计算总题目数
 const totalQuestions = computed(() => currentQuestions.value.length)
@@ -201,6 +219,10 @@ onMounted(async () => {
       // 构造userAnswers对象
       result.results.forEach(r => {
         quizData.value.userAnswers[r.questionId] = r.userAnswer
+        // 处理阅读理解题结果
+        if (r.readingResult) {
+          readingResults.value[r.questionId] = r.readingResult
+        }
       })
 
       // 保存points到quizData

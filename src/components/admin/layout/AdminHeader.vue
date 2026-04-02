@@ -42,7 +42,7 @@
               <el-icon><User /></el-icon>
               个人信息
             </el-dropdown-item>
-   <el-dropdown-item command="password">
+            <el-dropdown-item command="password">
               <el-icon><Lock /></el-icon>
               修改密码
             </el-dropdown-item>

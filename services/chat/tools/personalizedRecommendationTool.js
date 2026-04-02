@@ -15,8 +15,19 @@ const personalizedRecommendationTool = defineTool({
   schema: z.object({
     studentId: z.number().int().positive().describe('学生ID'),
     subjectId: z.number().int().positive().optional().describe('学科ID'),
-    count: z.number().int().min(1).max(50).optional().default(10).describe('推荐题目数量（默认10）'),
-    difficultyRange: z.enum(['adaptive', 'easy', 'medium', 'hard']).optional().default('adaptive').describe('难度策略: adaptive=自适应, easy=基础, medium=中等, hard=挑战'),
+    count: z
+      .number()
+      .int()
+      .min(1)
+      .max(50)
+      .optional()
+      .default(10)
+      .describe('推荐题目数量（默认10）'),
+    difficultyRange: z
+      .enum(['adaptive', 'easy', 'medium', 'hard'])
+      .optional()
+      .default('adaptive')
+      .describe('难度策略: adaptive=自适应, easy=基础, medium=中等, hard=挑战'),
     focusWeak: z.boolean().optional().default(true).describe('是否聚焦薄弱知识点')
   }),
   handler: async args => {
@@ -24,7 +35,8 @@ const personalizedRecommendationTool = defineTool({
       const { studentId, subjectId, count = 10, difficultyRange, focusWeak = true } = args
 
       // 1. 查询学生基本信息和整体表现
-      const studentInfo = await db.get(`
+      const studentInfo = await db.get(
+        `
         SELECT 
           u.id, COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.grade, u.class, u.points,
           COUNT(DISTINCT ar.id) as total_sessions,
@@ -35,7 +47,9 @@ const personalizedRecommendationTool = defineTool({
         LEFT JOIN answer_records ar ON u.id = ar.user_id
         WHERE u.id = ?
         GROUP BY u.id
-      `, [studentId])
+      `,
+        [studentId]
+      )
 
       if (!studentInfo) {
         return JSON.stringify({ success: false, error: '学生不存在' })
@@ -124,27 +138,29 @@ const personalizedRecommendationTool = defineTool({
           `
 
           const questionsForWeak = await db.query(questionsSQL, [
-            studentId, 
-            weakPoint.subcategory_id, 
-            studentId, 
+            studentId,
+            weakPoint.subcategory_id,
+            studentId,
             Math.ceil(count / weakPoints.length)
           ])
 
-          recommendations.push(...questionsForWeak.map(q => ({
-            ...q,
-            recommendation_reason: '薄弱知识点',
-            subcategory_id: weakPoint.subcategory_id,
-            mastery_level: weakPoint.mastery_level,
-            progress_percentage: weakPoint.progress_percentage,
-            priority: 'high'
-          })))
+          recommendations.push(
+            ...questionsForWeak.map(q => ({
+              ...q,
+              recommendation_reason: '薄弱知识点',
+              subcategory_id: weakPoint.subcategory_id,
+              mastery_level: weakPoint.mastery_level,
+              progress_percentage: weakPoint.progress_percentage,
+              priority: 'high'
+            }))
+          )
         }
       }
 
       // 5. 如果题目不够，补充其他题目
       if (recommendations.length < count) {
         const remaining = count - recommendations.length
-        
+
         const additionalSQL = `
           SELECT 
             q.id,
@@ -177,11 +193,13 @@ const personalizedRecommendationTool = defineTool({
 
         const additionalQuestions = await db.query(additionalSQL, additionalParams)
 
-        recommendations.push(...additionalQuestions.map(q => ({
-          ...q,
-          recommendation_reason: '拓展练习',
-          priority: 'medium'
-        })))
+        recommendations.push(
+          ...additionalQuestions.map(q => ({
+            ...q,
+            recommendation_reason: '拓展练习',
+            priority: 'medium'
+          }))
+        )
       }
 
       // 6. 去重并限制数量
@@ -203,7 +221,9 @@ const personalizedRecommendationTool = defineTool({
           },
           recommendation_strategy: {
             type: difficultyRange,
-            target_difficulty: targetDifficulty.map(d => d === 1 ? '基础' : d === 2 ? '中等' : '困难'),
+            target_difficulty: targetDifficulty.map(d =>
+              d === 1 ? '基础' : d === 2 ? '中等' : '困难'
+            ),
             focus_weak: focusWeak,
             weak_points_count: weakPoints.length
           },

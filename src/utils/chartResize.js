@@ -47,7 +47,7 @@ function initResizeObserver() {
     return
   }
 
-  resizeObserver = new ResizeObserver((entries) => {
+  resizeObserver = new ResizeObserver(entries => {
     for (const entry of entries) {
       const { width, height } = entry.contentRect
       if (width > 0 && height > 0) {

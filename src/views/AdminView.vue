@@ -13,9 +13,7 @@
       <QuestionList
         ref="questionListRef"
         :subjects="subjects"
-        @edit-question="editQuestion"
         @delete-question="deleteQuestion"
-        @show-add-dialog="showAddQuestionDialog"
         @show-batch-add-dialog="batchAddDialogVisible = true"
       />
     </div>
@@ -117,14 +115,6 @@
       :subjects="subjects"
       @batch-add-questions="handleBatchAddQuestions"
     />
-
-    <!-- 添加/编辑题目对话框 -->
-    <QuestionForm
-      v-model:visible="questionFormDialogVisible"
-      :question="selectedQuestion"
-      :subjects="subjects"
-      @save-question="saveQuestion"
-    />
   </AdminLayout>
 </template>
 
@@ -169,9 +159,6 @@ const DataCleanup = defineAsyncComponent(
   () => import('../components/admin/data-management/DataCleanup.vue')
 )
 const DashboardView = defineAsyncComponent(() => import('./admin/DashboardView.vue'))
-const QuestionForm = defineAsyncComponent(
-  () => import('../components/admin/question-management/QuestionForm.vue')
-)
 const BatchAddQuestion = defineAsyncComponent(
   () => import('../components/admin/question-management/BatchAddQuestion.vue')
 )
@@ -227,48 +214,11 @@ const handleAuthenticated = () => {
 let isComponentMounted = true
 
 // ==================== 题目管理 ====================
-const questionFormDialogVisible = ref(false)
 const batchAddDialogVisible = ref(false)
-const isEditing = ref(false)
-const selectedQuestion = ref(null)
-
-const showAddQuestionDialog = () => {
-  isEditing.value = false
-  selectedQuestion.value = null
-  questionFormDialogVisible.value = true
-}
-
-const editQuestion = question => {
-  isEditing.value = true
-  selectedQuestion.value = question
-  questionFormDialogVisible.value = true
-}
 
 const deleteQuestion = questionId => {
   questionStore.deleteQuestion(questionId)
   questionListRef.value?.refresh()
-}
-
-const saveQuestion = async formData => {
-  try {
-    if (isEditing.value) {
-      await questionStore.updateQuestion(formData)
-      if (isComponentMounted) {
-        message.success('题目更新成功！')
-      }
-    } else {
-      await questionStore.addQuestion(formData)
-      if (isComponentMounted) {
-        message.success('题目添加成功！')
-      }
-    }
-    questionFormDialogVisible.value = false
-    questionListRef.value?.refresh()
-  } catch (error) {
-    if (isComponentMounted) {
-      message.error('保存题目失败，请稍后重试！')
-    }
-  }
 }
 
 const handleBatchAddQuestions = async questions => {

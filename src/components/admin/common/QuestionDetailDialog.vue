@@ -31,8 +31,11 @@
         <div class="content-html rich-text-content size-xlarge" v-html="question.content"></div>
       </div>
 
-      <!-- 选项 -->
-      <div v-if="question.options && question.options.length > 0" class="options-section">
+      <!-- 选项（普通题目） -->
+      <div
+        v-if="question.type !== 'reading' && question.options && question.options.length > 0"
+        class="options-section"
+      >
         <h3>答案选项</h3>
         <div class="options-list">
           <div
@@ -57,6 +60,39 @@
             >
               正确答案
             </el-tag>
+          </div>
+        </div>
+      </div>
+
+      <!-- 阅读理解题小题列表 -->
+      <div v-if="question.type === 'reading'" class="reading-section">
+        <h3>小题列表（共 {{ parseReadingOptions(question.options).length }} 题）</h3>
+        <div class="sub-questions-list">
+          <div
+            v-for="(sq, sqIndex) in parseReadingOptions(question.options)"
+            :key="sqIndex"
+            class="sub-question-item"
+          >
+            <div class="sub-question-header">
+              <span class="sub-question-number">第 {{ sq.order || sqIndex + 1 }} 题</span>
+              <el-tag type="success" size="small">答案: {{ sq.answer }}</el-tag>
+            </div>
+            <div class="sub-question-content" v-html="sq.content"></div>
+            <div class="sub-question-options">
+              <div
+                v-for="(opt, optIndex) in sq.options"
+                :key="optIndex"
+                class="sub-option-item"
+                :class="{ 'is-correct': sq.answer === String.fromCharCode(65 + optIndex) }"
+              >
+                <span class="option-letter">{{ String.fromCharCode(65 + optIndex) }}.</span>
+                <span class="option-text" v-html="opt"></span>
+              </div>
+            </div>
+            <div v-if="sq.explanation" class="sub-question-explanation">
+              <span class="explanation-label">解析：</span>
+              <span v-html="sq.explanation"></span>
+            </div>
           </div>
         </div>
       </div>
@@ -217,6 +253,25 @@ const formatOption = option => {
   return String(option)
 }
 
+// 解析阅读理解题的小题列表
+const parseReadingOptions = options => {
+  if (!options) return []
+  let parsedOptions = options
+  if (typeof options === 'string') {
+    try {
+      parsedOptions = JSON.parse(options)
+    } catch (e) {
+      return []
+    }
+  }
+  if (!Array.isArray(parsedOptions)) return []
+  // 检查是否是阅读理解题格式（对象数组且包含order字段）
+  if (parsedOptions.length > 0 && typeof parsedOptions[0] === 'object') {
+    return parsedOptions
+  }
+  return []
+}
+
 // 判断是否是正确选项
 const isCorrectOption = index => {
   const letter = String.fromCharCode(65 + index)
@@ -361,6 +416,87 @@ const isUserCorrect = computed(() => {
   border-left: 4px solid #e6a23c;
   border-radius: 4px;
   line-height: 1.8;
+}
+
+/* 阅读理解题样式 */
+.reading-section {
+  margin-bottom: 20px;
+}
+
+.reading-section h3 {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 12px;
+}
+
+.sub-questions-list {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sub-question-item {
+  padding: 16px;
+  background-color: #f8fafc;
+  border-radius: 8px;
+  border: 1px solid #e4e7ed;
+}
+
+.sub-question-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.sub-question-number {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 15px;
+}
+
+.sub-question-content {
+  padding: 12px;
+  background-color: white;
+  border-radius: 6px;
+  margin-bottom: 12px;
+  line-height: 1.6;
+}
+
+.sub-question-options {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sub-option-item {
+  display: flex;
+  align-items: flex-start;
+  padding: 8px 12px;
+  background-color: white;
+  border-radius: 6px;
+  border: 1px solid #e4e7ed;
+}
+
+.sub-option-item.is-correct {
+  background-color: #f0f9ff;
+  border-color: #67c23a;
+}
+
+.sub-question-explanation {
+  margin-top: 12px;
+  padding: 12px;
+  background-color: #fff9e6;
+  border-left: 3px solid #e6a23c;
+  border-radius: 4px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.explanation-label {
+  font-weight: 600;
+  color: #606266;
 }
 
 .empty-state {

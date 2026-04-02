@@ -369,6 +369,62 @@ const mapAnswerToOriginal = (userAnswer, reverseMapping) => {
   }
 }
 
+// 判断阅读理解题是否正确的函数
+const judgeReadingQuestion = (userAnswers, correctAnswers, reverseMapping) => {
+  // userAnswers: { 小题索引: 用户答案 }
+  // correctAnswers: { 小题序号: 正确答案 } 或 JSON 字符串
+  // reverseMapping: { 小题索引: { 打乱后位置: 原始位置 } }
+
+  let correctCount = 0
+  const subQuestionResults = []
+
+  // 解析正确答案
+  let parsedCorrectAnswers = correctAnswers
+  if (typeof correctAnswers === 'string') {
+    try {
+      parsedCorrectAnswers = JSON.parse(correctAnswers)
+    } catch (e) {
+      parsedCorrectAnswers = {}
+    }
+  }
+
+  // 遍历所有小题
+  Object.keys(userAnswers).forEach(sqIndex => {
+    const userAnswer = userAnswers[sqIndex]
+    const sqOrder = parseInt(sqIndex) + 1 // 小题序号从1开始
+    const correctAnswer = parsedCorrectAnswers[String(sqOrder)]
+
+    // 获取该小题的打乱映射
+    const sqReverseMapping = reverseMapping ? reverseMapping[sqIndex] : null
+
+    // 映射用户答案回原始位置
+    let mappedAnswer = userAnswer
+    if (sqReverseMapping) {
+      mappedAnswer = mapAnswerToOriginal(userAnswer, sqReverseMapping)
+    }
+
+    // 判断是否正确
+    const isCorrect = mappedAnswer === correctAnswer
+    if (isCorrect) {
+      correctCount++
+    }
+
+    subQuestionResults.push({
+      order: sqOrder,
+      userAnswer: userAnswer,
+      mappedUserAnswer: mappedAnswer,
+      correctAnswer: correctAnswer,
+      isCorrect
+    })
+  })
+
+  return {
+    correctCount,
+    totalSubQuestions: Object.keys(userAnswers).length,
+    subQuestionResults
+  }
+}
+
 // 提交答案API - 应用严格限流
 router.post('/submit', submitLimiter.middleware(), async (req, res) => {
   try {
@@ -477,7 +533,17 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
 
       // 判断答案是否正确（使用映射后的答案）
       let isCorrect = false
-      if (question.type === 'multiple') {
+      let readingResult = null // 阅读理解题结果
+
+      if (question.type === 'reading') {
+        // 阅读理解题：判断所有小题
+        readingResult = judgeReadingQuestion(
+          userAnswer, // { 小题索引: 用户答案 }
+          originalQuestion.answer, // { 小题序号: 正确答案 }
+          reverseMapping // { 小题索引: { 打乱后位置: 原始位置 } }
+        )
+        isCorrect = readingResult.correctCount === readingResult.totalSubQuestions
+      } else if (question.type === 'multiple') {
         const correctAnswers = Array.isArray(correctAnswer)
           ? correctAnswer
           : correctAnswer.split('')
@@ -539,7 +605,15 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
         audio_url: originalQuestion.audio_url,
         image_url: originalQuestion.image_url,
         // 添加打乱映射，用于前端显示（实际上前端不需要了，因为后端已经处理好了）
-        shuffleMapping: reverseMapping
+        shuffleMapping: reverseMapping,
+        // 阅读理解题专用字段
+        readingResult: readingResult
+          ? {
+              correctCount: readingResult.correctCount,
+              totalSubQuestions: readingResult.totalSubQuestions,
+              subQuestionResults: readingResult.subQuestionResults
+            }
+          : null
       })
     }
 

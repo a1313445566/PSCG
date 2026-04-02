@@ -56,7 +56,7 @@ const classFullAnalysisTool = defineTool({
       // 检查缓存
       const cacheKey = getCacheKey(grade, classNum)
       const cachedData = getFromCache(cacheKey)
-      
+
       if (cachedData) {
         return cachedData
       }

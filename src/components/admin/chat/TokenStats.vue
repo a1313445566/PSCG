@@ -55,7 +55,7 @@
         </div>
       </div>
 
-        <!-- 详细信息 - 横向排列 -->
+      <!-- 详细信息 - 横向排列 -->
       <div class="stats-details">
         <div class="detail-row">
           <div class="detail-cell">

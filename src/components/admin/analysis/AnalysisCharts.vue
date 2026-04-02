@@ -80,7 +80,13 @@
 import { ref, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import VChart from '@visactor/vchart'
 import { formatPercent } from '../../../utils/format'
-import { registerChart, unregisterChart, observeContainer, unobserveContainer, cleanup } from '../../../utils/chartResize'
+import {
+  registerChart,
+  unregisterChart,
+  observeContainer,
+  unobserveContainer,
+  cleanup
+} from '../../../utils/chartResize'
 
 const props = defineProps({
   analysisData: {
@@ -129,7 +135,9 @@ const initSubjectChart = () => {
 
   // 先销毁旧图表
   if (subjectChart) {
-    try { subjectChart.release() } catch (e) {}
+    try {
+      subjectChart.release()
+    } catch (e) {}
     subjectChart = null
   }
 
@@ -173,7 +181,7 @@ const initSubjectChart = () => {
     mode: 'desktop-browser'
   })
   subjectChart.renderAsync()
-  
+
   // ✅ 添加到图表实例列表
   if (!chartInstanceList.includes(subjectChart)) {
     chartInstanceList.push(subjectChart)
@@ -186,7 +194,9 @@ const initGradeChart = () => {
 
   // 先销毁旧图表
   if (gradeChart) {
-    try { gradeChart.release() } catch (e) {}
+    try {
+      gradeChart.release()
+    } catch (e) {}
     gradeChart = null
   }
 
@@ -234,7 +244,7 @@ const initGradeChart = () => {
     mode: 'desktop-browser'
   })
   gradeChart.renderAsync()
-  
+
   // ✅ 添加到图表实例列表
   if (!chartInstanceList.includes(gradeChart)) {
     chartInstanceList.push(gradeChart)
@@ -247,7 +257,9 @@ const initTimeChart = () => {
 
   // 先销毁旧图表
   if (timeChart) {
-    try { timeChart.release() } catch (e) {}
+    try {
+      timeChart.release()
+    } catch (e) {}
     timeChart = null
   }
 
@@ -303,7 +315,7 @@ const initTimeChart = () => {
     mode: 'desktop-browser'
   })
   timeChart.renderAsync()
-  
+
   // ✅ 添加到图表实例列表
   if (!chartInstanceList.includes(timeChart)) {
     chartInstanceList.push(timeChart)
@@ -316,7 +328,9 @@ const initClassChart = () => {
 
   // 先销毁旧图表
   if (classChart) {
-    try { classChart.release() } catch (e) {}
+    try {
+      classChart.release()
+    } catch (e) {}
     classChart = null
   }
 
@@ -354,7 +368,7 @@ const initClassChart = () => {
     mode: 'desktop-browser'
   })
   classChart.renderAsync()
-  
+
   // ✅ 添加到图表实例列表
   if (!chartInstanceList.includes(classChart)) {
     chartInstanceList.push(classChart)
@@ -367,7 +381,9 @@ const initTimeSpentChart = () => {
 
   // 先销毁旧图表
   if (timeSpentChart) {
-    try { timeSpentChart.release() } catch (e) {}
+    try {
+      timeSpentChart.release()
+    } catch (e) {}
     timeSpentChart = null
   }
 
@@ -410,7 +426,7 @@ const initTimeSpentChart = () => {
     mode: 'desktop-browser'
   })
   timeSpentChart.renderAsync()
-  
+
   // ✅ 添加到图表实例列表
   if (!chartInstanceList.includes(timeSpentChart)) {
     chartInstanceList.push(timeSpentChart)
@@ -423,7 +439,9 @@ const initSubcategoryChart = () => {
 
   // 先销毁旧图表
   if (subcategoryChart) {
-    try { subcategoryChart.release() } catch (e) {}
+    try {
+      subcategoryChart.release()
+    } catch (e) {}
     subcategoryChart = null
   }
 
@@ -514,7 +532,7 @@ const disposeCharts = () => {
     }
   })
   chartInstanceList.length = 0 // 清空数组
-  
+
   // 清空引用
   subjectChart = null
   gradeChart = null
@@ -522,7 +540,7 @@ const disposeCharts = () => {
   classChart = null
   timeSpentChart = null
   subcategoryChart = null
-  
+
   // 清理定时器
   if (resizeTimeout) {
     clearTimeout(resizeTimeout)
@@ -533,7 +551,7 @@ const disposeCharts = () => {
 // ✅ 启动容器尺寸监听（使用 ResizeObserver）
 const startContainerObserver = () => {
   if (!window.ResizeObserver) return
-  
+
   // 监听所有图表容器
   const containers = [
     subjectChartRef.value,
@@ -543,13 +561,13 @@ const startContainerObserver = () => {
     timeSpentChartRef.value,
     subcategoryChartRef.value
   ].filter(Boolean)
-  
+
   if (containers.length === 0) return
-  
+
   resizeObserver = new ResizeObserver(() => {
     handleResize()
   })
-  
+
   containers.forEach(container => {
     resizeObserver.observe(container)
   })

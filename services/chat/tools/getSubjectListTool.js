@@ -12,7 +12,7 @@ const getSubjectListTool = defineTool({
   name: 'get_subject_list',
   description: '获取所有学科（题库）列表，包含每个学科的题目数量、答题人数、平均正确率等统计数据。',
   schema: z.object({}),
-  handler: async (args) => {
+  handler: async args => {
     try {
       // 查询所有学科及其统计数据
       const sql = `

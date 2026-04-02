@@ -490,7 +490,7 @@ async function streamAgentResponse(agent, messages, onChunk) {
     const assistantMessage = response.choices[0].message
 
     // Token 使用统计(第一次调用)
-    let tokenUsage = {
+    const tokenUsage = {
       input: response.usage?.prompt_tokens || 0,
       output: response.usage?.completion_tokens || 0
     }
@@ -502,9 +502,9 @@ async function streamAgentResponse(agent, messages, onChunk) {
       fullMessages.push(assistantMessage)
 
       // 并行执行工具(优化性能)
-      const toolPromises = assistantMessage.tool_calls.map(async (toolCall) => {
+      const toolPromises = assistantMessage.tool_calls.map(async toolCall => {
         const functionName = toolCall.function.name
-        let argsStr = toolCall.function.arguments
+        const argsStr = toolCall.function.arguments
           .replace(/:\s*None/g, ': null')
           .replace(/:\s*True/g, ': true')
           .replace(/:\s*False/g, ': false')
@@ -521,7 +521,7 @@ async function streamAgentResponse(agent, messages, onChunk) {
       const toolResults = await Promise.all(toolPromises)
 
       // 将工具结果加入历史
-      toolResults.forEach((result) => {
+      toolResults.forEach(result => {
         fullMessages.push({
           role: 'tool',
           tool_call_id: result.tool_call_id,

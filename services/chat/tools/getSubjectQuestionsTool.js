@@ -15,10 +15,18 @@ const getSubjectQuestionsTool = defineTool({
     subjectId: z.number().int().positive().describe('学科ID'),
     page: z.number().int().min(1).default(1).describe('页码，默认第1页'),
     pageSize: z.number().int().min(1).max(50).default(20).describe('每页数量，默认20，最大50'),
-    sortBy: z.enum(['difficulty', 'accuracy', 'attempts']).optional().default('attempts').describe('排序方式：difficulty-难度，accuracy-正确率，attempts-答题次数'),
-    order: z.enum(['asc', 'desc']).optional().default('desc').describe('排序顺序：asc-升序，desc-降序')
+    sortBy: z
+      .enum(['difficulty', 'accuracy', 'attempts'])
+      .optional()
+      .default('attempts')
+      .describe('排序方式：difficulty-难度，accuracy-正确率，attempts-答题次数'),
+    order: z
+      .enum(['asc', 'desc'])
+      .optional()
+      .default('desc')
+      .describe('排序顺序：asc-升序，desc-降序')
   }),
-  handler: async (args) => {
+  handler: async args => {
     const { subjectId, page = 1, pageSize = 20, sortBy = 'attempts', order = 'desc' } = args
     const offset = (page - 1) * pageSize
 
@@ -33,11 +41,12 @@ const getSubjectQuestionsTool = defineTool({
       }
 
       // 构建排序字段
-      const orderField = {
-        difficulty: 'q.difficulty',
-        accuracy: 'accuracy',
-        attempts: 'attempt_count'
-      }[sortBy] || 'attempt_count'
+      const orderField =
+        {
+          difficulty: 'q.difficulty',
+          accuracy: 'accuracy',
+          attempts: 'attempt_count'
+        }[sortBy] || 'attempt_count'
 
       const orderClause = `ORDER BY ${orderField} ${order.toUpperCase()}`
 

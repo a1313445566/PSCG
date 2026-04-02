@@ -16,7 +16,11 @@ const classComparisonTool = defineTool({
     grade: z.string().describe('年级(1-6)'),
     classes: z.array(z.string()).min(2).max(10).describe('班级列表（如["一班", "二班"]）'),
     subjectId: z.number().int().positive().optional().describe('学科ID'),
-    compareBy: z.enum(['accuracy', 'progress', 'activity', 'all']).optional().default('all').describe('对比维度: accuracy=正确率, progress=进步幅度, activity=活跃度, all=全部')
+    compareBy: z
+      .enum(['accuracy', 'progress', 'activity', 'all'])
+      .optional()
+      .default('all')
+      .describe('对比维度: accuracy=正确率, progress=进步幅度, activity=活跃度, all=全部')
   }),
   handler: async args => {
     try {
@@ -27,7 +31,8 @@ const classComparisonTool = defineTool({
       // 对每个班级进行统计
       for (const className of classes) {
         // 1. 基础统计
-        const basicStats = await db.get(`
+        const basicStats = await db.get(
+          `
           SELECT 
             COUNT(DISTINCT u.id) as students,
             COUNT(DISTINCT ar.id) as sessions,
@@ -39,10 +44,13 @@ const classComparisonTool = defineTool({
           LEFT JOIN answer_records ar ON u.id = ar.user_id
           ${subjectId ? ' AND ar.subject_id = ?' : ''}
           WHERE u.grade = ? AND u.class = ?
-        `, subjectId ? [subjectId, grade, className] : [grade, className])
+        `,
+          subjectId ? [subjectId, grade, className] : [grade, className]
+        )
 
         // 2. 本周 vs 上周对比（进步幅度）
-        const weeklyComparison = await db.get(`
+        const weeklyComparison = await db.get(
+          `
           SELECT 
             (SELECT ROUND(SUM(correct_count) * 100.0 / NULLIF(SUM(total_questions), 0), 2)
              FROM answer_records ar
@@ -59,15 +67,18 @@ const classComparisonTool = defineTool({
                AND ar.created_at >= DATE_SUB(NOW(), INTERVAL 14 DAY)
                AND ar.created_at < DATE_SUB(NOW(), INTERVAL 7 DAY)
             ) as last_week_accuracy
-        `, subjectId 
-          ? [grade, className, subjectId, grade, className, subjectId] 
-          : [grade, className, grade, className]
+        `,
+          subjectId
+            ? [grade, className, subjectId, grade, className, subjectId]
+            : [grade, className, grade, className]
         )
 
-        const progressChange = (weeklyComparison.this_week_accuracy || 0) - (weeklyComparison.last_week_accuracy || 0)
+        const progressChange =
+          (weeklyComparison.this_week_accuracy || 0) - (weeklyComparison.last_week_accuracy || 0)
 
         // 3. 学生正确率分布
-        const accuracyDistribution = await db.query(`
+        const accuracyDistribution = await db.query(
+          `
           SELECT 
             CASE 
               WHEN accuracy >= 90 THEN '优秀'
@@ -95,10 +106,13 @@ const classComparisonTool = defineTool({
               WHEN '及格' THEN 4
               ELSE 5
             END
-        `, subjectId ? [subjectId, grade, className] : [grade, className])
+        `,
+          subjectId ? [subjectId, grade, className] : [grade, className]
+        )
 
         // 4. TOP5 学生
-        const topStudents = await db.query(`
+        const topStudents = await db.query(
+          `
           SELECT COALESCE(NULLIF(u.name, ''), u.student_id) as name, u.points,
             COUNT(DISTINCT ar.id) as sessions,
             ROUND(SUM(ar.correct_count) * 100.0 / NULLIF(SUM(ar.total_questions), 0), 2) as accuracy
@@ -109,7 +123,9 @@ const classComparisonTool = defineTool({
           GROUP BY u.id
           ORDER BY u.points DESC
           LIMIT 5
-        `, subjectId ? [subjectId, grade, className] : [grade, className])
+        `,
+          subjectId ? [subjectId, grade, className] : [grade, className]
+        )
 
         comparisonResults.push({
           class: className,
@@ -125,7 +141,14 @@ const classComparisonTool = defineTool({
             this_week_accuracy: weeklyComparison.this_week_accuracy || 0,
             last_week_accuracy: weeklyComparison.last_week_accuracy || 0,
             progress_change: progressChange,
-            trend: progressChange > 5 ? '进步显著' : progressChange > 0 ? '略有进步' : progressChange < -5 ? '退步明显' : '保持稳定'
+            trend:
+              progressChange > 5
+                ? '进步显著'
+                : progressChange > 0
+                  ? '略有进步'
+                  : progressChange < -5
+                    ? '退步明显'
+                    : '保持稳定'
           },
           accuracy_distribution: {
             excellent: accuracyDistribution.find(d => d.level === '优秀')?.count || 0,
@@ -139,16 +162,16 @@ const classComparisonTool = defineTool({
       }
 
       // 生成对比分析
-      const sortedByAccuracy = [...comparisonResults].sort((a, b) => 
-        b.basic_stats.accuracy - a.basic_stats.accuracy
+      const sortedByAccuracy = [...comparisonResults].sort(
+        (a, b) => b.basic_stats.accuracy - a.basic_stats.accuracy
       )
 
-      const sortedByProgress = [...comparisonResults].sort((a, b) => 
-        b.weekly_progress.progress_change - a.weekly_progress.progress_change
+      const sortedByProgress = [...comparisonResults].sort(
+        (a, b) => b.weekly_progress.progress_change - a.weekly_progress.progress_change
       )
 
-      const sortedByActivity = [...comparisonResults].sort((a, b) => 
-        b.basic_stats.sessions - a.basic_stats.sessions
+      const sortedByActivity = [...comparisonResults].sort(
+        (a, b) => b.basic_stats.sessions - a.basic_stats.sessions
       )
 
       return JSON.stringify({

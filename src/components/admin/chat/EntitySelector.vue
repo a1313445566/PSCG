@@ -51,9 +51,7 @@
         :value="student.id"
       >
         <span>{{ student.name }}</span>
-        <span style="float: right; color: #909399; font-size: 12px">
-          {{ student.class }}班
-        </span>
+        <span style="float: right; color: #909399; font-size: 12px">{{ student.class }}班</span>
       </el-option>
     </el-select>
 
@@ -131,7 +129,7 @@ async function loadStudents() {
       page: 1,
       limit: 100
     })
-    
+
     // 兼容不同的响应格式
     let users = []
     if (res.code === 0 && res.data?.users) {
@@ -141,7 +139,7 @@ async function loadStudents() {
     } else if (res.users) {
       users = res.users
     }
-    
+
     students.value = users
   } catch (error) {
     console.error('加载学生列表失败:', error)

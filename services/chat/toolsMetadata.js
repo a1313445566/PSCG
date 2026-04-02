@@ -44,11 +44,7 @@ const toolsMetadata = [
     description: '获取所有学科（题库）列表及统计数据',
     requiredParams: [],
     optionalParams: [],
-    quickQuestions: [
-      '系统中有哪些题库',
-      '查看所有学科的题目数量统计',
-      '各学科有多少学生参与答题'
-    ]
+    quickQuestions: ['系统中有哪些题库', '查看所有学科的题目数量统计', '各学科有多少学生参与答题']
   },
   {
     name: 'get_subject_detail',
@@ -187,7 +183,15 @@ const toolsMetadata = [
     icon: 'DocumentRemove',
     description: '分析学生或班级的错题情况',
     requiredParams: [],
-    optionalParams: ['studentId', 'studentName', 'grade', 'className', 'subjectId', 'startDate', 'endDate'],
+    optionalParams: [
+      'studentId',
+      'studentName',
+      'grade',
+      'className',
+      'subjectId',
+      'startDate',
+      'endDate'
+    ],
     quickQuestions: [
       '分析{studentName}的错题',
       '{grade}年级{className}班常见错误类型',
@@ -203,7 +207,15 @@ const toolsMetadata = [
     icon: 'TrendCharts',
     description: '查询学习数据随时间变化趋势',
     requiredParams: [],
-    optionalParams: ['studentId', 'studentName', 'grade', 'className', 'startDate', 'endDate', 'granularity'],
+    optionalParams: [
+      'studentId',
+      'studentName',
+      'grade',
+      'className',
+      'startDate',
+      'endDate',
+      'granularity'
+    ],
     quickQuestions: [
       '查看{studentName}的学习趋势',
       '{grade}年级{className}班本学期学习曲线',
@@ -247,7 +259,14 @@ const toolsMetadata = [
     icon: 'MagicStick',
     description: '为学生生成个性化学习建议和题目推荐',
     requiredParams: [],
-    optionalParams: ['studentId', 'studentName', 'grade', 'subjectId', 'recommendationType', 'limit'],
+    optionalParams: [
+      'studentId',
+      'studentName',
+      'grade',
+      'subjectId',
+      'recommendationType',
+      'limit'
+    ],
     quickQuestions: [
       '为{studentName}推荐练习题目',
       '{studentName}需要重点复习哪些内容',
@@ -294,11 +313,7 @@ const toolsMetadata = [
     description: '查询系统整体统计数据',
     requiredParams: [],
     optionalParams: ['startDate', 'endDate'],
-    quickQuestions: [
-      '查看系统整体使用情况',
-      '本学期平台使用统计',
-      '最近一周的学生活跃度'
-    ]
+    quickQuestions: ['查看系统整体使用情况', '本学期平台使用统计', '最近一周的学生活跃度']
   }
 ]
 

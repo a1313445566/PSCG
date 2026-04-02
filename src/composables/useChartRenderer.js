@@ -1,6 +1,11 @@
 import { ref, onUnmounted } from 'vue'
 import { extractAllChartConfigs, VChart } from '@/utils/chartGenerator'
-import { registerChart, unregisterChart, observeContainer, unobserveContainer } from '@/utils/chartResize'
+import {
+  registerChart,
+  unregisterChart,
+  observeContainer,
+  unobserveContainer
+} from '@/utils/chartResize'
 
 // 图表ID计数器
 let chartIdCounter = 0

@@ -11,14 +11,22 @@ const db = require('../../database')
 
 const knowledgePointMasteryTool = defineTool({
   name: 'query_knowledge_point_mastery',
-  description: '知识点掌握度分析：查询学生在具体知识点（子分类）上的掌握程度。小学教育精准教学工具！',
+  description:
+    '知识点掌握度分析：查询学生在具体知识点（子分类）上的掌握程度。小学教育精准教学工具！',
   schema: z.object({
     studentId: z.number().int().positive().optional().describe('学生ID'),
     grade: z.string().optional().describe('年级(1-6)'),
     className: z.string().optional().describe('班级'),
     subjectId: z.number().int().positive().optional().describe('学科ID'),
     subcategoryId: z.number().int().positive().optional().describe('知识点ID（子分类ID）'),
-    masteryThreshold: z.number().int().min(0).max(100).optional().default(70).describe('掌握度阈值（低于此值为薄弱点）')
+    masteryThreshold: z
+      .number()
+      .int()
+      .min(0)
+      .max(100)
+      .optional()
+      .default(70)
+      .describe('掌握度阈值（低于此值为薄弱点）')
   }),
   handler: async args => {
     try {
@@ -59,13 +67,13 @@ const knowledgePointMasteryTool = defineTool({
         const studentMastery = await db.query(masterySQL, params)
 
         // 分析薄弱知识点
-        const weakPoints = studentMastery.filter(m => 
-          m.mastery_level < masteryThreshold || m.progress_percentage < masteryThreshold
+        const weakPoints = studentMastery.filter(
+          m => m.mastery_level < masteryThreshold || m.progress_percentage < masteryThreshold
         )
 
         // 分析优势知识点
-        const strongPoints = studentMastery.filter(m => 
-          m.mastery_level >= 90 && m.progress_percentage >= 90
+        const strongPoints = studentMastery.filter(
+          m => m.mastery_level >= 90 && m.progress_percentage >= 90
         )
 
         return JSON.stringify({
@@ -78,8 +86,10 @@ const knowledgePointMasteryTool = defineTool({
             total_knowledge_points: studentMastery.length,
             mastery_distribution: {
               excellent: studentMastery.filter(m => m.mastery_level >= 90).length,
-              good: studentMastery.filter(m => m.mastery_level >= 70 && m.mastery_level < 90).length,
-              average: studentMastery.filter(m => m.mastery_level >= 50 && m.mastery_level < 70).length,
+              good: studentMastery.filter(m => m.mastery_level >= 70 && m.mastery_level < 90)
+                .length,
+              average: studentMastery.filter(m => m.mastery_level >= 50 && m.mastery_level < 70)
+                .length,
               weak: studentMastery.filter(m => m.mastery_level < 50).length,
               not_started: studentMastery.filter(m => !m.mastery_level).length
             },
@@ -94,9 +104,8 @@ const knowledgePointMasteryTool = defineTool({
               accuracy_trend: wp.accuracy_trend,
               last_practiced: wp.last_practiced,
               ai_suggestion: wp.ai_suggestion,
-              suggestion: wp.mastery_level < 50 
-                ? '建议重点辅导，基础薄弱'
-                : '建议加强练习，巩固提升'
+              suggestion:
+                wp.mastery_level < 50 ? '建议重点辅导，基础薄弱' : '建议加强练习，巩固提升'
             })),
             strong_points: strongPoints.slice(0, 5).map(sp => ({
               subcategory_id: sp.subcategory_id,
@@ -107,9 +116,10 @@ const knowledgePointMasteryTool = defineTool({
               suggestion: '掌握良好，可适当拓展'
             })),
             all_mastery: studentMastery,
-            recommendation: weakPoints.length > 0
-              ? `发现 ${weakPoints.length} 个薄弱知识点，建议重点辅导`
-              : '知识点掌握良好，建议保持练习'
+            recommendation:
+              weakPoints.length > 0
+                ? `发现 ${weakPoints.length} 个薄弱知识点，建议重点辅导`
+                : '知识点掌握良好，建议保持练习'
           }
         })
       }
@@ -162,7 +172,8 @@ const knowledgePointMasteryTool = defineTool({
               class: className || '全部班级'
             },
             total_knowledge_points: classMastery.length,
-            class_average_mastery: classMastery.reduce((sum, m) => sum + (m.avg_mastery || 0), 0) / classMastery.length,
+            class_average_mastery:
+              classMastery.reduce((sum, m) => sum + (m.avg_mastery || 0), 0) / classMastery.length,
             weak_knowledge_points: classWeakPoints.map(wp => ({
               subcategory_id: wp.subcategory_id,
               subcategory_name: wp.subcategory_name,
@@ -194,9 +205,10 @@ const knowledgePointMasteryTool = defineTool({
               students_learned: m.students_learned,
               weak_students: m.weak_students
             })),
-            recommendation: classWeakPoints.length > 0
-              ? `发现 ${classWeakPoints.length} 个薄弱知识点，建议重点讲解`
-              : '全班知识点掌握良好'
+            recommendation:
+              classWeakPoints.length > 0
+                ? `发现 ${classWeakPoints.length} 个薄弱知识点，建议重点讲解`
+                : '全班知识点掌握良好'
           }
         })
       }
@@ -229,23 +241,30 @@ const knowledgePointMasteryTool = defineTool({
         const studentDetails = await db.query(detailSQL, detailParams)
 
         // 获取知识点信息
-        const subcategoryInfo = await db.get(`
+        const subcategoryInfo = await db.get(
+          `
           SELECT sc.*, s.name as subject_name
           FROM subcategories sc
           LEFT JOIN subjects s ON sc.subject_id = s.id
           WHERE sc.id = ?
-        `, [subcategoryId])
+        `,
+          [subcategoryId]
+        )
 
         return JSON.stringify({
           success: true,
           data: {
             subcategory: subcategoryInfo,
             total_students: studentDetails.length,
-            average_mastery: studentDetails.reduce((sum, s) => sum + (s.mastery_level || 0), 0) / studentDetails.length,
+            average_mastery:
+              studentDetails.reduce((sum, s) => sum + (s.mastery_level || 0), 0) /
+              studentDetails.length,
             mastery_distribution: {
               excellent: studentDetails.filter(s => s.mastery_level >= 90).length,
-              good: studentDetails.filter(s => s.mastery_level >= 70 && s.mastery_level < 90).length,
-              average: studentDetails.filter(s => s.mastery_level >= 50 && s.mastery_level < 70).length,
+              good: studentDetails.filter(s => s.mastery_level >= 70 && s.mastery_level < 90)
+                .length,
+              average: studentDetails.filter(s => s.mastery_level >= 50 && s.mastery_level < 70)
+                .length,
               weak: studentDetails.filter(s => s.mastery_level < 50).length
             },
             students: studentDetails.map(s => ({

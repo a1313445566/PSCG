@@ -316,23 +316,8 @@ router.post('/', async (req, res) => {
     content = xssFilter.deepSanitize(content)
     explanation = xssFilter.sanitize(explanation)
 
-    // 过滤选项中的富文本内容
-    const sanitizedOptions = options.map(opt => {
-      if (opt === null || opt === undefined) {
-        return ''
-      }
-      if (typeof opt === 'string') {
-        return xssFilter.deepSanitize(opt)
-      }
-      if (typeof opt === 'object') {
-        // 递归处理对象属性
-        return Object.keys(opt).reduce((acc, key) => {
-          acc[key] = typeof opt[key] === 'string' ? xssFilter.deepSanitize(opt[key]) : opt[key]
-          return acc
-        }, {})
-      }
-      return opt
-    })
+    // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
+    const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
 
     // 处理 options 参数，确保它是一个数组
     const optionsJson = JSON.stringify(sanitizedOptions || [])
@@ -415,23 +400,8 @@ router.put('/:id', async (req, res) => {
     content = xssFilter.deepSanitize(content)
     explanation = xssFilter.sanitize(explanation)
 
-    // 过滤选项中的富文本内容
-    const sanitizedOptions = options.map(opt => {
-      if (opt === null || opt === undefined) {
-        return ''
-      }
-      if (typeof opt === 'string') {
-        return xssFilter.deepSanitize(opt)
-      }
-      if (typeof opt === 'object') {
-        // 递归处理对象属性
-        return Object.keys(opt).reduce((acc, key) => {
-          acc[key] = typeof opt[key] === 'string' ? xssFilter.deepSanitize(opt[key]) : opt[key]
-          return acc
-        }, {})
-      }
-      return opt
-    })
+    // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
+    const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
 
     // 获取旧题目数据（用于对比文件引用）
     const oldQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [id])

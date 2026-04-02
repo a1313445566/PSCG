@@ -41,7 +41,7 @@ router.get('/category/:category', (req, res) => {
   try {
     const { category } = req.params
     const tools = toolsMetadata.filter(t => t.category === category)
-    
+
     res.json({
       code: 0,
       msg: 'success',
@@ -60,11 +60,11 @@ router.get('/detail/:name', (req, res) => {
   try {
     const { name } = req.params
     const tool = toolsMetadata.find(t => t.name === name)
-    
+
     if (!tool) {
       return res.status(404).json({ code: 1, msg: '工具不存在' })
     }
-    
+
     res.json({
       code: 0,
       msg: 'success',

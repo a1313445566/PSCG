@@ -14,11 +14,12 @@ const getSubjectDetailTool = defineTool({
   schema: z.object({
     subjectId: z.number().int().positive().describe('学科ID')
   }),
-  handler: async (args) => {
+  handler: async args => {
     const { subjectId } = args
     try {
       // 1. 学科基本信息
-      const subjectInfo = await db.get(`
+      const subjectInfo = await db.get(
+        `
         SELECT 
           s.id,
           s.name as subject_name,
@@ -34,7 +35,9 @@ const getSubjectDetailTool = defineTool({
         LEFT JOIN answer_records ar ON s.id = ar.subject_id
         WHERE s.id = ?
         GROUP BY s.id, s.name
-      `, [subjectId])
+      `,
+        [subjectId]
+      )
 
       if (!subjectInfo) {
         return JSON.stringify({
@@ -44,7 +47,8 @@ const getSubjectDetailTool = defineTool({
       }
 
       // 2. 题目难度分布
-      const difficultyDistribution = await db.query(`
+      const difficultyDistribution = await db.query(
+        `
         SELECT 
           CASE 
             WHEN q.difficulty <= 1 THEN '简单'
@@ -62,10 +66,13 @@ const getSubjectDetailTool = defineTool({
             WHEN '中等' THEN 2
             WHEN '困难' THEN 3
           END
-      `, [subjectId, subjectId])
+      `,
+        [subjectId, subjectId]
+      )
 
       // 3. 学生正确率分布
-      const studentPerformance = await db.query(`
+      const studentPerformance = await db.query(
+        `
         SELECT 
           u.id as student_id,
           u.username as student_name,
@@ -83,10 +90,13 @@ const getSubjectDetailTool = defineTool({
         GROUP BY u.id, u.username
         ORDER BY accuracy DESC
         LIMIT 20
-      `, [subjectId])
+      `,
+        [subjectId]
+      )
 
       // 4. 高频错题（错误次数最多的题目）
-      const topWrongQuestions = await db.query(`
+      const topWrongQuestions = await db.query(
+        `
         SELECT 
           q.id as question_id,
           q.title,
@@ -101,7 +111,9 @@ const getSubjectDetailTool = defineTool({
         HAVING wrong_count > 0
         ORDER BY wrong_count DESC, wrong_rate DESC
         LIMIT 10
-      `, [subjectId])
+      `,
+        [subjectId]
+      )
 
       return JSON.stringify({
         success: true,

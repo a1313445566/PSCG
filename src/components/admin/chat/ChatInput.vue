@@ -42,10 +42,22 @@
 
         <!-- 已选实体和工具标签 -->
         <div v-if="selectedEntity || selectedTool" class="selected-tags">
-          <el-tag v-if="selectedEntity" type="success" size="small" closable @close="selectedEntity = null">
+          <el-tag
+            v-if="selectedEntity"
+            type="success"
+            size="small"
+            closable
+            @close="selectedEntity = null"
+          >
             {{ selectedEntity.displayName }}
           </el-tag>
-          <el-tag v-if="selectedTool" type="primary" size="small" closable @close="selectedTool = null">
+          <el-tag
+            v-if="selectedTool"
+            type="primary"
+            size="small"
+            closable
+            @close="selectedTool = null"
+          >
             <el-icon><component :is="selectedTool.icon" /></el-icon>
             {{ selectedTool.displayName }}
           </el-tag>

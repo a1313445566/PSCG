@@ -11,13 +11,26 @@ const db = require('../../database')
 
 const studentAlertTool = defineTool({
   name: 'query_student_alerts',
-  description: '学生预警：识别学习异常学生（连续错误、正确率下降、未登录、答题量少）。小学教育刚需工具！',
+  description:
+    '学生预警：识别学习异常学生（连续错误、正确率下降、未登录、答题量少）。小学教育刚需工具！',
   schema: z.object({
     grade: z.string().optional().describe('年级(1-6)'),
     className: z.string().optional().describe('班级'),
-    alertType: z.enum(['all', 'consecutive_errors', 'accuracy_drop', 'inactive', 'low_activity']).optional().default('all').describe('预警类型: all=全部, consecutive_errors=连续错误, accuracy_drop=正确率下降, inactive=未登录, low_activity=答题量少'),
+    alertType: z
+      .enum(['all', 'consecutive_errors', 'accuracy_drop', 'inactive', 'low_activity'])
+      .optional()
+      .default('all')
+      .describe(
+        '预警类型: all=全部, consecutive_errors=连续错误, accuracy_drop=正确率下降, inactive=未登录, low_activity=答题量少'
+      ),
     days: z.number().int().positive().optional().default(7).describe('统计天数（默认7天）'),
-    threshold: z.number().int().min(1).max(100).optional().describe('阈值：连续错误次数/正确率百分比/未登录天数')
+    threshold: z
+      .number()
+      .int()
+      .min(1)
+      .max(100)
+      .optional()
+      .describe('阈值：连续错误次数/正确率百分比/未登录天数')
   }),
   handler: async args => {
     try {
@@ -58,7 +71,7 @@ const studentAlertTool = defineTool({
         errorParams.push(errorThreshold)
 
         const errorStudents = await db.query(errorSQL, errorParams)
-        
+
         if (errorStudents.length > 0) {
           alerts.push({
             type: 'consecutive_errors',
@@ -121,7 +134,7 @@ const studentAlertTool = defineTool({
         if (className) dropParams.push(className)
 
         const dropStudents = await db.query(dropSQL, dropParams)
-        
+
         if (dropStudents.length > 0) {
           alerts.push({
             type: 'accuracy_drop',
@@ -169,7 +182,7 @@ const studentAlertTool = defineTool({
         inactiveParams.push(inactiveThreshold)
 
         const inactiveStudents = await db.query(inactiveSQL, inactiveParams)
-        
+
         if (inactiveStudents.length > 0) {
           alerts.push({
             type: 'inactive',
@@ -232,7 +245,7 @@ const studentAlertTool = defineTool({
         if (className) activityParams.push(className)
 
         const lowActivityStudents = await db.query(activitySQL, activityParams)
-        
+
         if (lowActivityStudents.length > 0) {
           alerts.push({
             type: 'low_activity',
@@ -264,12 +277,17 @@ const studentAlertTool = defineTool({
           alert_types: alerts.length,
           alerts,
           summary: {
-            high_severity: alerts.filter(a => a.severity === 'high').reduce((sum, a) => sum + a.count, 0),
-            medium_severity: alerts.filter(a => a.severity === 'medium').reduce((sum, a) => sum + a.count, 0)
+            high_severity: alerts
+              .filter(a => a.severity === 'high')
+              .reduce((sum, a) => sum + a.count, 0),
+            medium_severity: alerts
+              .filter(a => a.severity === 'medium')
+              .reduce((sum, a) => sum + a.count, 0)
           },
-          recommendation: alerts.length > 0 
-            ? `发现 ${alerts.reduce((sum, a) => sum + a.count, 0)} 个预警学生，建议优先关注高危预警`
-            : '暂无预警学生，学生整体学习状态良好'
+          recommendation:
+            alerts.length > 0
+              ? `发现 ${alerts.reduce((sum, a) => sum + a.count, 0)} 个预警学生，建议优先关注高危预警`
+              : '暂无预警学生，学生整体学习状态良好'
         }
       })
     } catch (error) {

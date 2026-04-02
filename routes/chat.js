@@ -281,7 +281,7 @@ router.post('/sessions/:id/messages', adminAuth, async (req, res) => {
       const result = await streamAgentResponse(
         agent,
         [...compressedHistory, { role: 'user', content }],
-        (event) => {
+        event => {
           sendEvent(event)
 
           if (event.type === 'content') {

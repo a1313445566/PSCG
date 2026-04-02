@@ -320,7 +320,12 @@ const renderTrendChart = data => {
   spec.autoFit = true
 
   // ✅ 调试：检查容器尺寸
-  console.log('[Dashboard] 渲染趋势图，容器尺寸:', trendChartRef.value?.offsetWidth, 'x', trendChartRef.value?.offsetHeight)
+  console.log(
+    '[Dashboard] 渲染趋势图，容器尺寸:',
+    trendChartRef.value?.offsetWidth,
+    'x',
+    trendChartRef.value?.offsetHeight
+  )
 
   trendChart = new VChart(spec, {
     dom: trendChartRef.value,

@@ -43,17 +43,28 @@
 
       <div class="questions-section">
         <div v-if="currentQuestions.length > 0">
-          <QuestionCard
-            v-for="(question, index) in currentQuestions"
-            :key="question.id"
-            :question="question"
-            :question-number="index + 1"
-            :user-answer="userAnswers[question.id]"
-            :show-result="false"
-            @select-option="option => selectOption(question.id, option, question.type)"
-            @mouseenter="handleQuestionHover(question.id, true)"
-            @mouseleave="handleQuestionHover(question.id, false)"
-          />
+          <!-- 普通题目渲染 -->
+          <template v-for="(question, index) in currentQuestions" :key="question.id">
+            <QuestionCard
+              v-if="question.type !== 'reading'"
+              :question="question"
+              :question-number="index + 1"
+              :user-answer="userAnswers[question.id]"
+              :show-result="false"
+              @select-option="option => selectOption(question.id, option, question.type)"
+              @mouseenter="handleQuestionHover(question.id, true)"
+              @mouseleave="handleQuestionHover(question.id, false)"
+            />
+            <!-- 阅读理解题渲染 -->
+            <ReadingPassageCard
+              v-else
+              v-model="readingAnswers[question.id]"
+              :passage="question.content"
+              :sub-questions="parseReadingSubQuestions(question, question.shuffleMapping)"
+              :disabled="false"
+              @submit="answers => handleReadingSubmit(question.id, answers)"
+            />
+          </template>
         </div>
         <div v-else class="questions-skeleton">
           <SkeletonLoader v-for="i in 3" :key="i" type="question-card" />
@@ -82,6 +93,7 @@ import AppHeader from '../components/common/AppHeader.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
 import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import AnswerBehaviorTracker from '../components/quiz/AnswerBehaviorTracker.vue'
+import ReadingPassageCard from '../components/student/ReadingPassageCard.vue'
 import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/questionStore'
 import { getApiBaseUrl } from '../utils/database'
 import { ElMessage } from 'element-plus'
@@ -152,13 +164,77 @@ const progressPercentage = computed(() => {
 const hasAnsweredAll = computed(() => {
   return currentQuestions.value.every(question => {
     const answer = userAnswers.value[question.id]
+    // 阅读理解题：检查所有小题是否已答
+    if (question.type === 'reading') {
+      const subQuestions = parseReadingSubQuestions(question, question.shuffleMapping)
+      return Object.keys(readingAnswers.value[question.id] || {}).length === subQuestions.length
+    }
+    // 多选题：检查是否选择了至少一个选项
     if (question.type === 'multiple') {
       return Array.isArray(answer) && answer.length > 0
-    } else {
-      return answer !== undefined
     }
+    // 其他题型：检查是否有答案
+    return answer !== undefined
   })
 })
+
+// 阅读理解题答案存储：{ 题目ID: { 小题索引: 答案 } }
+const readingAnswers = ref({})
+
+// 解析阅读理解题的小题列表
+const parseReadingSubQuestions = (question, shuffleMapping) => {
+  let options = []
+  try {
+    options = typeof question.options === 'string' ? JSON.parse(question.options) : question.options
+  } catch (e) {
+    return []
+  }
+
+  if (!Array.isArray(options)) return []
+
+  // 为每个小题处理选项打乱
+  return options.map((sq, sqIndex) => {
+    // 处理选项打乱
+    let displayOptions = sq.options || []
+    if (shouldRandomize.value && shuffleMapping && shuffleMapping[sqIndex]) {
+      // 使用该小题的打乱映射
+      const sqMapping = shuffleMapping[sqIndex]
+      displayOptions = sq.options.map((_, i) => sq.options[sqMapping[i]] || sq.options[i])
+    }
+
+    return {
+      order: sq.order || sqIndex + 1,
+      content: sq.content || '',
+      options: sq.options || [],
+      displayOptions: displayOptions.map((opt, i) => ({
+        content: opt,
+        displayLabel: String.fromCharCode(65 + i),
+        originalLabel:
+          shouldRandomize.value && shuffleMapping && shuffleMapping[sqIndex]
+            ? String.fromCharCode(65 + (shuffleMapping[sqIndex][i] ?? i))
+            : String.fromCharCode(65 + i)
+      })),
+      answer: sq.answer || '',
+      explanation: sq.explanation || ''
+    }
+  })
+}
+
+// 处理阅读理解题提交
+const handleReadingSubmit = (questionId, answers) => {
+  // 将小题答案转换为标准格式存储
+  const formattedAnswers = {}
+  Object.entries(answers).forEach(([sqIndex, answer]) => {
+    formattedAnswers[sqIndex] = answer
+  })
+  userAnswers.value[questionId] = formattedAnswers
+  readingAnswers.value[questionId] = answers
+
+  // 检查是否所有题目都已答完
+  if (hasAnsweredAll.value) {
+    ElMessage.success('所有题目已答完，可以提交了！')
+  }
+}
 
 // 计时
 const startTime = ref(Date.now())
