@@ -56,12 +56,15 @@ router.post('/start', async (req, res) => {
     // 获取题目
     let questions
     if (actualSubcategoryId === null) {
-      // 错题巩固题库 - 只加载累计正确次数小于3次的错题，使用DISTINCT确保不重复
+      // 错题巩固题库 - 只加载累计正确次数小于3次的错题
+      // 使用 GROUP BY 确保每道题只出现一次，按最新错题时间排序
       const errorQuestions = await db.all(
-        `SELECT DISTINCT q.* FROM questions q
+        `SELECT q.*, MAX(ec.created_at) as latest_error_time
+         FROM questions q
          JOIN error_collection ec ON q.id = ec.question_id
          WHERE ec.user_id = ? AND q.subject_id = ? AND ec.correct_count < 3
-         ORDER BY ec.created_at DESC`,
+         GROUP BY q.id
+         ORDER BY latest_error_time DESC`,
         [userId, subjectId]
       )
 
@@ -84,8 +87,8 @@ router.post('/start', async (req, res) => {
 
       questions = await db.all(
         `SELECT q.*, (
-           SELECT AVG(difficulty) 
-           FROM questions 
+           SELECT AVG(difficulty)
+           FROM questions
            WHERE subcategory_id = ?
          ) as avg_difficulty
          FROM questions q
@@ -141,7 +144,7 @@ router.post('/start', async (req, res) => {
     // 如果是错题巩固题库，添加错题统计数据
     if (actualSubcategoryId === null) {
       const errorStats = await db.all(
-        `SELECT question_id, correct_count FROM error_collection 
+        `SELECT question_id, correct_count FROM error_collection
          WHERE user_id = ? AND question_id IN (${questions.map(q => '?').join(',')})`,
         [userId, ...questions.map(q => q.id)]
       )
@@ -384,9 +387,25 @@ const judgeReadingQuestion = (userAnswers, correctAnswers, reverseMapping) => {
     try {
       parsedCorrectAnswers = JSON.parse(correctAnswers)
     } catch (e) {
+      console.error('解析正确答案失败:', e)
       parsedCorrectAnswers = {}
     }
   }
+
+  // 确保 parsedCorrectAnswers 是对象
+  if (!parsedCorrectAnswers || typeof parsedCorrectAnswers !== 'object') {
+    console.error('正确答案格式错误:', parsedCorrectAnswers)
+    parsedCorrectAnswers = {}
+  }
+
+  console.log('阅读理解题判题:', {
+    userAnswers,
+    parsedCorrectAnswers,
+    reverseMapping
+  })
+
+  const letterToIndex = { A: 0, B: 1, C: 2, D: 3, E: 4, F: 5 }
+  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F']
 
   // 遍历所有小题
   Object.keys(userAnswers).forEach(sqIndex => {
@@ -400,20 +419,40 @@ const judgeReadingQuestion = (userAnswers, correctAnswers, reverseMapping) => {
     // 映射用户答案回原始位置
     let mappedAnswer = userAnswer
     if (sqReverseMapping) {
-      mappedAnswer = mapAnswerToOriginal(userAnswer, sqReverseMapping)
+      // 手动映射
+      const shuffledIndex = letterToIndex[userAnswer]
+      const originalIndex = sqReverseMapping[shuffledIndex]
+      mappedAnswer = indexToLetter[originalIndex]
+
+      console.log(`小题 ${sqOrder} 映射详情:`, {
+        用户原始答案: userAnswer,
+        打乱后索引: shuffledIndex,
+        reverseMapping: sqReverseMapping,
+        原始索引: originalIndex,
+        映射后答案: mappedAnswer,
+        正确答案: correctAnswer,
+        映射说明: `用户在打乱后界面选择 ${userAnswer}(索引${shuffledIndex}) -> reverseMapping[${shuffledIndex}]=${originalIndex} -> 原始答案 ${mappedAnswer}`
+      })
     }
 
-    // 判断是否正确
-    const isCorrect = mappedAnswer === correctAnswer
+    // 判断是否正确（如果正确答案不存在，则视为错误）
+    const isCorrect = correctAnswer && mappedAnswer === correctAnswer
     if (isCorrect) {
       correctCount++
     }
+
+    console.log(`小题 ${sqOrder} 判题结果:`, {
+      用户答案: userAnswer,
+      映射后答案: mappedAnswer,
+      正确答案: correctAnswer,
+      是否正确: isCorrect
+    })
 
     subQuestionResults.push({
       order: sqOrder,
       userAnswer: userAnswer,
       mappedUserAnswer: mappedAnswer,
-      correctAnswer: correctAnswer,
+      correctAnswer: correctAnswer || '未知',
       isCorrect
     })
   })
@@ -537,9 +576,28 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
 
       if (question.type === 'reading') {
         // 阅读理解题：判断所有小题
+        // 获取原始选项（小题列表）
+        const originalOptions =
+          typeof originalQuestion.options === 'string'
+            ? JSON.parse(originalQuestion.options)
+            : originalQuestion.options
+
+        console.log('阅读理解题原始数据:', {
+          题目ID: question.id,
+          原始选项数量: originalOptions ? originalOptions.length : 0,
+          正确答案: originalQuestion.correct_answer,
+          小题详情: originalOptions
+            ? originalOptions.map((sq, idx) => ({
+                小题序号: idx + 1,
+                选项内容: sq.options,
+                正确答案: sq.answer
+              }))
+            : []
+        })
+
         readingResult = judgeReadingQuestion(
           userAnswer, // { 小题索引: 用户答案 }
-          originalQuestion.answer, // { 小题序号: 正确答案 }
+          originalQuestion.correct_answer, // { 小题序号: 正确答案 }
           reverseMapping // { 小题索引: { 打乱后位置: 原始位置 } }
         )
         isCorrect = readingResult.correctCount === readingResult.totalSubQuestions
@@ -573,10 +631,29 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
         const originalOptions =
           typeof question.options === 'string' ? JSON.parse(question.options) : question.options
 
-        // 根据 reverseMapping（打乱后位置 -> 原始位置）生成打乱后的选项
-        shuffledOptions = Object.keys(reverseMapping)
-          .sort((a, b) => parseInt(a) - parseInt(b))
-          .map(key => originalOptions[reverseMapping[key]])
+        // 阅读理解题：每个小题单独处理选项打乱
+        if (question.type === 'reading') {
+          shuffledOptions = originalOptions.map((sq, sqIndex) => {
+            const sqReverseMapping = reverseMapping[sqIndex]
+            if (!sqReverseMapping) {
+              return sq
+            }
+            // 生成打乱后的选项
+            const shuffledSqOptions = Object.keys(sqReverseMapping)
+              .sort((a, b) => parseInt(a) - parseInt(b))
+              .map(key => sq.options[sqReverseMapping[key]])
+
+            return {
+              ...sq,
+              options: shuffledSqOptions
+            }
+          })
+        } else {
+          // 普通题目：直接处理选项
+          shuffledOptions = Object.keys(reverseMapping)
+            .sort((a, b) => parseInt(a) - parseInt(b))
+            .map(key => originalOptions[reverseMapping[key]])
+        }
       }
 
       if (isCorrect) {
@@ -611,7 +688,32 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
           ? {
               correctCount: readingResult.correctCount,
               totalSubQuestions: readingResult.totalSubQuestions,
-              subQuestionResults: readingResult.subQuestionResults
+              subQuestionResults: readingResult.subQuestionResults.map(sqResult => {
+                // 为每个小题映射正确答案到打乱后的位置
+                const sqReverseMapping = reverseMapping ? reverseMapping[sqResult.order - 1] : null
+                let displayCorrectAnswer = sqResult.correctAnswer
+
+                if (sqReverseMapping && sqResult.correctAnswer && sqResult.correctAnswer !== '未知') {
+                  // 从 reverseMapping 推导 shuffleMapping
+                  const sqShuffleMapping = {}
+                  Object.keys(sqReverseMapping).forEach(shuffledIdx => {
+                    const originalIdx = sqReverseMapping[shuffledIdx]
+                    sqShuffleMapping[originalIdx] = parseInt(shuffledIdx)
+                  })
+
+                  // 映射正确答案
+                  const letterToIndex = { A: 0, B: 1, C: 2, D: 3, E: 4, F: 5 }
+                  const indexToLetter = ['A', 'B', 'C', 'D', 'E', 'F']
+                  const originalIndex = letterToIndex[sqResult.correctAnswer]
+                  const shuffledIndex = sqShuffleMapping[originalIndex]
+                  displayCorrectAnswer = indexToLetter[shuffledIndex]
+                }
+
+                return {
+                  ...sqResult,
+                  correctAnswer: displayCorrectAnswer // 使用映射后的正确答案
+                }
+              })
             }
           : null
       })
@@ -716,16 +818,50 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
         const originalOptions =
           typeof question.options === 'string' ? JSON.parse(question.options) : question.options
 
-        // 根据 reverseMapping（打乱后位置 -> 原始位置）生成打乱后的选项
-        shuffledOptions = Object.keys(reverseMapping)
-          .sort((a, b) => parseInt(a) - parseInt(b))
-          .map(key => originalOptions[reverseMapping[key]])
+        // 阅读理解题：每个小题单独处理选项打乱
+        if (question.type === 'reading') {
+          shuffledOptions = originalOptions.map((sq, sqIndex) => {
+            const sqReverseMapping = reverseMapping[sqIndex]
+            if (!sqReverseMapping) {
+              return sq // 没有映射，返回原始小题
+            }
+            // 生成打乱后的选项
+            const shuffledSqOptions = Object.keys(sqReverseMapping)
+              .sort((a, b) => parseInt(a) - parseInt(b))
+              .map(key => sq.options[sqReverseMapping[key]])
+
+            return {
+              ...sq,
+              options: shuffledSqOptions
+            }
+          })
+        } else {
+          // 普通题目：直接处理选项
+          shuffledOptions = Object.keys(reverseMapping)
+            .sort((a, b) => parseInt(a) - parseInt(b))
+            .map(key => originalOptions[reverseMapping[key]])
+        }
       }
 
       // 计算映射回原始位置的用户答案
       let userAnswerOriginal = result.userAnswer
       if (reverseMapping) {
-        userAnswerOriginal = mapAnswerToOriginal(result.userAnswer, reverseMapping)
+        // 阅读理解题：每个小题单独映射
+        if (question.type === 'reading' && typeof result.userAnswer === 'object') {
+          userAnswerOriginal = {}
+          Object.keys(result.userAnswer).forEach(sqIndex => {
+            const sqAnswer = result.userAnswer[sqIndex]
+            const sqReverseMapping = reverseMapping[sqIndex]
+            if (sqReverseMapping) {
+              userAnswerOriginal[sqIndex] = mapAnswerToOriginal(sqAnswer, sqReverseMapping)
+            } else {
+              userAnswerOriginal[sqIndex] = sqAnswer
+            }
+          })
+        } else {
+          // 普通题目
+          userAnswerOriginal = mapAnswerToOriginal(result.userAnswer, reverseMapping)
+        }
       }
 
       await db.run(
@@ -807,10 +943,10 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
 
       // 获取该子分类的累计数据
       const stats = await db.get(
-        `SELECT 
+        `SELECT
           COUNT(*) as total_attempts,
           SUM(CASE WHEN is_correct = 1 THEN 1 ELSE 0 END) as correct_attempts
-        FROM question_attempts 
+        FROM question_attempts
         WHERE user_id = ? AND subject_id = ? AND subcategory_id = ?`,
         [userId, subjectId, subcategoryId]
       )
@@ -820,10 +956,10 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
 
         // 更新或插入学习进度
         await db.run(
-          `INSERT INTO learning_progress 
+          `INSERT INTO learning_progress
             (user_id, subject_id, subcategory_id, mastery_level, total_attempts, correct_attempts, last_practiced)
           VALUES (?, ?, ?, ?, ?, ?, NOW())
-          ON DUPLICATE KEY UPDATE 
+          ON DUPLICATE KEY UPDATE
             mastery_level = VALUES(mastery_level),
             total_attempts = VALUES(total_attempts),
             correct_attempts = VALUES(correct_attempts),
@@ -852,7 +988,7 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
     // 如果是错题巩固题库，返回更新后的统计数据
     if (session.subcategory_id === null) {
       const errorStats = await db.all(
-        `SELECT question_id, correct_count FROM error_collection 
+        `SELECT question_id, correct_count FROM error_collection
          WHERE user_id = ? AND question_id IN (${sessionQuestions.map(q => '?').join(',')})`,
         [userId, ...sessionQuestions.map(q => q.id)]
       )
@@ -898,7 +1034,7 @@ router.get('/history', async (req, res) => {
 
     // 获取历史答题记录
     const records = await db.all(
-      `SELECT 
+      `SELECT
         ar.id,
         ar.subject_id,
         ar.subcategory_id,

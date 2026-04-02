@@ -256,6 +256,12 @@ const handleViewDetail = async row => {
         const parsed = JSON.parse(answer)
         if (Array.isArray(parsed)) {
           answer = parsed.join(', ')
+        } else if (typeof parsed === 'object') {
+          // 处理阅读题答案格式 {"0":"B", "1":"C", "2":"B", "3":"D"}
+          const entries = Object.entries(parsed)
+            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+            .map(([index, value]) => `第${parseInt(index) + 1}题:${value}`)
+          answer = entries.join(', ')
         } else {
           answer = parsed
         }

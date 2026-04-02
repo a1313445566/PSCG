@@ -270,9 +270,8 @@
                         <label class="sub-label">小题题目</label>
                         <QuillEditor
                           v-model="sq.content"
-                          toolbar-mode="simple"
+                          toolbar-mode="basic"
                           :options="{ placeholder: '输入小题题目...' }"
-                          style="height: 150px"
                         />
                       </div>
                       <!-- 小题选项 -->
@@ -320,11 +319,11 @@
                       <!-- 小题解析 -->
                       <div class="sub-field sub-field-explanation">
                         <label class="sub-label">解析（可选）</label>
-                        <QuillEditor
+                        <el-input
                           v-model="sq.explanation"
-                          toolbar-mode="simple"
-                          :options="{ placeholder: '输入小题解析...' }"
-                          style="height: 100px"
+                          type="textarea"
+                          :rows="2"
+                          placeholder="输入小题解析..."
                         />
                       </div>
                       <!-- 小题操作按钮 -->
@@ -2602,12 +2601,13 @@ defineExpose({
 }
 
 .sub-field-content {
-  margin-bottom: 8px;
+  margin-bottom: 16px;
   overflow: visible;
 }
 
 .sub-field-content :deep(.quill-editor) {
   overflow: visible;
+  min-height: 120px;
 }
 
 .sub-field-content :deep(.ql-toolbar) {
@@ -2616,7 +2616,7 @@ defineExpose({
 }
 
 .sub-field-content :deep(.ql-container) {
-  min-height: 100px;
+  min-height: 80px;
 }
 
 .sub-field-options {
@@ -2627,8 +2627,9 @@ defineExpose({
   overflow: visible;
 }
 
-.sub-field-explanation :deep(.ql-container) {
-  min-height: 60px;
+.sub-field-explanation :deep(.el-textarea__inner) {
+  font-size: 13px;
+  line-height: 1.5;
 }
 
 /* 富文本编辑器容器 */
@@ -2653,6 +2654,7 @@ defineExpose({
   font-size: 14px;
   font-weight: 500;
   color: #475569;
+  margin-bottom: 8px;
 }
 
 .sub-options-grid {

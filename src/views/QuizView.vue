@@ -62,7 +62,6 @@
               :passage="question.content"
               :sub-questions="parseReadingSubQuestions(question, question.shuffleMapping)"
               :disabled="false"
-              @submit="answers => handleReadingSubmit(question.id, answers)"
             />
           </template>
         </div>
@@ -87,7 +86,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import QuestionCard from '../components/quiz/QuestionCard.vue'
@@ -181,6 +180,20 @@ const hasAnsweredAll = computed(() => {
 // 阅读理解题答案存储：{ 题目ID: { 小题索引: 答案 } }
 const readingAnswers = ref({})
 
+// 监听阅读理解题答案变化，自动同步到 userAnswers
+watch(
+  readingAnswers,
+  newVal => {
+    Object.keys(newVal).forEach(questionId => {
+      const answers = newVal[questionId]
+      if (answers && Object.keys(answers).length > 0) {
+        userAnswers.value[questionId] = answers
+      }
+    })
+  },
+  { deep: true }
+)
+
 // 解析阅读理解题的小题列表
 const parseReadingSubQuestions = (question, shuffleMapping) => {
   let options = []
@@ -192,48 +205,22 @@ const parseReadingSubQuestions = (question, shuffleMapping) => {
 
   if (!Array.isArray(options)) return []
 
-  // 为每个小题处理选项打乱
+  // 注意：前端已经打乱过了，question.options 就是打乱后的选项
+  // 这里直接返回，不要再应用映射！
   return options.map((sq, sqIndex) => {
-    // 处理选项打乱
-    let displayOptions = sq.options || []
-    if (shouldRandomize.value && shuffleMapping && shuffleMapping[sqIndex]) {
-      // 使用该小题的打乱映射
-      const sqMapping = shuffleMapping[sqIndex]
-      displayOptions = sq.options.map((_, i) => sq.options[sqMapping[i]] || sq.options[i])
-    }
-
     return {
       order: sq.order || sqIndex + 1,
       content: sq.content || '',
       options: sq.options || [],
-      displayOptions: displayOptions.map((opt, i) => ({
+      displayOptions: (sq.options || []).map((opt, i) => ({
         content: opt,
         displayLabel: String.fromCharCode(65 + i),
-        originalLabel:
-          shouldRandomize.value && shuffleMapping && shuffleMapping[sqIndex]
-            ? String.fromCharCode(65 + (shuffleMapping[sqIndex][i] ?? i))
-            : String.fromCharCode(65 + i)
+        originalLabel: sq.originalOptions ? String.fromCharCode(65 + sq.originalOptions.indexOf(opt)) : String.fromCharCode(65 + i)
       })),
       answer: sq.answer || '',
       explanation: sq.explanation || ''
     }
   })
-}
-
-// 处理阅读理解题提交
-const handleReadingSubmit = (questionId, answers) => {
-  // 将小题答案转换为标准格式存储
-  const formattedAnswers = {}
-  Object.entries(answers).forEach(([sqIndex, answer]) => {
-    formattedAnswers[sqIndex] = answer
-  })
-  userAnswers.value[questionId] = formattedAnswers
-  readingAnswers.value[questionId] = answers
-
-  // 检查是否所有题目都已答完
-  if (hasAnsweredAll.value) {
-    ElMessage.success('所有题目已答完，可以提交了！')
-  }
 }
 
 // 计时
@@ -507,7 +494,7 @@ const submitAnswers = async () => {
     // 准备打乱映射数据
     const shuffleMappings = {}
     currentQuestions.value.forEach(q => {
-      shuffleMappings[q.id] = q.shuffleMapping // 前端传递 reverseMapping，后端接收名为 shuffleMappings
+      shuffleMappings[q.id] = q.shuffleMapping
     })
 
     // 构建签名数据
@@ -756,23 +743,56 @@ onMounted(async () => {
     const questionsWithShuffled = data.questions.map(q => {
       const options = typeof q.options === 'string' ? JSON.parse(q.options) : q.options
 
-      // 根据题库类型的设置决定是否打乱选项
+      // 阅读理解题：为每个小题单独打乱选项
+      if (q.type === 'reading') {
+        if (!shouldRandomize.value) {
+          return {
+            ...q,
+            options: options,
+            shuffleMapping: null,
+            type: 'reading'
+          }
+        }
+
+        // 为每个小题打乱选项
+        const shuffleMapping = {}
+        const shuffledSubQuestions = options.map((sq, sqIndex) => {
+          const sqOptions = sq.options || []
+          const { shuffledOptions, reverseMapping } = shuffleOptions(sqOptions)
+          shuffleMapping[sqIndex] = reverseMapping
+
+          return {
+            ...sq,
+            options: shuffledOptions,
+            originalOptions: sqOptions
+          }
+        })
+
+        return {
+          ...q,
+          options: shuffledSubQuestions,
+          originalOptions: options,
+          shuffleMapping: shuffleMapping,
+          type: 'reading'
+        }
+      }
+
+      // 其他题型：直接打乱选项
       if (shouldRandomize.value) {
         const { shuffledOptions, reverseMapping } = shuffleOptions(options)
 
         return {
           ...q,
-          options: shuffledOptions, // 打乱后的选项
-          originalOptions: options, // 保存原始选项（可选）
-          shuffleMapping: reverseMapping, // 打乱映射：{打乱后位置: 原始位置}
+          options: shuffledOptions,
+          originalOptions: options,
+          shuffleMapping: reverseMapping,
           type: q.type || 'single'
         }
       } else {
-        // 不打乱选项
         return {
           ...q,
           options: options,
-          shuffleMapping: null, // 不打乱时映射为 null
+          shuffleMapping: null,
           type: q.type || 'single'
         }
       }

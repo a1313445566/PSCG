@@ -815,6 +815,12 @@ const loadAnswerQuestions = async recordId => {
           userAnswer = parsedAnswer.join(', ')
         } else if (typeof parsedAnswer === 'string') {
           userAnswer = parsedAnswer
+        } else if (typeof parsedAnswer === 'object') {
+          // 处理阅读题答案格式 {"0":"B", "1":"C", "2":"B", "3":"D"}
+          const entries = Object.entries(parsedAnswer)
+            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+            .map(([index, value]) => `第${parseInt(index) + 1}题:${value}`)
+          userAnswer = entries.join(', ')
         }
       } catch (e) {
         // 解析失败，使用原始值
@@ -828,6 +834,12 @@ const loadAnswerQuestions = async recordId => {
           correctAnswer = parsedAnswer.join(', ')
         } else if (typeof parsedAnswer === 'string') {
           correctAnswer = parsedAnswer
+        } else if (typeof parsedAnswer === 'object') {
+          // 处理阅读题答案格式 {"0":"B", "1":"C", "2":"B", "3":"D"}
+          const entries = Object.entries(parsedAnswer)
+            .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+            .map(([index, value]) => `第${parseInt(index) + 1}题:${value}`)
+          correctAnswer = entries.join(', ')
         }
       } catch (e) {
         // 解析失败，使用原始值

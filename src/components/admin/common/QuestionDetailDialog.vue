@@ -97,24 +97,6 @@
         </div>
       </div>
 
-      <!-- 调试信息（开发环境） -->
-      <div
-        v-if="isDev"
-        class="debug-info"
-        style="
-          margin-top: 20px;
-          padding: 10px;
-          background: #f5f5f5;
-          border-radius: 4px;
-          font-size: 12px;
-        "
-      >
-        <details>
-          <summary style="cursor: pointer; font-weight: bold">调试信息</summary>
-          <pre style="margin-top: 10px; overflow: auto">{{ debugInfo }}</pre>
-        </details>
-      </div>
-
       <!-- 用户答案和正确答案 -->
       <div class="answer-section">
         <div class="answer-row">
@@ -167,28 +149,6 @@ const props = defineProps({
 
 const emit = defineEmits(['update:dialogVisible'])
 
-// 开发环境标志
-const isDev = import.meta.env.DEV
-
-// 调试信息
-const debugInfo = computed(() => {
-  if (!props.question) return '无题目数据'
-  return JSON.stringify(
-    {
-      id: props.question.id,
-      type: props.question.type,
-      options: props.question.options,
-      optionsType: typeof props.question.options,
-      optionsLength: props.question.options?.length,
-      correctAnswer: props.question.correctAnswer || props.question.correct_answer,
-      userAnswer: props.question.userAnswer || props.question.user_answer,
-      isCorrect: props.question.isCorrect || props.question.is_correct
-    },
-    null,
-    2
-  )
-})
-
 // 获取题目类型标签
 const getTypeLabel = type => {
   const typeMap = {
@@ -227,6 +187,23 @@ const formatAnswer = answer => {
   if (Array.isArray(answer)) {
     return answer.join(', ')
   }
+
+  // 处理阅读题答案格式 {"0":"B", "1":"C", "2":"B", "3":"D"}
+  if (typeof answer === 'string' && answer.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(answer)
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        // 格式化为 "第1题:B, 第2题:C, 第3题:B, 第4题:D"
+        const entries = Object.entries(parsed)
+          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+          .map(([index, value]) => `第${parseInt(index) + 1}题:${value}`)
+        return entries.join(', ')
+      }
+    } catch (e) {
+      // 解析失败，返回原始字符串
+    }
+  }
+
   return String(answer)
 }
 

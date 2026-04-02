@@ -44,17 +44,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 提交按钮 -->
-    <div v-if="!disabled" class="submit-section">
-      <el-button type="primary" size="large" :disabled="!hasAnsweredAll" @click="handleSubmit">
-        提交答案
-      </el-button>
-      <p v-if="!hasAnsweredAll" class="submit-tip">
-        <el-icon><Warning /></el-icon>
-        请完成所有小题后再提交
-      </p>
-    </div>
   </div>
 </template>
 
@@ -92,27 +81,16 @@ const props = defineProps({
 })
 
 // Emits 定义
-const emit = defineEmits(['update:modelValue', 'submit'])
+const emit = defineEmits(['update:modelValue'])
 
 // 答案存储：{ 小题索引: 选中选项标签 }
 const answers = ref({})
-
-// 是否已回答所有小题
-const hasAnsweredAll = computed(() => {
-  return Object.keys(answers.value).length === props.subQuestions.length
-})
 
 // 选择答案
 const selectAnswer = (questionIndex, optionLabel) => {
   if (props.disabled) return
   answers.value[questionIndex] = optionLabel
   emit('update:modelValue', { ...answers.value })
-}
-
-// 提交答案
-const handleSubmit = () => {
-  if (!hasAnsweredAll.value) return
-  emit('submit', { ...answers.value })
 }
 
 // 监听 modelValue 变化，回显答案
@@ -134,19 +112,41 @@ onMounted(() => {
 })
 </script>
 
-<style scoped lang="scss">
+<style scoped>
 .reading-passage-card {
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
+  background: white;
+  border-radius: 20px;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  border: 2px solid #e8e8e8;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
-/* 阅读材料区域 */
+.reading-passage-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 5px;
+  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  border-radius: 20px 20px 0 0;
+}
+
+.reading-passage-card:hover {
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+  border-color: #667eea;
+}
+
 .passage-section {
   padding: 20px;
   background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
   border-radius: 12px;
   border: 1px solid #e2e8f0;
+  margin-bottom: 24px;
 }
 
 .passage-header {
@@ -168,7 +168,6 @@ onMounted(() => {
   border-radius: 8px;
 }
 
-/* 小题列表区域 */
 .sub-questions-section {
   display: flex;
   flex-direction: column;
@@ -236,7 +235,6 @@ onMounted(() => {
   color: #1e293b;
 }
 
-/* 选项样式 */
 .sub-question-options {
   display: flex;
   flex-direction: column;
@@ -288,26 +286,6 @@ onMounted(() => {
   color: #334155;
 }
 
-/* 提交区域 */
-.submit-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  padding: 20px;
-  background-color: #f8fafc;
-  border-radius: 12px;
-}
-
-.submit-tip {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #ef4444;
-}
-
-/* 富文本内容样式 */
 :deep(.passage-content img),
 :deep(.question-text img),
 :deep(.option-content img) {
@@ -321,5 +299,20 @@ onMounted(() => {
 :deep(.question-text p),
 :deep(.option-content p) {
   margin: 0;
+}
+
+@media (max-width: 768px) {
+  .reading-passage-card {
+    padding: 1.2rem;
+  }
+
+  .passage-content {
+    padding: 12px;
+    font-size: 14px;
+  }
+
+  .sub-question-item {
+    padding: 12px;
+  }
 }
 </style>

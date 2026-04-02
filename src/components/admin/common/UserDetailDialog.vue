@@ -145,7 +145,7 @@
                     </el-tooltip>
                   </template>
                 </el-table-column>
-                <el-table-column label="用户答案" width="80" align="center">
+                <el-table-column label="用户答案" width="120" align="center">
                   <template #default="{ row }">
                     <span
                       :class="{
@@ -153,24 +153,14 @@
                         'incorrect-answer': !row.is_correct && !row.isCorrect
                       }"
                     >
-                      {{
-                        row.userAnswer ||
-                        (Array.isArray(row.user_answer)
-                          ? row.user_answer.join('')
-                          : row.user_answer)
-                      }}
+                      {{ formatReadingAnswer(row.userAnswer || row.user_answer) }}
                     </span>
                   </template>
                 </el-table-column>
-                <el-table-column label="正确答案" width="80" align="center">
+                <el-table-column label="正确答案" width="120" align="center">
                   <template #default="{ row }">
                     <span class="correct-answer">
-                      {{
-                        row.correctAnswer ||
-                        (Array.isArray(row.correct_answer)
-                          ? row.correct_answer.join('')
-                          : row.correct_answer)
-                      }}
+                      {{ formatReadingAnswer(row.correctAnswer || row.correct_answer) }}
                     </span>
                   </template>
                 </el-table-column>
@@ -251,6 +241,32 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['update:dialogVisible', 'show-question-detail'])
+
+// 格式化阅读题答案（处理 JSON 格式）
+const formatReadingAnswer = answer => {
+  if (!answer) return '-'
+  if (Array.isArray(answer)) {
+    return answer.join(', ')
+  }
+
+  // 处理阅读题答案格式 {"0":"B", "1":"C", "2":"B", "3":"D"}
+  if (typeof answer === 'string' && answer.startsWith('{')) {
+    try {
+      const parsed = JSON.parse(answer)
+      if (typeof parsed === 'object' && !Array.isArray(parsed)) {
+        // 格式化为 "第1题:B, 第2题:C, 第3题:B, 第4题:D"
+        const entries = Object.entries(parsed)
+          .sort((a, b) => parseInt(a[0]) - parseInt(b[0]))
+          .map(([index, value]) => `第${parseInt(index) + 1}题:${value}`)
+        return entries.join(', ')
+      }
+    } catch (e) {
+      // 解析失败，返回原始字符串
+    }
+  }
+
+  return String(answer)
+}
 
 // 激活的标签
 const activeUserDetailTab = ref('records')
