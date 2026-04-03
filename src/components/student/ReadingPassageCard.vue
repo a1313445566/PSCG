@@ -3,8 +3,11 @@
     <!-- 阅读材料区域 -->
     <div class="passage-section">
       <div class="passage-header">
-        <el-icon><Document /></el-icon>
-        <span>阅读材料</span>
+        <div class="header-left">
+          <el-icon><Document /></el-icon>
+          <span>阅读材料</span>
+        </div>
+        <div class="question-type-badge type-reading">阅读理解</div>
       </div>
       <div class="passage-content" v-html="passage"></div>
     </div>
@@ -152,11 +155,36 @@ onMounted(() => {
 .passage-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 16px;
   font-size: 16px;
   font-weight: 600;
   color: #1e293b;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 题目类型标签 */
+.question-type-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  font-family: 'Microsoft YaHei', 微软雅黑，sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+/* 阅读题专用样式 */
+.question-type-badge.type-reading {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
 .passage-content {
@@ -166,6 +194,42 @@ onMounted(() => {
   padding: 16px;
   background-color: white;
   border-radius: 8px;
+}
+
+/* 阅读材料中的表格样式 */
+:deep(.passage-content table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 16px 0;
+  overflow-x: auto;
+  display: block;
+}
+
+:deep(.passage-content th),
+:deep(.passage-content td) {
+  border: 1px solid #d0d7de;
+  padding: 10px 14px;
+  text-align: left;
+  word-break: break-word;
+}
+
+:deep(.passage-content th) {
+  background-color: #f6f8fa;
+  font-weight: 600;
+  color: #24292e;
+}
+
+:deep(.passage-content tr:nth-child(even)) {
+  background-color: #f6f8fa;
+}
+
+:deep(.passage-content tr:hover) {
+  background-color: #f0f7ff;
+}
+
+:deep(.passage-content .table-wrapper) {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .sub-questions-section {

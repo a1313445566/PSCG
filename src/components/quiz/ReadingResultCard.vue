@@ -3,8 +3,11 @@
     <!-- 阅读材料 -->
     <div class="passage-section">
       <div class="passage-header">
-        <span class="header-icon">📖</span>
-        <span class="header-text">阅读材料</span>
+        <div class="header-left">
+          <span class="header-icon">📖</span>
+          <span class="header-text">阅读材料</span>
+        </div>
+        <div class="question-type-badge type-reading">阅读理解</div>
       </div>
       <div class="passage-content" v-html="question.content"></div>
     </div>
@@ -183,8 +186,33 @@ const getOptionLabel = index => {
 .passage-header {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 8px;
   margin-bottom: 12px;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* 题目类型标签 */
+.question-type-badge {
+  padding: 0.3rem 0.8rem;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  font-family: 'Microsoft YaHei', 微软雅黑，sans-serif;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  flex-shrink: 0;
+}
+
+/* 阅读题专用样式 */
+.question-type-badge.type-reading {
+  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
 }
 
 .header-icon {

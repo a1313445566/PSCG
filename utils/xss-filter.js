@@ -28,7 +28,17 @@ class XSSFilter {
       'code',
       'sub',
       'sup',
-      'img'
+      'img',
+      // 表格相关标签
+      'table',
+      'thead',
+      'tbody',
+      'tr',
+      'th',
+      'td',
+      'caption',
+      'col',
+      'colgroup'
     ]
 
     // 允许的属性
@@ -36,6 +46,15 @@ class XSSFilter {
       span: ['style', 'class'],
       img: ['src', 'alt', 'style', 'class'],
       p: ['style', 'class'],
+      // 表格相关属性
+      table: ['class', 'style', 'border', 'cellspacing', 'cellpadding'],
+      td: ['colspan', 'rowspan', 'class', 'style'],
+      th: ['colspan', 'rowspan', 'class', 'style', 'scope'],
+      tr: ['class', 'style'],
+      thead: ['class', 'style'],
+      tbody: ['class', 'style'],
+      col: ['class', 'style', 'span'],
+      colgroup: ['class', 'style', 'span'],
       '*': ['class'] // 所有标签允许 class
     }
 
@@ -46,7 +65,17 @@ class XSSFilter {
       'font-size',
       'font-weight',
       'text-align',
-      'text-decoration'
+      'text-decoration',
+      // 表格相关样式
+      'border',
+      'border-collapse',
+      'border-spacing',
+      'padding',
+      'margin',
+      'width',
+      'height',
+      'vertical-align',
+      'white-space'
     ]
   }
 

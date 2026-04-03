@@ -834,7 +834,44 @@ onMounted(() => {
   font-size: 1.1rem;
   color: #333;
   margin: 0;
-  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
+  font-family: 'Microsoft YaHei', 微软雅黑，sans-serif;
+}
+
+/* 题目内容中的表格样式 */
+:deep(.question-text table),
+:deep(.option-text table) {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 12px 0;
+  overflow-x: auto;
+  display: block;
+}
+
+:deep(.question-text th),
+:deep(.question-text td),
+:deep(.option-text th),
+:deep(.option-text td) {
+  border: 1px solid #d0d7de;
+  padding: 8px 12px;
+  text-align: left;
+  word-break: break-word;
+}
+
+:deep(.question-text th),
+:deep(.option-text th) {
+  background-color: #f6f8fa;
+  font-weight: 600;
+  color: #24292e;
+}
+
+:deep(.question-text tr:nth-child(even)),
+:deep(.option-text tr:nth-child(even)) {
+  background-color: #f6f8fa;
+}
+
+:deep(.question-text tr:hover),
+:deep(.option-text tr:hover) {
+  background-color: #f0f7ff;
 }
 
 .options {
