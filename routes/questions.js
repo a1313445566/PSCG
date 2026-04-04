@@ -3,7 +3,40 @@ const router = express.Router()
 const db = require('../services/database')
 const xssFilter = require('../utils/xss-filter')
 const { getPaginationParams } = require('../utils/pagination')
-const fileRefService = require('../services/fileReferenceService')
+const fileRefService = require('../services/file-reference-service')
+
+/**
+ * 验证判断题的选项和答案是否合法
+ * @param {string[]} sanitizedOptions - 已清理的选项数组
+ * @param {string} answer - 答案字符串（如 'A' 或 'B'）
+ * @returns {{ valid: boolean, error: string|null }} 验证结果，valid 为 true 表示通过
+ */
+function validateJudgmentQuestion(sanitizedOptions, answer) {
+  // 验证选项格式：必须是 ["对", "错"]
+  if (!Array.isArray(sanitizedOptions) || sanitizedOptions.length !== 2) {
+    return { valid: false, error: '判断题选项必须为["对", "错"]' }
+  }
+  if (sanitizedOptions[0] !== '对' || sanitizedOptions[1] !== '错') {
+    return { valid: false, error: '判断题选项必须为["对", "错"]' }
+  }
+  // 验证答案范围：必须是 A 或 B
+  if (!['A', 'B'].includes(answer)) {
+    return { valid: false, error: '判断题答案必须为 A 或 B' }
+  }
+  // 验证答案与选项的对应关系：A=对, B=错
+  const answerIndex = answer.charCodeAt(0) - 65 // 'A'→0, 'B'→1
+  const expectedOption = sanitizedOptions[answerIndex]
+  if (
+    (answer === 'A' && expectedOption !== '对') ||
+    (answer === 'B' && expectedOption !== '错')
+  ) {
+    return {
+      valid: false,
+      error: '判断题答案与选项不匹配：答案A应对应"对"，答案B应对应"错"',
+    }
+  }
+  return { valid: true, error: null }
+}
 
 // 获取子分类列表（供筛选器使用）
 router.get('/subcategories', async (req, res) => {
@@ -174,6 +207,28 @@ router.get('/', async (req, res) => {
     const formattedQuestions = questions.map(question => {
       if (excludeContent === 'true') {
         // 不包含完整内容时，只返回基本信息和内容摘要
+        let answer = question.answer
+
+        try {
+          // 尝试解析JSON格式的答案
+          const parsedAnswer = JSON.parse(question.answer)
+          if (typeof parsedAnswer === 'string') {
+            answer = parsedAnswer
+          } else if (typeof parsedAnswer === 'object' && parsedAnswer !== null) {
+            // 对于阅读题，转换为更友好的显示格式
+            if (question.type === 'reading') {
+              // 转换为类似 "1:A, 2:B" 的格式
+              answer = Object.entries(parsedAnswer)
+                .map(([key, value]) => `${key}:${value}`)
+                .join(', ')
+            } else {
+              answer = JSON.stringify(parsedAnswer)
+            }
+          }
+        } catch (error) {
+          // 如果解析失败，使用原始值
+        }
+
         return {
           id: question.id,
           subjectId: question.subjectId || question.subject_id,
@@ -182,7 +237,7 @@ router.get('/', async (req, res) => {
           subcategoryName: question.subcategoryName,
           content: question.content || '',
           type: question.type,
-          answer: question.answer,
+          answer: answer,
           difficulty: question.difficulty,
           image: question.image,
           audio: question.audio,
@@ -319,30 +374,13 @@ router.post('/', async (req, res) => {
     // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
     const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
 
-    // 判断题验证
-    if (type === 'judgment') {
-      // 验证选项格式：必须是 ["对", "错"]
-      if (!Array.isArray(sanitizedOptions) || sanitizedOptions.length !== 2) {
-        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
-      }
-      if (sanitizedOptions[0] !== '对' || sanitizedOptions[1] !== '错') {
-        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
-      }
-      // 验证答案与选项的对应关系：A=对, B=错
-      if (!['A', 'B'].includes(answer)) {
-        return res.status(400).json({ error: '判断题答案必须为 A 或 B' })
-      }
-      const answerIndex = answer.charCodeAt(0) - 65 // 'A'→0, 'B'→1
-      const expectedOption = sanitizedOptions[answerIndex]
-      if (
-        (answer === 'A' && expectedOption !== '对') ||
-        (answer === 'B' && expectedOption !== '错')
-      ) {
-        return res
-          .status(400)
-          .json({ error: '判断题答案与选项不匹配：答案A应对应"对"，答案B应对应"错"' })
-      }
+  // 判断题验证（复用统一验证函数）
+  if (type === 'judgment') {
+    const validation = validateJudgmentQuestion(sanitizedOptions, answer)
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error })
     }
+  }
 
     // 处理 options 参数，确保它是一个数组
     const optionsJson = JSON.stringify(sanitizedOptions || [])
@@ -428,28 +466,13 @@ router.put('/:id', async (req, res) => {
     // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
     const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
 
-    // 判断题验证（更新接口同样需要完整验证，防止通过更新接口写入矛盾数据）
-    if (type === 'judgment') {
-      if (!Array.isArray(sanitizedOptions) || sanitizedOptions.length !== 2) {
-        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
-      }
-      if (sanitizedOptions[0] !== '对' || sanitizedOptions[1] !== '错') {
-        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
-      }
-      if (!['A', 'B'].includes(answer)) {
-        return res.status(400).json({ error: '判断题答案必须为 A 或 B' })
-      }
-      const answerIndex = answer.charCodeAt(0) - 65 // 'A'→0, 'B'→1
-      const expectedOption = sanitizedOptions[answerIndex]
-      if (
-        (answer === 'A' && expectedOption !== '对') ||
-        (answer === 'B' && expectedOption !== '错')
-      ) {
-        return res
-          .status(400)
-          .json({ error: '判断题答案与选项不匹配：答案A应对应"对"，答案B应对应"错"' })
-      }
+  // 判断题验证（复用统一验证函数，防止通过更新接口写入矛盾数据）
+  if (type === 'judgment') {
+    const validation = validateJudgmentQuestion(sanitizedOptions, answer)
+    if (!validation.valid) {
+      return res.status(400).json({ error: validation.error })
     }
+  }
 
     // 获取旧题目数据（用于对比文件引用）
     const oldQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [id])

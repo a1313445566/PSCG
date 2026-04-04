@@ -479,7 +479,19 @@ router.get('/download', async (req, res) => {
     const worksheet = workbook.addWorksheet('答题记录')
 
     // 添加表头
-    const headers = ['学号', '姓名', '年级', '班级', '学科', '子分类', '总题数', '正确数', '正确率', '用时(秒)', '创建时间']
+    const headers = [
+      '学号',
+      '姓名',
+      '年级',
+      '班级',
+      '学科',
+      '子分类',
+      '总题数',
+      '正确数',
+      '正确率',
+      '用时(秒)',
+      '创建时间'
+    ]
     worksheet.addRow(headers)
 
     // 添加数据行

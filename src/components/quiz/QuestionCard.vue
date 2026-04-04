@@ -1254,34 +1254,53 @@ onMounted(() => {
   }
 }
 
-/* 判断题选项样式 */
+/* 判断题选项样式 - 一行2个横向排列 */
 .options.judgment-layout {
-  display: flex;
-  justify-content: center;
-  gap: 40px;
-  padding: 20px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.8rem;
 }
 
 .options.judgment-layout .option-item {
-  min-width: 200px;
-  max-width: 300px;
-  flex: 1;
-  justify-content: center;
+  min-height: 60px;
+  gap: 1rem;
 }
 
 .options.judgment-layout .option-content {
-  justify-content: center;
-  text-align: center;
+  justify-content: flex-start;
+  align-items: flex-start;
+  text-align: left;
+  flex-direction: row;
+  gap: 0.8rem;
 }
 
 .options.judgment-layout .option-label {
-  width: 40px;
-  height: 40px;
-  font-size: 1.2rem;
+  width: 30px;
+  height: 30px;
+  font-size: 1rem;
+  margin-bottom: 0;
 }
 
 .options.judgment-layout .option-text {
-  font-size: 1.1rem;
-  font-weight: 500;
+  font-size: 1rem;
+  font-weight: normal;
+}
+
+/* 响应式：小屏幕下也保持一行2个 */
+@media (max-width: 768px) {
+  .options.judgment-layout {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .options.judgment-layout {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 0.6rem;
+  }
+  
+  .options.judgment-layout .option-item {
+    padding: 0.8rem;
+  }
 }
 </style>

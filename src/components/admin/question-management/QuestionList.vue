@@ -192,21 +192,13 @@
                 <label class="section-label">答案选项（判断题固定为"对/错"）</label>
                 <div class="judgment-options">
                   <div class="judgment-option">
-                    <el-radio
-                      v-model="judgmentAnswer"
-                      label="A"
-                      class="judgment-radio"
-                    >
+                    <el-radio v-model="judgmentAnswer" label="A" class="judgment-radio">
                       <span class="option-letter">A</span>
                       <span class="option-text">对</span>
                     </el-radio>
                   </div>
                   <div class="judgment-option">
-                    <el-radio
-                      v-model="judgmentAnswer"
-                      label="B"
-                      class="judgment-radio"
-                    >
+                    <el-radio v-model="judgmentAnswer" label="B" class="judgment-radio">
                       <span class="option-letter">B</span>
                       <span class="option-text">错</span>
                     </el-radio>
@@ -215,7 +207,10 @@
               </div>
 
               <!-- 普通题目选项 -->
-              <div v-else-if="splitEditData && splitEditData.type !== 'reading'" class="quick-edit-section">
+              <div
+                v-else-if="splitEditData && splitEditData.type !== 'reading'"
+                class="quick-edit-section"
+              >
                 <label class="section-label">
                   答案选项
                   <el-button type="primary" size="small" text @click="addSplitEditOption">
@@ -224,38 +219,38 @@
                   </el-button>
                 </label>
                 <el-checkbox-group v-model="splitEditData.selectedAnswers">
-                <div class="options-grid">
-                  <div
-                    v-for="(_option, index) in splitEditData.options"
-                    :key="index"
-                    class="quick-option-item"
-                  >
-                    <el-checkbox
-                      v-model="splitEditData.selectedAnswers"
-                      :label="String.fromCharCode(65 + index)"
-                      :disabled="
-                        splitEditData.type === 'single' &&
-                        splitEditData.selectedAnswers.length > 0 &&
-                        !splitEditData.selectedAnswers.includes(String.fromCharCode(65 + index))
-                      "
+                  <div class="options-grid">
+                    <div
+                      v-for="(_option, index) in splitEditData.options"
+                      :key="index"
+                      class="quick-option-item"
                     >
-                      <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
-                    </el-checkbox>
-                    <EditableContent
-                      v-model="splitEditData.options[index]"
-                      placeholder="输入选项内容"
-                      class="quick-option-input"
-                    />
-                    <el-button
-                      type="danger"
-                      size="small"
-                      text
-                      @click="removeSplitEditOption(index)"
-                    >
-                      <el-icon><Delete /></el-icon>
-                    </el-button>
+                      <el-checkbox
+                        v-model="splitEditData.selectedAnswers"
+                        :label="String.fromCharCode(65 + index)"
+                        :disabled="
+                          splitEditData.type === 'single' &&
+                          splitEditData.selectedAnswers.length > 0 &&
+                          !splitEditData.selectedAnswers.includes(String.fromCharCode(65 + index))
+                        "
+                      >
+                        <span class="option-letter">{{ String.fromCharCode(65 + index) }}</span>
+                      </el-checkbox>
+                      <EditableContent
+                        v-model="splitEditData.options[index]"
+                        placeholder="输入选项内容"
+                        class="quick-option-input"
+                      />
+                      <el-button
+                        type="danger"
+                        size="small"
+                        text
+                        @click="removeSplitEditOption(index)"
+                      >
+                        <el-icon><Delete /></el-icon>
+                      </el-button>
+                    </div>
                   </div>
-                </div>
                 </el-checkbox-group>
               </div>
 
@@ -642,9 +637,46 @@
                   </div>
                 </template>
               </el-table-column>
-              <el-table-column prop="answer" label="答案" width="50" align="center">
+              <el-table-column prop="answer" label="答案" width="100" align="center">
                 <template #default="{ row }">
-                  <el-tag size="small" type="danger" effect="dark">{{ row.answer || '-' }}</el-tag>
+                  <template v-if="row.type === 'judgment'">
+                    <!-- 判断题显示"对"或"错" -->
+                    <el-tag size="small" type="danger" effect="dark">
+                      {{ (row.answer === 'A' || row.answer === '对') ? '对' : (row.answer === 'B' || row.answer === '错') ? '错' : row.answer || '-' }}
+                    </el-tag>
+                  </template>
+                  <template v-else-if="row.type === 'reading'">
+                    <!-- 阅读题显示小题答案数量 -->
+                    <template v-if="typeof row.answer === 'string' && row.answer.startsWith('{')">
+                      <el-tag 
+                        size="small" 
+                        type="success" 
+                        effect="light"
+                        :title="'答案：' + row.answer"
+                      >
+                        {{ Object.keys(JSON.parse(row.answer)).length }} 题
+                      </el-tag>
+                    </template>
+                    <template v-else-if="typeof row.answer === 'object' && row.answer !== null">
+                      <el-tag 
+                        size="small" 
+                        type="success" 
+                        effect="light"
+                        :title="'答案：' + JSON.stringify(row.answer)"
+                      >
+                        {{ Object.keys(row.answer).length }} 题
+                      </el-tag>
+                    </template>
+                    <el-tag v-else size="small" type="danger" effect="dark">
+                      {{ row.answer || '-' }}
+                    </el-tag>
+                  </template>
+                  <template v-else>
+                    <!-- 其他题型正常显示 -->
+                    <el-tag size="small" type="danger" effect="dark">
+                      {{ row.answer || '-' }}
+                    </el-tag>
+                  </template>
                 </template>
               </el-table-column>
               <el-table-column
@@ -1072,7 +1104,7 @@ const displayQuestions = computed(() => serverQuestions.value)
 // 判断题答案（将数组转为字符串供 el-radio 使用）
 const judgmentAnswer = computed({
   get: () => splitEditData.value?.selectedAnswers?.[0] || 'A',
-  set: (val) => {
+  set: val => {
     if (splitEditData.value) {
       splitEditData.value.selectedAnswers = [val]
     }
