@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="question-management scroll-self-managed">
     <!-- 顶部工具栏 -->
     <div class="toolbar">
@@ -191,17 +191,25 @@
               <div v-if="splitEditData.type === 'judgment'" class="quick-edit-section">
                 <label class="section-label">答案选项（判断题固定为"对/错"）</label>
                 <div class="judgment-options">
-                  <div class="judgment-option">
-                    <el-radio v-model="judgmentAnswer" label="A" class="judgment-radio">
-                      <span class="option-letter">A</span>
-                      <span class="option-text">对</span>
-                    </el-radio>
+                  <div
+                    class="judgment-card"
+                    :class="{ 'is-active': judgmentAnswer === 'A' }"
+                    @click="judgmentAnswer = 'A'"
+                  >
+                    <div class="judgment-icon correct">
+                      <el-icon><Check /></el-icon>
+                    </div>
+                    <span class="judgment-text">对</span>
                   </div>
-                  <div class="judgment-option">
-                    <el-radio v-model="judgmentAnswer" label="B" class="judgment-radio">
-                      <span class="option-letter">B</span>
-                      <span class="option-text">错</span>
-                    </el-radio>
+                  <div
+                    class="judgment-card"
+                    :class="{ 'is-active': judgmentAnswer === 'B' }"
+                    @click="judgmentAnswer = 'B'"
+                  >
+                    <div class="judgment-icon wrong">
+                      <el-icon><Close /></el-icon>
+                    </div>
+                    <span class="judgment-text">错</span>
                   </div>
                 </div>
               </div>
@@ -226,7 +234,7 @@
                       class="quick-option-item"
                     >
                       <el-checkbox
-                        v-model="splitEditData.selectedAnswers"
+                        :value="String.fromCharCode(65 + index)"
                         :label="String.fromCharCode(65 + index)"
                         :disabled="
                           splitEditData.type === 'single' &&

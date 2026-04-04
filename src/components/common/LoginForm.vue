@@ -1,4 +1,4 @@
-﻿﻿<template>
+<template>
   <div class="animated-login-page">
     <!-- 背景 -->
     <div class="bg-gradient"></div>

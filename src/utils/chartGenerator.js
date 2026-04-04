@@ -19,8 +19,8 @@ function parseChartConfig(configStr) {
         .replace(/"(\w+)":\s*function\s*\([^)]*\)\s*\{[^}]*\}/g, '"$1": null')
         // 清理数组中的多余逗号
         .replace(/,\s*([}\]])/g, '$1')
-        // 清理字符串中的无效字符
-        .replace(/[^\x00-\x7F]/g, '')
+        // 清理字符串中的非 ASCII 字符
+        .replace(/[^\u0000-\u007F]/g, '') // eslint-disable-line no-control-regex -- 需要清理非 ASCII 字符
         // 确保属性名用双引号包围
         .replace(/([{,])\s*([a-zA-Z_][a-zA-Z0-9_]*)\s*:/g, '$1 "$2":')
 

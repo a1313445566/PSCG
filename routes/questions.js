@@ -2,6 +2,7 @@ const express = require('express')
 const router = express.Router()
 const db = require('../services/database')
 const xssFilter = require('../utils/xss-filter')
+const base64Converter = require('../services/base64ImageConverter')
 const { getPaginationParams } = require('../utils/pagination')
 const fileRefService = require('../services/fileReferenceService')
 
@@ -368,8 +369,34 @@ router.post('/', async (req, res) => {
     content = xssFilter.deepSanitize(content)
     explanation = xssFilter.sanitize(explanation)
 
+    // 自动转换 base64 图片为文件（防止数据库存储庞大的 base64 数据）
+    if (base64Converter.hasBase64Images(content)) {
+      const contentResult = await base64Converter.convertHtml(content)
+      content = contentResult.html
+      if (contentResult.convertedCount > 0) {
+        console.log(`[题目新增] ✅ 已转换 ${contentResult.convertedCount} 张 base64 图片`)
+      }
+    }
+
+    if (base64Converter.hasBase64Images(explanation)) {
+      const explanationResult = await base64Converter.convertHtml(explanation)
+      explanation = explanationResult.html
+      if (explanationResult.convertedCount > 0) {
+        console.log(`[题目新增] ✅ 解析中已转换 ${explanationResult.convertedCount} 张 base64 图片`)
+      }
+    }
+
     // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
-    const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
+    const sanitizedOptions = await Promise.all(
+      options.map(async opt => {
+        const cleaned = xssFilter.recursiveSanitize(opt)
+        if (base64Converter.hasBase64Images(cleaned)) {
+          const result = await base64Converter.convertHtml(cleaned)
+          return result.html
+        }
+        return cleaned
+      })
+    )
 
     // 判断题验证（复用统一验证函数）
     if (type === 'judgment') {
@@ -460,8 +487,34 @@ router.put('/:id', async (req, res) => {
     content = xssFilter.deepSanitize(content)
     explanation = xssFilter.sanitize(explanation)
 
+    // 自动转换 base64 图片为文件（防止数据库存储庞大的 base64 数据）
+    if (base64Converter.hasBase64Images(content)) {
+      const contentResult = await base64Converter.convertHtml(content)
+      content = contentResult.html
+      if (contentResult.convertedCount > 0) {
+        console.log(`[题目编辑] ✅ 已转换 ${contentResult.convertedCount} 张 base64 图片`)
+      }
+    }
+
+    if (base64Converter.hasBase64Images(explanation)) {
+      const explanationResult = await base64Converter.convertHtml(explanation)
+      explanation = explanationResult.html
+      if (explanationResult.convertedCount > 0) {
+        console.log(`[题目编辑] ✅ 解析中已转换 ${explanationResult.convertedCount} 张 base64 图片`)
+      }
+    }
+
     // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
-    const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
+    const sanitizedOptions = await Promise.all(
+      options.map(async opt => {
+        const cleaned = xssFilter.recursiveSanitize(opt)
+        if (base64Converter.hasBase64Images(cleaned)) {
+          const result = await base64Converter.convertHtml(cleaned)
+          return result.html
+        }
+        return cleaned
+      })
+    )
 
     // 判断题验证（复用统一验证函数，防止通过更新接口写入矛盾数据）
     if (type === 'judgment') {

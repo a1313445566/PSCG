@@ -1,4 +1,4 @@
-﻿﻿<template>
+<template>
   <div class="question-card" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <div class="question-header">
       <div class="question-number">问题 {{ questionNumber }}</div>
@@ -1247,51 +1247,52 @@ onMounted(() => {
 
 /* 判断题选项样式 - 一行2个横向排列 */
 .options.judgment-layout {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 0.8rem;
+  display: grid !important;
+  grid-template-columns: repeat(2, 1fr) !important;
+  gap: 0.8rem !important;
+  flex-direction: unset !important;
 }
 
 .options.judgment-layout .option-item {
-  min-height: 60px;
-  gap: 1rem;
+  min-height: 60px !important;
+  gap: 1rem !important;
 }
 
 .options.judgment-layout .option-content {
-  justify-content: flex-start;
-  align-items: flex-start;
-  text-align: left;
-  flex-direction: row;
-  gap: 0.8rem;
+  justify-content: flex-start !important;
+  align-items: flex-start !important;
+  text-align: left !important;
+  flex-direction: row !important;
+  gap: 0.8rem !important;
 }
 
 .options.judgment-layout .option-label {
-  width: 30px;
-  height: 30px;
-  font-size: 1rem;
-  margin-bottom: 0;
+  width: 30px !important;
+  height: 30px !important;
+  font-size: 1rem !important;
+  margin-bottom: 0 !important;
 }
 
 .options.judgment-layout .option-text {
-  font-size: 1rem;
-  font-weight: normal;
+  font-size: 1rem !important;
+  font-weight: normal !important;
 }
 
 /* 响应式：小屏幕下也保持一行2个 */
 @media (max-width: 768px) {
   .options.judgment-layout {
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, 1fr) !important;
   }
 }
 
 @media (max-width: 480px) {
   .options.judgment-layout {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 0.6rem;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.6rem !important;
   }
 
   .options.judgment-layout .option-item {
-    padding: 0.8rem;
+    padding: 0.8rem !important;
   }
 }
 </style>
