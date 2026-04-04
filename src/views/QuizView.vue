@@ -97,6 +97,7 @@ import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/ques
 import { getApiBaseUrl } from '../utils/database'
 import { ElMessage } from 'element-plus'
 import { shuffleOptions } from '../utils/shuffleOptions'
+import { getCSRFToken } from '../utils/csrf'
 
 const router = useRouter()
 const route = useRoute()
@@ -642,12 +643,17 @@ const submitAnswersToApi = async submitData => {
   // 获取 token 用于身份验证
   const token = localStorage.getItem('token')
 
+  // 获取 CSRF Token
+  const csrfToken = await getCSRFToken()
+
   const response = await fetch(apiUrl, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
       // 使用 JWT token 进行身份验证（优先）
-      ...(token ? { Authorization: `Bearer ${token}` } : {})
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      // 添加 CSRF Token
+      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
     },
     body: JSON.stringify(submitData)
   })
@@ -794,12 +800,17 @@ onMounted(async () => {
     // 获取 token 用于身份验证
     const token = localStorage.getItem('token')
 
+    // 获取 CSRF Token
+    const csrfToken = await getCSRFToken()
+
     const response = await fetch(apiUrl, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         // 使用 JWT token 进行身份验证（优先）
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+        // 添加 CSRF Token
+        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
       },
       body: JSON.stringify(startData)
     })
