@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="app">
     <!-- 加载指示器 -->
     <div v-if="isLoading" class="loading-indicator"></div>
@@ -13,10 +13,11 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppFooter from './components/common/AppFooter.vue'
 import { useQuestionStore, setAppMountedState } from './stores/questionStore'
+import { getCSRFToken } from './utils/csrf'
 
 const route = useRoute()
 const isLoading = ref(false)
@@ -24,6 +25,16 @@ const questionStore = useQuestionStore()
 
 // 判断是否为后台管理页面
 const isAdminPage = computed(() => route.path === '/admin')
+
+// 应用初始化：预加载 CSRF Token
+onMounted(async () => {
+  try {
+    await getCSRFToken()
+    console.log('✅ CSRF Token 已初始化')
+  } catch (error) {
+    console.warn('⚠️ CSRF Token 初始化失败:', error.message)
+  }
+})
 
 // 监听路由变化，显示/隐藏加载指示器
 watch(

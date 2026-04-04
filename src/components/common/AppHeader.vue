@@ -1,4 +1,4 @@
-﻿<template>
+﻿﻿﻿﻿<template>
   <header class="app-header">
     <!-- 装饰元素 -->
     <span class="decor-element decor-star decor-star--left">⭐</span>

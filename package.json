@@ -10,7 +10,8 @@
     "lint": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,ts,vue,css,scss,json}\" \"routes/**/*.js\" \"services/**/*.js\" \"middleware/**/*.js\" \"utils/**/*.js\"",
     "lint:check": "eslint .",
-    "prepare": "husky"
+    "prepare": "husky",
+    "verify-refactoring": "powershell -Command \"[Console]::OutputEncoding = [System.Text.Encoding]::UTF8; node scripts/verify-refactoring.js\""
   },
   "dependencies": {
     "@visactor/vchart": "^2.0.20",

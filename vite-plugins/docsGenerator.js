@@ -97,6 +97,24 @@ function generateStats(items) {
 }
 
 export default function docsGeneratorPlugin() {
+  let cachedDocsData = null
+
+  async function generateDocsData() {
+    if (cachedDocsData) return cachedDocsData
+
+    const { marked } = await import('marked')
+    marked.setOptions({
+      gfm: true,
+      breaks: true
+    })
+
+    const docsTree = await scanDocsDir(DOCS_DIR, '', marked)
+    const stats = generateStats(docsTree)
+
+    cachedDocsData = JSON.stringify({ stats, tree: docsTree })
+    return cachedDocsData
+  }
+
   return {
     name: 'vite-plugin-docs-generator',
 
@@ -107,25 +125,7 @@ export default function docsGeneratorPlugin() {
     },
 
     async generateBundle(_options, _bundle) {
-      // 动态导入 marked
-      const { marked } = await import('marked')
-
-      // 配置 marked
-      marked.setOptions({
-        gfm: true,
-        breaks: true
-      })
-
-      const docsTree = await scanDocsDir(DOCS_DIR, '', marked)
-      const stats = generateStats(docsTree)
-
-      const docsData = {
-        stats,
-        tree: docsTree
-      }
-
-      // 输出 JSON
-      const jsonStr = JSON.stringify(docsData)
+      const jsonStr = await generateDocsData()
 
       this.emitFile({
         type: 'asset',
@@ -133,10 +133,29 @@ export default function docsGeneratorPlugin() {
         source: jsonStr
       })
 
+      const data = JSON.parse(jsonStr)
       console.log(`📚 [docsGenerator] 文档数据生成完成:`)
-      console.log(`   - 文件数: ${stats.totalFiles}`)
-      console.log(`   - 目录数: ${stats.totalDirs}`)
+      console.log(`   - 文件数: ${data.stats.totalFiles}`)
+      console.log(`   - 目录数: ${data.stats.totalDirs}`)
       console.log(`   - 输出: ${OUTPUT_FILE}\n`)
+    },
+
+    async configureServer(server) {
+      server.middlewares.use(async (req, res, next) => {
+        if (req.url === '/docs-data.json') {
+          try {
+            const jsonStr = await generateDocsData()
+            res.setHeader('Content-Type', 'application/json')
+            res.end(jsonStr)
+          } catch (error) {
+            console.error('[docsGenerator] 生成文档数据失败:', error)
+            res.statusCode = 500
+            res.end(JSON.stringify({ error: '生成文档数据失败' }))
+          }
+        } else {
+          next()
+        }
+      })
     }
   }
 }

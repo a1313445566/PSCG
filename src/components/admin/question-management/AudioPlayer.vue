@@ -69,7 +69,9 @@
               </el-button>
               <template #dropdown>
                 <el-dropdown-menu>
-                  <el-dropdown-item v-for="s in speedOptions" :key="s" :command="s">{{ s }}x</el-dropdown-item>
+                  <el-dropdown-item v-for="s in speedOptions" :key="s" :command="s">
+                    {{ s }}x
+                  </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
             </el-dropdown>
@@ -85,7 +87,15 @@
 
 <script setup>
 import { ref, computed } from 'vue'
-import { Upload, Delete, DArrowLeft, DArrowRight, VideoPlay, VideoPause, ArrowDown } from '@element-plus/icons-vue'
+import {
+  Upload,
+  Delete,
+  DArrowLeft,
+  DArrowRight,
+  VideoPlay,
+  VideoPause,
+  ArrowDown
+} from '@element-plus/icons-vue'
 import { useAudioPlayer } from '../../../composables/useAudioPlayer'
 
 const props = defineProps({

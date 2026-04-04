@@ -598,7 +598,7 @@
                           </div>
                           <div
                             class="content-text"
-                            v-html="truncate(stripImages(row.content), 150)"
+                            v-html="safeHtml(truncate(stripImages(row.content), 150))"
                           ></div>
                           <el-tag
                             v-if="isRichText(row.content)"
@@ -611,7 +611,10 @@
                         </div>
                         <div v-else-if="row.audio" class="content-with-audio">
                           <el-icon class="audio-icon"><Microphone /></el-icon>
-                          <div class="content-text" v-html="truncate(row.content, 150)"></div>
+                          <div
+                            class="content-text"
+                            v-html="safeHtml(truncate(row.content, 150))"
+                          ></div>
                           <el-tag
                             v-if="isRichText(row.content)"
                             size="small"
@@ -759,7 +762,7 @@
         </div>
         <div class="preview-item">
           <label>题目内容：</label>
-          <div class="preview-content-box" v-html="previewData.content"></div>
+          <div class="preview-content-box" v-html="safeHtml(previewData.content)"></div>
         </div>
         <div v-if="previewData.image" class="preview-item">
           <label>题目图片：</label>
@@ -787,7 +790,7 @@
                   <span class="sub-question-order">第 {{ sq.order || sqIndex + 1 }} 题</span>
                   <el-tag type="success" size="small">答案: {{ sq.answer }}</el-tag>
                 </div>
-                <div class="sub-question-content" v-html="sq.content"></div>
+                <div class="sub-question-content" v-html="safeHtml(sq.content)"></div>
                 <div class="sub-question-options">
                   <div
                     v-for="(opt, optIndex) in sq.options"
@@ -796,7 +799,7 @@
                     :class="{ 'is-correct': sq.answer === String.fromCharCode(65 + optIndex) }"
                   >
                     <span class="option-label">{{ String.fromCharCode(65 + optIndex) }}.</span>
-                    <span class="option-content" v-html="opt"></span>
+                    <span class="option-content" v-html="safeHtml(opt)"></span>
                   </div>
                 </div>
               </div>
@@ -811,7 +814,7 @@
                 class="preview-option"
               >
                 <span class="option-label">{{ String.fromCharCode(65 + index) }}.</span>
-                <span class="option-content" v-html="option"></span>
+                <span class="option-content" v-html="safeHtml(option)"></span>
               </div>
             </div>
           </template>
@@ -822,7 +825,7 @@
         </div>
         <div v-if="previewData.explanation" class="preview-item">
           <label>解析：</label>
-          <div class="preview-content-box" v-html="previewData.explanation"></div>
+          <div class="preview-content-box" v-html="safeHtml(previewData.explanation)"></div>
         </div>
       </div>
       <template #footer>
@@ -937,6 +940,7 @@ import { useSplitEdit } from '../../../composables/useSplitEdit'
 import { useBatchOperations } from '../../../composables/useBatchOperations'
 import { useAudioPlayer } from '../../../composables/useAudioPlayer'
 import { useQuestionPreview } from '../../../composables/useQuestionPreview'
+import xssFilter from '../../../utils/xss-filter'
 import EditableContent from '../../common/EditableContent.vue'
 import QuillEditor from '../../common/QuillEditor.vue'
 
@@ -975,8 +979,8 @@ const {
   cancelInlineEdit,
   pendingDeletes,
   deleteQuestionWithUndo,
-  undoDelete,
-  executeRealDelete: originalExecuteRealDelete,
+  // undoDelete 未使用，保留供未来撤销功能扩展
+  // executeRealDelete 由 useBatchOperations 内部管理，无需覆盖
   hasValidImage,
   isRichText,
   canInlineEdit,
@@ -1085,7 +1089,7 @@ const {
   previewVisible,
   previewData,
   previewLoading,
-  previewCache,
+  // previewCache 由 composable 内部管理
   previewQuestion,
   handleEditFromPreview,
   showImagePreview,
@@ -1204,14 +1208,11 @@ const showBatchAddQuestionDialog = () => {
 }
 
 // 刷新题目
+// 安全渲染富文本（XSS 防护）
+const safeHtml = html => xssFilter.sanitize(html)
+
 const refreshQuestions = () => {
   wrappedLoadQuestions()
-}
-
-// 覆盖 executeRealDelete 以添加 emit
-const executeRealDelete = async questionId => {
-  await originalExecuteRealDelete(questionId)
-  emit('delete-question', questionId)
 }
 
 // 初始加载

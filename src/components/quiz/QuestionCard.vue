@@ -1,4 +1,4 @@
-﻿<template>
+﻿﻿<template>
   <div class="question-card" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <div class="question-header">
       <div class="question-number">问题 {{ questionNumber }}</div>

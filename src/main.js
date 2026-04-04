@@ -8,6 +8,18 @@ import './styles/scss/main.scss' // SCSS 入口（已迁移 global.css）
 // 导入Element Plus CSS (关键CSS，同步加载)
 import 'element-plus/dist/index.css'
 
+// 预加载 CSRF Token（在应用挂载前完成）
+import { getCSRFToken } from './utils/csrf'
+getCSRFToken()
+  .then(token => {
+    if (token) {
+      console.log('✅ CSRF Token 预加载成功')
+    }
+  })
+  .catch(err => {
+    console.warn('⚠️ CSRF Token 预加载失败:', err.message)
+  })
+
 const app = createApp(App)
 const pinia = createPinia()
 

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="docs-view">
     <!-- 顶部导航 -->
     <div class="docs-header">
@@ -128,7 +128,7 @@ const treeData = computed(() => {
 // 加载文档数据
 onMounted(async () => {
   try {
-    const response = await fetch('./docs-data.json')
+    const response = await fetch('/docs-data.json')
     if (response.ok) {
       docsData.value = await response.json()
       treeHeight.value = window.innerHeight - 200
