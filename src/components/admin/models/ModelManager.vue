@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="model-manager">
     <!-- 头部 -->
     <div class="model-header">
@@ -153,7 +153,7 @@ async function handleSubmit(formData) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .model-manager {
   padding: 20px;
   background: #f5f7fa;

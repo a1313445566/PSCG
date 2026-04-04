@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="app">
     <!-- 加载指示器 -->
     <div v-if="isLoading" class="loading-indicator"></div>
@@ -48,7 +48,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .app {
   min-height: 100vh;
   position: relative;

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="docs-view">
     <!-- 顶部导航 -->
     <div class="docs-header">
@@ -178,7 +178,7 @@ function goBack() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .docs-view {
   min-height: 100vh;
   background: #f8f9fa;

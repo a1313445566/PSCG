@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="quiz-view">
     <AppHeader />
 
@@ -838,17 +838,8 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-/* 引入全局CSS变量 */
-:root {
-  --primary-color: #ff6b6b;
-  --accent-color: #ffd166;
-  --background-color: #f7fff7;
-  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
-  --header-border-color: #ff9999;
-  --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
-  --el-border-radius-round: 20px;
-}
+<style scoped lang="scss">
+/* CSS 变量已在 src/styles/scss/abstracts/_variables.scss 中统一定义 */
 
 .quiz-view {
   min-height: 100vh;

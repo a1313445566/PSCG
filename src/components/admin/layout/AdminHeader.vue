@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="admin-header">
     <!-- 左侧：标题和折叠按钮 -->
     <div class="header-left">
@@ -213,7 +213,7 @@ const handleLogout = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .admin-header {
   display: flex;
   align-items: center;

@@ -3,7 +3,7 @@ import { createPinia } from 'pinia'
 import App from './App.vue'
 import router from './router'
 import './styles/loading.css'
-import './styles/scss/main.scss'  // SCSS 入口（已迁移 global.css）
+import './styles/scss/main.scss' // SCSS 入口（已迁移 global.css）
 
 // 导入Element Plus CSS (关键CSS，同步加载)
 import 'element-plus/dist/index.css'

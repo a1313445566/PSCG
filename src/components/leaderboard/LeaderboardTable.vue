@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="leaderboard-table">
     <!-- 大屏和中屏：表格布局 -->
     <div v-if="!isSmallScreen" class="table-layout">
@@ -111,7 +111,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .leaderboard-table {
   background-color: white;
   border-radius: 15px;

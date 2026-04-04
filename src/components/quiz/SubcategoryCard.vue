@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="subcategory-card" @click="selectSubcategory">
     <div class="subcategory-icon">{{ subjectIcons[subcategory.iconIndex || 0] }}</div>
     <div class="subcategory-name">{{ subcategory.name }}</div>
@@ -118,7 +118,7 @@ const selectSubcategory = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .subcategory-card {
   background: white;
   border-radius: 15px;

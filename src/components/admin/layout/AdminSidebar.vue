@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="admin-sidebar" :style="{ width: currentWidth + 'px' }">
     <!-- 折叠按钮 -->
     <div class="collapse-btn" @click="toggleCollapse">
@@ -424,7 +424,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .admin-sidebar {
   position: relative;
   height: 100%;

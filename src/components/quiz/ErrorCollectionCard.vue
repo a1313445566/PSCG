@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="error-collection-card" :class="{ 'no-errors': errorQuestions.length === 0 }">
     <div class="card-header">
       <h3 class="card-title">📝 {{ subjectName }}错题巩固题库</h3>
@@ -63,7 +63,7 @@ const startErrorCollectionQuiz = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .error-collection-card {
   background: linear-gradient(135deg, #fff3f3 0%, #ffe6e6 100%);
   border-radius: 20px;

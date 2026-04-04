@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <AdminLayout
     :system-title="systemTitle"
     :subjects="subjects"
@@ -728,7 +728,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .question-management,
 .subject-management,
 .grades-classes-management,

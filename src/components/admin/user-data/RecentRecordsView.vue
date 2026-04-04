@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="recent-records-view scroll-self-managed">
     <!-- 筛选区域 -->
     <AdminFilter
@@ -498,7 +498,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .recent-records-view {
   height: 100%;
   display: flex;

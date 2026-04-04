@@ -409,7 +409,7 @@ router.get('/error-prone-questions', async (req, res) => {
     }
 
     if (className) {
-      query += ' AND u.\`class\` = ?'
+      query += ' AND u.`class` = ?'
       params.push(className)
     }
 

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="editable-content">
     <QuillEditor
       ref="quillRef"
@@ -199,7 +199,7 @@ watch(
 )
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .editable-content {
   width: 100%;
 }

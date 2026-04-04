@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="reading-result-card">
     <!-- 阅读材料 -->
     <div class="passage-section">
@@ -150,7 +150,7 @@ const getOptionLabel = index => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .reading-result-card {
   background: white;
   border-radius: 20px;

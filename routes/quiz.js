@@ -145,7 +145,7 @@ router.post('/start', async (req, res) => {
     if (actualSubcategoryId === null) {
       const errorStats = await db.all(
         `SELECT question_id, correct_count FROM error_collection
-         WHERE user_id = ? AND question_id IN (${questions.map(q => '?').join(',')})`,
+         WHERE user_id = ? AND question_id IN (${questions.map(_q => '?').join(',')})`,
         [userId, ...questions.map(q => q.id)]
       )
 
@@ -997,7 +997,7 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
     if (session.subcategory_id === null) {
       const errorStats = await db.all(
         `SELECT question_id, correct_count FROM error_collection
-         WHERE user_id = ? AND question_id IN (${sessionQuestions.map(q => '?').join(',')})`,
+         WHERE user_id = ? AND question_id IN (${sessionQuestions.map(_q => '?').join(',')})`,
         [userId, ...sessionQuestions.map(q => q.id)]
       )
 

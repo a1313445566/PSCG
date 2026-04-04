@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="subject-card" :class="`subject-${subject.iconIndex + 1}`" @click="selectSubject">
     <div class="subject-icon">
       {{ subjectIcons[subject.iconIndex || 0] }}
@@ -48,7 +48,7 @@ const selectSubject = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .subject-card {
   background: white;
   border-radius: 24px;

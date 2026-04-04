@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="home-view">
     <AppHeader />
 
@@ -362,7 +362,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .home-view {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);

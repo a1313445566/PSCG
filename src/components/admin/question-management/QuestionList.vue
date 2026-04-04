@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="question-management scroll-self-managed">
     <!-- 顶部工具栏 -->
     <div class="toolbar">
@@ -642,15 +642,21 @@
                   <template v-if="row.type === 'judgment'">
                     <!-- 判断题显示"对"或"错" -->
                     <el-tag size="small" type="danger" effect="dark">
-                      {{ (row.answer === 'A' || row.answer === '对') ? '对' : (row.answer === 'B' || row.answer === '错') ? '错' : row.answer || '-' }}
+                      {{
+                        row.answer === 'A' || row.answer === '对'
+                          ? '对'
+                          : row.answer === 'B' || row.answer === '错'
+                            ? '错'
+                            : row.answer || '-'
+                      }}
                     </el-tag>
                   </template>
                   <template v-else-if="row.type === 'reading'">
                     <!-- 阅读题显示小题答案数量 -->
                     <template v-if="typeof row.answer === 'string' && row.answer.startsWith('{')">
-                      <el-tag 
-                        size="small" 
-                        type="success" 
+                      <el-tag
+                        size="small"
+                        type="success"
                         effect="light"
                         :title="'答案：' + row.answer"
                       >
@@ -658,9 +664,9 @@
                       </el-tag>
                     </template>
                     <template v-else-if="typeof row.answer === 'object' && row.answer !== null">
-                      <el-tag 
-                        size="small" 
-                        type="success" 
+                      <el-tag
+                        size="small"
+                        type="success"
                         effect="light"
                         :title="'答案：' + JSON.stringify(row.answer)"
                       >
@@ -1229,7 +1235,13 @@ defineExpose({
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
+@use '../../../styles/scss/components/question-management' as *;
+
+// ============================================
+// QuestionList 布局骨架（仅保留与组件结构强耦合的样式）
+// 子模块样式见 _question-management.scss
+// ============================================
 .question-management {
   height: 100%;
   display: flex;
@@ -1392,412 +1404,9 @@ defineExpose({
   }
 }
 
-.split-edit-form {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
+// [已提取到 _question-management.scss: split-edit-form / audio-player / quick-option]
 
-.quick-edit-row {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.quick-edit-section {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.section-label {
-  font-size: 14px;
-  font-weight: 500;
-  color: #606266;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.content-editor-wrapper {
-  border: 1px solid #dcdfe6;
-  border-radius: 4px;
-  overflow: hidden;
-}
-
-.content-editor-wrapper :deep(.ql-container) {
-  min-height: 100px;
-  max-height: 180px;
-  overflow-y: auto;
-}
-
-.content-editor-wrapper :deep(.ql-editor) {
-  font-size: 14px;
-  line-height: 1.6;
-}
-
-.options-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.audio-upload-area {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.audio-upload-dragger {
-  padding: 20px;
-  border: 2px dashed #dcdfe6;
-  border-radius: 8px;
-  text-align: center;
-  cursor: pointer;
-  transition: all 0.3s;
-  background: #fafafa;
-}
-
-.audio-upload-dragger:hover {
-  border-color: #409eff;
-  background: #ecf5ff;
-}
-
-.audio-upload-dragger .upload-icon {
-  font-size: 48px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.audio-upload-dragger .upload-text {
-  font-size: 14px;
-  color: #606266;
-}
-
-.audio-upload-dragger .upload-text em {
-  color: #409eff;
-  font-style: normal;
-}
-
-.audio-upload-dragger .upload-tip {
-  font-size: 12px;
-  color: #909399;
-  margin-top: 8px;
-}
-
-.audio-uploading {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 12px;
-  padding: 20px;
-  background: #fafafa;
-  border-radius: 8px;
-}
-
-.audio-preview {
-  width: 100%;
-}
-
-.audio-player {
-  background: #f5f7fa;
-  border-radius: 8px;
-  padding: 12px;
-}
-
-.audio-player audio {
-  display: none;
-}
-
-.player-controls {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  flex-wrap: wrap;
-}
-
-.play-buttons {
-  flex-shrink: 0;
-}
-
-.progress-wrapper {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  min-width: 200px;
-}
-
-.progress-slider {
-  flex: 1;
-}
-
-.time-display {
-  font-size: 12px;
-  color: #606266;
-  min-width: 45px;
-  text-align: center;
-}
-
-.speed-control {
-  flex-shrink: 0;
-}
-
-.quick-option-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background: #f5f7fa;
-  border-radius: 6px;
-  border: 1px solid #e4e7ed;
-}
-
-.quick-option-item:hover {
-  border-color: #409eff;
-}
-
-.option-letter {
-  font-weight: 600;
-  color: #409eff;
-  min-width: 20px;
-}
-
-.quick-option-input {
-  flex: 1;
-}
-
-.quick-option-input :deep(.ql-container) {
-  min-height: 40px;
-}
-
-.quick-option-input :deep(.ql-editor) {
-  font-size: 13px;
-  padding: 8px;
-  min-height: 24px;
-}
-
-.quick-option-input :deep(.ql-editor p) {
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* 阅读理解题编辑样式 */
-.reading-tip {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 12px 16px;
-  background: linear-gradient(135deg, #e8f5e9 0%, #c8e6c9 100%);
-  border-radius: 8px;
-  margin-bottom: 16px;
-  font-size: 13px;
-  color: #2e7d32;
-}
-
-.reading-tip .el-icon {
-  font-size: 18px;
-}
-
-.reading-sub-collapse {
-  border: 1px solid #e4e7ed;
-  border-radius: 8px;
-  overflow: visible;
-}
-
-.reading-sub-collapse :deep(.el-collapse-item) {
-  position: relative;
-  z-index: 1;
-}
-
-.reading-sub-collapse :deep(.el-collapse-item.is-active) {
-  z-index: 10;
-}
-
-.reading-sub-collapse :deep(.el-collapse-item__header) {
-  background-color: #f8fafc;
-  border-bottom: 1px solid #e4e7ed;
-  padding: 0 16px;
-  height: 48px;
-  line-height: 48px;
-  position: relative;
-  z-index: 2;
-}
-
-.reading-sub-collapse :deep(.el-collapse-item__wrap) {
-  border-bottom: none;
-  position: relative;
-  z-index: 1;
-}
-
-.reading-sub-collapse :deep(.el-collapse-item__content) {
-  padding: 16px;
-  background-color: white;
-  position: relative;
-  z-index: 1;
-}
-
-.sub-collapse-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.sub-collapse-order {
-  font-weight: 600;
-  color: #1e293b;
-}
-
-.sub-answer-tag {
-  margin-left: 8px;
-}
-
-.sub-collapse-content {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-  position: relative;
-  z-index: 1;
-}
-
-.sub-field {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  position: relative;
-}
-
-.sub-field-content {
-  margin-bottom: 16px;
-  overflow: visible;
-}
-
-.sub-field-content :deep(.quill-editor) {
-  overflow: visible;
-  min-height: 120px;
-}
-
-.sub-field-content :deep(.ql-toolbar) {
-  position: relative;
-  z-index: 20;
-}
-
-.sub-field-content :deep(.ql-container) {
-  min-height: 80px;
-}
-
-.sub-field-options {
-  overflow: visible;
-}
-
-.sub-field-explanation {
-  overflow: visible;
-}
-
-.sub-field-explanation :deep(.el-textarea__inner) {
-  font-size: 13px;
-  line-height: 1.5;
-}
-
-/* 富文本编辑器容器 */
-.sub-field :deep(.quill-editor) {
-  position: relative;
-}
-
-.sub-field :deep(.ql-toolbar) {
-  position: relative;
-  z-index: 10;
-}
-
-.sub-field :deep(.ql-container) {
-  position: relative;
-  z-index: 5;
-}
-
-.sub-label {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  font-size: 14px;
-  font-weight: 500;
-  color: #475569;
-  margin-bottom: 8px;
-}
-
-.sub-options-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-}
-
-.sub-option-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 12px;
-  background-color: #f8fafc;
-  border: 1px solid #e4e7ed;
-  border-radius: 6px;
-  transition: all 0.2s;
-}
-
-.sub-option-row:hover {
-  border-color: #409eff;
-}
-
-.sub-option-row.is-selected {
-  background-color: #f0f9eb;
-  border-color: #67c23a;
-}
-
-.sub-option-row .el-radio {
-  flex-shrink: 0;
-}
-
-.sub-option-editor {
-  flex: 1;
-  min-height: 32px;
-}
-
-.sub-option-editor :deep(.ql-container) {
-  min-height: 32px;
-  border: none;
-}
-
-.sub-option-editor :deep(.ql-editor) {
-  padding: 4px 8px;
-  font-size: 13px;
-  min-height: 24px;
-}
-
-.sub-option-editor :deep(.ql-editor p) {
-  margin: 0;
-  line-height: 1.5;
-}
-
-/* 选项编辑器工具栏样式 - 聚焦时显示 */
-.sub-option-editor :deep(.ql-toolbar) {
-  display: none;
-  position: absolute;
-  top: -40px;
-  left: 0;
-  z-index: 100;
-  background: white;
-  border-radius: 4px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-}
-
-.sub-option-editor:focus-within :deep(.ql-toolbar) {
-  display: block;
-}
-
-.sub-actions {
-  display: flex;
-  gap: 8px;
-  justify-content: flex-end;
-  padding-top: 8px;
-  border-top: 1px solid #e4e7ed;
-}
+// [已提取到 _question-management.scss: reading-sub / sub-collapse / sub-option]
 
 .breadcrumb-bar {
   display: flex;
@@ -1964,116 +1573,7 @@ defineExpose({
   flex-shrink: 0;
 }
 
-/* 预览弹窗样式 */
-.preview-content {
-  padding: 10px;
-}
-
-.preview-item {
-  margin-bottom: 16px;
-  display: flex;
-  align-items: flex-start;
-}
-
-.preview-item label {
-  width: 80px;
-  flex-shrink: 0;
-  color: #606266;
-  font-weight: 500;
-}
-
-.preview-content-box {
-  flex: 1;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 4px;
-  line-height: 1.6;
-  word-break: break-word;
-}
-
-.preview-content-box img {
-  max-width: 100%;
-  max-height: 300px;
-  border-radius: 4px;
-  margin: 8px 0;
-}
-
-.preview-options {
-  flex: 1;
-}
-
-.preview-option {
-  padding: 10px 12px;
-  margin-bottom: 8px;
-  background: #f5f7fa;
-  border-radius: 4px;
-  display: flex;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.option-label {
-  flex-shrink: 0;
-  font-weight: 600;
-  color: #409eff;
-}
-
-.option-content {
-  flex: 1;
-  line-height: 1.6;
-  word-break: break-word;
-}
-
-.option-content img {
-  max-width: 200px;
-  max-height: 100px;
-  border-radius: 4px;
-  margin: 4px 0;
-}
-
-/* 阅读理解题预览样式 */
-.preview-reading-options {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
-.preview-sub-question {
-  padding: 12px;
-  background-color: #f8fafc;
-  border-radius: 6px;
-  border: 1px solid #e4e7ed;
-}
-
-.preview-sub-question .sub-question-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 8px;
-}
-
-.preview-sub-question .sub-question-order {
-  font-weight: 600;
-  color: #303133;
-}
-
-.preview-sub-question .sub-question-content {
-  padding: 8px;
-  background-color: white;
-  border-radius: 4px;
-  margin-bottom: 8px;
-}
-
-.preview-sub-question .sub-question-options {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.preview-sub-question .preview-option.is-correct {
-  background-color: #f0f9ff;
-  border-color: #67c23a;
-}
+// [已提取到 _question-management.scss: preview / preview-reading]
 
 /* Element Plus 样式覆盖 */
 :deep(.el-tree-node__content) {
@@ -2100,42 +1600,5 @@ defineExpose({
   background: #f5f7fa !important;
 }
 
-/* 判断题选项样式 */
-.judgment-options {
-  display: flex;
-  gap: 24px;
-  padding: 12px;
-  background: #f5f7fa;
-  border-radius: 8px;
-}
-
-.judgment-option {
-  flex: 1;
-  max-width: 200px;
-}
-
-.judgment-radio {
-  display: flex;
-  align-items: center;
-  padding: 12px 16px;
-  background: white;
-  border: 2px solid #e4e7ed;
-  border-radius: 8px;
-  transition: all 0.3s;
-}
-
-.judgment-radio:hover {
-  border-color: #409eff;
-}
-
-.judgment-radio.is-checked {
-  border-color: #409eff;
-  background: #ecf5ff;
-}
-
-.judgment-radio .option-text {
-  margin-left: 8px;
-  font-size: 14px;
-  color: #303133;
-}
+// [已提取到 _question-management.scss: judgment-options]
 </style>

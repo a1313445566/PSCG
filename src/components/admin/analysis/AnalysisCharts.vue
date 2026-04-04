@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="analysis-charts">
     <el-row :gutter="20">
       <!-- 学科分析 -->
@@ -602,7 +602,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .analysis-charts {
   margin-bottom: 20px;
 }

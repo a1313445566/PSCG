@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="game-page">
     <AppHeader />
 
@@ -325,7 +325,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .back-section {
   margin-bottom: 1.5rem;
 }

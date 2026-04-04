@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="security-monitor">
     <!-- Tabs 切换 -->
     <el-tabs v-model="activeTab" @tab-change="handleTabChange">
@@ -779,7 +779,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .security-monitor {
   padding: 20px;
 }

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dialog
     :model-value="visible"
     :title="user ? '编辑用户' : '添加用户'"
@@ -143,7 +143,7 @@ const handleSubmit = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .dialog-footer {
   display: flex;
   justify-content: flex-end;

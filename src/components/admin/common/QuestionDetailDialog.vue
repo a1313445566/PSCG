@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dialog
     :model-value="dialogVisible"
     title="题目详情"
@@ -279,7 +279,7 @@ const isUserCorrect = computed(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 @import '@/styles/rich-text.css';
 
 .question-detail {

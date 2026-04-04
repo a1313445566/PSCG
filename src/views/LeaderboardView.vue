@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="leaderboard-view">
     <AppHeader />
     <div class="leaderboard-content">
@@ -920,7 +920,7 @@ watch(activeTab, newTab => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 @import '@/styles/rich-text.css';
 
 .leaderboard-view {

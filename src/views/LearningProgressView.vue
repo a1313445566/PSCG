@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="learning-progress-view">
     <AppHeader />
 
@@ -276,7 +276,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .learning-progress-view {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);

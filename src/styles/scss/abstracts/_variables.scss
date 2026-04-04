@@ -104,24 +104,24 @@ $el-border-radius: $border-radius-sm;
   --el-color-primary-light-7: #{tint($primary-color, 70%)};
   --el-color-primary-light-8: #{tint($primary-color, 80%)};
   --el-color-primary-dark-2: #{shade($primary-color, 20%)};
-  
+
   // 功能色
   --el-color-success: #{$success-color};
   --el-color-warning: #{$warning-color};
   --el-color-danger: #{$danger-color};
   --el-color-info: #{$info-color};
-  
+
   // 文字颜色
   --el-text-color-primary: #{$text-primary};
   --el-text-color-regular: #606266;
   --el-text-color-secondary: #909399;
   --el-text-color-placeholder: #c0c4cc;
-  
+
   // 边框
   --el-border-color: #dcdfe6;
   --el-border-color-light: #e4e7ed;
   --el-border-radius: #{$border-radius-sm};
-  
+
   // 项目自定义变量（兼容 global.css）
   --primary-color: #{$primary-color};
   --secondary-color: #{$secondary-color};
@@ -137,4 +137,8 @@ $el-border-radius: $border-radius-sm;
   --shadow: #{$shadow-md};
   --border-radius: #{$border-radius};
   --game-font: #{$game-font};
+
+  // Header 组件变量
+  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  --header-border-color: #ff9999;
 }

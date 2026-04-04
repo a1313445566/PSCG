@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="skeleton-loader" :class="{ 'skeleton--pulse': pulse }">
     <!-- 文本骨架 -->
     <div
@@ -143,7 +143,7 @@ const props = defineProps({
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .skeleton-loader {
   display: inline-block;
 }

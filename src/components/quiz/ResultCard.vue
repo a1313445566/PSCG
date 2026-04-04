@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="result-card">
     <div class="result-header">
       <h2 class="result-title">{{ isErrorCollection ? '错题巩固结果' : '答题结果' }}</h2>
@@ -167,7 +167,7 @@ const backToSubjects = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .result-card {
   background: #ffffff;
   border-radius: 12px;

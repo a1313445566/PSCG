@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-management scroll-self-managed">
     <!-- 顶部工具栏 -->
     <div class="toolbar">
@@ -383,7 +383,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .user-management {
   height: 100%;
   display: flex;

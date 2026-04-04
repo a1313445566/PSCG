@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="error-analysis">
     <!-- 错题率统计表 -->
     <el-card class="error-stats-card">
@@ -308,7 +308,7 @@ const getTypeName = type => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 @import '@/styles/rich-text.css';
 
 .error-analysis {

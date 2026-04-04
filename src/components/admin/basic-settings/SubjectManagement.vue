@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="setting-card">
     <h3 class="setting-title">学科管理</h3>
     <div class="subject-management" style="padding: 20px">
@@ -695,7 +695,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .setting-card {
   background-color: white;
   border-radius: 10px;

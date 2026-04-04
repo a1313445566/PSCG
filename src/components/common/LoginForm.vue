@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="login-form-container">
     <div class="login-card">
       <div class="login-header">
@@ -244,7 +244,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .login-form-container {
   display: flex;
   justify-content: center;

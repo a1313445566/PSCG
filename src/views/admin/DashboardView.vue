@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="dashboard-view">
     <!-- 统计卡片 -->
     <div class="stats-grid">
@@ -461,7 +461,7 @@ onUnmounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .dashboard-view {
   padding: 0;
 }

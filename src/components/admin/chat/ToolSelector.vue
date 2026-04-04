@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="tool-selector">
     <!-- 工具分类 -->
     <div class="tool-categories">
@@ -184,7 +184,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .tool-selector {
   padding: 12px;
   background: #fff;

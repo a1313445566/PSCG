@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="reading-passage-card">
     <!-- 阅读材料区域 -->
     <div class="passage-section">
@@ -115,7 +115,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .reading-passage-card {
   background: white;
   border-radius: 20px;

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="question-card" @mouseenter="handleMouseEnter" @mouseleave="handleMouseLeave">
     <div class="question-header">
       <div class="question-number">问题 {{ questionNumber }}</div>
@@ -552,7 +552,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 @import '@/styles/rich-text.css';
 
 /* 听力音频播放器样式 */
@@ -740,16 +740,7 @@ onMounted(() => {
   color: #909399;
 }
 
-/* 引入全局CSS变量 */
-:root {
-  --primary-color: #ff6b6b;
-  --accent-color: #ffd166;
-  --background-color: #f7fff7;
-  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
-  --header-border-color: #ff9999;
-  --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
-  --el-border-radius-round: 20px;
-}
+/* CSS 变量已在 src/styles/scss/abstracts/_variables.scss 中统一定义 */
 
 .question-card {
   background: white;
@@ -1298,7 +1289,7 @@ onMounted(() => {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.6rem;
   }
-  
+
   .options.judgment-layout .option-item {
     padding: 0.8rem;
   }

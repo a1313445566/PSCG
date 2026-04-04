@@ -106,7 +106,7 @@ export default function docsGeneratorPlugin() {
       console.log('\n📚 [docsGenerator] 开始扫描 DOCS 目录...')
     },
 
-    async generateBundle(options, bundle) {
+    async generateBundle(_options, _bundle) {
       // 动态导入 marked
       const { marked } = await import('marked')
 
