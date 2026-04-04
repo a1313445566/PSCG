@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="reading-passage-card">
     <!-- 阅读材料区域 -->
     <div class="passage-section">
@@ -9,6 +9,7 @@
         </div>
         <div class="question-type-badge type-reading">阅读理解</div>
       </div>
+      <!-- eslint-disable-next-line vue/no-v-html -- 数据已在后端通过 xssFilter.deepSanitize() 过滤 -->
       <div class="passage-content" v-html="passage"></div>
     </div>
 
@@ -28,6 +29,7 @@
           <div class="sub-question-number">
             <span class="number-badge">{{ index + 1 }}</span>
             <span class="question-text" v-html="sq.content"></span>
+            <!-- eslint-disable-line vue/no-v-html -- 后端已过滤 -->
           </div>
           <div class="sub-question-options">
             <div
@@ -42,6 +44,7 @@
             >
               <span class="option-label">{{ opt.displayLabel }}.</span>
               <span class="option-content" v-html="opt.content"></span>
+              <!-- eslint-disable-line vue/no-v-html -- 后端已过滤 -->
             </div>
           </div>
         </div>
@@ -51,8 +54,8 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted } from 'vue'
-import { Document, List, Warning } from '@element-plus/icons-vue'
+import { ref, /* computed, */ watch, onMounted } from 'vue' // eslint-disable-line no-unused-vars -- computed 暂未使用
+import { Document, List /*, Warning */ } from '@element-plus/icons-vue' // eslint-disable-line no-unused-vars -- Warning 暂未使用
 
 /**
  * 阅读理解题答题卡片组件

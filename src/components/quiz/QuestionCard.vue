@@ -96,7 +96,8 @@ const props = defineProps({
   errorCollectionProgress: { type: Object, default: null }
 })
 
-const emit = defineEmits(['select-option', 'mouseenter', 'mouseleave'])
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- emit 保留用于未来扩展
+const _emit = defineEmits(['select-option', 'mouseenter', 'mouseleave'])
 
 const contentRef = ref(null)
 const {

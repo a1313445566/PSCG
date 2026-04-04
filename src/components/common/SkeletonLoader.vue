@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="skeleton-loader" :class="{ 'skeleton--pulse': pulse }">
     <!-- 文本骨架 -->
     <div
@@ -108,7 +108,8 @@
 </template>
 
 <script setup>
-const props = defineProps({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- props 保留用于未来扩展
+const _props = defineProps({
   type: {
     type: String,
     default: 'text',

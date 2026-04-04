@@ -24,7 +24,7 @@ const classComparisonTool = defineTool({
   }),
   handler: async args => {
     try {
-      const { grade, classes, subjectId, compareBy } = args
+      const { grade, classes, subjectId, compareBy: _compareBy } = args // eslint-disable-line @typescript-eslint/no-unused-vars -- compareBy 暂未使用
 
       const comparisonResults = []
 

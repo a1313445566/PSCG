@@ -358,7 +358,7 @@ router.post('/', async (req, res) => {
       explanation = '',
       audio = null,
       image = null
-    } = req.body // eslint-disable-line prefer-const
+    } = req.body
 
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })
@@ -476,7 +476,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     let { subjectId, subcategoryId, content, type, options, answer, explanation, audio, image } =
-      req.body // eslint-disable-line prefer-const
+      req.body
 
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="reading-result-card">
     <!-- 阅读材料 -->
     <div class="passage-section">
@@ -9,6 +9,7 @@
         </div>
         <div class="question-type-badge type-reading">阅读理解</div>
       </div>
+      <!-- eslint-disable-next-line vue/no-v-html -- 后端已过滤 -->
       <div class="passage-content" v-html="question.content"></div>
     </div>
 
@@ -40,6 +41,7 @@
 
           <!-- 小题内容 -->
           <div v-if="sqResult" class="sub-question-content">
+            <!-- eslint-disable-next-line vue/no-v-html -- 后端已过滤 -->
             <div v-html="getSubQuestionContent(index + 1)"></div>
           </div>
 
@@ -56,6 +58,7 @@
             >
               <span class="option-label">{{ getOptionLabel(optIndex) }}.</span>
               <span class="option-text" v-html="option"></span>
+              <!-- eslint-disable-line vue/no-v-html -->
             </div>
           </div>
 

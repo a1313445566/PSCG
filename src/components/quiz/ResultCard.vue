@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="result-card">
     <div class="result-header">
       <h2 class="result-title">{{ isErrorCollection ? '错题巩固结果' : '答题结果' }}</h2>
@@ -52,7 +52,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { MAX_CORRECT_COUNT, getProgressColor } from '../../utils/errorCollectionUtils'
+import { MAX_CORRECT_COUNT /*, getProgressColor */ } from '../../utils/errorCollectionUtils' // eslint-disable-line no-unused-vars -- getProgressColor 暂未使用
 
 const props = defineProps({
   score: {

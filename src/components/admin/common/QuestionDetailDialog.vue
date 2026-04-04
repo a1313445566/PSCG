@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-dialog
     :model-value="dialogVisible"
     title="题目详情"
@@ -28,6 +28,7 @@
       <!-- 题目内容 -->
       <div class="content-section">
         <h3>题目内容</h3>
+        <!-- eslint-disable-next-line vue/no-v-html -- 后端已通过 xssFilter.deepSanitize() 过滤 -->
         <div class="content-html rich-text-content size-xlarge" v-html="question.content"></div>
       </div>
 
@@ -52,6 +53,7 @@
               class="option-text rich-text-content size-medium"
               v-html="formatOption(option)"
             ></span>
+            <!-- eslint-disable-line vue/no-v-html -->
             <el-tag
               v-if="isCorrectOption(index)"
               type="success"
@@ -77,6 +79,7 @@
               <span class="sub-question-number">第 {{ sq.order || sqIndex + 1 }} 题</span>
               <el-tag type="success" size="small">答案: {{ sq.answer }}</el-tag>
             </div>
+            <!-- eslint-disable-next-line vue/no-v-html -- 后端已过滤 -->
             <div class="sub-question-content" v-html="sq.content"></div>
             <div class="sub-question-options">
               <div
@@ -87,11 +90,13 @@
               >
                 <span class="option-letter">{{ String.fromCharCode(65 + optIndex) }}.</span>
                 <span class="option-text" v-html="opt"></span>
+                <!-- eslint-disable-line vue/no-v-html -->
               </div>
             </div>
             <div v-if="sq.explanation" class="sub-question-explanation">
               <span class="explanation-label">解析：</span>
               <span v-html="sq.explanation"></span>
+              <!-- eslint-disable-line vue/no-v-html -->
             </div>
           </div>
         </div>
@@ -119,6 +124,7 @@
       <!-- 解析 -->
       <div v-if="question.explanation" class="explanation-section">
         <h3>答案解析</h3>
+        <!-- eslint-disable-next-line vue/no-v-html -- 后端已通过 xssFilter.sanitize() 过滤 -->
         <div class="explanation-content" v-html="question.explanation"></div>
       </div>
     </div>

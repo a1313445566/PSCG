@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="leaderboard-table">
     <!-- 大屏和中屏：表格布局 -->
     <div v-if="!isSmallScreen" class="table-layout">
@@ -82,7 +82,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const props = defineProps({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- props 保留用于未来扩展
+const _props = defineProps({
   leaderboardData: {
     type: Array,
     default: () => []

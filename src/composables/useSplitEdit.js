@@ -104,7 +104,7 @@ export function useSplitEdit(props, options = {}) {
       if (data.type === 'reading') {
         // options 是小题数组
         if (Array.isArray(options) && options.length > 0) {
-          readingSubQuestions = options.map((sq, idx) => ({
+          readingSubQuestions = options.map((sq, _idx) => ({
             content: sq.content || '',
             options: Array.isArray(sq.options) ? sq.options : ['', '', '', ''],
             answer: sq.answer || 'A',

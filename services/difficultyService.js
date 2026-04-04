@@ -22,8 +22,12 @@ class DifficultyService {
         return { success: false, message: '题目尝试次数不足' }
       }
 
-      const { total_attempts, correct_count, weighted_attempts, weighted_correct_count } =
-        attempts[0]
+      const {
+        total_attempts,
+        correct_count: _correct_count,
+        weighted_attempts,
+        weighted_correct_count
+      } = attempts[0] // eslint-disable-line @typescript-eslint/no-unused-vars -- correct_count 暂未使用
 
       // 计算加权错误率
       const weightedErrorRate = (weighted_attempts - weighted_correct_count) / weighted_attempts

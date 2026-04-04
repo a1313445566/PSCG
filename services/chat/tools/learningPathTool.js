@@ -23,7 +23,7 @@ const learningPathTool = defineTool({
   }),
   handler: async args => {
     try {
-      const { studentId, days = 30, detail } = args
+      const { studentId, days = 30, detail: _detail } = args // eslint-disable-line @typescript-eslint/no-unused-vars -- detail 暂未使用
 
       // 1. 学生基本信息
       const studentInfo = await db.get(

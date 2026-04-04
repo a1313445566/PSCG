@@ -4,7 +4,7 @@
  * 功能: 简化工具定义，移除 LangChain 依赖
  */
 
-const z = require('zod')
+// const z = require('zod') // eslint-disable-line no-unused-vars -- 暂未使用（保留用于未来 schema 验证）
 
 /**
  * 定义工具（替代 LangChain 的 tool()）

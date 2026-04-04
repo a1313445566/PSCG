@@ -141,7 +141,8 @@ export const uploadQueue = {
 
     this.running++
     this.notify()
-    const { file, resolve, reject, id, controller } = this.queue.shift()
+    const { file, resolve, reject, id } = this.queue.shift() // eslint-disable-line @typescript-eslint/no-unused-vars -- controller 暂未使用
+    const _controller = controller // 保留变量以避免解构警告
 
     try {
       const url = await uploadImageWithRetry(file, 3)

@@ -64,6 +64,6 @@ backups/*.json
 models.json
 
 # CodeBuddy data
-.codebuddy/
-.trae/
+
+
 backups/

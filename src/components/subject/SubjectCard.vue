@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="subject-card" :class="`subject-${subject.iconIndex + 1}`" @click="selectSubject">
     <div class="subject-icon">
       {{ subjectIcons[subject.iconIndex || 0] }}
@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+// import { computed } from 'vue' // eslint-disable-line no-unused-vars -- 暂未使用
 
 const props = defineProps({
   subject: {

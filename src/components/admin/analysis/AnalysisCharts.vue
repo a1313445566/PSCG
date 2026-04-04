@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="analysis-charts">
     <el-row :gutter="20">
       <!-- 学科分析 -->
@@ -82,10 +82,10 @@ import VChart from '@visactor/vchart'
 import { formatPercent } from '../../../utils/format'
 import {
   registerChart,
-  unregisterChart,
-  observeContainer,
-  unobserveContainer,
-  cleanup
+  // unregisterChart, // eslint-disable-line no-unused-vars -- 暂未使用
+  observeContainer
+  // unobserveContainer, // eslint-disable-line no-unused-vars -- 暂未使用
+  // cleanup // eslint-disable-line no-unused-vars -- 暂未使用
 } from '../../../utils/chartResize'
 
 const props = defineProps({
@@ -137,7 +137,9 @@ const initSubjectChart = () => {
   if (subjectChart) {
     try {
       subjectChart.release()
-    } catch (e) {}
+    } catch (e) {
+      // 静默处理释放错误
+    }
     subjectChart = null
   }
 

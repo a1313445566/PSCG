@@ -68,7 +68,8 @@
             <span class="document-path">{{ selectedItem.path }}</span>
           </div>
 
-          <!-- 直接渲染预编译的 HTML -->
+          <!-- 直接渲染预编译的 HTML（文档内容为受信来源） -->
+          <!-- eslint-disable-next-line vue/no-v-html -- 静态文档内容，安全可控 -->
           <div class="document-body markdown-body" v-html="selectedItem.html"></div>
         </div>
       </div>

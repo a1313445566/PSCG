@@ -1,14 +1,14 @@
 {
   "passed": false,
   "stats": {
-    "totalLines": 1177,
+    "totalLines": 1143,
     "mainFunctionLines": 47,
     "newFunctionsCount": 13,
-    "originalFunctionLines": 982
+    "originalFunctionLines": 948
   },
   "errors": [],
   "warnings": [
-    "⚠️  发现重复模式: ElMessage\\.(warning|error|success) (9 次)",
+    "⚠️  发现重复模式: ElMessage\\.(warning|error|success) (8 次)",
     "⚠️  注释覆盖率较低 (9%)，建议添加更多注释"
   ],
   "successes": [

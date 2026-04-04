@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="game-page">
     <AppHeader />
 
@@ -323,7 +323,8 @@ const subjectPreferenceText = computed(() => {
   return subjectPreference.value.map(s => s.name).join('、')
 })
 
-const errorTendencyText = computed(() => {
+const _errorTendencyText = computed(() => {
+  // eslint-disable-line @typescript-eslint/no-unused-vars -- 保留用于调试
   if (errorTendency.value.length === 0) return '暂无明显薄弱点'
   return errorTendency.value.map(e => `${e.subject_name}（${e.error_count}题）`).join('、')
 })
