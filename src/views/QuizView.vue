@@ -94,10 +94,9 @@ import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import AnswerBehaviorTracker from '../components/quiz/AnswerBehaviorTracker.vue'
 import ReadingPassageCard from '../components/student/ReadingPassageCard.vue'
 import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/questionStore'
-import { getApiBaseUrl } from '../utils/database'
+import { api } from '../utils/api'
 import { ElMessage } from 'element-plus'
 import { shuffleOptions } from '../utils/shuffleOptions'
-import { getCSRFToken } from '../utils/csrf'
 
 const router = useRouter()
 const route = useRoute()
@@ -196,7 +195,7 @@ watch(
 )
 
 // 解析阅读理解题的小题列表
-const parseReadingSubQuestions = (question, shuffleMapping) => {
+const parseReadingSubQuestions = (question, _shuffleMapping) => {
   let options = []
   try {
     options = typeof question.options === 'string' ? JSON.parse(question.options) : question.options
@@ -633,51 +632,29 @@ const generateSubmitSignature = async (timestamp, userId) => {
 
 // 提交答案到后端 API
 const submitAnswersToApi = async submitData => {
-  const apiUrl = `${getApiBaseUrl()}/quiz/submit`
-
   logSignatureDebug('发送请求到后端', {
-    url: apiUrl,
+    url: '/quiz/submit',
     method: 'POST'
   })
 
-  // 获取 token 用于身份验证
-  const token = localStorage.getItem('token')
+  try {
+    const result = await api.post('/quiz/submit', submitData, { showError: false })
 
-  // 获取 CSRF Token
-  const csrfToken = await getCSRFToken()
-
-  const response = await fetch(apiUrl, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      // 使用 JWT token 进行身份验证（优先）
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
-      // 添加 CSRF Token
-      ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-    },
-    body: JSON.stringify(submitData)
-  })
-
-  if (!response.ok) {
-    const errorData = await response.json()
-    logSignatureDebug('❌ 提交失败', {
-      status: response.status,
-      error: errorData.error
+    logSignatureDebug('✅ 提交成功', {
+      score: result.score,
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      points: result.points
     })
-    ElMessage.error(errorData.error || '提交答案失败')
+
+    return result
+  } catch (error) {
+    logSignatureDebug('❌ 提交失败', {
+      error: error.message
+    })
+    ElMessage.error(error.message || '提交答案失败')
     return null
   }
-
-  const result = await response.json()
-
-  logSignatureDebug('✅ 提交成功', {
-    score: result.score,
-    correctCount: result.correctCount,
-    totalQuestions: result.totalQuestions,
-    points: result.points
-  })
-
-  return result
 }
 
 // 提交答案
@@ -795,45 +772,23 @@ onMounted(async () => {
       class: parseInt(localStorage.getItem('userClass'))
     }
 
-    const apiUrl = `${getApiBaseUrl()}/quiz/start`
+    let data
 
-    // 获取 token 用于身份验证
-    const token = localStorage.getItem('token')
-
-    // 获取 CSRF Token
-    const csrfToken = await getCSRFToken()
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // 使用 JWT token 进行身份验证（优先）
-        ...(token ? { Authorization: `Bearer ${token}` } : {}),
-        // 添加 CSRF Token
-        ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {})
-      },
-      body: JSON.stringify(startData)
-    })
-
-    if (!response.ok) {
+    try {
+      data = await api.post('/quiz/start', startData, { showError: false })
+    } catch (error) {
       // 特殊处理错题巩固题库为空的情况
-      if (isErrorCollection.value && response.status === 404) {
-        ElMessage.success('恭喜！您的错题巩固题库为空，所有错题都已巩固完成！')
-        router.push(`/subcategory/${subjectId.value}`)
-        return
+      if (error.message?.includes('404') || error.message?.includes('Not Found')) {
+        if (isErrorCollection.value) {
+          ElMessage.success('恭喜！您的错题巩固题库为空，所有错题都已巩固完成！')
+          router.push(`/subcategory/${subjectId.value}`)
+          return
+        }
       }
-
-      try {
-        const errorData = await response.json()
-        ElMessage.error(errorData.error || '开始答题失败')
-      } catch (e) {
-        ElMessage.error('开始答题失败')
-      }
+      ElMessage.error(error.message || '开始答题失败')
       router.push(`/subcategory/${subjectId.value}`)
       return
     }
-
-    const data = await response.json()
 
     // 保存quizId用于后续提交
     quizStore.quizId = data.quizId
