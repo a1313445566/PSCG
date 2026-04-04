@@ -41,6 +41,14 @@ export default defineConfig({
       '/api': {
         target: 'http://localhost:3001',
         changeOrigin: true
+      },
+      '/images': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
+      },
+      '/audio': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
       }
     }
   },

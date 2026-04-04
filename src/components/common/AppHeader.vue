@@ -1,4 +1,4 @@
-﻿﻿﻿﻿<template>
+﻿﻿<template>
   <header class="app-header">
     <!-- 装饰元素 -->
     <span class="decor-element decor-star decor-star--left">⭐</span>
@@ -31,8 +31,26 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped lang="scss">
-/* CSS 变量已在 src/styles/scss/abstracts/_variables.scss 中统一定义 */
+<style>
+/* 1. CSS 变量抽离（仅保留核心业务变量，通用UI变量按需引用） */
+:root {
+  /* 业务核心变量 */
+  --primary-color: #ff6b6b;
+  --accent-color: #ffd166;
+  --background-color: #f7fff7;
+  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  --header-border-color: #ff9999;
+
+  /* 通用UI变量（精简版，仅保留使用到的） */
+  --el-color-white: #fff;
+  --el-color-black: #000;
+  --el-font-size-extra-large: 42px;
+  --el-font-size-large: 24px;
+  --el-font-size-base: 18px;
+  --el-font-size-small: 13px;
+  --el-border-radius-round: 20px;
+  --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
 
 /* 动画效果 */
 @keyframes header-float {
@@ -154,16 +172,16 @@ onMounted(async () => {
 }
 
 .header-title {
-  font-size: 40px;
+  font-size: var(--el-font-size-extra-large);
   font-weight: bold;
-  color: #ff6b6b;
+  color: var(--el-color-white);
   margin-bottom: 15px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .header-subtitle {
-  font-size: 18px;
+  font-size: var(--el-font-size-base);
   color: var(--el-color-white);
   line-height: 1.6;
   letter-spacing: 1px;
@@ -180,10 +198,10 @@ onMounted(async () => {
     padding: 25px 15px;
   }
   .header-title {
-    font-size: 28px;
+    font-size: var(--el-font-size-large);
   }
   .header-subtitle {
-    font-size: 14px;
+    font-size: var(--el-font-size-small);
     padding: 6px 15px;
   }
   .decor-element {

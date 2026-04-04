@@ -7,8 +7,8 @@
       <component :is="Component" :key="route.fullPath" />
     </router-view>
 
-    <!-- 页脚组件（后台管理页面不显示） -->
-    <AppFooter v-if="!isAdminPage" />
+    <!-- 页脚组件（后台管理页面和登录页面不显示） -->
+    <AppFooter v-if="!isAdminPage && !isLoginPage" />
   </div>
 </template>
 
@@ -23,8 +23,9 @@ const route = useRoute()
 const isLoading = ref(false)
 const questionStore = useQuestionStore()
 
-// 判断是否为后台管理页面
+// 判断是否为后台管理页面或登录页面
 const isAdminPage = computed(() => route.path === '/admin')
+const isLoginPage = computed(() => route.path === '/login')
 
 // 应用初始化：预加载 CSRF Token
 onMounted(async () => {
