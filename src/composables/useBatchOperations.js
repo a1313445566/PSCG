@@ -67,11 +67,15 @@ export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subje
   const executeBatchDifficulty = async () => {
     const ids = selectedQuestionsRef.value.map(q => q.id)
     try {
-      await api.post('/questions/batch', {
-        action: 'updateDifficulty',
-        ids,
-        data: { difficulty: batchDifficulty.value }
-      }, { showError: false })
+      await api.post(
+        '/questions/batch',
+        {
+          action: 'updateDifficulty',
+          ids,
+          data: { difficulty: batchDifficulty.value }
+        },
+        { showError: false }
+      )
       ElMessage.success(`成功修改 ${ids.length} 道题目的难度`)
       batchDifficultyVisible.value = false
       selectedQuestionsRef.value = []
@@ -90,11 +94,15 @@ export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subje
 
     const ids = selectedQuestionsRef.value.map(q => q.id)
     try {
-      await api.post('/questions/batch', {
-        action: 'updateType',
-        ids,
-        data: { type: batchType.value }
-      }, { showError: false })
+      await api.post(
+        '/questions/batch',
+        {
+          action: 'updateType',
+          ids,
+          data: { type: batchType.value }
+        },
+        { showError: false }
+      )
       ElMessage.success(`成功修改 ${ids.length} 道题目的类型`)
       batchTypeVisible.value = false
       selectedQuestionsRef.value = []
@@ -112,14 +120,18 @@ export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subje
   const executeBatchMove = async () => {
     const ids = selectedQuestionsRef.value.map(q => q.id)
     try {
-      await api.post('/questions/batch', {
-        action: 'move',
-        ids,
-        data: {
-          subjectId: batchMoveSubjectId.value,
-          subcategoryId: batchMoveSubcategoryId.value || null
-        }
-      }, { showError: false })
+      await api.post(
+        '/questions/batch',
+        {
+          action: 'move',
+          ids,
+          data: {
+            subjectId: batchMoveSubjectId.value,
+            subcategoryId: batchMoveSubcategoryId.value || null
+          }
+        },
+        { showError: false }
+      )
       ElMessage.success(`成功移动 ${ids.length} 道题目`)
       batchMoveVisible.value = false
       selectedQuestionsRef.value = []

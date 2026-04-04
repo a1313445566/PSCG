@@ -1,6 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
+const fileRefService = require('./fileReferenceService')
 
 const IMAGES_DIR = path.join(__dirname, '../images')
 
@@ -97,7 +98,12 @@ class Base64ImageConverter {
       const fileSizeKB = Math.round(buffer.length / 1024)
       console.log(`[Base64Converter] ✅ 已保存: ${filename} (${fileSizeKB}KB)`)
 
-      return `/images/${filename}`
+      const imageUrl = `/images/${filename}`
+
+      await fileRefService.incrementFileReference(imageUrl)
+      console.log(`[Base64Converter] 📝 已注册文件引用: ${filename}`)
+
+      return imageUrl
     } catch (error) {
       console.error('[Base64Converter] 保存失败:', error)
       return null

@@ -106,15 +106,20 @@ class ApiCache {
     }
 
     // 发送请求
-    const response = await fetch(url, options)
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`)
-    }
-    const data = await response.json()
+    try {
+      const response = await fetch(url, options)
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+      const data = await response.json()
 
-    // 缓存响应
-    this.set(key, data, ttl)
-    return data
+      // 缓存响应
+      this.set(key, data, ttl)
+      return data
+    } catch (error) {
+      console.error('[ApiCache] 请求失败:', error.message)
+      throw error
+    }
   }
 
   /**
