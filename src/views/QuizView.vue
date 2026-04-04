@@ -215,7 +215,9 @@ const parseReadingSubQuestions = (question, shuffleMapping) => {
       displayOptions: (sq.options || []).map((opt, i) => ({
         content: opt,
         displayLabel: String.fromCharCode(65 + i),
-        originalLabel: sq.originalOptions ? String.fromCharCode(65 + sq.originalOptions.indexOf(opt)) : String.fromCharCode(65 + i)
+        originalLabel: sq.originalOptions
+          ? String.fromCharCode(65 + sq.originalOptions.indexOf(opt))
+          : String.fromCharCode(65 + i)
       })),
       answer: sq.answer || '',
       explanation: sq.explanation || ''
@@ -777,7 +779,17 @@ onMounted(async () => {
         }
       }
 
-      // 其他题型：直接打乱选项
+      // 判断题：不对选项进行打乱，保持"对/错"原始顺序
+      if (q.type === 'judgment') {
+        return {
+          ...q,
+          options: options,
+          shuffleMapping: null,
+          type: 'judgment'
+        }
+      }
+
+      // 其他题型：根据设置决定是否对每道题的选项进行打乱
       if (shouldRandomize.value) {
         const { shuffledOptions, reverseMapping } = shuffleOptions(options)
 

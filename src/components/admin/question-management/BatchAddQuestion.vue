@@ -45,7 +45,19 @@
                 v-model="batchQuestionText"
                 type="textarea"
                 :rows="15"
-                placeholder="请粘贴题目文本，格式如下：\n下面语句中加点的词语运用不恰当的一项是(B)\nA. 选项1\nB. 选项2\nC. 选项3\nD. 选项4"
+                placeholder="请粘贴题目文本，支持以下格式：
+
+单选题/多选题：
+1. 题目内容(A)
+A. 选项1
+B. 选项2
+C. 选项3
+D. 选项4
+
+判断题：
+1. 题目内容(√)
+或
+【判断】题目内容。(×)"
                 style="width: 100%"
               ></el-input>
             </el-form-item>
@@ -163,14 +175,19 @@ const parseBatchQuestions = () => {
   for (let i = 0; i < lines.length; i++) {
     const line = lines[i]
 
+    // 判断题答案正则
+    const judgmentAnswerRegex = /[\(（]\s*[√×]\s*[\)）]/
+    // 判断题标记正则
+    const judgmentTagRegex = /【判断】/
+
     // 检查是否是新题目
-    // 模式1: 数字+标点+题目内容+答案括号 (如: 1. 题目内容(A))
-    // 模式2: 题目内容+答案括号 (如: 题目内容(A))
+    // 模式1: 数字+标点+题目内容+答案括号 (如: 1. 题目内容(A) 或 1. 题目内容(√))
+    // 模式2: 题目内容+答案括号 (如: 题目内容(A) 或 题目内容(√))
     // 支持答案括号后有句号等标点的情况
     const numberedQuestionMatch = line.match(
-      /^(\d+[.、]\s*)(.+?)([\(（]\s*[A-Da-d]+\s*[\)）])(.*)$/
+      /^(\d+[.、]\s*)(.+?)([\(（]\s*[A-Da-d√×]+\s*[\)）])(.*)$/
     )
-    const unnumberedQuestionMatch = line.match(/^(.+?)([\(（]\s*[A-Da-d]+\s*[\)）])(.*)$/)
+    const unnumberedQuestionMatch = line.match(/^(.+?)([\(（]\s*[A-Da-d√×]+\s*[\)）])(.*)$/)
 
     if (numberedQuestionMatch) {
       // 保存当前题目（如果存在）
@@ -180,28 +197,50 @@ const parseBatchQuestions = () => {
 
       // 创建新题目
       const questionText = numberedQuestionMatch[2].trim()
-      const answerMatch = numberedQuestionMatch[3].match(/[A-Da-d]+/)
-      const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+      const answerStr = numberedQuestionMatch[3]
       const postfix = numberedQuestionMatch[4] || ''
 
-      // 自动识别题目类型
+      // 判断是否为判断题
       let questionType = 'single'
-      // 检查是否有【多选】标记
-      if (questionText.includes('【多选】') || answer.length > 1) {
-        questionType = 'multiple'
-      }
+      let answer = ''
+      let options = []
 
-      // 保留括号但移除括号中的答案
-      const contentWithEmptyBrackets =
-        questionText + numberedQuestionMatch[3].replace(/[A-Da-d]+/, '') + postfix
-      currentQuestion = {
-        content: contentWithEmptyBrackets,
-        answer: answer,
-        type: questionType,
-        options: [],
-        explanation: ''
+      if (judgmentTagRegex.test(questionText) || judgmentAnswerRegex.test(answerStr)) {
+        // 判断题
+        questionType = 'judgment'
+        options = ['对', '错']
+        // 提取判断题答案
+        const judgmentMatch = answerStr.match(/[√×]/)
+        answer = judgmentMatch && judgmentMatch[0] === '√' ? 'A' : 'B'
+        // 移除【判断】标记
+        const cleanContent = questionText.replace(/【判断】/, '').trim()
+        currentQuestion = {
+          content: cleanContent,
+          answer: answer,
+          type: questionType,
+          options: options,
+          explanation: ''
+        }
+        inOptions = false
+      } else {
+        // 普通题目
+        const answerMatch = answerStr.match(/[A-Da-d]+/)
+        answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+        // 检查是否有【多选】标记
+        if (questionText.includes('【多选】') || answer.length > 1) {
+          questionType = 'multiple'
+        }
+        // 保留括号但移除括号中的答案
+        const contentWithEmptyBrackets = questionText + answerStr.replace(/[A-Da-d]+/, '') + postfix
+        currentQuestion = {
+          content: contentWithEmptyBrackets,
+          answer: answer,
+          type: questionType,
+          options: [],
+          explanation: ''
+        }
+        inOptions = true
       }
-      inOptions = true
     } else if (unnumberedQuestionMatch) {
       // 保存当前题目（如果存在）
       if (currentQuestion) {
@@ -210,28 +249,50 @@ const parseBatchQuestions = () => {
 
       // 创建新题目（无编号）
       const questionText = unnumberedQuestionMatch[1].trim()
-      const answerMatch = unnumberedQuestionMatch[2].match(/[A-Da-d]+/)
-      const answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+      const answerStr = unnumberedQuestionMatch[2]
       const postfix = unnumberedQuestionMatch[3] || ''
 
-      // 自动识别题目类型
+      // 判断是否为判断题
       let questionType = 'single'
-      // 检查是否有【多选】标记
-      if (questionText.includes('【多选】') || answer.length > 1) {
-        questionType = 'multiple'
-      }
+      let answer = ''
+      let options = []
 
-      // 保留括号但移除括号中的答案
-      const contentWithEmptyBrackets =
-        questionText + unnumberedQuestionMatch[2].replace(/[A-Da-d]+/, '') + postfix
-      currentQuestion = {
-        content: contentWithEmptyBrackets,
-        answer: answer,
-        type: questionType,
-        options: [],
-        explanation: ''
+      if (judgmentTagRegex.test(questionText) || judgmentAnswerRegex.test(answerStr)) {
+        // 判断题
+        questionType = 'judgment'
+        options = ['对', '错']
+        // 提取判断题答案
+        const judgmentMatch = answerStr.match(/[√×]/)
+        answer = judgmentMatch && judgmentMatch[0] === '√' ? 'A' : 'B'
+        // 移除【判断】标记
+        const cleanContent = questionText.replace(/【判断】/, '').trim()
+        currentQuestion = {
+          content: cleanContent,
+          answer: answer,
+          type: questionType,
+          options: options,
+          explanation: ''
+        }
+        inOptions = false
+      } else {
+        // 普通题目
+        const answerMatch = answerStr.match(/[A-Da-d]+/)
+        answer = answerMatch ? answerMatch[0].toUpperCase() : ''
+        // 检查是否有【多选】标记
+        if (questionText.includes('【多选】') || answer.length > 1) {
+          questionType = 'multiple'
+        }
+        // 保留括号但移除括号中的答案
+        const contentWithEmptyBrackets = questionText + answerStr.replace(/[A-Da-d]+/, '') + postfix
+        currentQuestion = {
+          content: contentWithEmptyBrackets,
+          answer: answer,
+          type: questionType,
+          options: [],
+          explanation: ''
+        }
+        inOptions = true
       }
-      inOptions = true
     } else if (inOptions && currentQuestion) {
       // 检查是否是选项（以字母+标点开头，允许行首有空格）
       const optionMatch = line.match(/^\s*([A-Za-z][\.\、．]?\s*)(.*)$/)

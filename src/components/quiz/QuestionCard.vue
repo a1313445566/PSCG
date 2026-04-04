@@ -337,6 +337,11 @@ const optionLayout = computed(() => {
   const options = parsedOptions.value
   const optionCount = options.length
 
+  // 判断题使用特殊布局
+  if (props.question?.type === 'judgment') {
+    return 'judgment-layout'
+  }
+
   // 检查是否有选项包含图片
   const hasImageOption = options.some(opt => opt.includes('<img'))
 
@@ -1247,5 +1252,36 @@ onMounted(() => {
   .options.grid-2 {
     grid-template-columns: 1fr;
   }
+}
+
+/* 判断题选项样式 */
+.options.judgment-layout {
+  display: flex;
+  justify-content: center;
+  gap: 40px;
+  padding: 20px;
+}
+
+.options.judgment-layout .option-item {
+  min-width: 200px;
+  max-width: 300px;
+  flex: 1;
+  justify-content: center;
+}
+
+.options.judgment-layout .option-content {
+  justify-content: center;
+  text-align: center;
+}
+
+.options.judgment-layout .option-label {
+  width: 40px;
+  height: 40px;
+  font-size: 1.2rem;
+}
+
+.options.judgment-layout .option-text {
+  font-size: 1.1rem;
+  font-weight: 500;
 }
 </style>

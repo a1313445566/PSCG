@@ -319,6 +319,31 @@ router.post('/', async (req, res) => {
     // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
     const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
 
+    // 判断题验证
+    if (type === 'judgment') {
+      // 验证选项格式：必须是 ["对", "错"]
+      if (!Array.isArray(sanitizedOptions) || sanitizedOptions.length !== 2) {
+        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
+      }
+      if (sanitizedOptions[0] !== '对' || sanitizedOptions[1] !== '错') {
+        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
+      }
+      // 验证答案与选项的对应关系：A=对, B=错
+      if (!['A', 'B'].includes(answer)) {
+        return res.status(400).json({ error: '判断题答案必须为 A 或 B' })
+      }
+      const answerIndex = answer.charCodeAt(0) - 65 // 'A'→0, 'B'→1
+      const expectedOption = sanitizedOptions[answerIndex]
+      if (
+        (answer === 'A' && expectedOption !== '对') ||
+        (answer === 'B' && expectedOption !== '错')
+      ) {
+        return res
+          .status(400)
+          .json({ error: '判断题答案与选项不匹配：答案A应对应"对"，答案B应对应"错"' })
+      }
+    }
+
     // 处理 options 参数，确保它是一个数组
     const optionsJson = JSON.stringify(sanitizedOptions || [])
 
@@ -402,6 +427,29 @@ router.put('/:id', async (req, res) => {
 
     // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
     const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
+
+    // 判断题验证（更新接口同样需要完整验证，防止通过更新接口写入矛盾数据）
+    if (type === 'judgment') {
+      if (!Array.isArray(sanitizedOptions) || sanitizedOptions.length !== 2) {
+        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
+      }
+      if (sanitizedOptions[0] !== '对' || sanitizedOptions[1] !== '错') {
+        return res.status(400).json({ error: '判断题选项必须为["对", "错"]' })
+      }
+      if (!['A', 'B'].includes(answer)) {
+        return res.status(400).json({ error: '判断题答案必须为 A 或 B' })
+      }
+      const answerIndex = answer.charCodeAt(0) - 65 // 'A'→0, 'B'→1
+      const expectedOption = sanitizedOptions[answerIndex]
+      if (
+        (answer === 'A' && expectedOption !== '对') ||
+        (answer === 'B' && expectedOption !== '错')
+      ) {
+        return res
+          .status(400)
+          .json({ error: '判断题答案与选项不匹配：答案A应对应"对"，答案B应对应"错"' })
+      }
+    }
 
     // 获取旧题目数据（用于对比文件引用）
     const oldQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [id])

@@ -72,7 +72,7 @@ class Database {
           subject_id INT NOT NULL,
           subcategory_id INT NOT NULL,
           content TEXT NOT NULL,
-          type ENUM('single', 'multiple') DEFAULT 'single',
+          type VARCHAR(20) DEFAULT 'single',
           options TEXT NOT NULL,
           correct_answer TEXT NOT NULL,
           explanation TEXT,

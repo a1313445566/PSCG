@@ -187,8 +187,35 @@
                 </div>
               </div>
 
+              <!-- 判断题选项 -->
+              <div v-if="splitEditData.type === 'judgment'" class="quick-edit-section">
+                <label class="section-label">答案选项（判断题固定为"对/错"）</label>
+                <div class="judgment-options">
+                  <div class="judgment-option">
+                    <el-radio
+                      v-model="judgmentAnswer"
+                      label="A"
+                      class="judgment-radio"
+                    >
+                      <span class="option-letter">A</span>
+                      <span class="option-text">对</span>
+                    </el-radio>
+                  </div>
+                  <div class="judgment-option">
+                    <el-radio
+                      v-model="judgmentAnswer"
+                      label="B"
+                      class="judgment-radio"
+                    >
+                      <span class="option-letter">B</span>
+                      <span class="option-text">错</span>
+                    </el-radio>
+                  </div>
+                </div>
+              </div>
+
               <!-- 普通题目选项 -->
-              <div v-if="splitEditData.type !== 'reading'" class="quick-edit-section">
+              <div v-else-if="splitEditData && splitEditData.type !== 'reading'" class="quick-edit-section">
                 <label class="section-label">
                   答案选项
                   <el-button type="primary" size="small" text @click="addSplitEditOption">
@@ -196,6 +223,7 @@
                     添加
                   </el-button>
                 </label>
+                <el-checkbox-group v-model="splitEditData.selectedAnswers">
                 <div class="options-grid">
                   <div
                     v-for="(_option, index) in splitEditData.options"
@@ -228,6 +256,7 @@
                     </el-button>
                   </div>
                 </div>
+                </el-checkbox-group>
               </div>
 
               <!-- 阅读理解题小题列表（折叠面板） -->
@@ -840,8 +869,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import {
   Search,
   Plus,
@@ -865,12 +893,12 @@ import {
   DArrowRight,
   Reading
 } from '@element-plus/icons-vue'
-import { useQuestionStore } from '../../../stores/questionStore'
 import { useAdminLayout } from '../../../composables/useAdminLayout'
-import { usePagination } from '../../../composables/usePagination'
-import { formatDate } from '../../../utils/dateUtils'
-import { getApiBaseUrl } from '../../../utils/database'
-import { api } from '../../../utils/api'
+import { useQuestionTable } from '../../../composables/useQuestionTable'
+import { useSplitEdit } from '../../../composables/useSplitEdit'
+import { useBatchOperations } from '../../../composables/useBatchOperations'
+import { useAudioPlayer } from '../../../composables/useAudioPlayer'
+import { useQuestionPreview } from '../../../composables/useQuestionPreview'
 import EditableContent from '../../common/EditableContent.vue'
 import QuillEditor from '../../common/QuillEditor.vue'
 
@@ -885,9 +913,6 @@ const props = defineProps({
 // Emits
 const emit = defineEmits(['delete-question', 'show-batch-add-dialog'])
 
-// Store
-const questionStore = useQuestionStore()
-
 // 使用全局布局状态
 const { filterSubjectId, filterSubcategoryId, clearFilter: clearGlobalFilter } = useAdminLayout()
 
@@ -895,79 +920,108 @@ const { filterSubjectId, filterSubcategoryId, clearFilter: clearGlobalFilter } =
 const searchKeyword = ref('')
 const filterType = ref('')
 
-// 加载状态
-const loading = ref(false)
-
 // 选中的题目
 const selectedQuestions = ref([])
 
-// 使用分页 Hook（服务端分页）
-const paginationTotal = ref(0)
+// 使用题目表格 composable
 const {
-  currentPage: paginationPage,
-  pageSize: paginationLimit,
+  loading,
+  serverQuestions,
+  paginationTotal,
+  loadQuestions,
+  editingId,
+  editingContent,
+  inlineEditInput,
+  startInlineEdit,
+  saveInlineEdit,
+  cancelInlineEdit,
+  pendingDeletes,
+  deleteQuestionWithUndo,
+  undoDelete,
+  executeRealDelete: originalExecuteRealDelete,
+  hasValidImage,
+  isRichText,
+  canInlineEdit,
+  extractImageUrl,
+  stripImages,
+  truncate,
+  getTypeName,
+  getTypeTagType,
+  isReadingOptions,
+  getRowClassName,
+  paginationPage,
+  paginationLimit,
   handleSizeChange,
-  handleCurrentChange,
-  reset: resetPagination
-} = usePagination(50, paginationTotal)
+  handleCurrentChange
+} = useQuestionTable(props)
 
-// 分页对象（为了兼容现有代码，使用计算属性）
-const pagination = computed(() => ({
-  page: paginationPage.value,
-  limit: paginationLimit.value,
-  total: paginationTotal.value
-}))
+// 使用分屏编辑 composable
+const {
+  splitEditMode,
+  editMode,
+  editingQuestionId,
+  splitEditData,
+  splitEditSaving,
+  editPanelHeight,
+  activeReadingSubQuestion,
+  splitEditSubcategories,
+  openAddPanel,
+  openSplitEdit,
+  closeSplitEdit,
+  saveSplitEdit,
+  saveAndNext,
+  onSplitEditSubjectChange,
+  addSplitEditOption,
+  removeSplitEditOption,
+  addReadingSubQuestion,
+  removeReadingSubQuestion,
+  addReadingSubOption,
+  removeReadingSubOption,
+  moveReadingSubQuestion
+} = useSplitEdit(props, { loadQuestions, serverQuestions })
 
-// 服务端数据
-const serverQuestions = ref([])
+// 使用批量操作 composable
+const {
+  batchDifficultyVisible,
+  batchDifficulty,
+  batchTypeVisible,
+  batchType,
+  batchMoveVisible,
+  batchMoveSubjectId,
+  batchMoveSubcategoryId,
+  batchMoveSubcategories,
+  handleBatchCommand,
+  executeBatchDifficulty,
+  executeBatchType,
+  handleBatchMoveSubjectChange,
+  executeBatchMove
+} = useBatchOperations(selectedQuestions, loadQuestions, props.subjects)
 
-// 行内编辑
-const editingId = ref(null)
-const editingContent = ref('')
-const inlineEditInput = ref(null)
+// 使用音频播放器 composable
+const {
+  audioPlayerRef,
+  audioPlaying,
+  audioCurrentTime,
+  audioDuration,
+  audioProgress,
+  audioSpeed,
+  audioUploading,
+  audioUploadProgress,
+  toggleAudioPlay,
+  onAudioLoaded,
+  onAudioTimeUpdate,
+  onAudioEnded,
+  onAudioProgressChange,
+  audioSeekBackward,
+  audioSeekForward,
+  setAudioSpeed,
+  formatAudioTime,
+  handleSplitEditAudioChange: originalHandleSplitEditAudioChange,
+  deleteSplitEditAudio: originalDeleteSplitEditAudio
+} = useAudioPlayer()
 
-// 预览
-const previewVisible = ref(false)
-const previewData = ref(null)
-const previewLoading = ref(false)
-const previewCache = new Map() // 预览缓存
-
-// 批量操作
-const batchDifficultyVisible = ref(false)
-const batchDifficulty = ref(1)
-const batchTypeVisible = ref(false)
-const batchType = ref('')
-const batchMoveVisible = ref(false)
-const batchMoveSubjectId = ref('')
-const batchMoveSubcategoryId = ref('')
-
-// Tree ref
-// Refs（预留用于未来的功能扩展）
-const _treeRef = ref(null) // 预留：题目分类树
-const _tableRef = ref(null) // 预留：题目表格引用
-
-// 删除撤销相关
-const pendingDeletes = ref(new Map()) // 存储待删除的题目
-
-// 分屏编辑相关
-const splitEditMode = ref(false)
-const editMode = ref('edit') // 'add' 或 'edit'
-const editingQuestionId = ref(null)
-const splitEditData = ref(null)
-const splitEditSaving = ref(false)
-const editPanelHeight = ref(800)
-const splitEditQuill = ref(null)
-const activeReadingSubQuestion = ref(0) // 当前展开的阅读理解小题
-
-// 音频播放器相关
-const audioPlayerRef = ref(null)
-const audioPlaying = ref(false)
-const audioCurrentTime = ref(0)
-const audioDuration = ref(0)
-const audioProgress = ref(0)
-const audioSpeed = ref(1)
-const audioUploading = ref(false)
-const audioUploadProgress = ref(0)
+const handleSplitEditAudioChange = file => originalHandleSplitEditAudioChange(file, splitEditData)
+const deleteSplitEditAudio = () => originalDeleteSplitEditAudio(splitEditData)
 
 // 防抖定时器
 let searchTimer = null
@@ -982,24 +1036,27 @@ const currentSubjectName = computed(() => {
 // 当前题库名称
 const currentSubcategoryName = computed(() => {
   if (!filterSubcategoryId.value) return ''
-  const subject = props.subjects.find(s => s.id == filterSubjectId.value)
+  const subject = props.subjects.find(s => s.id == filterSubcategoryId.value)
   if (!subject || !subject.subcategories) return ''
   const subcategory = subject.subcategories.find(sc => sc.id == filterSubcategoryId.value)
   return subcategory ? subcategory.name : ''
 })
 
-// 批量移动的子分类列表
-const batchMoveSubcategories = computed(() => {
-  if (!batchMoveSubjectId.value) return []
-  const subject = props.subjects.find(s => s.id == batchMoveSubjectId.value)
-  return subject ? subject.subcategories || [] : []
-})
-
-// 分屏编辑的子分类列表
-const splitEditSubcategories = computed(() => {
-  if (!splitEditData.value?.subjectId) return []
-  const subject = props.subjects.find(s => s.id == splitEditData.value.subjectId)
-  return subject ? subject.subcategories || [] : []
+// 使用题目预览 composable
+const {
+  previewVisible,
+  previewData,
+  previewLoading,
+  previewCache,
+  previewQuestion,
+  handleEditFromPreview,
+  showImagePreview,
+  clearPreviewCache
+} = useQuestionPreview(props, {
+  editQuestion: openSplitEdit,
+  currentSubjectName,
+  currentSubcategoryName,
+  getTypeName
 })
 
 // 是否有激活的筛选条件
@@ -1012,77 +1069,30 @@ const hasActiveFilters = computed(() => {
 // 显示的题目
 const displayQuestions = computed(() => serverQuestions.value)
 
-// 加载题目
-const loadQuestions = async (resetPage = false) => {
-  try {
-    loading.value = true
-    if (resetPage) {
-      resetPagination()
+// 判断题答案（将数组转为字符串供 el-radio 使用）
+const judgmentAnswer = computed({
+  get: () => splitEditData.value?.selectedAnswers?.[0] || 'A',
+  set: (val) => {
+    if (splitEditData.value) {
+      splitEditData.value.selectedAnswers = [val]
     }
-
-    const result = await questionStore.loadQuestions({
-      subjectId: filterSubjectId.value || null,
-      subcategoryId: filterSubcategoryId.value || null,
-      type: filterType.value || null,
-      keyword: searchKeyword.value || null,
-      page: paginationPage.value,
-      limit: paginationLimit.value,
-      excludeContent: true
-    })
-
-    serverQuestions.value = formatQuestions(result?.data || [])
-    paginationTotal.value = result?.total || 0
-  } catch (error) {
-    console.error('加载题目失败:', error)
-    ElMessage.error('加载题目失败')
-  } finally {
-    loading.value = false
   }
-}
+})
 
-// 格式化题目数据
-const formatQuestions = questions => {
-  return questions.map(question => {
-    const subjectId = question.subjectId || question.subject_id
-    const subject = props.subjects.find(s => String(s.id) === String(subjectId))
-    const subjectName = subject ? subject.name : ''
+// 分页对象
+const pagination = computed(() => ({
+  page: paginationPage.value,
+  limit: paginationLimit.value,
+  total: paginationTotal.value
+}))
 
-    let subcategoryName = ''
-    const subcategoryId = question.subcategoryId || question.subcategory_id
-    if (subject && subcategoryId) {
-      const subcategory = subject.subcategories?.find(sc => String(sc.id) === String(subcategoryId))
-      subcategoryName = subcategory ? subcategory.name : ''
-    }
-
-    const typeName = getTypeName(question.type)
-    const createdAt = question.createdAt || question.created_at || '未知'
-    const formattedCreatedAt =
-      typeof createdAt === 'string' && createdAt !== '未知' ? formatDate(createdAt) : createdAt
-
-    let content = question.content
-    if (typeof content === 'object' && content?.ops) {
-      const tempElement = document.createElement('div')
-      content.ops.forEach(op => {
-        if (typeof op.insert === 'string') {
-          tempElement.innerHTML += op.insert
-        } else if (op.insert?.image) {
-          tempElement.innerHTML += `<img src="${op.insert.image}" alt="图片" style="max-width: 100%;">`
-        }
-      })
-      content = tempElement.innerHTML
-    } else if (typeof content !== 'string') {
-      content = String(content || '')
-    }
-
-    return {
-      ...question,
-      content,
-      subjectName,
-      subcategoryName,
-      typeName,
-      createdAt: formattedCreatedAt,
-      image: question.image || question.image_url || ''
-    }
+// 包装 loadQuestions，添加筛选参数
+const wrappedLoadQuestions = (resetPage = false) => {
+  loadQuestions(resetPage, {
+    filterSubjectId: filterSubjectId.value,
+    filterSubcategoryId: filterSubcategoryId.value,
+    filterType: filterType.value,
+    searchKeyword: searchKeyword.value
   })
 }
 
@@ -1090,13 +1100,13 @@ const formatQuestions = questions => {
 const debouncedSearch = () => {
   clearTimeout(searchTimer)
   searchTimer = setTimeout(() => {
-    loadQuestions(true)
+    wrappedLoadQuestions(true)
   }, 300)
 }
 
 // 监听筛选条件变化
 watch([filterSubjectId, filterSubcategoryId, filterType], () => {
-  loadQuestions(true)
+  wrappedLoadQuestions(true)
 })
 
 watch(searchKeyword, () => {
@@ -1105,7 +1115,7 @@ watch(searchKeyword, () => {
 
 // 监听分页变化
 watch([paginationPage, paginationLimit], () => {
-  loadQuestions()
+  wrappedLoadQuestions()
 })
 
 // 分页变化处理
@@ -1145,888 +1155,9 @@ const handleSelectionChange = selection => {
   selectedQuestions.value = selection
 }
 
-// 行内编辑
-const startInlineEdit = row => {
-  // 检查是否为富文本内容
-  if (isRichText(row.content)) {
-    ElMessage.warning('该题目包含富文本格式，请使用"编辑"按钮进行完整编辑')
-    return
-  }
-
-  editingId.value = row.id
-  editingContent.value = row.content
-  nextTick(() => {
-    inlineEditInput.value?.focus()
-  })
-}
-
-const saveInlineEdit = async row => {
-  if (editingContent.value === row.content) {
-    editingId.value = null
-    return
-  }
-
-  try {
-    // 获取完整题目数据
-    const fullQuestion = await api.get(`/questions/${row.id}`)
-
-    await api.put(`/questions/${row.id}`, {
-      ...fullQuestion,
-      content: editingContent.value
-    })
-
-    ElMessage.success('修改成功')
-    // 更新本地数据
-    const index = serverQuestions.value.findIndex(q => q.id === row.id)
-    if (index !== -1) {
-      serverQuestions.value[index].content = editingContent.value
-    }
-  } catch (error) {
-    console.error('保存失败:', error)
-    ElMessage.error('保存失败')
-  } finally {
-    editingId.value = null
-  }
-}
-
-const cancelInlineEdit = () => {
-  editingId.value = null
-}
-
-// 删除撤销功能
-const deleteQuestionWithUndo = row => {
-  // 先临时从列表移除
-  const index = serverQuestions.value.findIndex(q => q.id === row.id)
-  const removed = { ...serverQuestions.value[index] }
-  serverQuestions.value.splice(index, 1)
-  paginationTotal.value -= 1
-
-  // 存储待删除项
-  pendingDeletes.value.set(row.id, {
-    data: removed,
-    index,
-    timer: null
-  })
-
-  // 显示撤销提示
-  ElMessage({
-    message: `已删除题目 #${row.id}`,
-    type: 'warning',
-    duration: 3000,
-    showClose: true,
-    action: {
-      text: '撤销',
-      handler: () => {
-        undoDelete(row.id)
-      }
-    },
-    onClose: () => {
-      // 消息关闭后执行真正删除
-      executeRealDelete(row.id)
-    }
-  })
-}
-
-const undoDelete = questionId => {
-  const pending = pendingDeletes.value.get(questionId)
-  if (pending) {
-    // 恢复数据
-    serverQuestions.value.splice(pending.index, 0, pending.data)
-    paginationTotal.value += 1
-    pendingDeletes.value.delete(questionId)
-    ElMessage.success('已撤销删除')
-  }
-}
-
-const executeRealDelete = async questionId => {
-  const pending = pendingDeletes.value.get(questionId)
-  if (!pending) return // 已被撤销
-
-  try {
-    await api.delete(`/questions/${questionId}`)
-    pendingDeletes.value.delete(questionId)
-    emit('delete-question', questionId)
-  } catch (error) {
-    console.error('删除失败:', error)
-  }
-}
-
-// 批量操作
-const handleBatchCommand = command => {
-  if (selectedQuestions.value.length === 0) {
-    ElMessage.warning('请先选择题目')
-    return
-  }
-
-  switch (command) {
-    case 'delete':
-      batchDeleteQuestions()
-      break
-    case 'updateDifficulty':
-      batchDifficulty.value = 1
-      batchDifficultyVisible.value = true
-      break
-    case 'updateType':
-      batchType.value = ''
-      batchTypeVisible.value = true
-      break
-    case 'move':
-      batchMoveSubjectId.value = ''
-      batchMoveSubcategoryId.value = ''
-      batchMoveVisible.value = true
-      break
-  }
-}
-
-// 批量删除
-const batchDeleteQuestions = async () => {
-  try {
-    await ElMessageBox.confirm(
-      `确定要删除选中的 ${selectedQuestions.value.length} 道题目吗？`,
-      '批量删除确认',
-      { type: 'warning' }
-    )
-
-    const ids = selectedQuestions.value.map(q => q.id)
-    await api.post('/questions/batch', { action: 'delete', ids })
-    ElMessage.success(`成功删除 ${ids.length} 道题目`)
-    selectedQuestions.value = []
-    loadQuestions()
-  } catch (e) {
-    if (e !== 'cancel') {
-      ElMessage.error('删除失败')
-    }
-  }
-}
-
-// 批量修改难度
-const executeBatchDifficulty = async () => {
-  const ids = selectedQuestions.value.map(q => q.id)
-  try {
-    await api.post('/questions/batch', {
-      action: 'updateDifficulty',
-      ids,
-      data: { difficulty: batchDifficulty.value }
-    })
-    ElMessage.success(`成功修改 ${ids.length} 道题目的难度`)
-    batchDifficultyVisible.value = false
-    selectedQuestions.value = []
-    loadQuestions()
-  } catch (error) {
-    ElMessage.error('修改失败')
-  }
-}
-
-// 批量修改类型
-const executeBatchType = async () => {
-  if (!batchType.value) {
-    ElMessage.warning('请选择目标类型')
-    return
-  }
-
-  const ids = selectedQuestions.value.map(q => q.id)
-  try {
-    await api.post('/questions/batch', {
-      action: 'updateType',
-      ids,
-      data: { type: batchType.value }
-    })
-    ElMessage.success(`成功修改 ${ids.length} 道题目的类型`)
-    batchTypeVisible.value = false
-    selectedQuestions.value = []
-    loadQuestions()
-  } catch (error) {
-    ElMessage.error('修改失败')
-  }
-}
-
-// 批量移动
-const handleBatchMoveSubjectChange = () => {
-  batchMoveSubcategoryId.value = ''
-}
-
-const executeBatchMove = async () => {
-  const ids = selectedQuestions.value.map(q => q.id)
-  try {
-    await api.post('/questions/batch', {
-      action: 'move',
-      ids,
-      data: {
-        subjectId: batchMoveSubjectId.value,
-        subcategoryId: batchMoveSubcategoryId.value || null
-      }
-    })
-    ElMessage.success(`成功移动 ${ids.length} 道题目`)
-    batchMoveVisible.value = false
-    selectedQuestions.value = []
-    loadQuestions()
-  } catch (error) {
-    ElMessage.error('移动失败')
-  }
-}
-
-// 预览题目
-const previewQuestion = async row => {
-  // 检查缓存
-  if (previewCache.has(row.id)) {
-    previewData.value = previewCache.get(row.id)
-    previewVisible.value = true
-    return
-  }
-
-  previewLoading.value = true
-  previewVisible.value = true
-  previewData.value = null
-
-  try {
-    const data = await api.get(`/questions/${row.id}`)
-
-    const previewInfo = {
-      ...data,
-      subjectName:
-        currentSubjectName.value || props.subjects.find(s => s.id == data.subjectId)?.name || '',
-      subcategoryName:
-        currentSubcategoryName.value ||
-        props.subjects
-          .find(s => s.id == data.subjectId)
-          ?.subcategories?.find(sc => sc.id == data.subcategoryId)?.name ||
-        '',
-      typeName: getTypeName(data.type)
-    }
-
-    // 缓存预览数据（最多缓存50条）
-    if (previewCache.size >= 50) {
-      const firstKey = previewCache.keys().next().value
-      previewCache.delete(firstKey)
-    }
-    previewCache.set(row.id, previewInfo)
-
-    previewData.value = previewInfo
-  } catch (error) {
-    previewVisible.value = false
-    ElMessage.error('获取题目详情失败')
-  } finally {
-    previewLoading.value = false
-  }
-}
-
-// 显示图片预览
-const showImagePreview = row => {
-  const url = extractImageUrl(row)
-  if (url) {
-    window.open(url, '_blank')
-  }
-}
-
 // 编辑题目
 const editQuestion = row => {
-  // 开启分屏编辑模式
   openSplitEdit(row)
-}
-
-// 从预览编辑
-const handleEditFromPreview = () => {
-  editQuestion(previewData.value)
-  previewVisible.value = false
-}
-
-// 打开添加面板
-const openAddPanel = () => {
-  editMode.value = 'add'
-  editingQuestionId.value = null
-  splitEditMode.value = true
-
-  // 初始化空表单
-  const defaultSubjectId = props.subjects.length > 0 ? props.subjects[0].id : null
-  const defaultSubcategoryId =
-    defaultSubjectId && props.subjects[0]?.subcategories?.length > 0
-      ? props.subjects[0].subcategories[0].id
-      : null
-
-  splitEditData.value = {
-    subjectId: defaultSubjectId,
-    subcategoryId: defaultSubcategoryId,
-    type: 'single',
-    difficulty: 1,
-    content: '',
-    options: ['', '', '', ''],
-    selectedAnswers: [],
-    explanation: '',
-    audio: null,
-    // 阅读理解题专用字段
-    readingSubQuestions: [
-      {
-        content: '',
-        options: ['', '', '', ''],
-        answer: 'A',
-        explanation: ''
-      }
-    ]
-  }
-}
-
-// 开启分屏编辑
-const openSplitEdit = async row => {
-  editMode.value = 'edit'
-  // 先显示面板和加载状态
-  splitEditMode.value = true
-  splitEditData.value = null
-  editingQuestionId.value = row.id
-
-  try {
-    // 获取完整题目数据
-    const data = await api.get(`/questions/${row.id}`)
-
-    let options = data.options || []
-    if (typeof options === 'string') {
-      try {
-        options = JSON.parse(options)
-      } catch (e) {
-        options = []
-      }
-    }
-
-    // 解析答案
-    let selectedAnswers = []
-    const answer = data.answer || data.correct_answer
-    if (answer) {
-      if (data.type === 'multiple') {
-        selectedAnswers = String(answer).split('')
-      } else {
-        selectedAnswers = [String(answer)]
-      }
-    }
-
-    // 阅读理解题：解析小题数据
-    let readingSubQuestions = []
-    if (data.type === 'reading') {
-      // options 是小题数组
-      if (Array.isArray(options) && options.length > 0) {
-        readingSubQuestions = options.map((sq, idx) => ({
-          content: sq.content || '',
-          options: Array.isArray(sq.options) ? sq.options : ['', '', '', ''],
-          answer: sq.answer || 'A',
-          explanation: sq.explanation || ''
-        }))
-      }
-      // 解析答案对象 { "1": "A", "2": "B" }
-      if (typeof answer === 'string') {
-        try {
-          const answerObj = JSON.parse(answer)
-          if (typeof answerObj === 'object') {
-            readingSubQuestions.forEach((sq, idx) => {
-              sq.answer = answerObj[String(idx + 1)] || 'A'
-            })
-          }
-        } catch (e) {
-          // 答案不是 JSON，忽略
-        }
-      }
-    }
-
-    // 设置数据
-    splitEditData.value = {
-      subjectId: data.subjectId || data.subject_id,
-      subcategoryId: data.subcategoryId || data.subcategory_id,
-      type: data.type,
-      difficulty: data.difficulty || 1,
-      content: data.content || '',
-      options: data.type === 'reading' ? [] : options,
-      selectedAnswers: selectedAnswers,
-      explanation: data.explanation || '',
-      audio: data.audio_url || data.audio || null,
-      // 阅读理解题专用字段
-      readingSubQuestions:
-        readingSubQuestions.length > 0
-          ? readingSubQuestions
-          : [
-              {
-                content: '',
-                options: ['', '', '', ''],
-                answer: 'A',
-                explanation: ''
-              }
-            ]
-    }
-  } catch (error) {
-    console.error('获取题目详情失败:', error)
-    ElMessage.error('获取题目详情失败')
-    closeSplitEdit()
-  }
-}
-
-// 关闭分屏编辑
-const closeSplitEdit = () => {
-  splitEditMode.value = false
-  editMode.value = 'edit'
-  editingQuestionId.value = null
-  splitEditData.value = null
-  splitEditQuill.value = null
-}
-
-// 保存分屏编辑
-const saveSplitEdit = async () => {
-  if (!splitEditData.value) return
-
-  // 验证
-  if (!splitEditData.value.subjectId) {
-    ElMessage.warning('请选择学科')
-    return
-  }
-  if (!splitEditData.value.subcategoryId) {
-    ElMessage.warning('请选择题库')
-    return
-  }
-  if (!splitEditData.value.content) {
-    ElMessage.warning('请输入题目内容')
-    return
-  }
-
-  // 阅读理解题验证
-  if (splitEditData.value.type === 'reading') {
-    if (
-      !splitEditData.value.readingSubQuestions ||
-      splitEditData.value.readingSubQuestions.length === 0
-    ) {
-      ElMessage.warning('请添加至少一个小题')
-      return
-    }
-    // 验证每个小题
-    for (let i = 0; i < splitEditData.value.readingSubQuestions.length; i++) {
-      const sq = splitEditData.value.readingSubQuestions[i]
-      if (!sq.content || !sq.content.trim()) {
-        ElMessage.warning(`请输入第 ${i + 1} 小题内容`)
-        return
-      }
-      if (sq.options.some(opt => !opt || (typeof opt === 'string' && !opt.trim()))) {
-        ElMessage.warning(`请填写第 ${i + 1} 小题的所有选项`)
-        return
-      }
-    }
-  } else {
-    // 普通题目验证
-    if (splitEditData.value.selectedAnswers.length === 0) {
-      ElMessage.warning('请选择正确答案')
-      return
-    }
-    // 验证选项内容
-    if (splitEditData.value.options.some(opt => !opt || (typeof opt === 'string' && !opt.trim()))) {
-      ElMessage.warning('请填写所有选项内容')
-      return
-    }
-  }
-
-  splitEditSaving.value = true
-
-  try {
-    let answer, options
-
-    if (splitEditData.value.type === 'reading') {
-      // 阅读理解题：构造小题数据和答案对象
-      options = splitEditData.value.readingSubQuestions.map((sq, idx) => ({
-        order: idx + 1,
-        content: sq.content,
-        options: sq.options,
-        answer: sq.answer,
-        explanation: sq.explanation || ''
-      }))
-      // 答案格式: { "1": "A", "2": "B" }
-      const answerObj = {}
-      splitEditData.value.readingSubQuestions.forEach((sq, idx) => {
-        answerObj[String(idx + 1)] = sq.answer
-      })
-      answer = JSON.stringify(answerObj)
-    } else {
-      // 普通题目
-      answer =
-        splitEditData.value.type === 'multiple'
-          ? splitEditData.value.selectedAnswers.join('')
-          : splitEditData.value.selectedAnswers[0]
-      options = splitEditData.value.options
-    }
-
-    const requestBody = {
-      subjectId: splitEditData.value.subjectId,
-      subcategoryId: splitEditData.value.subcategoryId || null,
-      type: splitEditData.value.type,
-      difficulty: splitEditData.value.difficulty,
-      content: splitEditData.value.content,
-      options: options,
-      answer: answer,
-      explanation: splitEditData.value.explanation,
-      audio: splitEditData.value.audio || null
-    }
-
-    if (editMode.value === 'add') {
-      // 添加新题目
-      await api.post('/questions', requestBody)
-    } else {
-      // 编辑现有题目
-      await api.put(`/questions/${editingQuestionId.value}`, requestBody)
-    }
-
-    ElMessage.success(editMode.value === 'add' ? '添加成功' : '保存成功')
-    // 刷新列表
-    loadQuestions()
-    // 添加成功后关闭面板
-    if (editMode.value === 'add') {
-      closeSplitEdit()
-    }
-  } catch (error) {
-    console.error('保存失败:', error)
-    ElMessage.error(error.message || '保存失败')
-  } finally {
-    splitEditSaving.value = false
-  }
-}
-
-// 保存并下一个
-const saveAndNext = async () => {
-  await saveSplitEdit()
-
-  if (!splitEditMode.value) return // 保存失败则不继续
-
-  // 找到当前题目的索引
-  const currentIndex = serverQuestions.value.findIndex(q => q.id === editingQuestionId.value)
-
-  if (currentIndex < serverQuestions.value.length - 1) {
-    // 打开下一个题目
-    const nextQuestion = serverQuestions.value[currentIndex + 1]
-    openSplitEdit(nextQuestion)
-  } else {
-    ElMessage.info('已是最后一题')
-    closeSplitEdit()
-  }
-}
-
-// 分屏编辑学科变化
-const onSplitEditSubjectChange = () => {
-  splitEditData.value.subcategoryId = null
-}
-
-// 分屏编辑 Quill 准备（预留用于未来的富文本编辑器增强功能）
-const _onSplitQuillReady = quill => {
-  splitEditQuill.value = quill
-}
-
-// 添加选项
-const addSplitEditOption = () => {
-  if (!splitEditData.value) return
-  if (splitEditData.value.options.length >= 6) {
-    ElMessage.warning('最多添加6个选项')
-    return
-  }
-  splitEditData.value.options.push('')
-}
-
-// 删除选项
-const removeSplitEditOption = index => {
-  if (!splitEditData.value) return
-  const letter = String.fromCharCode(65 + index)
-  // 移除选项
-  splitEditData.value.options.splice(index, 1)
-  // 移除答案中的该选项
-  splitEditData.value.selectedAnswers = splitEditData.value.selectedAnswers.filter(
-    a => a !== letter
-  )
-}
-
-// ========== 阅读理解题辅助函数 ==========
-// 添加阅读理解小题
-const addReadingSubQuestion = () => {
-  if (!splitEditData.value) return
-  if (splitEditData.value.readingSubQuestions.length >= 10) {
-    ElMessage.warning('最多添加10个小题')
-    return
-  }
-  splitEditData.value.readingSubQuestions.push({
-    content: '',
-    options: ['', '', '', ''],
-    answer: 'A',
-    explanation: ''
-  })
-}
-
-// 删除阅读理解小题
-const removeReadingSubQuestion = index => {
-  if (!splitEditData.value) return
-  if (splitEditData.value.readingSubQuestions.length <= 1) {
-    ElMessage.warning('至少保留一个小题')
-    return
-  }
-  splitEditData.value.readingSubQuestions.splice(index, 1)
-}
-
-// 添加阅读理解小题选项
-const addReadingSubOption = sqIndex => {
-  if (!splitEditData.value) return
-  const subQ = splitEditData.value.readingSubQuestions[sqIndex]
-  if (!subQ) return
-  if (subQ.options.length >= 6) {
-    ElMessage.warning('每个小题最多6个选项')
-    return
-  }
-  subQ.options.push('')
-}
-
-// 删除阅读理解小题选项
-const removeReadingSubOption = (sqIndex, optIndex) => {
-  if (!splitEditData.value) return
-  const subQ = splitEditData.value.readingSubQuestions[sqIndex]
-  if (!subQ) return
-  if (subQ.options.length <= 2) {
-    ElMessage.warning('每个小题至少2个选项')
-    return
-  }
-  subQ.options.splice(optIndex, 1)
-  // 如果删除的选项是当前答案，重置答案为第一个选项
-  const removedLetter = String.fromCharCode(65 + optIndex)
-  if (subQ.answer === removedLetter) {
-    subQ.answer = 'A'
-  }
-}
-
-// 移动阅读理解小题
-const moveReadingSubQuestion = (index, direction) => {
-  if (!splitEditData.value) return
-  const newIndex = index + direction
-  if (newIndex < 0 || newIndex >= splitEditData.value.readingSubQuestions.length) return
-
-  // 交换位置
-  const temp = splitEditData.value.readingSubQuestions[index]
-  splitEditData.value.readingSubQuestions[index] = splitEditData.value.readingSubQuestions[newIndex]
-  splitEditData.value.readingSubQuestions[newIndex] = temp
-
-  // 更新展开的小题索引
-  activeReadingSubQuestion.value = newIndex
-}
-
-// 处理音频文件上传
-const handleSplitEditAudioChange = async file => {
-  console.log('[音频上传] 文件信息:', {
-    name: file?.name,
-    size: file?.raw?.size,
-    type: file?.raw?.type,
-    sizeMB: file?.raw?.size ? (file.raw.size / 1024 / 1024).toFixed(2) + ' MB' : 'unknown'
-  })
-
-  if (!file || !file.raw) return
-
-  // 检查文件大小
-  const maxSize = 10 * 1024 * 1024 // 10MB
-  const fileSizeMB = (file.raw.size / 1024 / 1024).toFixed(2)
-
-  console.log(`[音频上传] 文件大小: ${fileSizeMB} MB, 限制: 10 MB`)
-
-  if (file.raw.size > maxSize) {
-    ElMessage.error(`音频文件大小 ${fileSizeMB} MB 超过限制（最大 10MB）`)
-    return
-  }
-
-  // 检查文件类型
-  const allowedTypes = [
-    'audio/mpeg',
-    'audio/mp3',
-    'audio/wav',
-    'audio/x-wav',
-    'audio/wave',
-    'audio/ogg',
-    'audio/mp4',
-    'audio/x-m4a',
-    'audio/m4a'
-  ]
-  const ext = file.name.split('.').pop().toLowerCase()
-  const allowedExts = ['mp3', 'wav', 'ogg', 'm4a']
-
-  if (!allowedTypes.includes(file.raw.type) && !allowedExts.includes(ext)) {
-    ElMessage.error('不支持的音频格式，仅支持 MP3、WAV、OGG、M4A')
-    return
-  }
-
-  audioUploading.value = true
-  audioUploadProgress.value = 0
-
-  const formData = new FormData()
-  formData.append('audio', file.raw)
-
-  // 使用 XMLHttpRequest 获取真实上传进度
-  const xhr = new XMLHttpRequest()
-  xhr.timeout = 60000 // 60秒超时
-
-  // 添加 readystatechange 监听
-  xhr.addEventListener('readystatechange', () => {
-    console.log('[音频上传] readyState:', xhr.readyState, 'status:', xhr.status)
-  })
-
-  xhr.upload.addEventListener('progress', e => {
-    if (e.lengthComputable) {
-      audioUploadProgress.value = Math.round((e.loaded / e.total) * 100)
-    }
-  })
-
-  xhr.addEventListener('load', () => {
-    console.log('[音频上传] 状态:', xhr.status, '响应:', xhr.responseText)
-    try {
-      const result = JSON.parse(xhr.responseText)
-      if (xhr.status === 200 && result.success) {
-        // 确保 splitEditData 存在
-        if (!splitEditData.value) {
-          splitEditData.value = {
-            subjectId: null,
-            subcategoryId: null,
-            type: 'single',
-            difficulty: 1,
-            content: '',
-            options: ['', '', '', ''],
-            selectedAnswers: [],
-            explanation: '',
-            audio: result.url
-          }
-        } else {
-          splitEditData.value.audio = result.url
-        }
-        console.log('[音频上传] 设置 audio URL:', result.url)
-        ElMessage.success('音频上传成功')
-      } else {
-        // 显示服务器返回的具体错误信息
-        const errorMsg = result.error || result.message || `上传失败 (${xhr.status})`
-        console.error('[音频上传] 服务器错误:', errorMsg)
-        ElMessage.error(errorMsg)
-      }
-    } catch (e) {
-      console.error('[音频上传] 解析错误:', e)
-      ElMessage.error(xhr.status === 200 ? '解析响应失败' : `上传失败: ${xhr.status}`)
-    }
-  })
-
-  xhr.addEventListener('loadend', () => {
-    console.log('[音频上传] 请求结束')
-    audioUploading.value = false
-    audioUploadProgress.value = 0
-  })
-
-  xhr.addEventListener('error', () => {
-    console.error('[音频上传] 网络错误')
-    ElMessage.error('网络错误，上传失败')
-  })
-
-  xhr.addEventListener('timeout', () => {
-    console.error('[音频上传] 超时')
-    ElMessage.error('上传超时')
-  })
-
-  xhr.addEventListener('abort', () => {
-    console.log('[音频上传] 被中止')
-    ElMessage.warning('上传已取消')
-  })
-
-  console.log('[音频上传] 开始上传:', file.name, '大小:', file.raw.size)
-  console.log('[音频上传] API URL:', `${getApiBaseUrl()}/upload/audio`)
-
-  xhr.open('POST', `${getApiBaseUrl()}/upload/audio`)
-  xhr.send(formData)
-
-  console.log('[音频上传] 请求已发送')
-}
-
-// 删除音频
-const deleteSplitEditAudio = () => {
-  if (splitEditData.value) {
-    splitEditData.value.audio = null
-    audioPlaying.value = false
-    audioCurrentTime.value = 0
-    audioDuration.value = 0
-    audioProgress.value = 0
-  }
-}
-
-// 音频播放器控制
-const toggleAudioPlay = () => {
-  if (!audioPlayerRef.value) return
-
-  if (audioPlaying.value) {
-    audioPlayerRef.value.pause()
-  } else {
-    audioPlayerRef.value.play()
-  }
-  audioPlaying.value = !audioPlaying.value
-}
-
-const onAudioLoaded = () => {
-  if (audioPlayerRef.value) {
-    audioDuration.value = audioPlayerRef.value.duration
-  }
-}
-
-const onAudioTimeUpdate = () => {
-  if (!audioPlayerRef.value) return
-  audioCurrentTime.value = audioPlayerRef.value.currentTime
-  if (audioDuration.value > 0) {
-    audioProgress.value = (audioCurrentTime.value / audioDuration.value) * 100
-  }
-}
-
-const onAudioEnded = () => {
-  audioPlaying.value = false
-  audioProgress.value = 0
-}
-
-const onAudioProgressChange = val => {
-  if (!audioPlayerRef.value || !audioDuration.value) return
-  audioPlayerRef.value.currentTime = (val / 100) * audioDuration.value
-}
-
-const audioSeekBackward = () => {
-  if (!audioPlayerRef.value) return
-  audioPlayerRef.value.currentTime = Math.max(0, audioPlayerRef.value.currentTime - 5)
-}
-
-const audioSeekForward = () => {
-  if (!audioPlayerRef.value) return
-  audioPlayerRef.value.currentTime = Math.min(
-    audioDuration.value,
-    audioPlayerRef.value.currentTime + 5
-  )
-}
-
-const setAudioSpeed = speed => {
-  if (!audioPlayerRef.value) return
-  audioPlayerRef.value.playbackRate = speed
-  audioSpeed.value = speed
-}
-
-const formatAudioTime = seconds => {
-  if (!seconds || isNaN(seconds)) return '00:00'
-  const mins = Math.floor(seconds / 60)
-  const secs = Math.floor(seconds % 60)
-  return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-}
-
-// 编辑面板拖拽调整高度
-let isPanelResizing = false
-let startPanelY = 0
-let startPanelHeight = 0
-
-// 面板调整大小功能（预留用于未来的 UI 交互增强）
-const _startPanelResize = e => {
-  isPanelResizing = true
-  startPanelY = e.clientY
-  startPanelHeight = editPanelHeight.value
-  document.addEventListener('mousemove', handlePanelResize)
-  document.addEventListener('mouseup', stopPanelResize)
-}
-
-const handlePanelResize = e => {
-  if (!isPanelResizing) return
-  const diff = startPanelY - e.clientY
-  const newHeight = Math.max(200, Math.min(500, startPanelHeight + diff))
-  editPanelHeight.value = newHeight
-}
-
-const stopPanelResize = () => {
-  isPanelResizing = false
-  document.removeEventListener('mousemove', handlePanelResize)
-  document.removeEventListener('mouseup', stopPanelResize)
 }
 
 // 显示批量添加对话框
@@ -2036,129 +1167,33 @@ const showBatchAddQuestionDialog = () => {
 
 // 刷新题目
 const refreshQuestions = () => {
-  loadQuestions()
+  wrappedLoadQuestions()
 }
 
-// 侧边栏拖拽调整宽度
-let isResizing = false
-let startX = 0
-let startWidth = 0
-
-// 侧边栏调整大小功能（预留用于未来的 UI 交互增强）
-const _startResize = e => {
-  isResizing = true
-  startX = e.clientX
-  startWidth = sidebarWidth.value
-  document.addEventListener('mousemove', handleResize)
-  document.addEventListener('mouseup', stopResize)
-}
-
-const handleResize = e => {
-  if (!isResizing) return
-  const diff = e.clientX - startX
-  const newWidth = Math.max(180, Math.min(350, startWidth + diff))
-  sidebarWidth.value = newWidth
-}
-
-const stopResize = () => {
-  isResizing = false
-  document.removeEventListener('mousemove', handleResize)
-  document.removeEventListener('mouseup', stopResize)
-}
-
-// 辅助方法
-const hasValidImage = row => {
-  if (row.image) return true
-  if (row.image_url) return true
-  return typeof row.content === 'string' && row.content.includes('<img')
-}
-
-// 检测内容是否包含富文本（HTML标签）
-const isRichText = content => {
-  if (!content || typeof content !== 'string') return false
-  // 检测常见的 HTML 标签（排除简单的换行）
-  const richTextPattern = /<(?!br\s*\/?>)[a-zA-Z][^>]*>/i
-  return richTextPattern.test(content)
-}
-
-// 检测内容是否可以安全进行行内编辑
-const canInlineEdit = row => {
-  // 富文本内容不适合行内编辑
-  return !isRichText(row.content)
-}
-
-const extractImageUrl = row => {
-  if (row.image) return row.image
-  if (row.image_url) return row.image_url
-  if (typeof row.content !== 'string') return ''
-  const match = row.content.match(/<img[^>]+src="([^"]+)"/)
-  return match ? match[1] : ''
-}
-
-const stripImages = content => {
-  if (typeof content !== 'string') return ''
-  return content.replace(/<img[^>]+>/g, '')
-}
-
-const truncate = (html, length) => {
-  if (!html) return ''
-  const text = html.replace(/<[^>]+>/g, '')
-  return text.length > length ? text.substring(0, length) + '...' : html
-}
-
-const getTypeName = type => {
-  const typeMap = {
-    single: '单选题',
-    multiple: '多选题',
-    judgment: '判断题',
-    listening: '听力题',
-    reading: '阅读题',
-    image: '看图题'
-  }
-  return typeMap[type] || (typeof type === 'string' ? type : '未知')
-}
-
-const getTypeTagType = type => {
-  const typeMap = {
-    single: 'primary',
-    multiple: 'success',
-    judgment: 'warning'
-  }
-  return typeMap[type] || 'info'
-}
-
-// 判断是否为阅读理解题格式的小题数组
-const isReadingOptions = options => {
-  if (!Array.isArray(options) || options.length === 0) return false
-  const first = options[0]
-  return typeof first === 'object' && first !== null && 'order' in first
-}
-
-const getRowClassName = ({ row }) => {
-  return hasValidImage(row) || row.audio ? 'has-media' : ''
+// 覆盖 executeRealDelete 以添加 emit
+const executeRealDelete = async questionId => {
+  await originalExecuteRealDelete(questionId)
+  emit('delete-question', questionId)
 }
 
 // 初始加载
 onMounted(() => {
-  loadQuestions()
+  wrappedLoadQuestions()
 })
 
 // 组件卸载时清理
 onUnmounted(() => {
-  // 清理搜索定时器
   if (searchTimer) {
     clearTimeout(searchTimer)
     searchTimer = null
   }
-  // 清理预览缓存
-  previewCache.clear()
-  // 清理待删除队列
+  clearPreviewCache()
   pendingDeletes.value.clear()
 })
 
 // 暴露方法给父组件
 defineExpose({
-  refresh: loadQuestions
+  refresh: wrappedLoadQuestions
 })
 </script>
 
@@ -2248,7 +1283,7 @@ defineExpose({
   flex-shrink: 0;
   min-height: 280px;
   max-height: 80vh;
-  z-index: 100;
+  z-index: 1 00;
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
 }
 
@@ -2761,23 +1796,6 @@ defineExpose({
   flex-shrink: 0;
 }
 
-.total-count {
-  color: #606266;
-  font-size: 14px;
-}
-
-.filter-tags {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px 14px;
-  background: #fff;
-  border-radius: 8px;
-  flex-wrap: wrap;
-  flex-shrink: 0;
-}
-
 .filter-label {
   color: #606266;
   font-size: 13px;
@@ -3048,5 +2066,44 @@ defineExpose({
 
 :deep(.el-table th) {
   background: #f5f7fa !important;
+}
+
+/* 判断题选项样式 */
+.judgment-options {
+  display: flex;
+  gap: 24px;
+  padding: 12px;
+  background: #f5f7fa;
+  border-radius: 8px;
+}
+
+.judgment-option {
+  flex: 1;
+  max-width: 200px;
+}
+
+.judgment-radio {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: white;
+  border: 2px solid #e4e7ed;
+  border-radius: 8px;
+  transition: all 0.3s;
+}
+
+.judgment-radio:hover {
+  border-color: #409eff;
+}
+
+.judgment-radio.is-checked {
+  border-color: #409eff;
+  background: #ecf5ff;
+}
+
+.judgment-radio .option-text {
+  margin-left: 8px;
+  font-size: 14px;
+  color: #303133;
 }
 </style>

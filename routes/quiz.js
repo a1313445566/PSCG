@@ -601,6 +601,10 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
           reverseMapping // { 小题索引: { 打乱后位置: 原始位置 } }
         )
         isCorrect = readingResult.correctCount === readingResult.totalSubQuestions
+      } else if (question.type === 'judgment') {
+        // 判断题：直接比较，不进行选项映射
+        isCorrect = userAnswer === correctAnswer
+        // 注意：shuffledOptions 在下方 L627 处统一声明赋值，此处无需额外操作
       } else if (question.type === 'multiple') {
         const correctAnswers = Array.isArray(correctAnswer)
           ? correctAnswer
@@ -622,12 +626,12 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
       let displayCorrectAnswer = correctAnswer
       let shuffledOptions = question.options
 
-      if (shuffleMapping) {
+      if (shuffleMapping && question.type !== 'judgment') {
         displayCorrectAnswer = mapAnswerToShuffled(correctAnswer, shuffleMapping)
       }
 
       // 生成打乱后的选项（使用 reverseMapping）
-      if (reverseMapping) {
+      if (reverseMapping && question.type !== 'judgment') {
         const originalOptions =
           typeof question.options === 'string' ? JSON.parse(question.options) : question.options
 
@@ -693,7 +697,11 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
                 const sqReverseMapping = reverseMapping ? reverseMapping[sqResult.order - 1] : null
                 let displayCorrectAnswer = sqResult.correctAnswer
 
-                if (sqReverseMapping && sqResult.correctAnswer && sqResult.correctAnswer !== '未知') {
+                if (
+                  sqReverseMapping &&
+                  sqResult.correctAnswer &&
+                  sqResult.correctAnswer !== '未知'
+                ) {
                   // 从 reverseMapping 推导 shuffleMapping
                   const sqShuffleMapping = {}
                   Object.keys(sqReverseMapping).forEach(shuffledIdx => {
@@ -813,7 +821,7 @@ router.post('/submit', submitLimiter.middleware(), async (req, res) => {
 
       // 生成打乱后的选项
       let shuffledOptions = question.options
-      if (reverseMapping) {
+      if (reverseMapping && question.type !== 'judgment') {
         // 解析原始选项
         const originalOptions =
           typeof question.options === 'string' ? JSON.parse(question.options) : question.options

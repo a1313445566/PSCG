@@ -2,7 +2,7 @@ const express = require('express')
 const router = express.Router()
 const db = require('../services/database')
 const cacheService = require('../services/cache')
-const XLSX = require('xlsx')
+const ExcelJS = require('exceljs')
 
 // 数据分析API
 router.get('/', async (req, res) => {
@@ -475,12 +475,54 @@ router.get('/download', async (req, res) => {
     const records = await db.all(recordsQuery, params)
 
     // 转换数据为Excel格式
-    const worksheet = XLSX.utils.json_to_sheet(records)
-    const workbook = XLSX.utils.book_new()
-    XLSX.utils.book_append_sheet(workbook, worksheet, '答题记录')
+    const workbook = new ExcelJS.Workbook()
+    const worksheet = workbook.addWorksheet('答题记录')
+
+    // 添加表头
+    const headers = ['学号', '姓名', '年级', '班级', '学科', '子分类', '总题数', '正确数', '正确率', '用时(秒)', '创建时间']
+    worksheet.addRow(headers)
+
+    // 添加数据行
+    records.forEach(record => {
+      worksheet.addRow([
+        record.student_id,
+        record.name,
+        record.grade,
+        record.class,
+        record.subject,
+        record.subcategory,
+        record.total_questions,
+        record.correct_count,
+        record.accuracy ? record.accuracy.toFixed(2) + '%' : '0%',
+        record.time_spent,
+        record.created_at
+      ])
+    })
+
+    // 设置表头样式
+    const headerRow = worksheet.getRow(1)
+    headerRow.font = { bold: true }
+    headerRow.fill = {
+      type: 'pattern',
+      pattern: 'solid',
+      fgColor: { argb: 'FFD3D3D3' }
+    }
+    headerRow.alignment = { vertical: 'middle', horizontal: 'center' }
+
+    // 自动调整列宽
+    worksheet.columns.forEach(column => {
+      let maxLength = 0
+      column.eachCell({ includeEmpty: true }, cell => {
+        const columnLength = cell.value ? cell.value.toString().length : 10
+        if (columnLength > maxLength) {
+          maxLength = columnLength
+        }
+      })
+      column.width = maxLength < 10 ? 10 : maxLength + 2
+    })
 
     // 生成Excel文件
-    const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'buffer' })
+    const excelBuffer = await workbook.xlsx.writeBuffer()
 
     // 设置响应头
     res.setHeader(
