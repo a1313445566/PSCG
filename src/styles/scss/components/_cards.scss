@@ -1,0 +1,241 @@
+@use '../abstracts' as *;
+
+// ============================================
+// 卡片组件样式
+// ============================================
+
+// ============================================
+// 基础卡片
+// ============================================
+.card {
+  background-color: $card-background;
+  border-radius: $border-radius;
+  box-shadow: $shadow-md;
+  padding: $spacing-lg;
+  margin-bottom: $spacing-lg;
+  transition: all 0.3s ease;
+}
+
+// ============================================
+// 卡片头部
+// ============================================
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  padding-bottom: $spacing-md;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.card-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.card-subtitle {
+  font-size: 14px;
+  color: $text-light;
+  margin-top: 4px;
+}
+
+// ============================================
+// 卡片内容
+// ============================================
+.card-body {
+  padding: $spacing-md 0;
+}
+
+// ============================================
+// 卡片底部
+// ============================================
+.card-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding-top: $spacing-md;
+  border-top: 1px solid #ebeef5;
+  margin-top: $spacing-md;
+}
+
+// ============================================
+// 卡片操作区
+// ============================================
+.card-actions {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+// ============================================
+// 可悬停卡片
+// ============================================
+.card-hover {
+  cursor: pointer;
+  
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow: $shadow-lg;
+  }
+}
+
+// ============================================
+// 可选中卡片
+// ============================================
+.card-selectable {
+  cursor: pointer;
+  border: 2px solid transparent;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    border-color: $primary-color;
+  }
+  
+  &.selected {
+    border-color: $primary-color;
+    background-color: set-alpha($primary-color, 5);
+  }
+}
+
+// ============================================
+// 卡片网格
+// ============================================
+.card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $spacing-lg;
+}
+
+// ============================================
+// 统计卡片
+// ============================================
+.stat-card {
+  @include card-style;
+  text-align: center;
+  
+  .stat-icon {
+    font-size: 32px;
+    margin-bottom: $spacing-sm;
+  }
+  
+  .stat-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: $text-primary;
+    margin-bottom: $spacing-xs;
+  }
+  
+  .stat-label {
+    font-size: 14px;
+    color: $text-light;
+  }
+  
+  .stat-trend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    font-size: 12px;
+    margin-top: $spacing-sm;
+    
+    &.up {
+      color: $success-color;
+    }
+    
+    &.down {
+      color: $danger-color;
+    }
+  }
+}
+
+// ============================================
+// 信息卡片
+// ============================================
+.info-card {
+  @include card-style;
+  
+  .info-card-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    margin-bottom: $spacing-md;
+    
+    &.primary {
+      background-color: set-alpha($primary-color, 10);
+      color: $primary-color;
+    }
+    
+    &.success {
+      background-color: set-alpha($success-color, 10);
+      color: $success-color;
+    }
+    
+    &.warning {
+      background-color: set-alpha($warning-color, 10);
+      color: $warning-color;
+    }
+    
+    &.danger {
+      background-color: set-alpha($danger-color, 10);
+      color: $danger-color;
+    }
+  }
+}
+
+// ============================================
+// 媒体卡片
+// ============================================
+.media-card {
+  @include card-style;
+  display: flex;
+  gap: $spacing-md;
+  
+  .media-card-image {
+    width: 80px;
+    height: 80px;
+    border-radius: $border-radius-sm;
+    object-fit: cover;
+    flex-shrink: 0;
+  }
+  
+  .media-card-content {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .media-card-title {
+    font-size: 16px;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: $spacing-xs;
+    @include text-ellipsis;
+  }
+  
+  .media-card-desc {
+    font-size: 14px;
+    color: $text-light;
+    @include text-ellipsis(2);
+  }
+}
+
+// ============================================
+// 响应式
+// ============================================
+@media (max-width: $breakpoint-md) {
+  .card {
+    padding: $spacing-md;
+  }
+  
+  .card-grid {
+    grid-template-columns: 1fr;
+  }
+}

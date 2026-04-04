@@ -535,8 +535,6 @@ onMounted(async () => {
 </script>
 
 <style scoped>
-@import '@/styles/game-common.css';
-
 .back-section {
   margin-bottom: 1.5rem;
 }

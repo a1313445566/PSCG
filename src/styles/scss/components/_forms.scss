@@ -1,0 +1,283 @@
+@use '../abstracts' as *;
+
+// ============================================
+// 表单组件样式
+// ============================================
+
+// ============================================
+// 表单组
+// ============================================
+.form-group {
+  margin-bottom: $spacing-md;
+}
+
+// ============================================
+// 表单标签
+// ============================================
+.form-label {
+  display: block;
+  margin-bottom: $spacing-xs;
+  font-size: 14px;
+  font-weight: 500;
+  color: $text-primary;
+  
+  .required {
+    color: $danger-color;
+    margin-left: 2px;
+  }
+}
+
+// ============================================
+// 输入框
+// ============================================
+.form-input {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid #dcdfe6;
+  border-radius: $border-radius-sm;
+  font-size: 14px;
+  color: $text-primary;
+  background-color: $card-background;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px set-alpha($primary-color, 10);
+  }
+  
+  &:disabled {
+    background-color: #f5f7fa;
+    cursor: not-allowed;
+  }
+  
+  &::placeholder {
+    color: #c0c4cc;
+  }
+}
+
+// ============================================
+// 输入框尺寸
+// ============================================
+.form-input-sm {
+  padding: $spacing-xs $spacing-sm;
+  font-size: 12px;
+}
+
+.form-input-lg {
+  padding: $spacing-md $spacing-lg;
+  font-size: 16px;
+}
+
+// ============================================
+// 文本域
+// ============================================
+.form-textarea {
+  min-height: 100px;
+  resize: vertical;
+}
+
+// ============================================
+// 选择框
+// ============================================
+.form-select {
+  width: 100%;
+  padding: $spacing-sm $spacing-md;
+  border: 1px solid #dcdfe6;
+  border-radius: $border-radius-sm;
+  font-size: 14px;
+  color: $text-primary;
+  background-color: $card-background;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:focus {
+    outline: none;
+    border-color: $primary-color;
+    box-shadow: 0 0 0 3px set-alpha($primary-color, 10);
+  }
+  
+  &:disabled {
+    background-color: #f5f7fa;
+    cursor: not-allowed;
+  }
+}
+
+// ============================================
+// 复选框和单选框
+// ============================================
+.form-checkbox,
+.form-radio {
+  display: inline-flex;
+  align-items: center;
+  gap: $spacing-xs;
+  cursor: pointer;
+  font-size: 14px;
+  color: $text-primary;
+  
+  input {
+    width: 16px;
+    height: 16px;
+    cursor: pointer;
+  }
+}
+
+// ============================================
+// 表单行（水平布局）
+// ============================================
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: $spacing-md;
+  
+  .form-group {
+    flex: 1;
+    min-width: 200px;
+  }
+}
+
+// ============================================
+// 内联表单
+// ============================================
+.form-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: $spacing-md;
+  
+  .form-group {
+    margin-bottom: 0;
+  }
+}
+
+// ============================================
+// 表单错误状态
+// ============================================
+.form-input-error {
+  border-color: $danger-color;
+  
+  &:focus {
+    border-color: $danger-color;
+    box-shadow: 0 0 0 3px set-alpha($danger-color, 10);
+  }
+}
+
+.form-error-message {
+  font-size: 12px;
+  color: $danger-color;
+  margin-top: $spacing-xs;
+}
+
+// ============================================
+// 表单成功状态
+// ============================================
+.form-input-success {
+  border-color: $success-color;
+  
+  &:focus {
+    border-color: $success-color;
+    box-shadow: 0 0 0 3px set-alpha($success-color, 10);
+  }
+}
+
+// ============================================
+// 输入框组
+// ============================================
+.input-group {
+  display: flex;
+  
+  .form-input {
+    flex: 1;
+    border-radius: 0;
+    
+    &:first-child {
+      border-radius: $border-radius-sm 0 0 $border-radius-sm;
+    }
+    
+    &:last-child {
+      border-radius: 0 $border-radius-sm $border-radius-sm 0;
+    }
+  }
+  
+  .input-group-addon {
+    display: flex;
+    align-items: center;
+    padding: 0 $spacing-md;
+    background-color: #f5f7fa;
+    border: 1px solid #dcdfe6;
+    font-size: 14px;
+    color: $text-light;
+    
+    &:first-child {
+      border-right: none;
+      border-radius: $border-radius-sm 0 0 $border-radius-sm;
+    }
+    
+    &:last-child {
+      border-left: none;
+      border-radius: 0 $border-radius-sm $border-radius-sm 0;
+    }
+  }
+}
+
+// ============================================
+// 表单提示
+// ============================================
+.form-hint {
+  font-size: 12px;
+  color: $text-light;
+  margin-top: $spacing-xs;
+}
+
+// ============================================
+// 搜索框
+// ============================================
+.search-input {
+  position: relative;
+  
+  .form-input {
+    padding-left: 36px;
+  }
+  
+  .search-icon {
+    position: absolute;
+    left: $spacing-sm;
+    top: 50%;
+    transform: translateY(-50%);
+    color: $text-light;
+  }
+  
+  .clear-btn {
+    position: absolute;
+    right: $spacing-sm;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: $text-light;
+    cursor: pointer;
+    padding: 4px;
+    
+    &:hover {
+      color: $text-primary;
+    }
+  }
+}
+
+// ============================================
+// 响应式
+// ============================================
+@media (max-width: $breakpoint-sm) {
+  .form-row {
+    flex-direction: column;
+    
+    .form-group {
+      min-width: 100%;
+    }
+  }
+  
+  .form-inline {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

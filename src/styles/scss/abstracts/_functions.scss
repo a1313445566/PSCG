@@ -1,0 +1,50 @@
+// ============================================
+// SCSS 函数模块
+// ============================================
+
+@use 'sass:color';
+@use 'sass:math';
+@use 'variables' as *;
+
+// ============================================
+// 颜色处理函数（避免与 Sass 内置函数冲突）
+// ============================================
+
+@function shade($color, $amount) {
+  @return color.mix(#000000, $color, $amount);
+}
+
+@function tint($color, $amount) {
+  @return color.mix(#ffffff, $color, $amount);
+}
+
+@function set-alpha($color, $opacity) {
+  @return rgba(
+    color.channel($color, 'red', $space: rgb),
+    color.channel($color, 'green', $space: rgb),
+    color.channel($color, 'blue', $space: rgb),
+    math.div($opacity, 100)
+  );
+}
+
+// ============================================
+// 间距计算函数
+// ============================================
+@function spacing($multiplier) {
+  @return $spacing-md * $multiplier;
+}
+
+// ============================================
+// 响应式计算函数
+// ============================================
+@function calc-rem($px) {
+  @return math.div($px, 16px) * 1rem;
+}
+
+@function em($px, $base) {
+  @return math.div($px, $base) * 1em;
+}
+
+@function gradient($from, $to, $direction: to bottom) {
+  @return linear-gradient($direction, $from, $to);
+}

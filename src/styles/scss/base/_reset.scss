@@ -1,0 +1,49 @@
+@use '../abstracts' as *;
+
+// 全局样式重置
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+// 基础字体设置
+body {
+  font-family: $admin-font;
+  font-size: 14px;
+  line-height: 1.5;
+  color: #303133;
+  background-color: #ffffff;
+}
+
+// 链接样式
+a {
+  text-decoration: none;
+  color: $primary-color;
+  transition: color 0.3s ease;
+  
+  &:hover {
+    color: shade($primary-color, 10%);
+  }
+}
+
+// 列表样式
+ul, ol {
+  list-style: none;
+}
+
+// 表单元素
+input, button, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  line-height: inherit;
+  border: none;
+  outline: none;
+}
+
+// 图片响应式
+img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+}

@@ -462,8 +462,6 @@ onUnmounted(async () => {
 </script>
 
 <style scoped>
-@import '../../styles/common.css';
-
 .dashboard-view {
   padding: 0;
 }

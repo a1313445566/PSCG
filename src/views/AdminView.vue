@@ -729,8 +729,6 @@ onUnmounted(() => {
 </script>
 
 <style scoped>
-@import '../styles/common.css';
-
 .question-management,
 .subject-management,
 .grades-classes-management,
