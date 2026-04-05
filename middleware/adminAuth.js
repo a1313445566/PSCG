@@ -5,8 +5,14 @@
 
 const jwt = require('jsonwebtoken')
 
-// JWT 密钥（与 routes/admin.js 保持一致）
-const JWT_SECRET = process.env.JWT_SECRET || 'pscg-admin-secret-key-change-in-production'
+// JWT 密钥（从环境变量获取，禁止硬编码）
+const JWT_SECRET = process.env.JWT_SECRET
+
+if (!JWT_SECRET) {
+  console.error('❌ 错误：JWT_SECRET 环境变量未设置')
+  console.error('请在 .env 文件中配置：JWT_SECRET=your_secret_key_at_least_32_chars')
+  process.exit(1)
+}
 
 /**
  * 验证管理员权限

@@ -31,6 +31,17 @@ function mapModelFields(dbModel) {
 }
 
 /**
+ * 获取加密密钥（从环境变量获取，禁止硬编码）
+ */
+function getEncryptionKey() {
+  const secret = process.env.JWT_SECRET
+  if (!secret) {
+    throw new Error('JWT_SECRET 环境变量未设置')
+  }
+  return crypto.scryptSync(secret, 'salt', 32)
+}
+
+/**
  * 加密 API Key
  */
 function encryptApiKey(apiKey) {
@@ -38,9 +49,7 @@ function encryptApiKey(apiKey) {
 
   try {
     const algorithm = 'aes-256-cbc'
-    // ✅ 使用与 adminAuth.js 相同的 JWT_SECRET 默认值
-    const secret = process.env.JWT_SECRET || 'pscg-admin-secret-key-change-in-production'
-    const key = crypto.scryptSync(secret, 'salt', 32)
+    const key = getEncryptionKey()
     const iv = crypto.randomBytes(16)
     const cipher = crypto.createCipheriv(algorithm, key, iv)
 
@@ -62,9 +71,7 @@ function decryptApiKey(encryptedKey) {
 
   try {
     const algorithm = 'aes-256-cbc'
-    // ✅ 使用与 adminAuth.js 相同的 JWT_SECRET 默认值
-    const secret = process.env.JWT_SECRET || 'pscg-admin-secret-key-change-in-production'
-    const key = crypto.scryptSync(secret, 'salt', 32)
+    const key = getEncryptionKey()
 
     // ✅ 只按第一个冒号分割（加密数据可能包含冒号）
     const colonIndex = encryptedKey.indexOf(':')

@@ -9,9 +9,15 @@ const db = require('../services/database')
 const { hashPassword, verifyPassword } = require('../services/passwordHash')
 const jwt = require('jsonwebtoken')
 
-// JWT 密钥（优先从环境变量获取）
-const JWT_SECRET = process.env.JWT_SECRET || 'pscg-admin-secret-key-change-in-production'
-const JWT_EXPIRES_IN = '24h'
+// JWT 密钥（从环境变量获取，禁止硬编码）
+const JWT_SECRET = process.env.JWT_SECRET
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h'
+
+if (!JWT_SECRET) {
+  console.error('❌ 错误：JWT_SECRET 环境变量未设置')
+  console.error('请在 .env 文件中配置：JWT_SECRET=your_secret_key_at_least_32_chars')
+  process.exit(1)
+}
 
 /**
  * 初始化管理员表

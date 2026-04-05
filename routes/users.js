@@ -4,9 +4,19 @@ const db = require('../services/database')
 const jwt = require('jsonwebtoken')
 const { getPaginationParams, buildPaginationResponse } = require('../utils/pagination')
 
-// JWT密钥
-const JWT_SECRET = 'your-secret-key'
-const JWT_EXPIRES_IN = '24h' // 24小时过期
+// JWT 配置（从环境变量获取，禁止硬编码）
+const JWT_SECRET = process.env.JWT_SECRET
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h'
+
+if (!JWT_SECRET) {
+  console.error('❌ 错误：JWT_SECRET 环境变量未设置')
+  console.error('请在 .env 文件中配置：JWT_SECRET=your_secret_key_at_least_32_chars')
+  process.exit(1)
+}
+
+// 用户表字段（禁止 SELECT *，必须指定字段）
+// 注意：updated_at 字段在旧数据库中可能不存在，已移除
+const USER_FIELDS = 'id, student_id, name, grade, class, points, created_at'
 
 // 获取用户列表（支持服务端分页）
 router.get('/', async (req, res) => {
@@ -49,7 +59,7 @@ router.get('/', async (req, res) => {
 
     // 如果limit为0或负数，返回所有用户（向后兼容）
     if (limit === '0' || (limit && parseInt(limit) <= 0)) {
-      const query = `SELECT * FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED)`
+      const query = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED)`
       const users = await db.all(query, params)
 
       // 添加统计数据
@@ -70,7 +80,7 @@ router.get('/', async (req, res) => {
     const total = countResult?.total || 0
 
     // 2. 获取分页数据
-    const dataQuery = `SELECT * FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`
+    const dataQuery = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`
     const users = await db.all(dataQuery, params)
 
     // 3. 添加统计数据
@@ -135,7 +145,7 @@ async function attachUserStats(users) {
 router.get('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    const user = await db.get('SELECT * FROM users WHERE id = ?', [id])
+    const user = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [id])
 
     if (!user) {
       res.status(404).json({ error: '用户不存在' })
@@ -165,7 +175,7 @@ router.post('/', async (req, res) => {
     )
 
     // 返回新添加的用户
-    const newUser = await db.get('SELECT * FROM users WHERE id = ?', [result.insertId])
+    const newUser = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [result.insertId])
     res.json(newUser)
   } catch (error) {
     // console.error('添加用户失败:', error);
@@ -478,7 +488,7 @@ router.post('/login', async (req, res) => {
 
     // 检查用户是否存在（根据学号、年级和班级的组合）
     let user = await db.get(
-      'SELECT * FROM users WHERE student_id = ? AND grade = ? AND class = ?',
+      `SELECT ${USER_FIELDS} FROM users WHERE student_id = ? AND grade = ? AND class = ?`,
       [studentId, grade, className]
     )
 
@@ -488,12 +498,12 @@ router.post('/login', async (req, res) => {
         'INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)',
         [studentId, trimmedName, grade, className]
       )
-      user = await db.get('SELECT * FROM users WHERE id = ?', [result.insertId])
+      user = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [result.insertId])
     } else {
       // 如果用户存在且提供了名字，更新用户信息
       if (trimmedName) {
         await db.run('UPDATE users SET name = ? WHERE id = ?', [trimmedName, user.id])
-        user = await db.get('SELECT * FROM users WHERE id = ?', [user.id])
+        user = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [user.id])
       }
     }
 
