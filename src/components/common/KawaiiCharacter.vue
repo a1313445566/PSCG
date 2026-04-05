@@ -136,67 +136,177 @@
 
       <!-- ===== 小猫 Cat ===== -->
       <g v-else-if="character === 'cat'">
-        <ellipse cx="100" cy="148" rx="48" ry="38" :fill="color" class="kawaii-body" />
-        <polygon points="55,55 70,90 40,80" :fill="color" class="ear ear-left" />
-        <polygon points="145,55 130,90 160,80" :fill="color" class="ear ear-right" />
-        <polygon points="60,62 70,85 48,78" :fill="innerColor" class="ear-inner-left" />
-        <polygon points="140,62 130,85 152,78" :fill="innerColor" class="ear-inner-right" />
-        <ellipse cx="100" cy="90" rx="52" ry="45" :fill="color" class="kawaii-head" />
+        <ellipse cx="100" cy="150" rx="45" ry="35" :fill="color" class="kawaii-body" />
+
+        <!-- 圆圆的猫头（先画头部作为底层） -->
+        <ellipse cx="100" cy="95" rx="50" ry="42" :fill="color" class="kawaii-head" />
+
+        <!-- 圆润可爱的猫耳朵 - 左耳组（围绕头部圆弧旋转） -->
+        <g class="ear-group ear-left-group">
+          <path
+            d="M 58 72
+                   Q 50 48, 70 38
+                   Q 82 48, 82 68
+                   Z"
+            :fill="color"
+            class="ear ear-left"
+          />
+          <path
+            d="M 64 67
+                   Q 58 52, 70 44
+                   Q 78 52, 78 64
+                   Z"
+            :fill="innerColor"
+            class="ear-inner-left"
+          />
+        </g>
+
+        <!-- 圆润可爱的猫耳朵 - 右耳组（围绕头部圆弧旋转） -->
+        <g class="ear-group ear-right-group">
+          <path
+            d="M 142 72
+                   Q 150 48, 130 38
+                   Q 118 48, 118 68
+                   Z"
+            :fill="color"
+            class="ear ear-right"
+          />
+          <path
+            d="M 136 67
+                   Q 142 52, 130 44
+                   Q 122 52, 122 64
+                   Z"
+            :fill="innerColor"
+            class="ear-inner-right"
+          />
+        </g>
+
+        <!-- 胡须区域 -->
+        <g class="whiskers">
+          <!-- 左边胡须 -->
+          <line
+            x1="55"
+            y1="98"
+            x2="30"
+            y2="93"
+            stroke="#2D3748"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+          <line
+            x1="55"
+            y1="103"
+            x2="28"
+            y2="103"
+            stroke="#2D3748"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+          <line
+            x1="55"
+            y1="108"
+            x2="30"
+            y2="113"
+            stroke="#2D3748"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+          <!-- 右边胡须 -->
+          <line
+            x1="145"
+            y1="98"
+            x2="170"
+            y2="93"
+            stroke="#2D3748"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+          <line
+            x1="145"
+            y1="103"
+            x2="172"
+            y2="103"
+            stroke="#2D3748"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+          <line
+            x1="145"
+            y1="108"
+            x2="170"
+            y2="113"
+            stroke="#2D3748"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            opacity="0.6"
+          />
+        </g>
+
         <g class="kawaii-face">
+          <!-- 表情状态切换逻辑 -->
           <g v-if="mood === 'sad'" class="eyes-sad">
-            <ellipse cx="82" cy="85" rx="7" ry="10" fill="#2D3748" />
-            <ellipse cx="118" cy="85" rx="7" ry="10" fill="#2D3748" />
+            <ellipse cx="82" cy="88" rx="7" ry="9" fill="#2D3748" />
+            <ellipse cx="118" cy="88" rx="7" ry="9" fill="#2D3748" />
           </g>
           <g v-else-if="mood === 'shocked'" class="eyes-shocked">
-            <circle cx="82" cy="83" r="11" fill="#2D3748" />
-            <circle cx="118" cy="83" r="11" fill="#2D3748" />
-            <circle cx="85" cy="80" r="4" fill="white" />
-            <circle cx="121" cy="80" r="4" fill="white" />
+            <circle cx="82" cy="86" r="10" fill="#2D3748" />
+            <circle cx="118" cy="86" r="10" fill="#2D3748" />
+            <circle cx="85" cy="83" r="3.5" fill="white" />
+            <circle cx="121" cy="83" r="3.5" fill="white" />
           </g>
           <g v-else-if="mood === 'ko'" class="eyes-ko">
             <line
               x1="74"
-              y1="85"
+              y1="88"
               x2="90"
-              y2="85"
+              y2="88"
               stroke="#2D3748"
               stroke-width="3"
               stroke-linecap="round"
             />
             <line
               x1="110"
-              y1="85"
+              y1="88"
               x2="126"
-              y2="85"
+              y2="88"
               stroke="#2D3748"
               stroke-width="3"
               stroke-linecap="round"
             />
           </g>
           <g v-else class="eyes-normal">
-            <ellipse cx="82" cy="85" rx="6" ry="10" fill="#2D3748" />
-            <ellipse cx="118" cy="85" rx="6" ry="10" fill="#2D3748" />
-            <circle v-if="mood !== 'lovestruck'" cx="84" cy="81" r="3" fill="white" />
-            <circle v-if="mood !== 'lovestruck'" cx="120" cy="81" r="3" fill="white" />
+            <ellipse cx="82" cy="87" rx="7" ry="9" fill="#2D3748" />
+            <ellipse cx="118" cy="87" rx="7" ry="9" fill="#2D3748" />
+            <circle v-if="mood !== 'lovestruck'" cx="84" cy="84" r="3" fill="white" />
+            <circle v-if="mood !== 'lovestruck'" cx="120" cy="84" r="3" fill="white" />
           </g>
+
+          <!-- 爱心眼睛（恋爱中） -->
           <g v-if="mood === 'lovestruck'" class="hearts">
             <path
-              d="M74 72 c0-3 2.5-5.5 5.5-5.5 s5.5 2.5 5.5 5.5 c0 4 -5.5 8 -5.5 9.5 c0-1.5 -5.5-5.5 -5.5-9.5 z"
+              d="M74 76 c0-2.5 2-4.5 4.5-4.5 s4.5 2 4.5 4.5 c0 3.5 -4.5 7 -4.5 8 c0-1 -4.5-4.5 -4.5-8 z"
               fill="#F687B3"
-              transform="scale(0.55)"
+              transform="scale(0.6)"
             />
             <path
-              d="M134 72 c0-3 2.5-5.5 5.5-5.5 s5.5 2.5 5.5 5.5 c0 4 -5.5 8 -5.5 9.5 c0-1.5 -5.5-5.5 -5.5-9.5 z"
+              d="M134 76 c0-2.5 2-4.5 4.5-4.5 s4.5 2 4.5 4.5 c0 3.5 -4.5 7 -4.5 8 c0-1 -4.5-4.5 -4.5-8 z"
               fill="#F687B3"
-              transform="scale(0.55)"
+              transform="scale(0.6)"
             />
           </g>
+
+          <!-- 腮红 -->
           <ellipse
             v-if="mood !== 'sad' && mood !== 'shocked' && mood !== 'ko'"
             cx="72"
             cy="100"
-            rx="9"
-            ry="5"
+            rx="8"
+            ry="4.5"
             fill="#FC8181"
             opacity="0.5"
           />
@@ -204,89 +314,81 @@
             v-if="mood !== 'sad' && mood !== 'shocked' && mood !== 'ko'"
             cx="128"
             cy="100"
-            rx="9"
-            ry="5"
+            rx="8"
+            ry="4.5"
             fill="#FC8181"
             opacity="0.5"
           />
-          <ellipse cx="100" cy="98" rx="5" ry="3.5" fill="#F6AD55" class="nose" />
+
+          <!-- 小三角猫鼻子 -->
+          <polygon points="96,99 104,99 100,105" fill="#F6AD55" class="nose" />
+
+          <!-- 嘴巴 -->
           <path
             v-if="mood === 'sad'"
-            d="M86 106 Q100 99 114 106"
+            d="M92 109 Q100 104 108 109"
             stroke="#2D3748"
-            stroke-width="2.5"
+            stroke-width="2"
             fill="none"
             stroke-linecap="round"
           />
           <path
             v-else-if="mood === 'shocked'"
-            d="M94 107 L106 107"
+            d="M97 110 L103 110"
             stroke="#2D3748"
-            stroke-width="2.5"
+            stroke-width="2"
             stroke-linecap="round"
           />
-          <ellipse v-else-if="mood === 'ko'" cx="100" cy="107" rx="5" ry="3.5" fill="#2D3748" />
+          <ellipse v-else-if="mood === 'ko'" cx="100" cy="110" rx="4" ry="3" fill="#2D3748" />
           <path
             v-else-if="mood === 'lovestruck'"
-            d="M89 104 Q100 115 111 104"
+            d="M94 107 Q100 116 106 107"
             stroke="#2D3748"
-            stroke-width="2.5"
+            stroke-width="2"
             fill="none"
             stroke-linecap="round"
           />
           <path
             v-else-if="mood === 'excited'"
-            d="M82 104 Q100 124 118 104"
+            d="M88 107 Q100 122 112 107"
             stroke="#2D3748"
-            stroke-width="2.5"
+            stroke-width="2"
             fill="#F687B3"
             stroke-linecap="round"
           />
           <path
             v-else
-            d="M86 105 Q100 118 114 105"
+            d="M92 108 Q100 117 108 108"
             stroke="#2D3748"
-            stroke-width="2.5"
+            stroke-width="2"
             fill="none"
             stroke-linecap="round"
           />
-          <line
-            v-if="mood !== 'shocked' && mood !== 'ko'"
-            x1="100"
-            y1="107"
-            x2="100"
-            y2="113"
-            stroke="#2D3748"
-            stroke-width="1.5"
-          />
-          <path
-            v-if="mood !== 'shocked' && mood !== 'ko'"
-            d="M94 114 Q100 118 106 114"
-            stroke="#2D3748"
-            stroke-width="1.5"
-            fill="none"
-          />
         </g>
-        <line
-          x1="65"
-          y1="155"
-          x2="55"
-          y2="180"
-          stroke="#2D3748"
-          stroke-width="8"
-          stroke-linecap="round"
-          opacity="0.3"
-        />
-        <line
-          x1="135"
-          y1="155"
-          x2="145"
-          y2="180"
-          stroke="#2D3748"
-          stroke-width="8"
-          stroke-linecap="round"
-          opacity="0.3"
-        />
+
+        <!-- 猫咪前爪（小手） -->
+        <g class="cat-paw cat-paw-left">
+          <ellipse cx="58" cy="145" rx="10" ry="8" :fill="color" />
+          <ellipse cx="58" cy="148" rx="5" ry="3" fill="#FEEBC8" opacity="0.6" />
+        </g>
+        <g class="cat-paw cat-paw-right">
+          <ellipse cx="142" cy="145" rx="10" ry="8" :fill="color" />
+          <ellipse cx="142" cy="148" rx="5" ry="3" fill="#FEEBC8" opacity="0.6" />
+        </g>
+
+        <!-- 猫咪后脚（带肉垫） -->
+        <g class="cat-foot cat-foot-left">
+          <ellipse cx="72" cy="178" rx="14" ry="10" :fill="color" />
+          <ellipse cx="68" cy="176" rx="4" ry="3" fill="#FEEBC8" opacity="0.7" />
+          <ellipse cx="76" cy="176" rx="4" ry="3" fill="#FEEBC8" opacity="0.7" />
+          <ellipse cx="72" cy="180" rx="5" ry="3" fill="#FEEBC8" opacity="0.7" />
+        </g>
+        <g class="cat-foot cat-foot-right">
+          <ellipse cx="128" cy="178" rx="14" ry="10" :fill="color" />
+          <ellipse cx="124" cy="176" rx="4" ry="3" fill="#FEEBC8" opacity="0.7" />
+          <ellipse cx="132" cy="176" rx="4" ry="3" fill="#FEEBC8" opacity="0.7" />
+          <ellipse cx="128" cy="180" rx="5" ry="3" fill="#FEEBC8" opacity="0.7" />
+        </g>
       </g>
 
       <!-- ===== 小幽灵 Ghost ===== -->
@@ -854,17 +956,34 @@ onMounted(() => {
     }
   }
 
-  .ear-left,
-  .ear-right {
-    transition: transform 0.4s ease;
+  .ear-group {
+    transition: transform 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
-  &:hover .ear-left {
-    transform: rotate(-10deg);
+  .ear-left-group {
+    transform-origin: 70px 68px;
   }
 
-  &:hover .ear-right {
-    transform: rotate(10deg);
+  .ear-right-group {
+    transform-origin: 130px 68px;
+  }
+
+  &:hover .ear-left-group {
+    transform: rotate(-15deg);
+  }
+
+  &:hover .ear-right-group {
+    transform: rotate(15deg);
+  }
+
+  &:hover .kawaii-head {
+    transform: scale(1.02);
+    transition: transform 0.3s ease;
+  }
+
+  &:hover .kawaii-body {
+    transform: translateY(-2px);
+    transition: transform 0.3s ease;
   }
 
   .antenna {

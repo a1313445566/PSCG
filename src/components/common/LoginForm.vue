@@ -52,21 +52,41 @@
               <circle cx="100" cy="90" r="65" :fill="headColor" class="head" />
 
               <!-- 耳朵 -->
-              <circle cx="45" cy="55" r="18" :fill="headColor" class="ear ear-left" />
-              <circle cx="155" cy="55" r="18" :fill="headColor" class="ear ear-right" />
-              <circle
-                cx="45"
-                cy="55"
-                r="10"
+              <ellipse
+                cx="40"
+                cy="70"
+                rx="16"
+                ry="22"
+                :fill="headColor"
+                class="ear ear-left"
+                transform="rotate(-20 40 70)"
+              />
+              <ellipse
+                cx="160"
+                cy="70"
+                rx="16"
+                ry="22"
+                :fill="headColor"
+                class="ear ear-right"
+                transform="rotate(20 160 70)"
+              />
+              <ellipse
+                cx="40"
+                cy="72"
+                rx="9"
+                ry="13"
                 :fill="innerEarColor"
                 class="ear-inner ear-inner-left"
+                transform="rotate(-20 40 72)"
               />
-              <circle
-                cx="155"
-                cy="55"
-                r="10"
+              <ellipse
+                cx="160"
+                cy="72"
+                rx="9"
+                ry="13"
                 :fill="innerEarColor"
                 class="ear-inner ear-inner-right"
+                transform="rotate(20 160 72)"
               />
 
               <!-- 眼睛 -->
