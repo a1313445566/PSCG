@@ -1,6 +1,5 @@
 const express = require('express')
 const router = express.Router()
-const db = require('../services/database')
 const fs = require('fs')
 const path = require('path')
 const multer = require('multer')
@@ -20,124 +19,12 @@ if (!fs.existsSync(backupDir)) {
   fs.mkdirSync(backupDir, { recursive: true })
 }
 
-// 备份数据
+// 备份数据（仅支持 DB 格式）
 router.get('/backup', async (req, res) => {
   try {
-    const { type = 'full', format = 'db', dataTypes } = req.query
+    const { type = 'full' } = req.query
 
-    // 验证format参数
-    const validFormats = ['db', 'json']
-    if (!validFormats.includes(format)) {
-      return res.status(400).json({ error: '无效的格式参数，支持db和json格式' })
-    }
-
-    // 解析并验证dataTypes参数（仅在format为json时需要）
-    let requestedTypes = []
-    if (format === 'json') {
-      requestedTypes = dataTypes ? dataTypes.split(',') : []
-
-      // 验证dataTypes参数
-      const validDataTypes = [
-        'questions',
-        'users',
-        'answers',
-        'settings',
-        'subjects',
-        'subcategories',
-        'grades',
-        'classes',
-        'leaderboard',
-        'analysis'
-      ]
-      const invalidTypes = requestedTypes.filter(dataType => !validDataTypes.includes(dataType))
-      if (invalidTypes.length > 0) {
-        return res.status(400).json({ error: `无效的数据类型: ${invalidTypes.join(', ')}` })
-      }
-    }
-
-    // 如果请求JSON格式
-    if (format === 'json') {
-      const backupData = {
-        timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
-        data: {}
-      }
-
-      // 根据请求的数据类型获取数据
-      try {
-        if (requestedTypes.length === 0 || requestedTypes.includes('questions')) {
-          backupData.data.questions = await db.all('SELECT * FROM questions')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('users')) {
-          backupData.data.users = await db.all('SELECT * FROM users')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('answers')) {
-          backupData.data.answer_records = await db.all('SELECT * FROM answer_records')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('settings')) {
-          backupData.data.settings = await db.all('SELECT * FROM settings')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('subjects')) {
-          backupData.data.subjects = await db.all('SELECT * FROM subjects')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('subcategories')) {
-          backupData.data.subcategories = await db.all('SELECT * FROM subcategories')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('grades')) {
-          backupData.data.grades = await db.all('SELECT * FROM grades')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('classes')) {
-          backupData.data.classes = await db.all('SELECT * FROM classes')
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('leaderboard')) {
-          // 排行榜数据可以从answer_records中计算
-          backupData.data.leaderboard = await db.all(`
-            SELECT
-              u.id,
-              u.student_id,
-              u.name,
-              u.grade,
-              u.class,
-              SUM(ar.total_questions) as total_questions,
-              SUM(ar.correct_count) as correct_count,
-              CASE WHEN SUM(ar.total_questions) > 0 THEN
-                (SUM(ar.correct_count) * 100.0) / SUM(ar.total_questions)
-              ELSE 0 END as avg_accuracy,
-              SUM(ar.correct_count) * 10 as points
-            FROM users u
-            LEFT JOIN answer_records ar ON u.id = ar.user_id
-            GROUP BY u.id
-            HAVING SUM(ar.total_questions) >= 20
-            ORDER BY points DESC, avg_accuracy DESC, total_questions DESC
-            LIMIT 10
-          `)
-        }
-
-        if (requestedTypes.length === 0 || requestedTypes.includes('analysis')) {
-          // 分析数据
-          backupData.data.analysis = {
-            totalUsers: await db.get('SELECT COUNT(*) as count FROM users'),
-            totalQuestions: await db.get('SELECT COUNT(*) as count FROM questions'),
-            totalAnswerRecords: await db.get('SELECT COUNT(*) as count FROM answer_records')
-          }
-        }
-      } catch (dbError) {
-        console.error('数据库查询失败:', dbError)
-        throw new Error(`数据库查询失败: ${dbError.message}`)
-      }
-
-      res.json(backupData)
-      return
-    }
-
-    // 否则执行默认的数据库备份
+    // 执行数据库备份
     // 生成备份文件名，包含完整的时间戳（年月日时分秒毫秒）
     const now = new Date()
     const timestamp = now.toISOString().slice(0, 23).replace(/[-T:]/g, '-')
@@ -266,19 +153,16 @@ router.post('/backup/verify', upload.single('backup'), (req, res) => {
       return res.status(400).json({ error: '请选择备份文件' })
     }
 
-    // 检查文件扩展名是否为.db
     const isValid = req.file.originalname.endsWith('.db')
 
-    // 删除临时上传文件
     fs.unlinkSync(req.file.path)
 
     if (isValid) {
       res.json({
         valid: true,
-        type: 'full', // 默认为全量备份
+        type: 'full',
         timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
-        size: `${(req.file.size / 1024).toFixed(2)} KB`,
-        dataTypes: ['questions', 'users', 'answers', 'settings']
+        size: `${(req.file.size / 1024).toFixed(2)} KB`
       })
     } else {
       res.json({
@@ -289,34 +173,6 @@ router.post('/backup/verify', upload.single('backup'), (req, res) => {
   } catch (error) {
     console.error('验证备份文件失败:', error)
     res.status(500).json({ error: '验证备份文件失败' })
-  }
-})
-
-// 导出数据
-router.get('/export', async (req, res) => {
-  try {
-    const exportData = {
-      timestamp: new Date().toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' }),
-      data: {
-        questions: await db.all('SELECT * FROM questions'),
-        subjects: await db.all('SELECT * FROM subjects'),
-        subcategories: await db.all('SELECT * FROM subcategories'),
-        users: await db.all('SELECT * FROM users'),
-        answer_records: await db.all('SELECT * FROM answer_records'),
-        settings: await db.all('SELECT * FROM settings')
-      }
-    }
-
-    // 保存导出文件
-    const exportFileName = `export-${new Date().toISOString().slice(0, 10)}.json`
-    const exportFilePath = path.join(backupDir, exportFileName)
-    fs.writeFileSync(exportFilePath, JSON.stringify(exportData, null, 2))
-
-    // 发送导出文件
-    res.download(exportFilePath, exportFileName)
-  } catch (error) {
-    console.error('导出数据失败:', error)
-    res.status(500).json({ error: '导出数据失败' })
   }
 })
 

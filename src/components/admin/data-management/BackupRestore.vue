@@ -20,33 +20,18 @@
             <label class="setting-label">备份类型</label>
             <el-radio-group v-model="backupType" class="setting-control">
               <el-radio value="full">完整备份</el-radio>
-              <el-radio value="incremental">增量备份</el-radio>
             </el-radio-group>
           </div>
           <div class="setting-item">
             <label class="setting-label">文件格式</label>
-            <el-radio-group v-model="backupFormat" class="setting-control">
-              <el-radio value="db">DB</el-radio>
+            <el-radio-group v-model="backupFormat" class="setting-control" disabled>
+              <el-radio value="db">DB（MySQL备份）</el-radio>
             </el-radio-group>
           </div>
         </div>
-        <div class="setting-row">
-          <div class="setting-item full-width">
-            <label class="setting-label">备份内容</label>
-            <el-checkbox-group v-model="selectedDataTypes" class="setting-control">
-              <el-checkbox value="questions">题目</el-checkbox>
-              <el-checkbox value="users">用户</el-checkbox>
-              <el-checkbox value="answers">答题记录</el-checkbox>
-              <el-checkbox value="settings">系统设置</el-checkbox>
-              <el-checkbox value="subjects">学科</el-checkbox>
-              <el-checkbox value="subcategories">子分类</el-checkbox>
-              <el-checkbox value="grades">年级</el-checkbox>
-              <el-checkbox value="classes">班级</el-checkbox>
-              <el-checkbox value="leaderboard">排行榜数据</el-checkbox>
-              <el-checkbox value="analysis">分析数据</el-checkbox>
-            </el-checkbox-group>
-          </div>
-        </div>
+        <el-alert title="备份说明" type="info" :closable="false" show-icon style="margin-top: 10px">
+          DB 格式备份将完整导出数据库所有表数据，包括题目、用户、答题记录、错题本等全部数据。
+        </el-alert>
       </div>
     </el-card>
 
@@ -65,12 +50,6 @@
             <el-button type="primary" @click="backupData">
               <el-icon><DocumentCopy /></el-icon>
               备份数据
-            </el-button>
-          </div>
-          <div class="button-wrapper">
-            <el-button type="warning" @click="exportData">
-              <el-icon><Upload /></el-icon>
-              导出数据
             </el-button>
           </div>
           <div class="button-wrapper">
@@ -260,7 +239,6 @@ const props = defineProps({
 const emit = defineEmits([
   'backup-data',
   'restore-data',
-  'export-data',
   'upload-backup',
   'download-backup',
   'delete-backup',
@@ -269,20 +247,8 @@ const emit = defineEmits([
 ])
 
 // 备份设置
-const backupType = ref('full') // full 或 incremental
-const backupFormat = ref('json') // json 或 compressed
-const selectedDataTypes = ref([
-  'questions',
-  'users',
-  'answers',
-  'settings',
-  'subjects',
-  'subcategories',
-  'grades',
-  'classes',
-  'leaderboard',
-  'analysis'
-])
+const backupType = ref('full')
+const backupFormat = ref('db')
 
 // 备份进度
 const isBackuping = ref(false)
@@ -304,24 +270,22 @@ const backupData = () => {
     type: 'info'
   })
     .then(() => {
-      // 开始备份
       isBackuping.value = true
       backupProgress.value = 0
       backupStatus.value = ''
       backupMessage.value = '正在准备备份...'
 
-      // 模拟备份进度
       let progress = 0
       const interval = setInterval(() => {
         progress += 10
         backupProgress.value = progress
 
         if (progress < 30) {
-          backupMessage.value = '正在收集数据...'
+          backupMessage.value = '正在导出数据库...'
         } else if (progress < 60) {
-          backupMessage.value = '正在处理数据...'
-        } else if (progress < 90) {
           backupMessage.value = '正在生成备份文件...'
+        } else if (progress < 90) {
+          backupMessage.value = '正在压缩数据...'
         } else {
           backupMessage.value = '备份完成，正在下载...'
         }
@@ -330,23 +294,18 @@ const backupData = () => {
           clearInterval(interval)
           backupStatus.value = 'success'
 
-          // 触发备份事件，传递备份参数
           emit('backup-data', {
             type: backupType.value,
-            format: backupFormat.value,
-            dataTypes: selectedDataTypes.value
+            format: backupFormat.value
           })
 
-          // 延迟关闭进度显示
           setTimeout(() => {
             isBackuping.value = false
           }, 1000)
         }
       }, 300)
     })
-    .catch(() => {
-      // 取消备份
-    })
+    .catch(() => {})
 }
 
 // 恢复数据
@@ -405,11 +364,6 @@ const restoreData = () => {
     .catch(() => {
       // 取消恢复
     })
-}
-
-// 导出数据
-const exportData = () => {
-  emit('export-data')
 }
 
 // 处理文件上传

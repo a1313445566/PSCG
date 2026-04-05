@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <AdminLayout
     :system-title="systemTitle"
     :subjects="subjects"
@@ -69,7 +69,6 @@
       <BackupRestore
         :backup-history="backupHistory"
         @backup-data="backupData"
-        @export-data="exportData"
         @upload-backup="uploadBackup"
         @download-backup="downloadBackup"
         @delete-backup="deleteBackup"
@@ -450,29 +449,6 @@ const backupData = async (backupParams = {}) => {
     console.error('备份数据失败:', error)
     if (isComponentMounted) {
       message.error('备份数据失败，请稍后重试')
-    }
-  }
-}
-
-const exportData = async () => {
-  if (!isComponentMounted) return
-
-  try {
-    const response = await fetch(`${getApiBaseUrl()}/export`)
-    const blob = await response.blob()
-    const url = URL.createObjectURL(blob)
-    const a = document.createElement('a')
-    a.href = url
-    a.download = `export-${new Date().toISOString().slice(0, 10)}.json`
-    a.click()
-    URL.revokeObjectURL(url)
-    if (isComponentMounted) {
-      message.success('数据导出成功')
-    }
-  } catch (error) {
-    console.error('导出数据失败:', error)
-    if (isComponentMounted) {
-      message.error('导出数据失败，请稍后重试')
     }
   }
 }
