@@ -4,6 +4,7 @@ const fs = require('fs')
 const path = require('path')
 const multer = require('multer')
 const { execSync } = require('child_process')
+const cacheService = require('../services/cache')
 
 // 配置文件上传
 const upload = multer({
@@ -45,8 +46,13 @@ router.get('/backup', async (req, res) => {
       MYSQL_PWD: dbConfig.password
     })
 
-    // 构建mysqldump命令，不包含密码
-    const command = `mysqldump --no-tablespaces -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} > ${backupFilePath}`
+    // 构建mysqldump命令，添加完整参数确保备份完整性
+    // --single-transaction: InnoDB一致性快照，不锁表
+    // --routines: 备份存储过程和函数
+    // --triggers: 备份触发器
+    // --add-drop-table: 在CREATE TABLE前添加DROP TABLE（恢复时自动删除旧表）
+    // --disable-keys: 插入数据时禁用索引，加速恢复
+    const command = `mysqldump --no-tablespaces --single-transaction --routines --triggers --add-drop-table --disable-keys -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} > ${backupFilePath}`
 
     try {
       execSync(command, { env })
@@ -202,11 +208,17 @@ router.post('/restore/:id', async (req, res) => {
       return res.status(500).json({ error: '数据库连接失败，请检查配置' })
     }
 
-    const command = `mysql -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} < ${backupFilePath}`
+    // 恢复命令：使用 --init-command 禁用外键检查，确保恢复顺序不受外键约束影响
+    // 恢复完成后外键检查会自动恢复
+    const command = `mysql --init-command="SET FOREIGN_KEY_CHECKS=0;" -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} < ${backupFilePath}`
 
     try {
       execSync(command, { env })
       console.log('从历史备份恢复数据成功')
+
+      // 清除所有缓存，确保前端获取最新数据
+      cacheService.clear()
+      console.log('缓存已清除')
     } catch (execError) {
       console.error('恢复数据命令执行失败:', execError)
       return res.status(500).json({ error: '恢复数据命令执行失败' })
@@ -256,11 +268,16 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
     const env = Object.assign({}, process.env, {
       MYSQL_PWD: dbConfig.password
     })
-    const command = `mysql -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} < ${backupFilePath}`
+    // 恢复命令：使用 --init-command 禁用外键检查，确保恢复顺序不受外键约束影响
+    const command = `mysql --init-command="SET FOREIGN_KEY_CHECKS=0;" -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} < ${backupFilePath}`
 
     try {
       execSync(command, { env })
       console.log('数据恢复命令执行成功')
+
+      // 清除所有缓存，确保前端获取最新数据
+      cacheService.clear()
+      console.log('缓存已清除')
     } catch (execError) {
       console.error('恢复数据命令执行失败:', execError)
       console.error('错误输出:', execError.stderr ? execError.stderr.toString() : '无错误输出')
