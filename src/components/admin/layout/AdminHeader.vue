@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="admin-header">
     <!-- 左侧：标题和折叠按钮 -->
     <div class="header-left">
@@ -99,14 +99,14 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminLayout } from '../../../composables/useAdminLayout'
 import { api } from '../../../utils/api'
 import message from '../../../utils/message'
 import { Refresh, House, SwitchButton, User, Lock, ArrowDown } from '@element-plus/icons-vue'
 
-const props = defineProps({
+defineProps({
   systemTitle: {
     type: String,
     default: '题库管理系统'

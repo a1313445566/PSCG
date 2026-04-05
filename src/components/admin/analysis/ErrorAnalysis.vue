@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="error-analysis">
     <!-- 错题率统计表 -->
     <el-card class="error-stats-card">
@@ -167,7 +167,6 @@ import { computed, ref } from 'vue'
 import { View } from '@element-plus/icons-vue'
 import { formatPercent } from '../../../utils/format'
 import xssFilter from '../../../utils/xss-filter'
-import api from '../../../utils/api'
 
 const props = defineProps({
   analysisData: {

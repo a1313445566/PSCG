@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="setting-card">
     <h3 class="setting-title">年级班级管理</h3>
     <div style="padding: 20px">
@@ -107,7 +107,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { useQuestionStore } from '../../../stores/questionStore'
 
 // 定义属性
-const props = defineProps({})
+defineProps({})
 
 const questionStore = useQuestionStore()
 

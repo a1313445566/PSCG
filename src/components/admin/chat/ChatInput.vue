@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="chat-input-enhanced">
     <!-- 工具和实体选择区 -->
     <div v-if="showSelectors" class="selectors-area">
@@ -90,7 +90,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref } from 'vue'
 import { UserFilled, Tools, Operation } from '@element-plus/icons-vue'
 import EntitySelector from './EntitySelector.vue'
 import ToolSelector from './ToolSelector.vue'

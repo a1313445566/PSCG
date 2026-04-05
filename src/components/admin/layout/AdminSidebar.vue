@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="admin-sidebar" :style="{ width: currentWidth + 'px' }">
     <!-- 折叠按钮 -->
     <div class="collapse-btn" @click="toggleCollapse">
@@ -315,7 +315,7 @@ const menuTreeData = computed(() => {
 })
 
 // 节点点击处理
-const handleNodeClick = (data, node) => {
+const handleNodeClick = (data, _node) => {
   // 如果是"全部题目"
   if (data.id === 'all-questions') {
     setActiveMenu('questions')

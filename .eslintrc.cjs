@@ -34,7 +34,7 @@ module.exports = {
       {
         argsIgnorePattern: '^_',
         varsIgnorePattern: '^_',
-        caughtErrorsIgnorePattern: '^(error|e|err|_)$' // 忽略 catch 中的 error 变量
+        caughtErrorsIgnorePattern: '^(_|error|e|err)$' // 忽略 catch 中的 error 变量
       }
     ],
     '@typescript-eslint/no-var-requires': 'off', // 允许 require（后端代码）

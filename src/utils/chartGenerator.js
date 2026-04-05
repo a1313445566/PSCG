@@ -11,8 +11,7 @@ function parseChartConfig(configStr) {
       if (config.type && config.data) {
         return config
       }
-    } catch (jsonError) {
-      // eslint-disable-line @typescript-eslint/no-unused-vars -- 需要捕获但不使用
+    } catch (_) {
       // JSON 解析失败，尝试清理各种可能的问题
       const cleanedStr = configStr
         // 清理函数表达式
@@ -31,8 +30,7 @@ function parseChartConfig(configStr) {
         if (config.type && config.data) {
           return config
         }
-      } catch (secondError) {
-        // eslint-disable-line @typescript-eslint/no-unused-vars -- 需要捕获但不使用
+      } catch (_) {
         // 尝试更激进的清理 - 移除所有非 JSON 字符
         const superCleaned = cleanedStr.replace(/[^{}[\]",:0-9a-zA-Z\s]/g, '')
 
@@ -41,8 +39,7 @@ function parseChartConfig(configStr) {
           if (config.type && config.data) {
             return config
           }
-        } catch (thirdError) {
-          // eslint-disable-line @typescript-eslint/no-unused-vars -- 需要捕获但不使用
+        } catch (_) {
           // 最终失败，记录详细错误
           console.error('[图表] 解析配置失败，原始配置:', configStr)
         }

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <el-card class="setting-card" shadow="hover">
     <template #header>
       <div class="card-header">
@@ -175,7 +175,6 @@
 
 <script setup>
 import { ref, watch, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
 
 const props = defineProps({
   randomizeAnswers: { type: Boolean, default: false },

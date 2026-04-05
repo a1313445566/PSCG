@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- 密码验证对话框 -->
   <el-dialog
     v-model="dialogVisible"
@@ -40,7 +40,7 @@
 </template>
 
 <script setup>
-import { ref, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, watch, onMounted, onUnmounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { api } from '../../../utils/api'
 

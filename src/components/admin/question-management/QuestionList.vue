@@ -230,24 +230,9 @@ const {
 
 // 使用音频播放器 composable
 const {
-  audioPlaying,
-  audioCurrentTime,
-  audioDuration,
-  audioProgress,
-  audioSpeed,
   audioUploading,
   audioUploadProgress,
-  toggleAudioPlay,
-  onAudioLoaded,
-  onAudioTimeUpdate,
-  onAudioEnded,
-  onAudioProgressChange,
-  audioSeekBackward,
-  audioSeekForward,
-  setAudioSpeed,
-  formatAudioTime,
-  handleSplitEditAudioChange: originalHandleSplitEditAudioChange,
-  deleteSplitEditAudio: originalDeleteSplitEditAudio
+  handleSplitEditAudioChange: originalHandleSplitEditAudioChange
 } = useAudioPlayer()
 
 const handleAudioChange = file => originalHandleSplitEditAudioChange(file, splitEditData)

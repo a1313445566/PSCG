@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="entity-selector">
     <!-- 实体类型选择 -->
     <el-radio-group v-model="entityType" size="small" class="entity-type-group">
@@ -67,7 +67,6 @@
 
 <script setup>
 import { ref, computed, watch } from 'vue'
-import { User, School } from '@element-plus/icons-vue'
 import { api } from '@/utils/api'
 
 // Props

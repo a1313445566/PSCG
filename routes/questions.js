@@ -348,26 +348,26 @@ router.get('/:id', async (req, res) => {
 // 添加题目
 router.post('/', async (req, res) => {
   try {
-    let {
+    const {
       subjectId,
       subcategoryId,
-      content,
+      content: rawContent,
       type,
       options,
       answer,
-      explanation = '',
+      explanation: rawExplanation = '',
       audio = null,
       image = null
     } = req.body
 
-    if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
+    if (!subjectId || !subcategoryId || !rawContent || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })
       return
     }
 
     // XSS 过滤 - 对富文本内容进行清理
-    content = xssFilter.deepSanitize(content)
-    explanation = xssFilter.sanitize(explanation)
+    let content = xssFilter.deepSanitize(rawContent)
+    let explanation = xssFilter.sanitize(rawExplanation)
 
     // 自动转换 base64 图片为文件（防止数据库存储庞大的 base64 数据）
     if (base64Converter.hasBase64Images(content)) {
@@ -475,17 +475,26 @@ router.post('/', async (req, res) => {
 router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
-    let { subjectId, subcategoryId, content, type, options, answer, explanation, audio, image } =
-      req.body
+    const {
+      subjectId,
+      subcategoryId,
+      content: rawContent,
+      type,
+      options,
+      answer,
+      explanation: rawExplanation,
+      audio,
+      image
+    } = req.body
 
-    if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
+    if (!subjectId || !subcategoryId || !rawContent || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })
       return
     }
 
     // XSS 过滤 - 对富文本内容进行清理
-    content = xssFilter.deepSanitize(content)
-    explanation = xssFilter.sanitize(explanation)
+    let content = xssFilter.deepSanitize(rawContent)
+    let explanation = xssFilter.sanitize(rawExplanation)
 
     // 自动转换 base64 图片为文件（防止数据库存储庞大的 base64 数据）
     if (base64Converter.hasBase64Images(content)) {

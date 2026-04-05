@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="model-manager">
     <!-- 头部 -->
     <div class="model-header">
@@ -72,7 +72,6 @@ import { useModel } from './composables/useModel'
 import ModelCard from './ModelCard.vue'
 import ModelForm from './ModelForm.vue'
 import TokenStats from '../chat/TokenStats.vue'
-import message from '@/utils/message'
 
 const {
   models,

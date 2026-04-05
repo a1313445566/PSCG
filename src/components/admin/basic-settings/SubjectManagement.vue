@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="setting-card">
     <h3 class="setting-title">学科管理</h3>
     <div class="subject-management" style="padding: 20px">
@@ -230,25 +230,22 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { useQuestionStore } from '../../../stores/questionStore'
 import { api } from '../../../utils/api'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 
 // 定义属性和事件
-const props = defineProps({})
+defineProps({})
 
-const emit = defineEmits(['manage-subcategories'])
+defineEmits(['manage-subcategories'])
 
 const questionStore = useQuestionStore()
 
 // 组件挂载状态和定时器管理
 let isComponentMounted = true
 const timeoutIds = []
-
-// 使用计算属性获取最新的学科数据
-const subjects = computed(() => questionStore.subjects)
 
 // 导入共享图标配置
 import { subjectIcons, subjectIconNames } from '../../../config/iconConfig'
@@ -523,7 +520,7 @@ const cancelEdit = () => {
 }
 
 // 根据ID查找节点
-const findNodeById = (nodes, id) => {
+const _findNodeById = (nodes, id) => {
   for (const node of nodes) {
     if (node.id === id) return node
     if (node.children) {
@@ -569,7 +566,7 @@ const allowDrop = (draggingNode, dropNode, type) => {
 }
 
 // 处理节点拖拽完成
-const handleNodeDrop = async (draggingNode, dropNode, dropType, ev) => {
+const handleNodeDrop = async (draggingNode, dropNode, _dropType, _ev) => {
   // 处理前端显示顺序的调整
   const draggingData = draggingNode.data
   const dropData = dropNode.data

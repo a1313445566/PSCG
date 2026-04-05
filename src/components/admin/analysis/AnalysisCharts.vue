@@ -509,7 +509,7 @@ const initAllCharts = () => {
 }
 
 // 调整图表大小
-const resizeCharts = () => {
+const _resizeCharts = () => {
   // ✅ 使用防抖
   if (resizeTimeout) clearTimeout(resizeTimeout)
   resizeTimeout = setTimeout(() => {
@@ -551,7 +551,7 @@ const disposeCharts = () => {
 }
 
 // ✅ 启动容器尺寸监听（使用 ResizeObserver）
-const startContainerObserver = () => {
+const _startContainerObserver = () => {
   if (!window.ResizeObserver) return
 
   // 监听所有图表容器
@@ -576,7 +576,7 @@ const startContainerObserver = () => {
 }
 
 // ✅ 停止容器尺寸监听
-const stopContainerObserver = () => {
+const _stopContainerObserver = () => {
   if (resizeObserver) {
     resizeObserver.disconnect()
     resizeObserver = null

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="chat-container">
     <!-- 左侧会话列表 -->
     <div class="chat-sidebar">
@@ -106,13 +106,11 @@ const {
   sessions,
   currentSession,
   messages,
-  loading,
   createSession,
   fetchSessions,
   selectSession,
   deleteSession,
   addMessage,
-  updateLastMessage,
   cleanup
 } = useChat()
 const { models, defaultModel, fetchModels } = useModels()

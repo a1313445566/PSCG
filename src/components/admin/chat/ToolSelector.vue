@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="tool-selector">
     <!-- 工具分类 -->
     <div class="tool-categories">
@@ -106,7 +106,7 @@ const selectedCategory = ref('student')
 const selectedTool = ref(props.selectedTool)
 
 // 图标映射
-const iconComponents = {
+const _iconComponents = {
   User,
   School,
   Aim,

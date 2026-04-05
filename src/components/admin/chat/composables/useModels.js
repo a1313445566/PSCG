@@ -6,7 +6,6 @@
 
 import { ref } from 'vue'
 import { api } from '@/utils/api'
-import message from '@/utils/message'
 
 export function useModels() {
   const models = ref([])

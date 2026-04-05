@@ -60,12 +60,8 @@ export const getApiBaseUrl = () => {
 
 // 初始化数据库
 export const initDatabase = async () => {
-  try {
-    // 后端会自动初始化数据库
-    return true
-  } catch (error) {
-    return false
-  }
+  // 后端会自动初始化数据库
+  return true
 }
 
 // 获取所有学科
