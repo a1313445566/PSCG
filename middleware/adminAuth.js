@@ -5,20 +5,20 @@
 
 const jwt = require('jsonwebtoken')
 
-// JWT 密钥（从环境变量获取，禁止硬编码）
+// JWT 密钥（从环境变量获取）
 const JWT_SECRET = process.env.JWT_SECRET
-
-if (!JWT_SECRET) {
-  console.error('❌ 错误：JWT_SECRET 环境变量未设置')
-  console.error('请在 .env 文件中配置：JWT_SECRET=your_secret_key_at_least_32_chars')
-  process.exit(1)
-}
 
 /**
  * 验证管理员权限
  * 通过检查 Authorization 请求头中的 JWT Token
  */
 function adminAuth(req, res, next) {
+  // 检查 JWT_SECRET 是否配置
+  if (!JWT_SECRET) {
+    console.error('❌ 错误：JWT_SECRET 环境变量未设置')
+    return res.status(500).json({ error: '服务器配置错误，请联系管理员' })
+  }
+
   // 方式1：通过 Authorization header (Bearer token)
   const authHeader = req.headers.authorization
 

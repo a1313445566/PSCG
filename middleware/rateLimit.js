@@ -12,13 +12,11 @@
 
 const jwt = require('jsonwebtoken')
 
-// JWT 密钥（从环境变量获取，禁止硬编码）
+// JWT 密钥（从环境变量获取，可选）
 const JWT_SECRET = process.env.JWT_SECRET
 
 if (!JWT_SECRET) {
-  console.error('❌ 错误：JWT_SECRET 环境变量未设置')
-  console.error('请在 .env 文件中配置：JWT_SECRET=your_secret_key_at_least_32_chars')
-  process.exit(1)
+  console.warn('⚠️ [限流] JWT_SECRET 未设置，将跳过 JWT 验证，使用降级方案（仅基于 IP 限流）')
 }
 
 class RateLimiter {
@@ -106,17 +104,19 @@ class RateLimiter {
 
   // 获取用户 ID（优先从 JWT token 解析，确保安全性）
   getUserId(req) {
-    // 1. 优先从 JWT token 解析（最安全）
-    const authHeader = req.headers['authorization']
-    if (authHeader && authHeader.startsWith('Bearer ')) {
-      try {
-        const token = authHeader.substring(7)
-        const decoded = jwt.verify(token, JWT_SECRET)
-        if (decoded && decoded.userId) {
-          return `user:${decoded.userId}`
+    // 1. 优先从 JWT token 解析（需要 JWT_SECRET）
+    if (JWT_SECRET) {
+      const authHeader = req.headers['authorization']
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        try {
+          const token = authHeader.substring(7)
+          const decoded = jwt.verify(token, JWT_SECRET)
+          if (decoded && decoded.userId) {
+            return `user:${decoded.userId}`
+          }
+        } catch (err) {
+          // token 无效或过期，继续尝试其他方式
         }
-      } catch (err) {
-        // token 无效或过期，继续尝试其他方式
       }
     }
 

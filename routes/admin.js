@@ -9,15 +9,9 @@ const db = require('../services/database')
 const { hashPassword, verifyPassword } = require('../services/passwordHash')
 const jwt = require('jsonwebtoken')
 
-// JWT 密钥（从环境变量获取，禁止硬编码）
+// JWT 配置（从环境变量获取）
 const JWT_SECRET = process.env.JWT_SECRET
 const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h'
-
-if (!JWT_SECRET) {
-  console.error('❌ 错误：JWT_SECRET 环境变量未设置')
-  console.error('请在 .env 文件中配置：JWT_SECRET=your_secret_key_at_least_32_chars')
-  process.exit(1)
-}
 
 /**
  * 初始化管理员表
@@ -125,6 +119,12 @@ router.post('/init', async (req, res) => {
  */
 router.post('/login', async (req, res) => {
   try {
+    // 检查 JWT_SECRET 是否配置
+    if (!JWT_SECRET) {
+      console.error('❌ 错误：JWT_SECRET 环境变量未设置')
+      return res.status(503).json({ error: '服务暂时不可用，请联系管理员配置 JWT_SECRET' })
+    }
+
     const { username, password } = req.body
 
     if (!username || !password) {
@@ -170,6 +170,12 @@ router.post('/login', async (req, res) => {
  */
 router.post('/change-password', async (req, res) => {
   try {
+    // 检查 JWT_SECRET 是否配置
+    if (!JWT_SECRET) {
+      console.error('❌ 错误：JWT_SECRET 环境变量未设置')
+      return res.status(503).json({ error: '服务暂时不可用，请联系管理员配置 JWT_SECRET' })
+    }
+
     // 验证 Token
     const authHeader = req.headers.authorization
     if (!authHeader || !authHeader.startsWith('Bearer ')) {
@@ -218,79 +224,10 @@ router.post('/change-password', async (req, res) => {
       decoded.id
     ])
 
-    console.log(`✅ 管理员 "${decoded.username}" 密码修改成功`)
     res.json({ success: true, message: '密码修改成功' })
   } catch (error) {
     console.error('修改密码失败:', error)
     res.status(500).json({ error: '修改密码失败' })
-  }
-})
-
-/**
- * 验证 Token（用于前端检查登录状态）
- */
-router.get('/verify', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ valid: false, error: '未登录' })
-    }
-
-    const token = authHeader.substring(7)
-    const decoded = jwt.verify(token, JWT_SECRET)
-
-    res.json({
-      valid: true,
-      username: decoded.username,
-      isAdmin: decoded.isAdmin
-    })
-  } catch (err) {
-    res.status(401).json({ valid: false, error: '登录已过期' })
-  }
-})
-
-/**
- * 验证数据库管理权限（二次验证）
- */
-router.post('/verify-data-management', async (req, res) => {
-  try {
-    const authHeader = req.headers.authorization
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ valid: false, error: '未登录' })
-    }
-
-    const token = authHeader.substring(7)
-    let decoded
-    try {
-      decoded = jwt.verify(token, JWT_SECRET)
-    } catch (err) {
-      return res.status(401).json({ valid: false, error: '登录已过期' })
-    }
-
-    const { password } = req.body
-    if (!password) {
-      return res.status(400).json({ valid: false, error: '请输入密码' })
-    }
-
-    // 查询管理员
-    const admin = await db.get('SELECT id, password_hash FROM admin_credentials WHERE id = ?', [
-      decoded.id
-    ])
-
-    if (!admin) {
-      return res.status(404).json({ valid: false, error: '管理员不存在' })
-    }
-
-    // 验证密码
-    const isValid = await verifyPassword(password, admin.password_hash)
-    if (!isValid) {
-      return res.status(400).json({ valid: false, error: '密码错误' })
-    }
-
-    res.json({ valid: true, message: '验证成功' })
-  } catch (error) {
-    console.error('数据库管理验证失败:', error)
-    res.status(500).json({ valid: false, error: '验证失败' })
   }
 })
 

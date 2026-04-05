@@ -2,6 +2,7 @@ require('dotenv').config()
 const express = require('express')
 const compression = require('compression')
 const cors = require('cors')
+const helmet = require('helmet')
 const path = require('path')
 const multer = require('multer')
 
@@ -96,11 +97,81 @@ const dbPerformanceMonitor = require('./middleware/dbPerformance')
 const app = express()
 const port = process.env.SERVER_PORT || 3001
 
+// ==================== 安全中间件配置 ====================
+
+/**
+ * CORS 配置 - 支持环境变量白名单 + 动态域名 + 内网 IP
+ * 支持场景：
+ * - 环境变量配置：CORS_ORIGIN_WHITELIST
+ * - 动态 Cloudflare Tunnel：*.trycloudflare.com
+ * - 内网 IP：10.78.x.x
+ * - 本地开发：localhost/127.0.0.1
+ */
+const corsOriginWhitelist = process.env.CORS_ORIGIN_WHITELIST
+  ? process.env.CORS_ORIGIN_WHITELIST.split(',').map(origin => origin.trim())
+  : [
+      'http://localhost:3000',
+      'http://localhost:5173',
+      'http://127.0.0.1:3000',
+      'http://127.0.0.1:5173'
+    ]
+
+const corsOptions = {
+  origin: (origin, callback) => {
+    // 允许无 origin 的请求（如移动应用、Postman、服务器间调用等）
+    if (!origin) {
+      return callback(null, true)
+    }
+
+    // 1. 检查环境变量白名单
+    if (corsOriginWhitelist.includes(origin)) {
+      return callback(null, true)
+    }
+
+    // 2. 支持动态 Cloudflare Tunnel 域名 (*.trycloudflare.com)
+    if (origin.endsWith('.trycloudflare.com')) {
+      return callback(null, true)
+    }
+
+    // 3. 支持内网 IP 段（10.78.x.x）
+    if (origin.match(/^http:\/\/10\.78\.\d{1,3}\.\d{1,3}:\d+$/)) {
+      return callback(null, true)
+    }
+
+    // 4. 支持本地开发（localhost/127.0.0.1）
+    if (origin.match(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/)) {
+      return callback(null, true)
+    }
+
+    // 拒绝未授权的来源
+    console.warn(`[CORS] 拒绝未授权的来源: ${origin}`)
+    callback(new Error('未授权的 CORS 请求'))
+  },
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
+  credentials: true, // 允许发送 Cookie，配合 CSRF 使用
+  maxAge: 86400 // 预检请求缓存 24 小时
+}
+
+app.use(cors(corsOptions))
+
+/**
+ * Helmet 安全头中间件（精简版）
+ * 适用于：教育网内网 + Cloudflare Tunnel 场景
+ * Cloudflare 已提供 DDoS/SSL/WAF 防护，此处仅保留应用层安全头
+ */
 app.use(
-  cors({
-    origin: '*',
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization']
+  helmet({
+    // 禁用 CSP - 教育网场景可能影响资源加载，Cloudflare 可配置
+    contentSecurityPolicy: false,
+    // X-Frame-Options - 防止点击劫持（与 Cloudflare 双重保险）
+    frameguard: { action: 'deny' },
+    // X-Content-Type-Options - 防止 MIME 类型嗅探
+    noSniff: true,
+    // 禁用 X-XSS-Protection - 现代浏览器已废弃
+    xssFilter: false,
+    // Referrer-Policy - 控制 Referer 信息
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
   })
 )
 app.use(compression())
@@ -125,6 +196,16 @@ app.use('/api', csrfVerifyMiddleware)
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
     res.setHeader('Content-Type', 'application/json; charset=utf-8')
+  }
+  next()
+})
+
+// 【缓存优化】HTML 文件不缓存，避免加载旧版本
+app.use((req, res, next) => {
+  if (req.path.endsWith('.html')) {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
+    res.setHeader('Pragma', 'no-cache')
+    res.setHeader('Expires', '0')
   }
   next()
 })
@@ -477,7 +558,7 @@ app.get('/api/security/logs', adminAuth, async (req, res) => {
     const limitNum = Number(limit)
     const offsetNum = (Number(page) - 1) * limitNum
     const logsSQL = `
-      SELECT * FROM security_logs 
+      SELECT * FROM security_logs
       ${whereClause}
       ORDER BY timestamp DESC
       LIMIT ${limitNum} OFFSET ${offsetNum}
@@ -559,15 +640,71 @@ app.post('/api/security/batch-block', adminAuth, async (req, res) => {
   }
 })
 
+// ==================== 全局错误处理 ====================
+
+/**
+ * 未捕获异常处理
+ * 记录日志后退出进程，避免进程僵死
+ */
 process.on('uncaughtException', err => {
-  console.error(`未捕获异常:`, err.message)
+  console.error(`【严重】未捕获异常:`, err.message)
+  console.error('堆栈信息:', err.stack)
+
+  // 数据库相关错误 - 尝试重新连接
   if (err.message.includes('SQLITE_CANTOPEN') || err.message.includes('database is locked')) {
-    console.log('数据库错误，尝试重新连接...')
+    console.error('数据库连接失败，5秒后尝试重启...')
+    setTimeout(() => {
+      process.exit(1)
+    }, 5000)
+  }
+  // 其他严重错误 - 立即退出
+  else if (
+    err.message.includes('EADDRINUSE') ||
+    err.message.includes('listen EADDRINUSE') ||
+    err.message.includes('ENOENT') ||
+    err.message.includes('MODULE_NOT_FOUND')
+  ) {
+    console.error('严重错误，进程即将退出...')
+    process.exit(1)
+  }
+  // 其他未知错误 - 延迟退出以记录日志
+  else {
+    console.error('未知错误，进程即将退出...')
+    setTimeout(() => {
+      process.exit(1)
+    }, 1000)
   }
 })
 
+/**
+ * 未处理 Promise 拒绝处理
+ * 记录日志，区分致命错误和警告
+ */
 process.on('unhandledRejection', (reason, _promise) => {
-  console.error(`未处理 Promise 拒绝:`, reason)
+  // 将 reason 转换为字符串以便检查
+  const reasonStr = reason instanceof Error ? reason.message : String(reason)
+
+  console.error(`未处理 Promise 拒绝:`, reasonStr)
+
+  // 如果是致命错误，打印完整堆栈并退出
+  if (reason instanceof Error) {
+    console.error('堆栈信息:', reason.stack)
+  }
+
+  // 致命错误 - 立即退出
+  if (
+    reasonStr.includes('ECONNREFUSED') ||
+    reasonStr.includes('database') ||
+    reasonStr.includes('SQLITE_CANTOPEN') ||
+    reasonStr.includes('database is locked')
+  ) {
+    console.error('致命错误，进程即将退出...')
+    process.exit(1)
+  }
+  // 非致命错误 - 记录但不退出进程
+  else {
+    console.warn('警告: 存在未处理的 Promise 拒绝，请检查代码')
+  }
 })
 
 async function startServer() {

@@ -4,24 +4,18 @@ const db = require('../services/database')
 const jwt = require('jsonwebtoken')
 const { getPaginationParams, buildPaginationResponse } = require('../utils/pagination')
 
-// JWT 配置（从环境变量获取，禁止硬编码）
+// JWT 配置（从环境变量获取）
 const JWT_SECRET = process.env.JWT_SECRET
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h'
-
-if (!JWT_SECRET) {
-  console.error('❌ 错误：JWT_SECRET 环境变量未设置')
-  console.error('请在 .env 文件中配置：JWT_SECRET=your_secret_key_at_least_32_chars')
-  process.exit(1)
-}
+var JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '24h'
 
 // 用户表字段（禁止 SELECT *，必须指定字段）
 // 注意：updated_at 字段在旧数据库中可能不存在，已移除
-const USER_FIELDS = 'id, student_id, name, grade, class, points, created_at'
+var USER_FIELDS = 'id, student_id, name, grade, class, points, created_at'
 
 // 获取用户列表（支持服务端分页）
 router.get('/', async (req, res) => {
   try {
-    const {
+    var {
       grade,
       class: className,
       page = 1,
@@ -32,8 +26,8 @@ router.get('/', async (req, res) => {
     } = req.query
 
     // 构建查询条件
-    const conditions = []
-    const params = []
+    var conditions = []
+    var params = []
 
     if (student_id) {
       conditions.push('student_id LIKE ?')
@@ -55,12 +49,12 @@ router.get('/', async (req, res) => {
       params.push(className)
     }
 
-    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
+    var whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : ''
 
     // 如果limit为0或负数，返回所有用户（向后兼容）
     if (limit === '0' || (limit && parseInt(limit) <= 0)) {
-      const query = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED)`
-      const users = await db.all(query, params)
+      var query = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED)`
+      var users = await db.all(query, params)
 
       // 添加统计数据
       if (withStats === 'true' && users.length > 0) {
@@ -72,16 +66,16 @@ router.get('/', async (req, res) => {
     }
 
     // 服务端分页模式 - 使用统一分页工具
-    const { pageNum, limitNum, offset } = getPaginationParams(page, limit)
+    var { pageNum, limitNum, offset } = getPaginationParams(page, limit)
 
     // 1. 获取总数
-    const countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`
-    const countResult = await db.get(countQuery, params)
-    const total = countResult?.total || 0
+    var countQuery = `SELECT COUNT(*) as total FROM users ${whereClause}`
+    var countResult = await db.get(countQuery, params)
+    var total = countResult?.total || 0
 
     // 2. 获取分页数据
-    const dataQuery = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`
-    const users = await db.all(dataQuery, params)
+    var dataQuery = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`
+    var users = await db.all(dataQuery, params)
 
     // 3. 添加统计数据
     if (withStats === 'true' && users.length > 0) {
@@ -99,9 +93,9 @@ router.get('/', async (req, res) => {
 // 为用户附加统计数据的辅助函数
 async function attachUserStats(users) {
   try {
-    const userIds = users.map(user => user.id)
+    var userIds = users.map(user => user.id)
 
-    const batchStatsQuery = `
+    var batchStatsQuery = `
       SELECT 
         ar.user_id,
         COUNT(DISTINCT ar.id) as totalSessions,
@@ -115,15 +109,15 @@ async function attachUserStats(users) {
       GROUP BY ar.user_id
     `
 
-    const statsResults = await db.all(batchStatsQuery, userIds)
+    var statsResults = await db.all(batchStatsQuery, userIds)
 
-    const statsMap = {}
+    var statsMap = {}
     statsResults.forEach(stat => {
       statsMap[stat.user_id] = stat
     })
 
-    for (const user of users) {
-      const stats = statsMap[user.id] || {
+    for (var user of users) {
+      var stats = statsMap[user.id] || {
         totalSessions: 0,
         totalQuestions: 0,
         totalCorrect: 0,
@@ -134,7 +128,7 @@ async function attachUserStats(users) {
     }
   } catch (error) {
     console.warn('[attachUserStats] 批量获取用户统计数据失败:', error)
-    for (const user of users) {
+    for (var user of users) {
       user.total_sessions = 0
       user.avg_accuracy = 0
     }
@@ -144,8 +138,8 @@ async function attachUserStats(users) {
 // 获取单个用户
 router.get('/:id', async (req, res) => {
   try {
-    const { id } = req.params
-    const user = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [id])
+    var { id } = req.params
+    var user = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [id])
 
     if (!user) {
       res.status(404).json({ error: '用户不存在' })
@@ -162,20 +156,20 @@ router.get('/:id', async (req, res) => {
 // 添加用户
 router.post('/', async (req, res) => {
   try {
-    const { student_id, name, grade, class: className } = req.body
+    var { student_id, name, grade, class: className } = req.body
 
     if (!student_id) {
       res.status(400).json({ error: '学号不能为空' })
       return
     }
 
-    const result = await db.run(
+    var result = await db.run(
       'INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)',
       [student_id, name, grade, className]
     )
 
     // 返回新添加的用户
-    const newUser = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [result.insertId])
+    var newUser = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [result.insertId])
     res.json(newUser)
   } catch (error) {
     // console.error('添加用户失败:', error);
@@ -186,18 +180,18 @@ router.post('/', async (req, res) => {
 // 批量添加用户
 router.post('/batch', async (req, res) => {
   try {
-    const users = req.body
+    var users = req.body
 
     if (!Array.isArray(users)) {
       res.status(400).json({ error: '用户数据必须是数组' })
       return
     }
 
-    let successCount = 0
-    let errorCount = 0
+    var successCount = 0
+    var errorCount = 0
 
-    for (const user of users) {
-      const { student_id, name, grade, class: className } = user
+    for (var user of users) {
+      var { student_id, name, grade, class: className } = user
 
       if (student_id) {
         try {
@@ -225,8 +219,8 @@ router.post('/batch', async (req, res) => {
 // 更新用户
 router.put('/:id', async (req, res) => {
   try {
-    const { id } = req.params
-    const { name, grade, class: className, student_id } = req.body
+    var { id } = req.params
+    var { name, grade, class: className, student_id } = req.body
 
     await db.run('UPDATE users SET name = ?, grade = ?, class = ?, student_id = ? WHERE id = ?', [
       name,
@@ -246,7 +240,7 @@ router.put('/:id', async (req, res) => {
 // 删除用户
 router.delete('/:id', async (req, res) => {
   try {
-    const { id } = req.params
+    var { id } = req.params
 
     await db.transaction(async conn => {
       // 删除用户的错题记录
@@ -257,20 +251,15 @@ router.delete('/:id', async (req, res) => {
         'DELETE FROM quiz_attempts WHERE quiz_session_id IN (SELECT id FROM quiz_sessions WHERE user_id = ?)',
         [id]
       )
-
       // 删除用户的答题会话
       await conn.execute('DELETE FROM quiz_sessions WHERE user_id = ?', [id])
-
       // 删除用户的题目尝试记录
       await conn.execute('DELETE FROM question_attempts WHERE user_id = ?', [id])
-
       // 删除用户的答题记录
       await conn.execute('DELETE FROM answer_records WHERE user_id = ?', [id])
-
       // 删除用户
       await conn.execute('DELETE FROM users WHERE id = ?', [id])
     })
-
     res.json({ success: true })
   } catch (error) {
     console.error('删除用户失败:', error)
@@ -281,14 +270,14 @@ router.delete('/:id', async (req, res) => {
 // 批量删除用户
 router.post('/batch-delete', async (req, res) => {
   try {
-    const { userIds } = req.body
+    var { userIds } = req.body
 
     if (!Array.isArray(userIds) || userIds.length === 0) {
       return res.status(400).json({ error: '请选择要删除的用户' })
     }
 
     // 限制单次批量删除数量，防止过载
-    const MAX_BATCH_SIZE = 100
+    var MAX_BATCH_SIZE = 100
     if (userIds.length > MAX_BATCH_SIZE) {
       return res.status(400).json({
         error: `单次最多删除 ${MAX_BATCH_SIZE} 个用户，当前选择 ${userIds.length} 个`
@@ -296,15 +285,15 @@ router.post('/batch-delete', async (req, res) => {
     }
 
     // 过滤有效的用户ID
-    const validUserIds = userIds.filter(id => Number.isInteger(id) && id > 0)
+    var validUserIds = userIds.filter(id => Number.isInteger(id) && id > 0)
     if (validUserIds.length === 0) {
       return res.status(400).json({ error: '没有有效的用户ID' })
     }
 
     // 构建 IN 子句占位符
-    const placeholders = validUserIds.map(() => '?').join(',')
+    var placeholders = validUserIds.map(() => '?').join(',')
 
-    let deletedCount = 0
+    var deletedCount = 0
 
     await db.transaction(async conn => {
       // 批量删除用户的错题记录
@@ -312,39 +301,33 @@ router.post('/batch-delete', async (req, res) => {
         `DELETE FROM error_collection WHERE user_id IN (${placeholders})`,
         validUserIds
       )
-
       // 批量删除用户的答题尝试记录（通过子查询）
       await conn.execute(
         `DELETE FROM quiz_attempts WHERE quiz_session_id IN (SELECT id FROM quiz_sessions WHERE user_id IN (${placeholders}))`,
         validUserIds
       )
-
       // 批量删除用户的答题会话
       await conn.execute(
         `DELETE FROM quiz_sessions WHERE user_id IN (${placeholders})`,
         validUserIds
       )
-
       // 批量删除用户的题目尝试记录
       await conn.execute(
         `DELETE FROM question_attempts WHERE user_id IN (${placeholders})`,
         validUserIds
       )
-
       // 批量删除用户的答题记录
       await conn.execute(
         `DELETE FROM answer_records WHERE user_id IN (${placeholders})`,
         validUserIds
       )
-
       // 批量删除用户
-      const [result] = await conn.execute(
+      var [result] = await conn.execute(
         `DELETE FROM users WHERE id IN (${placeholders})`,
         validUserIds
       )
       deletedCount = result.affectedRows
     })
-
     res.json({
       success: true,
       message: `成功删除 ${deletedCount} 个用户`,
@@ -360,10 +343,10 @@ router.post('/batch-delete', async (req, res) => {
 // 用户统计API
 router.get('/stats/:userId', async (req, res) => {
   try {
-    const { userId } = req.params
+    var { userId } = req.params
 
     // 获取用户总体统计
-    const userStatsQuery = `
+    var userStatsQuery = `
       SELECT COUNT(DISTINCT ar.id) as totalSessions,
              SUM(ar.total_questions) as totalQuestions,
              SUM(ar.correct_count) as totalCorrect,
@@ -375,7 +358,7 @@ router.get('/stats/:userId', async (req, res) => {
     `
 
     // 获取用户各学科统计
-    const subjectStatsQuery = `
+    var subjectStatsQuery = `
       SELECT ar.subject_id,
              s.name as subject_name,
              COUNT(DISTINCT ar.id) as total_sessions,
@@ -390,16 +373,14 @@ router.get('/stats/:userId', async (req, res) => {
       GROUP BY ar.subject_id
     `
 
-    const userStats = (await db.get(userStatsQuery, [userId])) || {
+    var userStats = (await db.get(userStatsQuery, [userId])) || {
       totalSessions: 0,
       totalQuestions: 0,
       totalCorrect: 0,
       avgAccuracy: 0
     }
-
-    const subjectStats = await db.all(subjectStatsQuery, [userId])
+    var subjectStats = await db.all(subjectStatsQuery, [userId])
     userStats.subjectStats = subjectStats
-
     res.json(userStats)
   } catch (error) {
     // console.error('获取用户统计失败:', error);
@@ -410,17 +391,16 @@ router.get('/stats/:userId', async (req, res) => {
 // 用户排名API
 router.get('/:id/rank', async (req, res) => {
   try {
-    const { id } = req.params
+    var { id } = req.params
 
     // 获取用户信息
-    const user = await db.get('SELECT id, points, grade, class FROM users WHERE id = ?', [id])
+    var user = await db.get('SELECT id, points, grade, class FROM users WHERE id = ?', [id])
 
     if (!user) {
       return res.status(404).json({ error: '用户不存在' })
     }
-
     // 获取同年级同班级的所有用户排名
-    const rankQuery = `
+    var rankQuery = `
       SELECT 
         id,
         points,
@@ -429,14 +409,13 @@ router.get('/:id/rank', async (req, res) => {
       WHERE grade = ? AND class = ?
     `
 
-    const rankings = await db.all(rankQuery, [user.grade, user.class])
-
+    var rankings = await db.all(rankQuery, [user.grade, user.class])
     // 找到当前用户的排名
-    const userRank = rankings.find(r => r.id === parseInt(id))
-    const totalStudents = rankings.length
+    var userRank = rankings.find(r => r.id === parseInt(id))
+    var totalStudents = rankings.length
 
     // 计算百分位
-    const percentile =
+    var percentile =
       totalStudents > 0
         ? Math.round((1 - (userRank?.rank || totalStudents) / totalStudents) * 100)
         : 0
@@ -457,7 +436,7 @@ router.get('/:id/rank', async (req, res) => {
 // 用户登录API
 router.post('/login', async (req, res) => {
   try {
-    const { studentId, name, grade, class: className } = req.body
+    var { studentId, name, grade, class: className } = req.body
 
     if (!studentId) {
       res.status(400).json({ error: '学号不能为空' })
@@ -465,36 +444,38 @@ router.post('/login', async (req, res) => {
     }
 
     // 验证学号格式
-    const studentIdRegex = /^\d{2}$/
+    var studentIdRegex = /^\d{2}$/
     if (!studentIdRegex.test(studentId)) {
       res.status(400).json({ error: '学号只能输入2位数字' })
       return
     }
-
-    let trimmedName = name
+    var trimmedName = name
     if (name) {
       trimmedName = name.trim()
     }
-
     // 验证名字格式（如果提供了名字）
     if (trimmedName) {
       // 只允许中文字符，长度不超过4个
-      const chineseRegex = /^[\u4e00-\u9fa5]{1,4}$/
+      var chineseRegex = /^[\u4e00-\u9fa5]{1,4}$/
       if (!chineseRegex.test(trimmedName)) {
         res.status(400).json({ error: '姓名只能输入1-4个中文字符' })
         return
       }
     }
-
+    // 检查 JWT_SECRET 是否配置
+    if (!JWT_SECRET) {
+      console.error('❌ 错误:JWT_SECRET 环境变量未设置')
+      return res.status(503).json({ error: '服务暂时不可用，请联系管理员配置 JWT_SECRET' })
+    }
     // 检查用户是否存在（根据学号、年级和班级的组合）
-    let user = await db.get(
+    var user = await db.get(
       `SELECT ${USER_FIELDS} FROM users WHERE student_id = ? AND grade = ? AND class = ?`,
       [studentId, grade, className]
     )
 
     if (!user) {
       // 如果用户不存在，创建新用户
-      const result = await db.run(
+      var result = await db.run(
         'INSERT INTO users (student_id, name, grade, class) VALUES (?, ?, ?, ?)',
         [studentId, trimmedName, grade, className]
       )
@@ -506,12 +487,10 @@ router.post('/login', async (req, res) => {
         user = await db.get(`SELECT ${USER_FIELDS} FROM users WHERE id = ?`, [user.id])
       }
     }
-
     // 生成JWT token
-    const token = jwt.sign({ userId: user.id, studentId: user.student_id }, JWT_SECRET, {
+    var token = jwt.sign({ userId: user.id, studentId: user.student_id }, JWT_SECRET, {
       expiresIn: JWT_EXPIRES_IN
     })
-
     // 返回用户信息和token
     res.json({
       userId: user.id,
