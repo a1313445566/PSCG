@@ -1,4 +1,7 @@
 // API 请求缓存工具
+// 符合项目规则：使用 api.js 封装，禁止原生 fetch
+
+import { api } from './api.js'
 
 class ApiCache {
   constructor() {
@@ -9,14 +12,14 @@ class ApiCache {
   /**
    * 生成缓存键
    * @param {string} url - 请求 URL
-   * @param {object} options - 请求选项
+   * @param {string} method - 请求方法
+   * @param {object} params - 请求参数
    * @returns {string} 缓存键
    */
-  generateKey(url, options = {}) {
-    const { method = 'GET', body } = options
+  generateKey(url, method = 'GET', params = null) {
     let key = `${method}:${url}`
-    if (body) {
-      key += `:${typeof body === 'string' ? body : JSON.stringify(body)}`
+    if (params) {
+      key += `:${JSON.stringify(params)}`
     }
     return key
   }
@@ -90,14 +93,14 @@ class ApiCache {
   }
 
   /**
-   * 缓存的 fetch 方法
+   * 缓存的 GET 请求（使用 api.js 封装，自动携带 CSRF Token 和 Authorization）
    * @param {string} url - 请求 URL
-   * @param {object} options - 请求选项
+   * @param {object} params - 查询参数
    * @param {number} ttl - 缓存时间（毫秒）
    * @returns {Promise<any>} 请求结果
    */
-  async fetch(url, options = {}, ttl = this.defaultTTL) {
-    const key = this.generateKey(url, options)
+  async getCached(url, params = {}, ttl = this.defaultTTL) {
+    const key = this.generateKey(url, 'GET', params)
 
     // 检查缓存
     const cachedData = this.get(key)
@@ -105,52 +108,46 @@ class ApiCache {
       return cachedData
     }
 
-    // 发送请求
+    // 使用 api.js 发送请求（自动携带 CSRF Token 和 Authorization）
     try {
-      const response = await fetch(url, options)
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
-      }
-      const data = await response.json()
+      const data = await api.get(url, params, { showError: false })
 
       // 缓存响应
       this.set(key, data, ttl)
       return data
     } catch (error) {
-      console.error('[ApiCache] 请求失败:', error.message)
+      console.error('[ApiCache] GET 请求失败:', error.message)
       throw error
     }
   }
 
   /**
-   * 缓存的 GET 请求
-   * @param {string} url - 请求 URL
-   * @param {number} ttl - 缓存时间（毫秒）
-   * @returns {Promise<any>} 请求结果
-   */
-  async getCached(url, ttl = this.defaultTTL) {
-    return this.fetch(url, { method: 'GET' }, ttl)
-  }
-
-  /**
-   * 缓存的 POST 请求
+   * 缓存的 POST 请求（使用 api.js 封装）
    * @param {string} url - 请求 URL
    * @param {any} body - 请求体
    * @param {number} ttl - 缓存时间（毫秒）
    * @returns {Promise<any>} 请求结果
    */
-  async post(url, body, ttl = this.defaultTTL) {
-    return this.fetch(
-      url,
-      {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        },
-        body: JSON.stringify(body)
-      },
-      ttl
-    )
+  async post(url, body = {}, ttl = this.defaultTTL) {
+    const key = this.generateKey(url, 'POST', body)
+
+    // 检查缓存
+    const cachedData = this.get(key)
+    if (cachedData) {
+      return cachedData
+    }
+
+    // 使用 api.js 发送请求
+    try {
+      const data = await api.post(url, body, { showError: false })
+
+      // 缓存响应
+      this.set(key, data, ttl)
+      return data
+    } catch (error) {
+      console.error('[ApiCache] POST 请求失败:', error.message)
+      throw error
+    }
   }
 }
 

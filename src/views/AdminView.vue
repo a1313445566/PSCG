@@ -125,7 +125,6 @@ import { useAdminLayout } from '../composables/useAdminLayout'
 import message from '../utils/message'
 import { useLoading } from '../composables/useLoading'
 import { api } from '../utils/api'
-import { getApiBaseUrl } from '../utils/database'
 
 // 布局组件
 import AdminLayout from '../components/admin/layout/AdminLayout.vue'
@@ -426,15 +425,15 @@ const backupData = async (backupParams = {}) => {
   if (!isComponentMounted) return
 
   try {
-    const params = new URLSearchParams()
-    params.append('type', backupParams.type || 'full')
-    params.append('format', backupParams.format || 'json')
+    const params = {
+      type: backupParams.type || 'full',
+      format: backupParams.format || 'json'
+    }
     if (backupParams.dataTypes && backupParams.dataTypes.length > 0) {
-      params.append('dataTypes', backupParams.dataTypes.join(','))
+      params.dataTypes = backupParams.dataTypes.join(',')
     }
 
-    const response = await fetch(`${getApiBaseUrl()}/backup?${params.toString()}`)
-    const blob = await response.blob()
+    const blob = await api.download('/backup', params)
     const downloadUrl = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = downloadUrl
@@ -560,8 +559,7 @@ const downloadBackup = async backupId => {
   if (!isComponentMounted) return
 
   try {
-    const response = await fetch(`${getApiBaseUrl()}/backup/${backupId}`)
-    const blob = await response.blob()
+    const blob = await api.download(`/backup/${backupId}`)
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

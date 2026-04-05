@@ -1,5 +1,5 @@
 import { ElMessage, ElLoading } from 'element-plus'
-import { getCSRFToken } from './csrf.js'
+import { api } from './api.js'
 
 /**
  * 上传图片到服务器
@@ -22,43 +22,16 @@ export async function uploadImage(file, maxSize = 2 * 1024 * 1024) {
   const formData = new FormData()
   formData.append('image', file)
 
-  const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 30000) // 30秒超时
-
   try {
-    // 获取 CSRF Token
-    const csrfToken = await getCSRFToken()
+    const result = await api.postFormData('/upload/image', formData, { timeout: 30000 })
 
-    const headers = {}
-    if (csrfToken) {
-      headers['X-CSRF-Token'] = csrfToken
-    }
-
-    const response = await fetch('/api/upload/image', {
-      method: 'POST',
-      headers,
-      body: formData,
-      signal: controller.signal,
-      credentials: 'same-origin'
-    })
-
-    clearTimeout(timeoutId)
-
-    if (!response.ok) {
-      const error = await response.json()
-      throw new Error(error.error || '上传失败')
-    }
-
-    const result = await response.json()
     if (result.success) {
       return result.url
     }
 
     throw new Error(result.error || '上传失败')
   } catch (error) {
-    clearTimeout(timeoutId)
-
-    if (error.name === 'AbortError') {
+    if (error.message.includes('超时')) {
       throw new Error('上传超时，请检查网络')
     }
 

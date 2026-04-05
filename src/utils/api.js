@@ -1,5 +1,4 @@
 import { ElMessage } from 'element-plus'
-import { getApiBaseUrl } from './database.js'
 import { getCSRFToken } from './csrf.js'
 
 /**
@@ -12,31 +11,27 @@ import { getCSRFToken } from './csrf.js'
  * - CSRF Token 自动添加
  * - 统一错误处理
  *
+ * 注意：baseUrl 固定为 /api，调用方只需传入相对路径（如 /subjects）
+ *
  * @example
  * ```js
  * import { api } from '@/utils/api'
  *
  * // GET 请求
- * const users = await api.get('/users', { page: 1, limit: 20 })
+ * const users = await api.get('/subjects')
  *
  * // POST 请求
  * const result = await api.post('/questions', { title: '题目内容' })
  *
  * // DELETE 请求
  * await api.delete('/questions/123')
- *
- * // 带配置的请求
- * const result = await api.get('/users', {}, {
- *   showError: false,  // 不显示错误提示
- *   retries: 3         // 重试 3 次
- * })
  * ```
  */
 class ApiClient {
   constructor() {
-    this.baseUrl = getApiBaseUrl()
-    this.pending = new Map() // 防抖：存储进行中的请求
-    this.abortControllers = new Map() // 超时控制
+    this.baseUrl = '/api'
+    this.pending = new Map()
+    this.abortControllers = new Map()
   }
 
   /**
@@ -405,6 +400,64 @@ class ApiClient {
       }
     } finally {
       clearTimeout(timeoutId)
+    }
+  }
+
+  /**
+   * 下载文件（返回 Blob）
+   * @param {string} endpoint - API 端点
+   * @param {Object} params - 查询参数
+   * @param {Object} config - 配置选项
+   * @returns {Promise<Blob>} Blob 数据
+   *
+   * @example
+   * const blob = await api.download('/backup', { type: 'full' })
+   * const url = URL.createObjectURL(blob)
+   */
+  async download(endpoint, params = {}, config = {}) {
+    const { timeout = 60000 } = config
+
+    // 过滤掉 undefined 和空字符串的参数
+    const searchParams = new URLSearchParams(
+      Object.entries(params).filter(([, v]) => v !== undefined && v !== '')
+    )
+    const url = searchParams.toString() ? `${endpoint}?${searchParams}` : endpoint
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+
+    try {
+      // 获取认证 Token (管理员或用户)
+      const adminToken = sessionStorage.getItem('adminToken')
+      const userToken = localStorage.getItem('token')
+      const authToken = adminToken || userToken
+
+      const response = await fetch(`${this.baseUrl}${url}`, {
+        method: 'GET',
+        headers: {
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(
+          errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        )
+      }
+
+      return await response.blob()
+    } catch (error) {
+      clearTimeout(timeoutId)
+
+      if (error.name === 'AbortError') {
+        throw new Error('下载超时，请检查网络连接')
+      }
+
+      throw error
     }
   }
 }
