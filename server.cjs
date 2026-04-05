@@ -1,196 +1,62 @@
+/**
+ * 服务器主入口文件（重构版）
+ * 职责：中间件配置、路由挂载、服务启动
+ */
+
 require('dotenv').config()
 const express = require('express')
 const compression = require('compression')
 const cors = require('cors')
 const helmet = require('helmet')
 const path = require('path')
-const multer = require('multer')
 
-// 添加响应时间监控中间件
 const responseTime = require('./middleware/responseTime')
-
-// 添加限流中间件
 const { globalLimiter, apiLimiter, submitLimiter } = require('./middleware/rateLimit')
-
-// 添加签名缓存
 const signatureCache = require('./middleware/signatureCache')
-
-// 添加管理员权限验证
 const adminAuth = require('./middleware/adminAuth')
-
-// CSRF 防护中间件
 const { csrfTokenMiddleware, csrfVerifyMiddleware } = require('./middleware/csrf')
+const { createPathTraversalGuard } = require('./middleware/pathTraversal')
+const dbPerformanceMonitor = require('./middleware/dbPerformance')
 
-// 配置multer存储
-const storage = multer.diskStorage({
-  destination: function (req, file, cb) {
-    // 根据文件类型选择存储目录
-    if (file.mimetype.startsWith('audio/')) {
-      cb(null, './audio')
-    } else {
-      cb(null, './images')
-    }
-  },
-  filename: function (req, file, cb) {
-    // 生成唯一文件名：字段名-时间戳-随机数.扩展名
-    const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1e9)
-    const ext = path.extname(file.originalname)
-    // 根据文件类型使用不同的前缀
-    const prefix = file.mimetype.startsWith('audio/') ? 'audio' : 'image'
-    cb(null, `${prefix}-${uniqueSuffix}${ext}`)
-  }
-})
-
-// 文件过滤
-const fileFilter = function (req, file, cb) {
-  // 允许的图片类型
-  if (file.mimetype.startsWith('image/')) {
-    cb(null, true)
-  }
-  // 允许的音频类型
-  else if (file.mimetype.startsWith('audio/')) {
-    cb(null, true)
-  }
-  // 其他类型拒绝
-  else {
-    cb(new Error('不支持的文件类型'), false)
-  }
-}
-
-const _upload = multer({
-  storage: storage,
-  fileFilter: fileFilter,
-  limits: {
-    fileSize: 10 * 1024 * 1024 // 最大 10MB
-  }
-})
-
-const dataRoutes = require('./routes/data')
-const settingsRoutes = require('./routes/settings')
-const subjectsRoutes = require('./routes/subjects')
-const questionsRoutes = require('./routes/questions')
-const gradesClassesRoutes = require('./routes/grades-classes')
-const usersRoutes = require('./routes/users')
-const leaderboardRoutes = require('./routes/leaderboard')
-const answerRecordsRoutes = require('./routes/answer-records')
-const quizRoutes = require('./routes/quiz')
-const analysisRoutes = require('./routes/analysis')
-const difficultyRoutes = require('./routes/difficulty')
-const backupRoutes = require('./routes/backup')
-const errorCollectionRoutes = require('./routes/error-collection')
-const adminRoutes = require('./routes/admin')
-const uploadRoutes = require('./routes/upload')
-const dashboardRoutes = require('./routes/dashboard')
-const answerBehaviorRoutes = require('./routes/answer-behavior')
-const learningProgressRoutes = require('./routes/learning-progress')
-const userStatsRoutes = require('./routes/user-stats')
-const chatRoutes = require('./routes/chat')
-const healthRoutes = require('./routes/health') // 健康检查路由
-const toolsRoutes = require('./routes/tools') // 工具元数据路由
-
+const corsOptions = require('./config/cors')
+const routes = require('./routes')
 const db = require('./services/database')
 const cacheService = require('./services/cache')
-
-// 导入数据库性能监控
-const dbPerformanceMonitor = require('./middleware/dbPerformance')
+const {
+  createSecurityLogsTable,
+  logSecurityOperation,
+  isValidIP,
+  getSecurityLogs
+} = require('./services/securityMonitor')
+const { setupErrorHandlers } = require('./utils/errorHandler')
 
 const app = express()
 const port = process.env.SERVER_PORT || 3001
 
-// ==================== 安全中间件配置 ====================
-
-/**
- * CORS 配置 - 支持环境变量白名单 + 动态域名 + 内网 IP
- * 支持场景：
- * - 环境变量配置：CORS_ORIGIN_WHITELIST
- * - 动态 Cloudflare Tunnel：*.trycloudflare.com
- * - 内网 IP：10.78.x.x
- * - 本地开发：localhost/127.0.0.1
- */
-const corsOriginWhitelist = process.env.CORS_ORIGIN_WHITELIST
-  ? process.env.CORS_ORIGIN_WHITELIST.split(',').map(origin => origin.trim())
-  : [
-      'http://localhost:3000',
-      'http://localhost:5173',
-      'http://127.0.0.1:3000',
-      'http://127.0.0.1:5173'
-    ]
-
-const corsOptions = {
-  origin: (origin, callback) => {
-    // 允许无 origin 的请求（如移动应用、Postman、服务器间调用等）
-    if (!origin) {
-      return callback(null, true)
-    }
-
-    // 1. 检查环境变量白名单
-    if (corsOriginWhitelist.includes(origin)) {
-      return callback(null, true)
-    }
-
-    // 2. 支持动态 Cloudflare Tunnel 域名 (*.trycloudflare.com)
-    if (origin.endsWith('.trycloudflare.com')) {
-      return callback(null, true)
-    }
-
-    // 3. 支持内网 IP 段（10.78.x.x）
-    if (origin.match(/^http:\/\/10\.78\.\d{1,3}\.\d{1,3}:\d+$/)) {
-      return callback(null, true)
-    }
-
-    // 4. 支持本地开发（localhost/127.0.0.1）
-    if (origin.match(/^http:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/)) {
-      return callback(null, true)
-    }
-
-    // 拒绝未授权的来源
-    console.warn(`[CORS] 拒绝未授权的来源: ${origin}`)
-    callback(new Error('未授权的 CORS 请求'))
-  },
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token'],
-  credentials: true, // 允许发送 Cookie，配合 CSRF 使用
-  maxAge: 86400 // 预检请求缓存 24 小时
-}
+setupErrorHandlers()
 
 app.use(cors(corsOptions))
-
-/**
- * Helmet 安全头中间件（精简版）
- * 适用于：教育网内网 + Cloudflare Tunnel 场景
- * Cloudflare 已提供 DDoS/SSL/WAF 防护，此处仅保留应用层安全头
- */
 app.use(
   helmet({
-    // 禁用 CSP - 教育网场景可能影响资源加载，Cloudflare 可配置
     contentSecurityPolicy: false,
-    // X-Frame-Options - 防止点击劫持（与 Cloudflare 双重保险）
     frameguard: { action: 'deny' },
-    // X-Content-Type-Options - 防止 MIME 类型嗅探
     noSniff: true,
-    // 禁用 X-XSS-Protection - 现代浏览器已废弃
     xssFilter: false,
-    // Referrer-Policy - 控制 Referer 信息
     referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
   })
 )
 app.use(compression())
 app.use(express.json({ encoding: 'utf-8', limit: '10mb' }))
 app.use(express.urlencoded({ extended: true, encoding: 'utf-8', limit: '10mb' }))
-app.use(responseTime) // 添加响应时间监控
+app.use(responseTime)
 
-// 【防护】全局限流 - 对所有 API 请求生效
 app.use('/api', apiLimiter.middleware())
-
-// 【防护】签名缓存中间件
 app.use('/api/quiz', signatureCache.middleware())
 
-// CSRF Token 生成接口 - 必须在 CSRF 验证之前注册，否则无法获取 Token
 app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {
   res.json({ success: true, csrfToken: res.locals.csrfToken })
 })
 
-// 【防护】CSRF 验证中间件 - 保护所有 POST/PUT/DELETE 请求
 app.use('/api', csrfVerifyMiddleware)
 
 app.use((req, res, next) => {
@@ -200,7 +66,6 @@ app.use((req, res, next) => {
   next()
 })
 
-// 【缓存优化】HTML 文件不缓存，避免加载旧版本
 app.use((req, res, next) => {
   if (req.path.endsWith('.html')) {
     res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate')
@@ -229,88 +94,22 @@ app.use(
   })
 )
 
-app.use(
-  '/audio',
-  express.static(path.join(__dirname, 'audio'), {
-    maxAge: '30d',
-    etag: true,
-    lastModified: true
-  })
-)
+const staticDirs = ['audio', 'images', 'fonts']
+staticDirs.forEach(dir => {
+  app.use(
+    `/${dir}`,
+    createPathTraversalGuard(path.join(__dirname, dir)),
+    express.static(path.join(__dirname, dir), {
+      maxAge: '30d',
+      etag: true,
+      lastModified: true,
+      immutable: dir === 'fonts'
+    })
+  )
+})
 
-app.use(
-  '/images',
-  express.static(path.join(__dirname, 'images'), {
-    maxAge: '30d',
-    etag: true,
-    lastModified: true
-  })
-)
+app.use('/api', routes)
 
-// 安全：目录遍历防护中间件
-const createPathTraversalGuard = baseDir => {
-  return (req, res, next) => {
-    // 解码 URL（处理 %2e%2e%2f 等编码形式）
-    let decodedPath
-    try {
-      decodedPath = decodeURIComponent(req.path)
-    } catch (e) {
-      return res.status(400).send('Invalid path encoding')
-    }
-
-    // 规范化路径，解析 .. 和 .
-    const normalizedPath = path.normalize(decodedPath)
-
-    // 获取绝对路径
-    const resolvedPath = path.resolve(baseDir, normalizedPath)
-
-    // 检查解析后的路径是否仍在目标目录内
-    if (!resolvedPath.startsWith(baseDir)) {
-      console.warn(`[Security] Path traversal attempt blocked: ${req.path} -> ${resolvedPath}`)
-      return res.status(403).send('Forbidden')
-    }
-
-    next()
-  }
-}
-
-// 应用目录遍历防护
-app.use('/images', createPathTraversalGuard(path.join(__dirname, 'images')))
-app.use('/audio', createPathTraversalGuard(path.join(__dirname, 'audio')))
-
-app.use(
-  '/fonts',
-  express.static(path.join(__dirname, 'fonts'), {
-    maxAge: '30d',
-    etag: true,
-    immutable: true
-  })
-)
-
-app.use('/api/data', dataRoutes)
-app.use('/api/settings', settingsRoutes)
-app.use('/api/subjects', subjectsRoutes)
-app.use('/api/questions', questionsRoutes)
-app.use('/api', gradesClassesRoutes)
-app.use('/api/users', usersRoutes)
-app.use('/api/leaderboard', leaderboardRoutes)
-app.use('/api/answer-records', answerRecordsRoutes)
-app.use('/api/quiz', quizRoutes)
-app.use('/api/analysis', analysisRoutes)
-app.use('/api/difficulty', difficultyRoutes)
-app.use('/api', backupRoutes)
-app.use('/api/error-collection', errorCollectionRoutes)
-app.use('/api/admin', adminRoutes)
-app.use('/api/upload', uploadRoutes)
-app.use('/api/dashboard', dashboardRoutes)
-app.use('/api/answer-behavior', answerBehaviorRoutes)
-app.use('/api/learning-progress', learningProgressRoutes)
-app.use('/api/user-stats', userStatsRoutes)
-app.use('/api/chat', chatRoutes)
-app.use('/api/health', healthRoutes)
-app.use('/api/tools', toolsRoutes)
-
-// 缓存管理 API
 app.get('/api/cache/stats', (req, res) => {
   const stats = cacheService.getStats()
   res.json(stats)
@@ -321,7 +120,6 @@ app.post('/api/cache/clear', (req, res) => {
   res.json({ success: true, message: '缓存已清空' })
 })
 
-// 【防护】限流状态监控 API - 需要管理员权限
 app.get('/api/security/rate-limit', adminAuth, (req, res) => {
   res.json({
     global: globalLimiter.getStats(),
@@ -330,17 +128,14 @@ app.get('/api/security/rate-limit', adminAuth, (req, res) => {
   })
 })
 
-// 【防护】签名缓存状态监控 API - 需要管理员权限
 app.get('/api/security/signature-cache', adminAuth, (req, res) => {
   res.json(signatureCache.getStats())
 })
 
-// 【防护】手动封禁 IP - 需要管理员权限
 app.post('/api/security/block-ip', adminAuth, async (req, res) => {
   try {
     const { ip, duration, reason } = req.body
 
-    // 输入验证
     if (!ip) {
       return res.status(400).json({ error: '缺少 IP 参数' })
     }
@@ -348,10 +143,8 @@ app.post('/api/security/block-ip', adminAuth, async (req, res) => {
       return res.status(400).json({ error: 'IP 地址格式不正确' })
     }
 
-    // 执行封禁
     await globalLimiter.manualBlock(ip, duration || 3600000)
 
-    // 记录操作日志
     await logSecurityOperation({
       type: 'block',
       ip,
@@ -367,7 +160,6 @@ app.post('/api/security/block-ip', adminAuth, async (req, res) => {
   }
 })
 
-// 【防护】手动解封 IP - 需要管理员权限
 app.post('/api/security/unblock-ip', adminAuth, async (req, res) => {
   try {
     const { ip, reason } = req.body
@@ -376,12 +168,10 @@ app.post('/api/security/unblock-ip', adminAuth, async (req, res) => {
       return res.status(400).json({ error: '缺少 IP 参数' })
     }
 
-    // 执行解封
     await globalLimiter.unblock(ip)
     await apiLimiter.unblock(ip)
     await submitLimiter.unblock(ip)
 
-    // 记录操作日志
     await logSecurityOperation({
       type: 'unblock',
       ip,
@@ -396,15 +186,12 @@ app.post('/api/security/unblock-ip', adminAuth, async (req, res) => {
   }
 })
 
-// 【防护】解除所有封禁 - 需要管理员权限
 app.post('/api/security/unblock-all', adminAuth, async (req, res) => {
   try {
-    // 使用限流器标准方法清空数据
     const globalResult = await globalLimiter.unblockAll()
     const apiResult = await apiLimiter.unblockAll()
     const submitResult = await submitLimiter.unblockAll()
 
-    // 记录操作日志
     const operator = req.admin?.username || 'unknown'
     await logSecurityOperation({
       type: 'unblock_all',
@@ -441,151 +228,21 @@ app.post('/api/security/unblock-all', adminAuth, async (req, res) => {
   }
 })
 
-// ==================== 安全监控增强功能 ====================
-
-/**
- * 创建安全监控操作日志表
- */
-const createSecurityLogsTable = async () => {
-  const createTableSQL = `
-    CREATE TABLE IF NOT EXISTS security_logs (
-      id INT AUTO_INCREMENT PRIMARY KEY,
-      type VARCHAR(50) NOT NULL COMMENT '操作类型: block, unblock, batch_block, unblock_all',
-      ip VARCHAR(100) NOT NULL COMMENT 'IP 地址',
-      duration INT COMMENT '封禁时长（毫秒）',
-      reason TEXT COMMENT '封禁/解封原因',
-      operator VARCHAR(100) NOT NULL COMMENT '操作人（管理员用户名）',
-      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '操作时间',
-      metadata TEXT COMMENT '其他元数据（JSON 格式）',
-      INDEX idx_timestamp (timestamp),
-      INDEX idx_ip (ip),
-      INDEX idx_operator (operator),
-      INDEX idx_type (type)
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='安全监控操作日志'
-  `
-
-  try {
-    await db.run(createTableSQL)
-    console.log('✅ 安全监控操作日志表已准备就绪')
-  } catch (error) {
-    console.error('❌ 创建安全监控操作日志表失败:', error)
-  }
-}
-
-/**
- * 记录安全监控操作日志
- * @param {Object} logData - 日志数据
- * @returns {Promise<void>}
- */
-const logSecurityOperation = async logData => {
-  const { type, ip, duration, reason, operator, metadata } = logData
-
-  const sql = `
-    INSERT INTO security_logs (type, ip, duration, reason, operator, metadata)
-    VALUES (?, ?, ?, ?, ?, ?)
-  `
-
-  try {
-    await db.run(sql, [
-      type,
-      ip,
-      duration || null,
-      reason || null,
-      operator,
-      metadata ? JSON.stringify(metadata) : null
-    ])
-  } catch (error) {
-    console.error('[安全监控] 记录操作日志失败:', error)
-  }
-}
-
-/**
- * IP 地址格式验证
- * @param {string} ip - IP 地址
- * @returns {boolean} 是否有效
- */
-const isValidIP = ip => {
-  if (!ip || typeof ip !== 'string') return false
-
-  // IPv4 验证 - 检查格式并验证每个数字在 0-255 范围内
-  const ipv4Regex = /^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/
-  const ipv4Match = ip.match(ipv4Regex)
-  if (ipv4Match) {
-    const nums = ipv4Match.slice(1, 5).map(Number)
-    return nums.every(n => n >= 0 && n <= 255)
-  }
-
-  // IPv6 验证 - 支持完整格式和简写格式
-  // 完整格式: 8组4位十六进制
-  // 简写格式: :: 压缩连续的零组
-  const ipv6FullRegex = /^[0-9a-fA-F]{1,4}(:[0-9a-fA-F]{1,4}){7}$/
-  const ipv6CompressedRegex =
-    /^(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::(([0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$/
-
-  return ipv6FullRegex.test(ip) || ipv6CompressedRegex.test(ip)
-}
-
-/**
- * 获取操作日志（分页）
- * GET /api/security/logs
- */
 app.get('/api/security/logs', adminAuth, async (req, res) => {
   try {
-    const { page = 1, limit = 20, type, ip, operator } = req.query
-
-    // 构建查询条件
-    let whereClause = 'WHERE 1=1'
-    const params = []
-
-    if (type) {
-      whereClause += ' AND type = ?'
-      params.push(type)
-    }
-    if (ip) {
-      whereClause += ' AND ip LIKE ?'
-      params.push(`%${ip}%`)
-    }
-    if (operator) {
-      whereClause += ' AND operator LIKE ?'
-      params.push(`%${operator}%`)
-    }
-
-    // 查询总数
-    const countSQL = `SELECT COUNT(*) as total FROM security_logs ${whereClause}`
-    const countResult = await db.get(countSQL, params)
-
-    // 分页查询
-    const limitNum = Number(limit)
-    const offsetNum = (Number(page) - 1) * limitNum
-    const logsSQL = `
-      SELECT * FROM security_logs
-      ${whereClause}
-      ORDER BY timestamp DESC
-      LIMIT ${limitNum} OFFSET ${offsetNum}
-    `
-    const logs = await db.query(logsSQL, params)
-
-    res.json({
-      logs: logs || [],
-      total: countResult.total,
-      page: parseInt(page),
-      limit: parseInt(limit)
-    })
+    const { page, limit, type, ip, operator } = req.query
+    const result = await getSecurityLogs(page, limit, { type, ip, operator })
+    res.json(result)
   } catch (error) {
     console.error('[安全监控] 获取操作日志失败:', error)
     res.status(500).json({ error: '获取操作日志失败' })
   }
 })
 
-/**
- * 批量封禁 IP
- * POST /api/security/batch-block
- */
 app.post('/api/security/batch-block', adminAuth, async (req, res) => {
   try {
     const { ips, duration, reason } = req.body
 
-    // 输入验证
     if (!Array.isArray(ips) || ips.length === 0) {
       return res.status(400).json({ error: 'IP 列表不能为空' })
     }
@@ -596,7 +253,6 @@ app.post('/api/security/batch-block', adminAuth, async (req, res) => {
       return res.status(400).json({ error: '封禁原因不能为空' })
     }
 
-    // 验证每个 IP 格式
     const invalidIPs = ips.filter(ip => !isValidIP(ip))
     if (invalidIPs.length > 0) {
       return res.status(400).json({
@@ -604,7 +260,6 @@ app.post('/api/security/batch-block', adminAuth, async (req, res) => {
       })
     }
 
-    // 批量封禁
     let successCount = 0
     for (const ip of ips) {
       try {
@@ -615,7 +270,6 @@ app.post('/api/security/batch-block', adminAuth, async (req, res) => {
       }
     }
 
-    // 记录操作日志
     await logSecurityOperation({
       type: 'batch_block',
       ip: ips.join(','),
@@ -640,81 +294,12 @@ app.post('/api/security/batch-block', adminAuth, async (req, res) => {
   }
 })
 
-// ==================== 全局错误处理 ====================
-
-/**
- * 未捕获异常处理
- * 记录日志后退出进程，避免进程僵死
- */
-process.on('uncaughtException', err => {
-  console.error(`【严重】未捕获异常:`, err.message)
-  console.error('堆栈信息:', err.stack)
-
-  // 数据库相关错误 - 尝试重新连接
-  if (err.message.includes('SQLITE_CANTOPEN') || err.message.includes('database is locked')) {
-    console.error('数据库连接失败，5秒后尝试重启...')
-    setTimeout(() => {
-      process.exit(1)
-    }, 5000)
-  }
-  // 其他严重错误 - 立即退出
-  else if (
-    err.message.includes('EADDRINUSE') ||
-    err.message.includes('listen EADDRINUSE') ||
-    err.message.includes('ENOENT') ||
-    err.message.includes('MODULE_NOT_FOUND')
-  ) {
-    console.error('严重错误，进程即将退出...')
-    process.exit(1)
-  }
-  // 其他未知错误 - 延迟退出以记录日志
-  else {
-    console.error('未知错误，进程即将退出...')
-    setTimeout(() => {
-      process.exit(1)
-    }, 1000)
-  }
-})
-
-/**
- * 未处理 Promise 拒绝处理
- * 记录日志，区分致命错误和警告
- */
-process.on('unhandledRejection', (reason, _promise) => {
-  // 将 reason 转换为字符串以便检查
-  const reasonStr = reason instanceof Error ? reason.message : String(reason)
-
-  console.error(`未处理 Promise 拒绝:`, reasonStr)
-
-  // 如果是致命错误，打印完整堆栈并退出
-  if (reason instanceof Error) {
-    console.error('堆栈信息:', reason.stack)
-  }
-
-  // 致命错误 - 立即退出
-  if (
-    reasonStr.includes('ECONNREFUSED') ||
-    reasonStr.includes('database') ||
-    reasonStr.includes('SQLITE_CANTOPEN') ||
-    reasonStr.includes('database is locked')
-  ) {
-    console.error('致命错误，进程即将退出...')
-    process.exit(1)
-  }
-  // 非致命错误 - 记录但不退出进程
-  else {
-    console.warn('警告: 存在未处理的 Promise 拒绝，请检查代码')
-  }
-})
-
 async function startServer() {
   try {
     await db.connect()
 
-    // 创建安全监控操作日志表
     await createSecurityLogsTable()
 
-    // 初始化限流器（设置数据库实例并加载持久化数据）
     globalLimiter.setDatabase(db)
     apiLimiter.setDatabase(db)
     submitLimiter.setDatabase(db)
@@ -724,10 +309,7 @@ async function startServer() {
       submitLimiter.loadBlocksFromDB()
     ])
 
-    // 启用数据库性能监控
     dbPerformanceMonitor.monitorQuery(db)
-
-    // 添加性能监控API端点
     dbPerformanceMonitor.createPerformanceEndpoint(app)
 
     const server = app.listen(port, '0.0.0.0', () => {
