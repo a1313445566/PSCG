@@ -31,7 +31,7 @@ export async function uploadImage(file, maxSize = 2 * 1024 * 1024) {
 
     throw new Error(result.error || '上传失败')
   } catch (error) {
-    if (error.message.includes('超时')) {
+    if (error.name === 'AbortError' || error.message.includes('超时')) {
       throw new Error('上传超时，请检查网络')
     }
 

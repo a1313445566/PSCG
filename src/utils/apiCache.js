@@ -94,6 +94,7 @@ class ApiCache {
 
   /**
    * 缓存的 GET 请求（使用 api.js 封装，自动携带 CSRF Token 和 Authorization）
+   * 注意：仅缓存 GET 请求（幂等操作），POST 等非幂等操作不缓存
    * @param {string} url - 请求 URL
    * @param {object} params - 查询参数
    * @param {number} ttl - 缓存时间（毫秒）
@@ -117,35 +118,6 @@ class ApiCache {
       return data
     } catch (error) {
       console.error('[ApiCache] GET 请求失败:', error.message)
-      throw error
-    }
-  }
-
-  /**
-   * 缓存的 POST 请求（使用 api.js 封装）
-   * @param {string} url - 请求 URL
-   * @param {any} body - 请求体
-   * @param {number} ttl - 缓存时间（毫秒）
-   * @returns {Promise<any>} 请求结果
-   */
-  async post(url, body = {}, ttl = this.defaultTTL) {
-    const key = this.generateKey(url, 'POST', body)
-
-    // 检查缓存
-    const cachedData = this.get(key)
-    if (cachedData) {
-      return cachedData
-    }
-
-    // 使用 api.js 发送请求
-    try {
-      const data = await api.post(url, body, { showError: false })
-
-      // 缓存响应
-      this.set(key, data, ttl)
-      return data
-    } catch (error) {
-      console.error('[ApiCache] POST 请求失败:', error.message)
       throw error
     }
   }

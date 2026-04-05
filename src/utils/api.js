@@ -427,6 +427,9 @@ class ApiClient {
     const timeoutId = setTimeout(() => controller.abort(), timeout)
 
     try {
+      // 获取 CSRF Token
+      const csrfToken = await getCSRFToken()
+
       // 获取认证 Token (管理员或用户)
       const adminToken = sessionStorage.getItem('adminToken')
       const userToken = localStorage.getItem('token')
@@ -435,6 +438,7 @@ class ApiClient {
       const response = await fetch(`${this.baseUrl}${url}`, {
         method: 'GET',
         headers: {
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
           ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
         },
         signal: controller.signal
