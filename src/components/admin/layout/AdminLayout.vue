@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="admin-layout">
     <!-- 密码验证对话框 -->
     <PasswordDialog
@@ -11,12 +11,20 @@
     <!-- 主布局 -->
     <template v-if="isAuthenticated">
       <!-- 顶部栏 -->
-      <AdminHeader :system-title="systemTitle" @refresh="handleRefresh" @logout="handleLogout" />
+      <AdminHeader
+        :system-title="systemTitle"
+        @refresh="handleRefresh"
+        @logout="handleLogout"
+        @mobile-menu-click="handleMobileMenuClick"
+      />
 
       <!-- 主体区域 -->
       <div class="layout-main">
         <!-- 侧边栏 -->
-        <AdminSidebar @menu-select="handleMenuSelect" />
+        <AdminSidebar ref="sidebarRef" @menu-select="handleMenuSelect" @mobile-state-change="handleMobileStateChange" />
+
+        <!-- 移动端遮罩层 -->
+        <div v-if="showSidebarOverlay" class="sidebar-overlay" @click="handleOverlayClick" />
 
         <!-- 内容区域 -->
         <div class="layout-content">
@@ -55,6 +63,9 @@ import PasswordDialog from '../auth/PasswordDialog.vue'
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
 const { cleanup: cleanupLoading } = useLoading()
+
+// 侧边栏 ref
+const sidebarRef = ref(null)
 
 // Props
 const props = defineProps({
@@ -134,6 +145,41 @@ const handleLogout = () => {
 // 菜单选择
 const handleMenuSelect = key => {
   emit('menu-change', key)
+  // 移动端点击菜单后自动关闭侧边栏
+  if (window.innerWidth <= 992) {
+    showSidebarOverlay.value = false
+  }
+}
+
+// 移动端侧边栏状态
+const showSidebarOverlay = ref(false)
+
+// 处理移动端侧边栏状态变化
+const handleMobileStateChange = isOpen => {
+  showSidebarOverlay.value = isOpen
+}
+
+// 关闭移动端侧边栏
+const closeMobileSidebar = () => {
+  showSidebarOverlay.value = false
+  // 调用侧边栏的关闭方法
+  if (sidebarRef.value) {
+    sidebarRef.value.closeMobileSidebar()
+  }
+}
+
+// 处理遮罩层点击
+const handleOverlayClick = () => {
+  closeMobileSidebar()
+}
+
+// 处理移动端菜单按钮点击
+const handleMobileMenuClick = () => {
+  showSidebarOverlay.value = true
+  // 调用侧边栏的打开方法
+  if (sidebarRef.value) {
+    sidebarRef.value.openMobileSidebar()
+  }
 }
 
 // 刷新数据
@@ -331,6 +377,22 @@ onErrorCaptured(err => {
 @media (max-width: 768px) {
   .layout-content {
     padding: 12px;
+  }
+}
+
+/* 侧边栏遮罩层 */
+.sidebar-overlay {
+  display: none;
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 999;
+  
+  @media (max-width: 992px) {
+    display: block;
   }
 }
 </style>

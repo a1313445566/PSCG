@@ -260,6 +260,79 @@ class ApiClient {
   }
 
   /**
+   * POST FormData 请求（用于文件上传）
+   * @param {string} endpoint - API 端点
+   * @param {FormData} formData - FormData 对象
+   * @param {Object} config - 配置选项
+   * @returns {Promise} 响应数据
+   *
+   * @example
+   * const formData = new FormData()
+   * formData.append('file', file)
+   * const result = await api.postFormData('/upload', formData)
+   */
+  async postFormData(endpoint, formData, config = {}) {
+    const { retries = 2, showError = true, timeout = 30000 } = config
+
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), timeout)
+    this.abortControllers.set(endpoint, controller)
+
+    try {
+      let csrfToken = await getCSRFToken()
+      if (!csrfToken) {
+        console.warn('⚠️ CSRF Token 未就绪，尝试重新获取...')
+        csrfToken = await getCSRFToken()
+      }
+
+      const adminToken = sessionStorage.getItem('adminToken')
+      const userToken = localStorage.getItem('token')
+      const authToken = adminToken || userToken
+
+      const response = await fetch(`${this.baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: {
+          ...(csrfToken ? { 'X-CSRF-Token': csrfToken } : {}),
+          ...(authToken ? { Authorization: `Bearer ${authToken}` } : {})
+        },
+        body: formData,
+        signal: controller.signal
+      })
+
+      clearTimeout(timeoutId)
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}))
+        throw new Error(
+          errorData.error || errorData.message || `HTTP ${response.status}: ${response.statusText}`
+        )
+      }
+
+      return await response.json()
+    } catch (error) {
+      clearTimeout(timeoutId)
+
+      if (error.name === 'AbortError') {
+        const timeoutError = new Error('请求超时，请检查网络连接')
+        if (showError) ElMessage.error(timeoutError.message)
+        throw timeoutError
+      }
+
+      if (retries > 0 && this._isNetworkError(error)) {
+        await this._delay(1000)
+        return this.postFormData(endpoint, formData, { ...config, retries: retries - 1, showError })
+      }
+
+      if (showError) {
+        ElMessage.error(error.message || '网络请求失败')
+      }
+      throw error
+    } finally {
+      this.abortControllers.delete(endpoint)
+    }
+  }
+
+  /**
    * SSE 流式请求
    * @param {string} endpoint - API 端点
    * @param {Object} data - 请求数据

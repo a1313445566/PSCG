@@ -460,10 +460,7 @@ const uploadBackup = async file => {
     const formData = new FormData()
     formData.append('backup', file.raw)
 
-    const response = await fetch(`${getApiBaseUrl()}/restore`, {
-      method: 'POST',
-      body: formData
-    })
+    await api.postFormData('/restore', formData)
 
     if (response.ok) {
       const results = await Promise.allSettled([

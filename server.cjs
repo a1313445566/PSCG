@@ -114,6 +114,11 @@ app.use('/api', apiLimiter.middleware())
 // 【防护】签名缓存中间件
 app.use('/api/quiz', signatureCache.middleware())
 
+// CSRF Token 生成接口 - 必须在 CSRF 验证之前注册，否则无法获取 Token
+app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {
+  res.json({ success: true, csrfToken: res.locals.csrfToken })
+})
+
 // 【防护】CSRF 验证中间件 - 保护所有 POST/PUT/DELETE 请求
 app.use('/api', csrfVerifyMiddleware)
 
@@ -224,12 +229,7 @@ app.use('/api/chat', chatRoutes)
 app.use('/api/health', healthRoutes)
 app.use('/api/tools', toolsRoutes)
 
-// CSRF Token 接口
-app.get('/api/csrf-token', csrfTokenMiddleware, (req, res) => {
-  res.json({ success: true, csrfToken: res.locals.csrfToken })
-})
-
-// 缓存管理API
+// 缓存管理 API
 app.get('/api/cache/stats', (req, res) => {
   const stats = cacheService.getStats()
   res.json(stats)

@@ -543,6 +543,45 @@ class Database {
     }
   }
 
+  // 健康检查
+  async healthCheck() {
+    try {
+      const startTime = Date.now()
+      
+      // 检查连接池是否存在
+      if (!this.pool) {
+        return {
+          status: 'disconnected',
+          message: '数据库连接池未初始化',
+          timestamp: new Date().toISOString()
+        }
+      }
+      
+      // 尝试获取连接并执行简单查询
+      const connection = await this.pool.getConnection()
+      try {
+        await connection.execute('SELECT 1')
+        const responseTime = Date.now() - startTime
+        
+        return {
+          status: 'healthy',
+          message: '数据库连接正常',
+          responseTime: `${responseTime}ms`,
+          timestamp: new Date().toISOString()
+        }
+      } finally {
+        connection.release()
+      }
+    } catch (error) {
+      console.error('健康检查失败:', error)
+      return {
+        status: 'unhealthy',
+        message: error.message,
+        timestamp: new Date().toISOString()
+      }
+    }
+  }
+
   // 关闭连接
   async close() {
     if (this.pool) {

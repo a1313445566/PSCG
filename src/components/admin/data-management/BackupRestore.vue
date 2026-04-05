@@ -1,210 +1,231 @@
 ﻿<template>
-  <div class="data-management-container">
-    <!-- 主标题 -->
-    <div class="section-header">
-      <h3 class="section-title">数据管理中心</h3>
-      <p class="section-description">管理系统数据的备份、恢复和导出功能</p>
+  <div class="database-management">
+    <div class="stats-overview">
+      <div class="stat-card">
+        <div class="stat-icon backup-icon">
+          <el-icon><DocumentCopy /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">备份类型</div>
+          <div class="stat-value">{{ backupType === 'full' ? '完整备份' : '增量备份' }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon format-icon">
+          <el-icon><Files /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">文件格式</div>
+          <div class="stat-value">{{ backupFormat.toUpperCase() }}</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon history-icon">
+          <el-icon><Clock /></el-icon>
+        </div>
+        <div class="stat-content">
+          <div class="stat-label">历史备份</div>
+          <div class="stat-value">{{ props.backupHistory.length }} 个</div>
+        </div>
+      </div>
     </div>
 
-    <!-- 备份设置卡片 -->
-    <el-card class="data-card" shadow="hover">
-      <template #header>
-        <div class="card-header">
-          <el-icon class="card-icon"><i class="el-icon-document-copy"></i></el-icon>
-          <span class="card-title">备份设置</span>
-        </div>
-      </template>
-      <div class="backup-settings">
-        <div class="setting-row">
-          <div class="setting-item">
-            <label class="setting-label">备份类型</label>
-            <el-radio-group v-model="backupType" class="setting-control">
-              <el-radio value="full">完整备份</el-radio>
-            </el-radio-group>
+    <div class="main-actions">
+      <div class="action-section">
+        <div class="section-header">
+          <div class="header-icon backup">
+            <el-icon><Download /></el-icon>
           </div>
-          <div class="setting-item">
-            <label class="setting-label">文件格式</label>
-            <el-radio-group v-model="backupFormat" class="setting-control" disabled>
-              <el-radio value="db">DB（MySQL备份）</el-radio>
-            </el-radio-group>
+          <div class="header-content">
+            <h3>数据备份</h3>
+            <p>创建数据库备份文件，保护您的数据安全</p>
           </div>
         </div>
-        <el-alert title="备份说明" type="info" :closable="false" show-icon style="margin-top: 10px">
-          DB 格式备份将完整导出数据库所有表数据，包括题目、用户、答题记录、错题本等全部数据。
-        </el-alert>
-      </div>
-    </el-card>
-
-    <!-- 操作按钮区域 -->
-    <div class="action-grid">
-      <!-- 备份操作 -->
-      <el-card class="action-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <el-icon class="card-icon"><Download /></el-icon>
-            <span class="card-title">备份操作</span>
+        <div class="section-body">
+          <div class="backup-options">
+            <div class="option-group">
+              <label>备份类型</label>
+              <el-radio-group v-model="backupType" size="large">
+                <el-radio-button value="full">完整备份</el-radio-button>
+              </el-radio-group>
+            </div>
+            <div class="option-group">
+              <label>文件格式</label>
+              <el-radio-group v-model="backupFormat" size="large" disabled>
+                <el-radio-button value="db">DB 格式</el-radio-button>
+              </el-radio-group>
+            </div>
           </div>
-        </template>
-        <div class="action-buttons">
-          <div class="button-wrapper">
-            <el-button type="primary" @click="backupData">
+          <div class="action-buttons-row">
+            <el-button type="primary" size="large" :loading="isBackuping" @click="backupData">
               <el-icon><DocumentCopy /></el-icon>
-              备份数据
+              <span>立即备份</span>
+            </el-button>
+            <el-button size="large" @click="showBackupHistory">
+              <el-icon><Clock /></el-icon>
+              <span>查看历史</span>
             </el-button>
           </div>
-          <div class="button-wrapper">
-            <el-button type="info" @click="showBackupHistory">
-              <el-icon><Clock /></el-icon>
-              备份历史
-            </el-button>
+          <div class="info-box">
+            <el-icon><InfoFilled /></el-icon>
+            <span>DB 格式将完整导出数据库所有表数据，包括题目、用户、答题记录等</span>
           </div>
         </div>
-      </el-card>
+      </div>
 
-      <!-- 恢复操作 -->
-      <el-card class="action-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <el-icon class="card-icon"><Upload /></el-icon>
-            <span class="card-title">恢复操作</span>
+      <div class="action-section">
+        <div class="section-header">
+          <div class="header-icon restore">
+            <el-icon><Upload /></el-icon>
           </div>
-        </template>
-        <div class="action-buttons">
-          <div class="button-wrapper">
-            <el-button type="success" @click="restoreData">
-              <el-icon><Refresh /></el-icon>
-              恢复数据
-            </el-button>
+          <div class="header-content">
+            <h3>数据恢复</h3>
+            <p>从备份文件恢复数据，覆盖当前系统数据</p>
           </div>
-          <div class="button-wrapper">
+        </div>
+        <div class="section-body">
+          <div v-if="!uploadedFile" class="upload-area">
             <el-upload
               action="#"
               :auto-upload="false"
               :on-change="handleFileChange"
               accept=".db"
               :limit="1"
+              drag
             >
-              <el-button type="info">
-                <el-icon><FolderOpened /></el-icon>
-                上传备份文件
-              </el-button>
+              <el-icon class="upload-icon"><UploadFilled /></el-icon>
+              <div class="upload-text">
+                <p>
+                  拖拽文件到此处或
+                  <em>点击上传</em>
+                </p>
+                <p class="upload-hint">仅支持 .db 格式的备份文件</p>
+              </div>
             </el-upload>
           </div>
-          <div class="button-wrapper">
-            <el-upload
-              action="#"
-              :auto-upload="false"
-              :on-change="handleVerifyFileChange"
-              accept=".db"
-              :limit="1"
-            >
-              <el-button type="info">
-                <el-icon><Check /></el-icon>
-                验证备份文件
+          <div v-else class="uploaded-file">
+            <div class="file-info">
+              <el-icon class="file-icon"><Document /></el-icon>
+              <div class="file-details">
+                <div class="file-name">{{ uploadedFile.name }}</div>
+                <div class="file-size">{{ formatFileSize(uploadedFile.size) }}</div>
+              </div>
+              <el-button type="danger" size="small" circle @click="uploadedFile = null">
+                <el-icon><Close /></el-icon>
               </el-button>
-            </el-upload>
+            </div>
+            <div class="action-buttons-row">
+              <el-button type="success" size="large" @click="restoreData">
+                <el-icon><Refresh /></el-icon>
+                <span>开始恢复</span>
+              </el-button>
+              <el-upload
+                action="#"
+                :auto-upload="false"
+                :on-change="handleVerifyFileChange"
+                accept=".db"
+                :limit="1"
+              >
+                <el-button size="large">
+                  <el-icon><Check /></el-icon>
+                  <span>验证文件</span>
+                </el-button>
+              </el-upload>
+            </div>
+          </div>
+          <div class="warning-box">
+            <el-icon><WarningFilled /></el-icon>
+            <span>恢复操作将覆盖当前系统数据，请谨慎操作</span>
           </div>
         </div>
-      </el-card>
-
-      <!-- 数据库操作 -->
-      <el-card class="action-card" shadow="hover">
-        <template #header>
-          <div class="card-header">
-            <el-icon class="card-icon"><Files /></el-icon>
-            <span class="card-title">数据库操作</span>
-          </div>
-        </template>
-        <div class="action-buttons">
-          <div class="button-wrapper">
-            <el-button type="info" @click="checkDatabaseHealth">
-              <el-icon><DataLine /></el-icon>
-              健康检查
-            </el-button>
-          </div>
-          <div class="button-wrapper">
-            <el-button type="info" @click="checkDatabaseStatus">
-              <el-icon><View /></el-icon>
-              数据库状态
-            </el-button>
-          </div>
-          <div class="button-wrapper">
-            <el-button type="info" @click="importLocalData">
-              <el-icon><Grid /></el-icon>
-              导入本地数据
-            </el-button>
-          </div>
-        </div>
-      </el-card>
+      </div>
     </div>
 
-    <!-- 备份进度显示 -->
-    <div v-if="isBackuping" class="backup-progress">
-      <el-card shadow="hover">
-        <div class="progress-content">
-          <h4 class="progress-title">备份进度</h4>
-          <el-progress
-            :percentage="backupProgress"
-            :status="backupStatus"
-            :stroke-width="15"
-          ></el-progress>
-          <p class="progress-message">{{ backupMessage }}</p>
+    <div class="tools-section">
+      <div class="section-header-simple">
+        <h3>数据库工具</h3>
+        <p>数据库健康检查和维护工具</p>
+      </div>
+      <div class="tools-grid">
+        <div class="tool-card" @click="checkDatabaseHealth">
+          <div class="tool-icon">
+            <el-icon><DataLine /></el-icon>
+          </div>
+          <div class="tool-name">健康检查</div>
+          <div class="tool-desc">检查数据库连接和性能</div>
         </div>
-      </el-card>
+        <div class="tool-card" @click="checkDatabaseStatus">
+          <div class="tool-icon">
+            <el-icon><View /></el-icon>
+          </div>
+          <div class="tool-name">状态查看</div>
+          <div class="tool-desc">查看数据库运行状态</div>
+        </div>
+        <div class="tool-card" @click="importLocalData">
+          <div class="tool-icon">
+            <el-icon><Grid /></el-icon>
+          </div>
+          <div class="tool-name">导入数据</div>
+          <div class="tool-desc">从本地存储导入数据</div>
+        </div>
+      </div>
     </div>
 
-    <!-- 操作提示 -->
-    <div class="operation-tips">
-      <el-alert title="操作提示" type="info" :closable="false" show-icon>
-        <div class="tips-content">
-          <p>• 备份数据：根据选择的内容保存系统数据，可选择完整备份或增量备份</p>
-          <p>• 恢复数据：将覆盖当前系统的数据，请谨慎操作</p>
-          <p>• 导出数据：导出系统数据为JSON文件，用于数据迁移或备份</p>
-          <p>• 上传备份：通过备份文件恢复系统数据</p>
-          <p>
-            •
-            备份内容：可选择题目、用户、答题记录、系统设置、学科、子分类、年级、班级、排行榜数据和分析数据
-          </p>
-          <p>• 备份格式：支持JSON和DB格式</p>
-        </div>
-      </el-alert>
-    </div>
+    <el-dialog
+      v-model="isBackuping"
+      title="备份进度"
+      width="500px"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :show-close="false"
+    >
+      <div class="progress-dialog">
+        <el-progress
+          :percentage="backupProgress"
+          :status="backupStatus"
+          :stroke-width="20"
+          :text-inside="true"
+        />
+        <p class="progress-message">{{ backupMessage }}</p>
+      </div>
+    </el-dialog>
 
-    <!-- 备份历史对话框 -->
     <el-dialog
       v-model="backupHistoryVisible"
       title="备份历史"
-      width="800px"
+      width="900px"
       custom-class="backup-history-dialog"
     >
-      <div v-if="props.backupHistory.length > 0">
-        <el-table :data="props.backupHistory" stripe style="width: 100%">
-          <el-table-column prop="id" label="ID" width="80"></el-table-column>
-          <el-table-column prop="filename" label="文件名" min-width="200"></el-table-column>
-          <el-table-column prop="type" label="类型" width="100">
+      <div v-if="props.backupHistory.length > 0" class="history-table">
+        <el-table :data="props.backupHistory" stripe>
+          <el-table-column prop="id" label="ID" width="80" align="center" />
+          <el-table-column prop="filename" label="文件名" min-width="200" show-overflow-tooltip />
+          <el-table-column prop="type" label="类型" width="100" align="center">
             <template #default="{ row }">
-              <el-tag v-if="row" :type="row.type === 'full' ? 'primary' : 'success'">
+              <el-tag v-if="row" :type="row.type === 'full' ? 'primary' : 'success'" effect="dark">
                 {{ row.type === 'full' ? '完整' : '增量' }}
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column prop="size" label="大小" width="100"></el-table-column>
-          <el-table-column prop="createdAt" label="创建时间" width="200"></el-table-column>
-          <el-table-column label="操作" width="150">
+          <el-table-column prop="size" label="大小" width="120" align="center" />
+          <el-table-column prop="createdAt" label="创建时间" width="180" align="center" />
+          <el-table-column label="操作" width="180" align="center" fixed="right">
             <template #default="{ row }">
               <template v-if="row">
-                <el-button type="primary" size="small" @click="downloadBackup(row.id)">
+                <el-button type="primary" size="small" link @click="downloadBackup(row.id)">
+                  <el-icon><Download /></el-icon>
                   下载
                 </el-button>
-                <el-button type="danger" size="small" @click="deleteBackup(row.id)">删除</el-button>
+                <el-button type="danger" size="small" link @click="deleteBackup(row.id)">
+                  <el-icon><Delete /></el-icon>
+                  删除
+                </el-button>
               </template>
             </template>
           </el-table-column>
         </el-table>
       </div>
-      <div v-else style="text-align: center; padding: 40px">
-        <el-empty description="暂无备份历史"></el-empty>
-      </div>
+      <el-empty v-else description="暂无备份历史" :image-size="120" />
     </el-dialog>
   </div>
 </template>
@@ -218,16 +239,20 @@ import {
   Upload,
   Clock,
   Refresh,
-  FolderOpened,
   Check,
   DataLine,
   View,
   Grid,
   Download,
-  Files
+  Files,
+  InfoFilled,
+  WarningFilled,
+  UploadFilled,
+  Document,
+  Close,
+  Delete
 } from '@element-plus/icons-vue'
 
-// 定义props
 const props = defineProps({
   backupHistory: {
     type: Array,
@@ -235,7 +260,6 @@ const props = defineProps({
   }
 })
 
-// 定义事件
 const emit = defineEmits([
   'backup-data',
   'restore-data',
@@ -246,25 +270,28 @@ const emit = defineEmits([
   'verify-backup'
 ])
 
-// 备份设置
 const backupType = ref('full')
 const backupFormat = ref('db')
 
-// 备份进度
 const isBackuping = ref(false)
 const backupProgress = ref(0)
 const backupStatus = ref('')
 const backupMessage = ref('')
 
-// 备份历史
 const backupHistoryVisible = ref(false)
 
-// 上传的文件
 const uploadedFile = ref(null)
 
-// 备份数据
+const formatFileSize = bytes => {
+  if (!bytes) return '0 B'
+  const k = 1024
+  const sizes = ['B', 'KB', 'MB', 'GB']
+  const i = Math.floor(Math.log(bytes) / Math.log(k))
+  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i]
+}
+
 const backupData = () => {
-  ElMessageBox.confirm('确定要备份数据吗？', '提示', {
+  ElMessageBox.confirm('确定要备份数据吗？', '备份确认', {
     confirmButtonText: '确定',
     cancelButtonText: '取消',
     type: 'info'
@@ -308,7 +335,6 @@ const backupData = () => {
     .catch(() => {})
 }
 
-// 恢复数据
 const restoreData = () => {
   if (!uploadedFile.value) {
     ElMessage.error('请先上传备份文件')
@@ -325,13 +351,11 @@ const restoreData = () => {
     }
   )
     .then(() => {
-      // 显示恢复进度
       isBackuping.value = true
       backupProgress.value = 0
       backupStatus.value = ''
       backupMessage.value = '正在准备恢复...'
 
-      // 模拟恢复进度
       let progress = 0
       const interval = setInterval(() => {
         progress += 10
@@ -353,38 +377,30 @@ const restoreData = () => {
         }
       }, 300)
 
-      // 触发恢复事件
       emit('upload-backup', uploadedFile.value)
 
-      // 延迟关闭进度显示
       setTimeout(() => {
         isBackuping.value = false
       }, 1500)
     })
-    .catch(() => {
-      // 取消恢复
-    })
+    .catch(() => {})
 }
 
-// 处理文件上传
 const handleFileChange = file => {
-  // 检查文件扩展名
   if (!file.name.endsWith('.db')) {
     ElMessage.error('请上传.db格式的备份文件')
     return
   }
 
-  // 存储上传的文件
   uploadedFile.value = file
-  ElMessage.success('备份文件上传成功，请点击"恢复数据"按钮执行恢复操作')
+  ElMessage.success('备份文件上传成功，请点击"开始恢复"按钮执行恢复操作')
 }
 
-// 健康检查
 const checkDatabaseHealth = async () => {
   try {
     const result = await healthCheck()
-    if (result.status === 'ok') {
-      ElMessage.success('数据库健康状态良好')
+    if (result.status === 'healthy') {
+      ElMessage.success('数据库连接正常')
     } else {
       ElMessage.error(`数据库健康检查失败: ${result.message}`)
     }
@@ -393,7 +409,6 @@ const checkDatabaseHealth = async () => {
   }
 }
 
-// 导入本地数据
 const importLocalData = () => {
   ElMessageBox.confirm(
     '确定要从本地存储导入数据吗？这将覆盖当前系统的所有数据，请谨慎操作！',
@@ -416,18 +431,15 @@ const importLocalData = () => {
         ElMessage.error('导入失败，请稍后重试')
       }
     })
-    .catch(() => {
-      // 取消导入
-    })
+    .catch(() => {})
 }
 
-// 检查数据库状态
 const checkDatabaseStatus = async () => {
   try {
     const result = await healthCheck()
     ElMessageBox.alert(
       `<div style="text-align: left;">
-        <p><strong>数据库状态:</strong> ${result.status === 'ok' ? '正常' : '异常'}</p>
+        <p><strong>数据库状态:</strong> ${result.status === 'healthy' ? '正常' : '异常'}</p>
         <p><strong>时间戳:</strong> ${new Date(result.timestamp).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</p>
         ${result.message ? `<p><strong>消息:</strong> ${result.message}</p>` : ''}
       </div>`,
@@ -442,24 +454,19 @@ const checkDatabaseStatus = async () => {
   }
 }
 
-// 显示备份历史
 const showBackupHistory = async () => {
   try {
-    // 触发获取备份历史事件，更新父组件中的备份历史数据
     await emit('get-backup-history')
   } catch (error) {
     console.error('获取备份历史失败:', error)
   }
-  // 直接使用props中的备份历史数据
   backupHistoryVisible.value = true
 }
 
-// 下载备份
 const downloadBackup = backupId => {
   emit('download-backup', backupId)
 }
 
-// 删除备份
 const deleteBackup = backupId => {
   ElMessageBox.confirm('确定要删除此备份文件吗？', '删除确认', {
     confirmButtonText: '确定',
@@ -468,15 +475,11 @@ const deleteBackup = backupId => {
   })
     .then(async () => {
       emit('delete-backup', backupId)
-      // 重新获取备份历史数据
       await emit('get-backup-history')
     })
-    .catch(() => {
-      // 取消删除
-    })
+    .catch(() => {})
 }
 
-// 处理备份文件验证
 const handleVerifyFileChange = file => {
   ElMessageBox.confirm('确定要验证此备份文件吗？', '验证确认', {
     confirmButtonText: '确定',
@@ -486,223 +489,387 @@ const handleVerifyFileChange = file => {
     .then(() => {
       emit('verify-backup', file)
     })
-    .catch(() => {
-      // 取消验证
-    })
+    .catch(() => {})
 }
 </script>
 
 <style scoped lang="scss">
-.data-management-container {
-  padding: 20px;
+.database-management {
+  padding: 24px;
+  background: #f5f7fa;
 }
 
-/* 头部样式 */
-.section-header {
-  margin-bottom: 30px;
-  text-align: center;
-}
-
-.section-title {
-  font-size: 24px;
-  font-weight: bold;
-  color: #303133;
-  margin-bottom: 10px;
-}
-
-.section-description {
-  font-size: 14px;
-  color: #606266;
-  margin: 0;
-}
-
-/* 卡片样式 */
-.data-card {
-  margin-bottom: 25px;
-  border-radius: 10px;
-}
-
-.card-header {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.card-icon {
-  font-size: 18px;
-  color: #409eff;
-}
-
-.card-title {
-  font-size: 16px;
-  font-weight: bold;
-  color: #303133;
-}
-
-/* 备份设置样式 */
-.backup-settings {
-  padding: 10px 0;
-}
-
-.setting-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-  margin-bottom: 15px;
-}
-
-.setting-item {
-  flex: 1;
-  min-width: 300px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.setting-item.full-width {
-  flex: 100%;
-  min-width: 100%;
-}
-
-.setting-label {
-  font-weight: 500;
-  color: #303133;
-  font-size: 14px;
-}
-
-.setting-control {
-  display: flex;
-  gap: 15px;
-  flex-wrap: wrap;
-}
-
-/* 操作网格 */
-.action-grid {
+.stats-overview {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
   gap: 20px;
-  margin-bottom: 30px;
+  margin-bottom: 24px;
 }
 
-.action-card {
-  border-radius: 10px;
-}
-
-.action-buttons {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  gap: 12px;
+.stat-card {
+  background: white;
+  border-radius: 12px;
   padding: 20px;
-  justify-content: center;
-  align-items: center;
-}
-
-.button-wrapper {
-  flex: 1;
-  min-width: 120px;
-  text-align: center;
   display: flex;
-  justify-content: center;
   align-items: center;
+  gap: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  }
 }
 
-/* 确保带图标的按钮文本居中 */
-.button-wrapper .el-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-}
-
-.button-wrapper .el-button span {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 100%;
-  gap: 8px;
-}
-
-/* 确保上传组件中的按钮与其他按钮对齐 */
-.button-wrapper .el-upload {
+.stat-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 12px;
   display: flex;
-  justify-content: center;
   align-items: center;
-  width: 100%;
-}
+  justify-content: center;
+  font-size: 24px;
 
-.button-wrapper .el-upload .el-button {
-  width: 100%;
-  max-width: 150px;
-}
-
-/* 确保所有按钮大小一致 */
-.button-wrapper .el-button {
-  width: 100%;
-  max-width: 150px;
-}
-
-/* 进度条样式 */
-.backup-progress {
-  margin-bottom: 30px;
-}
-
-.progress-content {
-  text-align: center;
-  padding: 20px;
-}
-
-.progress-title {
-  margin-bottom: 20px;
-  color: #303133;
-  font-size: 16px;
-  font-weight: bold;
-}
-
-.progress-message {
-  margin-top: 15px;
-  color: #606266;
-  font-size: 14px;
-}
-
-/* 操作提示 */
-.operation-tips {
-  margin-bottom: 20px;
-}
-
-.tips-content {
-  text-align: left;
-  font-size: 14px;
-  line-height: 1.6;
-  color: #606266;
-}
-
-.tips-content p {
-  margin: 5px 0;
-}
-
-/* 对话框样式 */
-.backup-history-dialog {
-  border-radius: 10px;
-}
-
-/* 响应式设计 */
-@media screen and (max-width: 768px) {
-  .data-management-container {
-    padding: 10px;
+  &.backup-icon {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
   }
 
-  .action-grid {
+  &.format-icon {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+  }
+
+  &.history-icon {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+    color: white;
+  }
+}
+
+.stat-content {
+  flex: 1;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #909399;
+  margin-bottom: 4px;
+}
+
+.stat-value {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.main-actions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+  gap: 24px;
+  margin-bottom: 24px;
+}
+
+.action-section {
+  background: white;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.section-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
+  border-bottom: 1px solid #ebeef5;
+
+  .header-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+
+    &.backup {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    &.restore {
+      background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+      color: white;
+    }
+  }
+
+  .header-content {
+    flex: 1;
+
+    h3 {
+      margin: 0;
+      font-size: 18px;
+      font-weight: 600;
+      color: #303133;
+    }
+
+    p {
+      margin: 4px 0 0;
+      font-size: 13px;
+      color: #909399;
+    }
+  }
+}
+
+.section-body {
+  padding: 24px;
+}
+
+.backup-options {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  margin-bottom: 20px;
+}
+
+.option-group {
+  label {
+    display: block;
+    font-size: 14px;
+    font-weight: 500;
+    color: #606266;
+    margin-bottom: 12px;
+  }
+}
+
+.action-buttons-row {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 16px;
+
+  .el-button {
+    flex: 1;
+  }
+}
+
+.info-box,
+.warning-box {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 13px;
+
+  .el-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+  }
+}
+
+.info-box {
+  background: #ecf5ff;
+  color: #409eff;
+  border: 1px solid #d9ecff;
+}
+
+.warning-box {
+  background: #fdf6ec;
+  color: #e6a23c;
+  border: 1px solid #faecd8;
+}
+
+.upload-area {
+  margin-bottom: 16px;
+
+  :deep(.el-upload-dragger) {
+    border: 2px dashed #d9d9d9;
+    border-radius: 8px;
+    background: #fafafa;
+    transition: all 0.3s ease;
+
+    &:hover {
+      border-color: #409eff;
+      background: #ecf5ff;
+    }
+  }
+
+  .upload-icon {
+    font-size: 48px;
+    color: #c0c4cc;
+    margin-bottom: 16px;
+  }
+
+  .upload-text {
+    p {
+      margin: 0;
+      color: #606266;
+      font-size: 14px;
+
+      em {
+        color: #409eff;
+        font-style: normal;
+      }
+    }
+
+    .upload-hint {
+      margin-top: 8px !important;
+      font-size: 12px !important;
+      color: #909399 !important;
+    }
+  }
+}
+
+.uploaded-file {
+  .file-info {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px;
+    background: #f0f9ff;
+    border: 1px solid #b3d8ff;
+    border-radius: 8px;
+    margin-bottom: 16px;
+
+    .file-icon {
+      font-size: 32px;
+      color: #409eff;
+    }
+
+    .file-details {
+      flex: 1;
+
+      .file-name {
+        font-size: 14px;
+        font-weight: 500;
+        color: #303133;
+        margin-bottom: 4px;
+      }
+
+      .file-size {
+        font-size: 12px;
+        color: #909399;
+      }
+    }
+  }
+}
+
+.tools-section {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.section-header-simple {
+  margin-bottom: 20px;
+
+  h3 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #303133;
+  }
+
+  p {
+    margin: 4px 0 0;
+    font-size: 13px;
+    color: #909399;
+  }
+}
+
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 16px;
+}
+
+.tool-card {
+  padding: 24px 20px;
+  min-height: 140px;
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  text-align: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  &:hover {
+    border-color: #409eff;
+    background: #ecf5ff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(64, 158, 255, 0.15);
+
+    .tool-icon {
+      background: #409eff;
+      color: white;
+    }
+  }
+
+  .tool-icon {
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 12px;
+    border-radius: 12px;
+    background: #f5f7fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    color: #606266;
+    transition: all 0.3s ease;
+  }
+
+  .tool-name {
+    font-size: 15px;
+    font-weight: 500;
+    color: #303133;
+    margin-bottom: 4px;
+  }
+
+  .tool-desc {
+    font-size: 12px;
+    color: #909399;
+  }
+}
+
+.progress-dialog {
+  padding: 20px 0;
+  text-align: center;
+
+  .progress-message {
+    margin-top: 16px;
+    font-size: 14px;
+    color: #606266;
+  }
+}
+
+.history-table {
+  :deep(.el-table) {
+    border-radius: 8px;
+    overflow: hidden;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .database-management {
+    padding: 16px;
+  }
+
+  .main-actions {
     grid-template-columns: 1fr;
   }
 
-  .setting-item {
-    min-width: 100%;
+  .stats-overview {
+    grid-template-columns: 1fr;
   }
 
-  .setting-control {
+  .action-buttons-row {
     flex-direction: column;
-    align-items: flex-start;
   }
 }
 </style>

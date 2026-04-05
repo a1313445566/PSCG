@@ -2,6 +2,14 @@
   <div class="admin-header">
     <!-- 左侧：标题和折叠按钮 -->
     <div class="header-left">
+      <!-- 移动端菜单按钮 -->
+      <el-button
+        v-if="isMobile"
+        type="primary"
+        :icon="Menu"
+        circle
+        @click="handleMobileMenuClick"
+      />
       <h1 class="system-title">{{ systemTitle }}</h1>
     </div>
 
@@ -99,24 +107,37 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAdminLayout } from '../../../composables/useAdminLayout'
 import { api } from '../../../utils/api'
 import message from '../../../utils/message'
-import { Refresh, House, SwitchButton, User, Lock, ArrowDown } from '@element-plus/icons-vue'
+import { Refresh, House, SwitchButton, User, Lock, ArrowDown, Menu } from '@element-plus/icons-vue'
 
-defineProps({
+const props = defineProps({
   systemTitle: {
     type: String,
     default: '题库管理系统'
   }
 })
 
-const emit = defineEmits(['refresh', 'logout'])
+const emit = defineEmits(['refresh', 'logout', 'mobile-menu-click'])
 
 const router = useRouter()
 const { breadcrumb } = useAdminLayout()
+
+// 移动端状态
+const isMobile = ref(false)
+
+// 检测屏幕尺寸
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 992
+}
+
+// 移动端菜单按钮点击
+const handleMobileMenuClick = () => {
+  emit('mobile-menu-click')
+}
 
 // 刷新状态
 const refreshing = ref(false)
@@ -211,6 +232,16 @@ const handlePasswordSubmit = async () => {
 const handleLogout = () => {
   emit('logout')
 }
+
+// 生命周期
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', checkMobile)
+})
 </script>
 
 <style scoped lang="scss">

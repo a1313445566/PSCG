@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="dashboard-view">
     <!-- 统计卡片 -->
     <div class="stats-grid">
@@ -560,6 +560,7 @@ onUnmounted(async () => {
 /* 活动卡片 */
 .activity-card {
   border-radius: 12px;
+  margin-top: 24px;
 }
 
 .activity-card :deep(.el-card__header) {

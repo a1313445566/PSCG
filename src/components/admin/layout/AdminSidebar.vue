@@ -1,10 +1,16 @@
 <template>
-  <div class="admin-sidebar" :style="{ width: currentWidth + 'px' }">
+  <div
+    class="admin-sidebar"
+    :class="{ 'is-mobile': isMobile, 'mobile-open': mobileOpen }"
+    :style="{ width: isMobile ? '240px' : currentWidth + 'px' }"
+  >
     <!-- 折叠按钮 -->
-    <div class="collapse-btn" @click="toggleCollapse">
+    <div class="collapse-btn" @click="handleCollapseClick">
       <el-icon :size="20">
-        <ArrowLeft v-if="!isCollapse" />
-        <ArrowRight v-else />
+        <ArrowLeft v-if="!isCollapse && !isMobile" />
+        <ArrowRight v-else-if="!isMobile" />
+        <Close v-if="isMobile && mobileOpen" />
+        <Menu v-if="isMobile && !mobileOpen" />
       </el-icon>
     </div>
 
@@ -76,7 +82,7 @@
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted, inject, nextTick } from 'vue'
+import { ref, computed, watch, onUnmounted, inject, nextTick, onMounted } from 'vue'
 import { useAdminLayout } from '../../../composables/useAdminLayout'
 import {
   DataLine,
@@ -96,7 +102,9 @@ import {
   Clock,
   TrendCharts,
   ChatDotRound,
-  Cpu
+  Cpu,
+  Close,
+  Menu
 } from '@element-plus/icons-vue'
 
 const {
@@ -116,8 +124,51 @@ const {
 // 从父组件注入 subjects
 const subjects = inject('subjects', ref([]))
 
-const emit = defineEmits(['menu-select'])
+const emit = defineEmits(['menu-select', 'mobile-state-change'])
 const treeRef = ref(null)
+
+// 移动端状态
+const isMobile = ref(false)
+const mobileOpen = ref(false)
+
+// 检测屏幕尺寸
+const checkMobile = () => {
+  isMobile.value = window.innerWidth <= 992
+  if (!isMobile.value) {
+    mobileOpen.value = false
+  }
+}
+
+// 处理折叠按钮点击
+const handleCollapseClick = () => {
+  if (isMobile.value) {
+    mobileOpen.value = !mobileOpen.value
+    emit('mobile-state-change', mobileOpen.value)
+  } else {
+    toggleCollapse()
+  }
+}
+
+// 暴露方法给父组件
+const openMobileSidebar = () => {
+  if (isMobile.value) {
+    mobileOpen.value = true
+    emit('mobile-state-change', true)
+  }
+}
+
+// 关闭移动端侧边栏
+const closeMobileSidebar = () => {
+  if (isMobile.value) {
+    mobileOpen.value = false
+    emit('mobile-state-change', false)
+  }
+}
+
+defineExpose({
+  openMobileSidebar,
+  closeMobileSidebar
+})
 
 // 图标组件映射
 const iconMap = {
@@ -421,6 +472,13 @@ const stopResize = () => {
 onUnmounted(() => {
   document.removeEventListener('mousemove', handleResize)
   document.removeEventListener('mouseup', stopResize)
+  window.removeEventListener('resize', checkMobile)
+})
+
+// 组件挂载时检测
+onMounted(() => {
+  checkMobile()
+  window.addEventListener('resize', checkMobile)
 })
 </script>
 
@@ -434,6 +492,22 @@ onUnmounted(() => {
   flex-direction: column;
   overflow: hidden;
   flex-shrink: 0;
+
+  // 移动端样式
+  &.is-mobile {
+    position: fixed;
+    left: -240px;
+    top: 0;
+    bottom: 0;
+    height: 100vh;
+    z-index: 1000;
+    transition: left 0.3s ease;
+
+    &.mobile-open {
+      left: 0;
+      box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+    }
+  }
 }
 
 .collapse-btn {
@@ -452,6 +526,12 @@ onUnmounted(() => {
   color: #fff;
   transition: all 0.3s ease;
   box-shadow: 0 2px 8px rgba(64, 158, 255, 0.4);
+
+  // 移动端调整按钮位置到内部
+  .is-mobile & {
+    right: 8px;
+    top: 12px;
+  }
 }
 
 .collapse-btn:hover {

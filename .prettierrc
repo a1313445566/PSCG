@@ -8,5 +8,13 @@
   "arrowParens": "avoid",
   "endOfLine": "lf",
   "vueIndentScriptAndStyle": false,
-  "htmlWhitespaceSensitivity": "ignore"
+  "htmlWhitespaceSensitivity": "ignore",
+  "overrides": [
+    {
+      "files": "*.vue",
+      "options": {
+        "parser": "vue"
+      }
+    }
+  ]
 }
