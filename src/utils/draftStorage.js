@@ -66,6 +66,7 @@ class DraftStorage {
           localStorage.setItem(this.key, jsonStr)
           return true
         } catch (e2) {
+          // eslint-disable-line @typescript-eslint/no-unused-vars -- 需要捕获但不使用
           console.error('存储空间不足，草稿保存失败')
           return false
         }

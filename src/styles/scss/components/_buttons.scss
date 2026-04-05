@@ -1,0 +1,200 @@
+@use '../abstracts' as *;
+
+// ============================================
+// 按钮组件样式
+// ============================================
+
+// ============================================
+// 基础按钮
+// ============================================
+.btn {
+  display: inline-block;
+  padding: $spacing-sm $spacing-md;
+  border: none;
+  border-radius: $border-radius-sm;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-decoration: none;
+  text-align: center;
+  
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+// ============================================
+// 按钮尺寸
+// ============================================
+.btn-sm {
+  padding: $spacing-xs $spacing-sm;
+  font-size: 12px;
+}
+
+.btn-lg {
+  padding: $spacing-md $spacing-lg;
+  font-size: 16px;
+}
+
+.btn-xl {
+  padding: $spacing-lg $spacing-xl;
+  font-size: 18px;
+}
+
+// ============================================
+// 按钮类型
+// ============================================
+.btn-primary {
+  @include button-style($primary-color);
+}
+
+.btn-secondary {
+  @include button-style($secondary-color);
+}
+
+.btn-success {
+  @include button-style($success-color);
+}
+
+.btn-danger {
+  @include button-style($danger-color);
+}
+
+.btn-warning {
+  @include button-style($warning-color, $text-primary);
+}
+
+.btn-info {
+  @include button-style($info-color);
+}
+
+// ============================================
+// 轮廓按钮
+// ============================================
+.btn-outline-primary {
+  background-color: transparent;
+  color: $primary-color;
+  border: 2px solid $primary-color;
+  
+  &:hover {
+    background-color: $primary-color;
+    color: $text-white;
+  }
+}
+
+.btn-outline-secondary {
+  background-color: transparent;
+  color: $secondary-color;
+  border: 2px solid $secondary-color;
+  
+  &:hover {
+    background-color: $secondary-color;
+    color: $text-white;
+  }
+}
+
+.btn-outline-danger {
+  background-color: transparent;
+  color: $danger-color;
+  border: 2px solid $danger-color;
+  
+  &:hover {
+    background-color: $danger-color;
+    color: $text-white;
+  }
+}
+
+// ============================================
+// 文本按钮
+// ============================================
+.btn-text {
+  background: transparent;
+  color: $primary-color;
+  padding: 0;
+  border: none;
+  
+  &:hover {
+    color: shade($primary-color, 10%);
+    background: transparent;
+    transform: none;
+  }
+}
+
+// ============================================
+// 按钮组
+// ============================================
+.btn-group {
+  display: inline-flex;
+  
+  .btn {
+    border-radius: 0;
+    
+    &:first-child {
+      border-radius: $border-radius-sm 0 0 $border-radius-sm;
+    }
+    
+    &:last-child {
+      border-radius: 0 $border-radius-sm $border-radius-sm 0;
+    }
+    
+    &:not(:last-child) {
+      border-right: 1px solid rgba(255, 255, 255, 0.2);
+    }
+  }
+}
+
+// ============================================
+// 图标按钮
+// ============================================
+.btn-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border-radius: 50%;
+  
+  &.btn-icon-sm {
+    width: 28px;
+    height: 28px;
+  }
+  
+  &.btn-icon-lg {
+    width: 48px;
+    height: 48px;
+  }
+}
+
+// ============================================
+// 加载按钮
+// ============================================
+.btn-loading {
+  position: relative;
+  color: transparent !important;
+  pointer-events: none;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 16px;
+    height: 16px;
+    margin: -8px 0 0 -8px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: $text-white;
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+  }
+}
+
+// ============================================
+// 块级按钮
+// ============================================
+.btn-block {
+  display: block;
+  width: 100%;
+}

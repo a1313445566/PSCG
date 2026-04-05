@@ -2,9 +2,7 @@
 // 自动检测当前环境：使用相对路径，这样会自动使用与页面相同的协议
 const isDevelopment = import.meta.env.DEV
 // 明确设置API基础URL，避免被意外覆盖
-let API_BASE_URL
-// 始终使用相对路径，避免混合内容错误
-API_BASE_URL = '/api'
+const API_BASE_URL = '/api'
 
 // 输出环境变量信息（仅在开发环境）
 if (isDevelopment) {

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dialog
     :model-value="visible"
     :title="`管理 ${subject?.name} 的学科题库`"
@@ -322,7 +322,7 @@ const deleteSubcategory = subcategoryId => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .dialog-footer {
   text-align: center;
 }

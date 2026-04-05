@@ -11,7 +11,7 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
+// import { computed } from 'vue' // eslint-disable-line no-unused-vars -- 暂未使用
 
 const props = defineProps({
   subject: {
@@ -48,7 +48,7 @@ const selectSubject = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .subject-card {
   background: white;
   border-radius: 24px;

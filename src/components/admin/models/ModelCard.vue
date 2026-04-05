@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card class="model-card" shadow="hover" :class="{ 'is-default': model.is_default }">
     <div class="card-header">
       <div class="status-dot" :class="{ active: model.is_active }"></div>
@@ -67,7 +67,7 @@ function getProviderColor(provider) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .model-card {
   margin-bottom: 20px;
   position: relative;

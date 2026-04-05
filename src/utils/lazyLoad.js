@@ -32,7 +32,8 @@ export function createLazyLoadObserver(config = {}) {
           }
 
           // 停止观察
-          options.observer?.unobserve(img) || entry.target._observer?.unobserve(img)
+          options.observer?.unobserve(img)
+          entry.target._observer?.unobserve(img)
         }
       })
     },

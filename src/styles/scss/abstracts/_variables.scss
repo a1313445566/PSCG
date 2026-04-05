@@ -1,0 +1,144 @@
+// ============================================
+// 主题颜色变量
+// ============================================
+$primary-color: #ff6b6b;
+$secondary-color: #4ecdc4;
+$accent-color: #ffd166;
+$danger-color: #ef476f;
+$success-color: #06d6a0;
+$warning-color: #ffd166;
+$info-color: #118ab2;
+
+// ============================================
+// 背景色
+// ============================================
+$background-color: #f7fff7;
+$card-background: #ffffff;
+$sidebar-background: #292f36;
+
+// ============================================
+// 文字颜色
+// ============================================
+$text-primary: #292f36;
+$text-secondary: #4ecdc4;
+$text-light: #848484;
+$text-white: #ffffff;
+
+// ============================================
+// 边框与圆角
+// ============================================
+$border-color: #ffd166;
+$border-radius: 16px;
+$border-radius-sm: 8px;
+$border-radius-lg: 24px;
+
+// ============================================
+// 阴影
+// ============================================
+$shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
+$shadow-md: 0 4px 15px rgba(0, 0, 0, 0.15);
+$shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.2);
+
+// ============================================
+// 字体
+// ============================================
+$game-font: 'Comic Sans MS', 'Arial', sans-serif;
+$admin-font: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+
+// ============================================
+// 间距（标准化）
+// ============================================
+$spacing-xs: 4px;
+$spacing-sm: 8px;
+$spacing-md: 16px;
+$spacing-lg: 24px;
+$spacing-xl: 32px;
+$spacing-2xl: 48px;
+
+// ============================================
+// 断点
+// ============================================
+$breakpoint-xs: 360px;
+$breakpoint-sm: 576px;
+$breakpoint-md: 768px;
+$breakpoint-lg: 992px;
+$breakpoint-xl: 1200px;
+
+// ============================================
+// Element Plus 主题变量覆盖
+// ============================================
+
+// 主色调系列
+$el-color-primary: $primary-color;
+$el-color-primary-light-3: tint($primary-color, 30%);
+$el-color-primary-light-5: tint($primary-color, 50%);
+$el-color-primary-light-7: tint($primary-color, 70%);
+$el-color-primary-light-8: tint($primary-color, 80%);
+$el-color-primary-dark-2: shade($primary-color, 20%);
+
+// 功能色系列
+$el-color-success: $success-color;
+$el-color-warning: $warning-color;
+$el-color-danger: $danger-color;
+$el-color-info: $info-color;
+
+// 文字颜色
+$el-text-color-primary: $text-primary;
+$el-text-color-regular: #606266;
+$el-text-color-secondary: #909399;
+$el-text-color-placeholder: #c0c4cc;
+
+// 边框
+$el-border-color: #dcdfe6;
+$el-border-color-light: #e4e7ed;
+$el-border-radius: $border-radius-sm;
+
+// ============================================
+// CSS 自定义属性（用于 :root 覆盖 Element Plus）
+// ============================================
+:root {
+  // 主色
+  --el-color-primary: #{$primary-color};
+  --el-color-primary-light-3: #{tint($primary-color, 30%)};
+  --el-color-primary-light-5: #{tint($primary-color, 50%)};
+  --el-color-primary-light-7: #{tint($primary-color, 70%)};
+  --el-color-primary-light-8: #{tint($primary-color, 80%)};
+  --el-color-primary-dark-2: #{shade($primary-color, 20%)};
+
+  // 功能色
+  --el-color-success: #{$success-color};
+  --el-color-warning: #{$warning-color};
+  --el-color-danger: #{$danger-color};
+  --el-color-info: #{$info-color};
+
+  // 文字颜色
+  --el-text-color-primary: #{$text-primary};
+  --el-text-color-regular: #606266;
+  --el-text-color-secondary: #909399;
+  --el-text-color-placeholder: #c0c4cc;
+
+  // 边框
+  --el-border-color: #dcdfe6;
+  --el-border-color-light: #e4e7ed;
+  --el-border-radius: #{$border-radius-sm};
+
+  // 项目自定义变量（兼容 global.css）
+  --primary-color: #{$primary-color};
+  --secondary-color: #{$secondary-color};
+  --accent-color: #{$accent-color};
+  --danger-color: #{$danger-color};
+  --success-color: #{$success-color};
+  --background-color: #{$background-color};
+  --card-background: #{$card-background};
+  --text-primary: #{$text-primary};
+  --text-secondary: #{$text-secondary};
+  --text-light: #{$text-light};
+  --border-color: #{$border-color};
+  --shadow: #{$shadow-md};
+  --border-radius: #{$border-radius};
+  --game-font: #{$game-font};
+
+  // Header 组件变量
+  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  --header-border-color: #ff9999;
+}

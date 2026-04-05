@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div ref="messageListRef" class="message-list">
     <div v-for="(message, index) in messages" :key="message.id || index" class="message-item">
       <!-- 用户消息 -->
@@ -110,7 +110,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .message-list {
   padding: 16px;
   overflow-y: auto;

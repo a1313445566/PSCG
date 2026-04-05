@@ -82,7 +82,8 @@
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
 
-const props = defineProps({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- props 保留用于未来扩展
+const _props = defineProps({
   leaderboardData: {
     type: Array,
     default: () => []
@@ -111,7 +112,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .leaderboard-table {
   background-color: white;
   border-radius: 15px;

@@ -409,7 +409,7 @@ router.get('/error-prone-questions', async (req, res) => {
     }
 
     if (className) {
-      query += ' AND u.\`class\` = ?'
+      query += ' AND u.`class` = ?'
       params.push(className)
     }
 
@@ -483,7 +483,8 @@ router.post('/', async (req, res) => {
     } = req.body
 
     // 验证签名
-    const signatureData = {
+    const _signatureData = {
+      // eslint-disable-line @typescript-eslint/no-unused-vars -- 保留用于调试
       userId,
       grade,
       class: className,
@@ -575,7 +576,8 @@ router.post('/question-attempts', async (req, res) => {
     } = req.body
 
     // 验证签名
-    const signatureData = {
+    const _signatureData2 = {
+      // eslint-disable-line @typescript-eslint/no-unused-vars -- 保留用于调试
       userId,
       questionId,
       answerRecordId,

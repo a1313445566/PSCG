@@ -7,6 +7,13 @@ import path from 'path'
 export default defineConfig({
   plugins: [vue(), docsGenerator()],
   base: './',
+  css: {
+    preprocessorOptions: {
+      scss: {
+        silenceDeprecations: ['legacy-js-api']
+      }
+    }
+  },
   resolve: {
     alias: {
       '@': path.resolve(__dirname, 'src')
@@ -32,6 +39,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/api': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
+      },
+      '/images': {
+        target: 'http://localhost:3001',
+        changeOrigin: true
+      },
+      '/audio': {
         target: 'http://localhost:3001',
         changeOrigin: true
       }

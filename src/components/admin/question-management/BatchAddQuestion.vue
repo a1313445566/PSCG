@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dialog
     :model-value="visible"
     title="批量添加题目"
@@ -363,7 +363,7 @@ const saveBatchQuestions = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .batch-add-layout {
   display: flex;
   gap: 20px;

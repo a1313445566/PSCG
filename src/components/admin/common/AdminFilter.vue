@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="admin-filter">
     <div class="admin-filter-row">
       <!-- 动态筛选项 -->
@@ -244,7 +244,7 @@ const clearAllTags = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .admin-filter {
   background: #fff;
   border-radius: 8px;

@@ -323,7 +323,8 @@ const subjectPreferenceText = computed(() => {
   return subjectPreference.value.map(s => s.name).join('、')
 })
 
-const errorTendencyText = computed(() => {
+const _errorTendencyText = computed(() => {
+  // eslint-disable-line @typescript-eslint/no-unused-vars -- 保留用于调试
   if (errorTendency.value.length === 0) return '暂无明显薄弱点'
   return errorTendency.value.map(e => `${e.subject_name}（${e.error_count}题）`).join('、')
 })
@@ -534,9 +535,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
-@import '@/styles/game-common.css';
-
+<style scoped lang="scss">
 .back-section {
   margin-bottom: 1.5rem;
 }

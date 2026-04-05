@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="entity-selector">
     <!-- 实体类型选择 -->
     <el-radio-group v-model="entityType" size="small" class="entity-type-group">
@@ -211,7 +211,7 @@ watch(
 )
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .entity-selector {
   display: flex;
   flex-wrap: wrap;

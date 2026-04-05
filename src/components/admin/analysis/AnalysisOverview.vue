@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="analysis-overview">
     <el-row :gutter="20">
       <el-col v-for="item in overviewItems" :key="item.key" :xs="24" :sm="12" :md="6">
@@ -65,7 +65,7 @@ const overviewItems = computed(() => [
 ])
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .analysis-overview {
   margin-bottom: 20px;
 }

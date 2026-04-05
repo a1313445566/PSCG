@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="chat-container">
     <!-- 左侧会话列表 -->
     <div class="chat-sidebar">
@@ -245,7 +245,7 @@ async function handleSendMessage(content) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .chat-container {
   display: flex;
   height: 100%;

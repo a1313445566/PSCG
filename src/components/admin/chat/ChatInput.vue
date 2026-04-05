@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="chat-input-enhanced">
     <!-- 工具和实体选择区 -->
     <div v-if="showSelectors" class="selectors-area">
@@ -152,7 +152,7 @@ function handleSend() {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .chat-input-enhanced {
   background: #fff;
 }

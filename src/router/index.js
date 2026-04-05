@@ -120,7 +120,8 @@ const routes = [
 const router = createRouter({
   history: createWebHashHistory(),
   routes,
-  scrollBehavior(to, from, savedPosition) {
+  scrollBehavior(_to, _from, _savedPosition) {
+    // eslint-disable-line @typescript-eslint/no-unused-vars -- Vue Router API 要求
     // 始终滚动到顶部
     return { top: 0 }
   }

@@ -2,7 +2,7 @@ import { ref, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { api } from '../utils/api'
 
-export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subjectsRef) {
+export function useBatchOperations(selectedQuestionsRef, loadQuestionsFn, subjectsRef) {
   const batchDifficultyVisible = ref(false)
   const batchDifficulty = ref(1)
   const batchTypeVisible = ref(false)
@@ -52,13 +52,14 @@ export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subje
       )
 
       const ids = selectedQuestionsRef.value.map(q => q.id)
-      await api.post('/questions/batch', { action: 'delete', ids })
+      await api.post('/questions/batch', { action: 'delete', ids }, { showError: false })
       ElMessage.success(`成功删除 ${ids.length} 道题目`)
       selectedQuestionsRef.value = []
-      loadQuestionsRef.value()
+      loadQuestionsFn()
     } catch (e) {
       if (e !== 'cancel') {
-        ElMessage.error('删除失败')
+        console.error('批量删除失败:', e)
+        ElMessage.error(e.message || '删除失败')
       }
     }
   }
@@ -66,17 +67,22 @@ export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subje
   const executeBatchDifficulty = async () => {
     const ids = selectedQuestionsRef.value.map(q => q.id)
     try {
-      await api.post('/questions/batch', {
-        action: 'updateDifficulty',
-        ids,
-        data: { difficulty: batchDifficulty.value }
-      })
+      await api.post(
+        '/questions/batch',
+        {
+          action: 'updateDifficulty',
+          ids,
+          data: { difficulty: batchDifficulty.value }
+        },
+        { showError: false }
+      )
       ElMessage.success(`成功修改 ${ids.length} 道题目的难度`)
       batchDifficultyVisible.value = false
       selectedQuestionsRef.value = []
-      loadQuestionsRef.value()
+      loadQuestionsFn()
     } catch (error) {
-      ElMessage.error('修改失败')
+      console.error('批量修改难度失败:', error)
+      ElMessage.error(error.message || '修改失败')
     }
   }
 
@@ -88,17 +94,22 @@ export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subje
 
     const ids = selectedQuestionsRef.value.map(q => q.id)
     try {
-      await api.post('/questions/batch', {
-        action: 'updateType',
-        ids,
-        data: { type: batchType.value }
-      })
+      await api.post(
+        '/questions/batch',
+        {
+          action: 'updateType',
+          ids,
+          data: { type: batchType.value }
+        },
+        { showError: false }
+      )
       ElMessage.success(`成功修改 ${ids.length} 道题目的类型`)
       batchTypeVisible.value = false
       selectedQuestionsRef.value = []
-      loadQuestionsRef.value()
+      loadQuestionsFn()
     } catch (error) {
-      ElMessage.error('修改失败')
+      console.error('批量修改类型失败:', error)
+      ElMessage.error(error.message || '修改失败')
     }
   }
 
@@ -109,20 +120,25 @@ export function useBatchOperations(selectedQuestionsRef, loadQuestionsRef, subje
   const executeBatchMove = async () => {
     const ids = selectedQuestionsRef.value.map(q => q.id)
     try {
-      await api.post('/questions/batch', {
-        action: 'move',
-        ids,
-        data: {
-          subjectId: batchMoveSubjectId.value,
-          subcategoryId: batchMoveSubcategoryId.value || null
-        }
-      })
+      await api.post(
+        '/questions/batch',
+        {
+          action: 'move',
+          ids,
+          data: {
+            subjectId: batchMoveSubjectId.value,
+            subcategoryId: batchMoveSubcategoryId.value || null
+          }
+        },
+        { showError: false }
+      )
       ElMessage.success(`成功移动 ${ids.length} 道题目`)
       batchMoveVisible.value = false
       selectedQuestionsRef.value = []
-      loadQuestionsRef.value()
+      loadQuestionsFn()
     } catch (error) {
-      ElMessage.error('移动失败')
+      console.error('批量移动失败:', error)
+      ElMessage.error(error.message || '移动失败')
     }
   }
 

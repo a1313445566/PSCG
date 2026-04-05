@@ -1,0 +1,276 @@
+@use '../abstracts' as *;
+
+// ============================================
+// 弹窗组件样式
+// ============================================
+
+// ============================================
+// 遮罩层
+// ============================================
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+// ============================================
+// 弹窗容器
+// ============================================
+.modal {
+  background-color: $card-background;
+  border-radius: $border-radius;
+  box-shadow: $shadow-lg;
+  max-width: 90vw;
+  max-height: 90vh;
+  overflow: hidden;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+// ============================================
+// 弹窗尺寸
+// ============================================
+.modal-sm {
+  width: 400px;
+}
+
+.modal-md {
+  width: 600px;
+}
+
+.modal-lg {
+  width: 800px;
+}
+
+.modal-xl {
+  width: 1000px;
+}
+
+.modal-fullscreen {
+  width: 100vw;
+  height: 100vh;
+  max-width: 100vw;
+  max-height: 100vh;
+  border-radius: 0;
+}
+
+// ============================================
+// 弹窗头部
+// ============================================
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.modal-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: $text-primary;
+  margin: 0;
+}
+
+.modal-close {
+  background: none;
+  border: none;
+  font-size: 20px;
+  color: $text-light;
+  cursor: pointer;
+  padding: 4px;
+  transition: color 0.2s ease;
+  
+  &:hover {
+    color: $text-primary;
+  }
+}
+
+// ============================================
+// 弹窗内容
+// ============================================
+.modal-body {
+  padding: $spacing-lg;
+  overflow-y: auto;
+  max-height: calc(90vh - 130px);
+}
+
+// ============================================
+// 弹窗底部
+// ============================================
+.modal-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: $spacing-sm;
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid #ebeef5;
+}
+
+// ============================================
+// 确认弹窗
+// ============================================
+.modal-confirm {
+  text-align: center;
+  
+  .modal-body {
+    padding: $spacing-xl;
+  }
+  
+  .confirm-icon {
+    font-size: 48px;
+    margin-bottom: $spacing-md;
+    
+    &.warning {
+      color: $warning-color;
+    }
+    
+    &.danger {
+      color: $danger-color;
+    }
+    
+    &.success {
+      color: $success-color;
+    }
+    
+    &.info {
+      color: $info-color;
+    }
+  }
+  
+  .confirm-title {
+    font-size: 18px;
+    font-weight: 600;
+    color: $text-primary;
+    margin-bottom: $spacing-sm;
+  }
+  
+  .confirm-message {
+    font-size: 14px;
+    color: $text-light;
+  }
+}
+
+// ============================================
+// 抽屉
+// ============================================
+.drawer-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+.drawer {
+  position: fixed;
+  top: 0;
+  background-color: $card-background;
+  box-shadow: $shadow-lg;
+  z-index: 1001;
+  display: flex;
+  flex-direction: column;
+  
+  &.drawer-left {
+    left: 0;
+    height: 100vh;
+    animation: slideInLeft 0.3s ease;
+  }
+  
+  &.drawer-right {
+    right: 0;
+    height: 100vh;
+    animation: slideInRight 0.3s ease;
+  }
+  
+  &.drawer-top {
+    left: 0;
+    right: 0;
+    width: 100vw;
+    animation: slideInTop 0.3s ease;
+  }
+  
+  &.drawer-bottom {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: 100vw;
+    animation: slideInBottom 0.3s ease;
+  }
+}
+
+@keyframes slideInLeft {
+  from { transform: translateX(-100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInRight {
+  from { transform: translateX(100%); }
+  to { transform: translateX(0); }
+}
+
+@keyframes slideInTop {
+  from { transform: translateY(-100%); }
+  to { transform: translateY(0); }
+}
+
+@keyframes slideInBottom {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.drawer-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: $spacing-md $spacing-lg;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.drawer-body {
+  flex: 1;
+  padding: $spacing-lg;
+  overflow-y: auto;
+}
+
+.drawer-footer {
+  padding: $spacing-md $spacing-lg;
+  border-top: 1px solid #ebeef5;
+}
+
+// ============================================
+// 响应式
+// ============================================
+@media (max-width: $breakpoint-md) {
+  .modal {
+    width: 95vw;
+    margin: $spacing-md;
+  }
+  
+  .modal-sm,
+  .modal-md,
+  .modal-lg,
+  .modal-xl {
+    width: 95vw;
+  }
+}

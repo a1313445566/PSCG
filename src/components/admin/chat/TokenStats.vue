@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="token-stats">
     <div class="stats-header">
       <h3>Token 使用统计</h3>
@@ -145,7 +145,7 @@ function getPercentage(value, total) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .token-stats {
   background: #fff;
   border-radius: 12px;

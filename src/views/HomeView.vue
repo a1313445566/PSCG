@@ -230,18 +230,20 @@ const userStats = ref(null)
 // 倒计时
 const countdown = ref('')
 let countdownInterval = null
+// 排行榜自动刷新定时器
+let leaderboardRefreshInterval = null
 
 // 调试：监控 subjects 数据变化
 watch(
   () => questionStore.subjects,
-  newSubjects => {},
+  () => {}, // eslint-disable-line @typescript-eslint/no-empty-function -- 仅用于触发响应式更新
   { deep: true, immediate: true }
 )
 
 // 监控 questions 数据变化，确保新添加的题目能显示
 watch(
   () => questionStore.questions,
-  newQuestions => {},
+  () => {}, // eslint-disable-line @typescript-eslint/no-empty-function -- 仅用于触发响应式更新
   { deep: true }
 )
 
@@ -250,7 +252,9 @@ const fetchLeaderboardData = async () => {
   try {
     const data = await api.get('/leaderboard/top10')
     leaderboardData.value = data
-  } catch (error) {}
+  } catch (error) {
+    // 静默处理错误，避免影响用户体验
+  }
 }
 
 // 计算到下周一00:00的时间差
@@ -304,6 +308,25 @@ const stopCountdown = () => {
   }
 }
 
+// 启动排行榜自动刷新（每30秒刷新一次）
+const startLeaderboardAutoRefresh = () => {
+  if (leaderboardRefreshInterval) {
+    clearInterval(leaderboardRefreshInterval)
+  }
+
+  leaderboardRefreshInterval = setInterval(() => {
+    fetchLeaderboardData()
+  }, 30000) // 30秒刷新一次
+}
+
+// 停止排行榜自动刷新
+const stopLeaderboardAutoRefresh = () => {
+  if (leaderboardRefreshInterval) {
+    clearInterval(leaderboardRefreshInterval)
+    leaderboardRefreshInterval = null
+  }
+}
+
 // 获取用户统计数据
 const fetchUserStats = async () => {
   try {
@@ -315,7 +338,9 @@ const fetchUserStats = async () => {
       data.points = userData.points || 0
       userStats.value = data
     }
-  } catch (error) {}
+  } catch (error) {
+    // 静默处理错误
+  }
 }
 
 // 选择学科
@@ -349,6 +374,7 @@ onMounted(() => {
       // 数据加载完成后再加载排行榜和用户统计
       fetchLeaderboardData()
       startCountdown()
+      startLeaderboardAutoRefresh() // 启动排行榜自动刷新
       fetchUserStats()
     })
     .catch(error => {
@@ -359,10 +385,12 @@ onMounted(() => {
 onUnmounted(() => {
   // 停止倒计时，防止内存泄漏
   stopCountdown()
+  // 停止排行榜自动刷新，防止内存泄漏
+  stopLeaderboardAutoRefresh()
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .home-view {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);

@@ -1,0 +1,230 @@
+@use '../abstracts' as *;
+
+// ============================================
+// 表格组件样式
+// ============================================
+
+// ============================================
+// 表格容器
+// ============================================
+.table-wrapper {
+  overflow-x: auto;
+  background: $card-background;
+  border-radius: $border-radius;
+  box-shadow: $shadow-sm;
+}
+
+// ============================================
+// 基础表格
+// ============================================
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  
+  th, td {
+    padding: $spacing-sm $spacing-md;
+    text-align: left;
+    border-bottom: 1px solid #ebeef5;
+  }
+  
+  th {
+    font-weight: 600;
+    color: $text-primary;
+    background-color: #f5f7fa;
+    white-space: nowrap;
+  }
+  
+  td {
+    color: $text-primary;
+  }
+  
+  tbody tr {
+    transition: background-color 0.2s ease;
+    
+    &:hover {
+      background-color: #f5f7fa;
+    }
+  }
+}
+
+// ============================================
+// 条纹表格
+// ============================================
+.table-striped {
+  tbody tr:nth-child(even) {
+    background-color: #fafafa;
+  }
+}
+
+// ============================================
+// 紧凑表格
+// ============================================
+.table-compact {
+  th, td {
+    padding: $spacing-xs $spacing-sm;
+    font-size: 13px;
+  }
+}
+
+// ============================================
+// 可选中表格
+// ============================================
+.table-selectable {
+  tbody tr {
+    cursor: pointer;
+    
+    &.selected {
+      background-color: set-alpha($primary-color, 10);
+    }
+  }
+}
+
+// ============================================
+// 表格头部
+// ============================================
+.table-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: $spacing-md;
+  padding: $spacing-md;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.table-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: $text-primary;
+}
+
+.table-toolbar {
+  display: flex;
+  gap: $spacing-sm;
+  align-items: center;
+}
+
+// ============================================
+// 排序图标
+// ============================================
+.sortable {
+  cursor: pointer;
+  user-select: none;
+  
+  .sort-icon {
+    margin-left: 4px;
+    opacity: 0.3;
+    transition: opacity 0.2s ease;
+  }
+  
+  &:hover .sort-icon {
+    opacity: 0.6;
+  }
+  
+  &.asc .sort-icon,
+  &.desc .sort-icon {
+    opacity: 1;
+    color: $primary-color;
+  }
+}
+
+// ============================================
+// 空表格
+// ============================================
+.table-empty {
+  text-align: center;
+  padding: $spacing-2xl;
+  color: $text-light;
+  
+  .empty-icon {
+    font-size: 48px;
+    margin-bottom: $spacing-md;
+    opacity: 0.5;
+  }
+  
+  .empty-text {
+    font-size: 14px;
+  }
+}
+
+// ============================================
+// 加载表格
+// ============================================
+.table-loading {
+  position: relative;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(255, 255, 255, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+// ============================================
+// 固定列
+// ============================================
+.table-fixed-left {
+  position: sticky;
+  left: 0;
+  background: inherit;
+  z-index: 1;
+  
+  &::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    width: 10px;
+    background: linear-gradient(to right, rgba(0, 0, 0, 0.05), transparent);
+    pointer-events: none;
+  }
+}
+
+.table-fixed-right {
+  position: sticky;
+  right: 0;
+  background: inherit;
+  z-index: 1;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 10px;
+    background: linear-gradient(to left, rgba(0, 0, 0, 0.05), transparent);
+    pointer-events: none;
+  }
+}
+
+// ============================================
+// 响应式表格
+// ============================================
+@media (max-width: $breakpoint-md) {
+  .table-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: $spacing-sm;
+  }
+  
+  .table-toolbar {
+    width: 100%;
+    justify-content: flex-end;
+  }
+  
+  .table {
+    th, td {
+      padding: $spacing-xs $spacing-sm;
+      font-size: 13px;
+    }
+  }
+}

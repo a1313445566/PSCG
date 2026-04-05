@@ -56,7 +56,7 @@ const fileFilter = function (req, file, cb) {
   }
 }
 
-const upload = multer({
+const _upload = multer({
   storage: storage,
   fileFilter: fileFilter,
   limits: {
@@ -113,6 +113,9 @@ app.use('/api', apiLimiter.middleware())
 
 // 【防护】签名缓存中间件
 app.use('/api/quiz', signatureCache.middleware())
+
+// 【防护】CSRF 验证中间件 - 保护所有 POST/PUT/DELETE 请求
+app.use('/api', csrfVerifyMiddleware)
 
 app.use((req, res, next) => {
   if (req.path.startsWith('/api/')) {
@@ -563,7 +566,7 @@ process.on('uncaughtException', err => {
   }
 })
 
-process.on('unhandledRejection', (reason, promise) => {
+process.on('unhandledRejection', (reason, _promise) => {
   console.error(`未处理 Promise 拒绝:`, reason)
 })
 

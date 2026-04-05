@@ -108,7 +108,8 @@
 </template>
 
 <script setup>
-const props = defineProps({
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- props 保留用于未来扩展
+const _props = defineProps({
   type: {
     type: String,
     default: 'text',
@@ -143,7 +144,7 @@ const props = defineProps({
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .skeleton-loader {
   display: inline-block;
 }

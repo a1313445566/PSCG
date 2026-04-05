@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="data-management-container">
     <!-- 主标题 -->
     <div class="section-header">
@@ -538,7 +538,7 @@ const handleVerifyFileChange = file => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .data-management-container {
   padding: 20px;
 }

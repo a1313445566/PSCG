@@ -22,7 +22,29 @@
         "usedAt": 1775295650228,
         "industryId": "02-Engineering"
       }
+    ],
+    "cad0091c8205476aae6a07f1323cc3a7": [
+      {
+        "expertId": "UserExperienceArchitect",
+        "name": "Tom",
+        "profession": "用户体验架构师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/01-Design/UserExperienceArchitect/UserExperienceArchitect.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/01-Design/UserExperienceArchitect/UserExperienceArchitect_zh.md",
+        "usedAt": 1775304261190,
+        "industryId": "01-Design"
+      }
+    ],
+    "e9c60293e88c440e8f796879157d1eae": [
+      {
+        "expertId": "UserExperienceArchitect",
+        "name": "Tom",
+        "profession": "用户体验架构师",
+        "avatarUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/avatars/01-Design/UserExperienceArchitect/UserExperienceArchitect.png",
+        "promptUrl": "https://acc-1258344699.cos.accelerate.myqcloud.com/workbuddy/experts/experts/01-Design/UserExperienceArchitect/UserExperienceArchitect_zh.md",
+        "usedAt": 1775305204788,
+        "industryId": "01-Design"
+      }
     ]
   },
-  "lastUpdated": 1775303215154
+  "lastUpdated": 1775305367752
 }

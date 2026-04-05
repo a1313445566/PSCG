@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="user-stats-view scroll-self-managed">
     <!-- 筛选区域 -->
     <AdminFilter
@@ -413,7 +413,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .user-stats-view {
   height: 100%;
   display: flex;

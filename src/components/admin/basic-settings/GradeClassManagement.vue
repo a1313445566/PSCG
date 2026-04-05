@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="setting-card">
     <h3 class="setting-title">年级班级管理</h3>
     <div style="padding: 20px">
@@ -254,7 +254,7 @@ const deleteClass = async classId => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .setting-card {
   background-color: white;
   border-radius: 10px;

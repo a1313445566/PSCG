@@ -7,23 +7,35 @@
       <component :is="Component" :key="route.fullPath" />
     </router-view>
 
-    <!-- 页脚组件（后台管理页面不显示） -->
-    <AppFooter v-if="!isAdminPage" />
+    <!-- 页脚组件（后台管理页面和登录页面不显示） -->
+    <AppFooter v-if="!isAdminPage && !isLoginPage" />
   </div>
 </template>
 
 <script setup>
-import { ref, computed, watch, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import AppFooter from './components/common/AppFooter.vue'
 import { useQuestionStore, setAppMountedState } from './stores/questionStore'
+import { getCSRFToken } from './utils/csrf'
 
 const route = useRoute()
 const isLoading = ref(false)
 const questionStore = useQuestionStore()
 
-// 判断是否为后台管理页面
+// 判断是否为后台管理页面或登录页面
 const isAdminPage = computed(() => route.path === '/admin')
+const isLoginPage = computed(() => route.path === '/login')
+
+// 应用初始化：预加载 CSRF Token
+onMounted(async () => {
+  try {
+    await getCSRFToken()
+    console.log('✅ CSRF Token 已初始化')
+  } catch (error) {
+    console.warn('⚠️ CSRF Token 初始化失败:', error.message)
+  }
+})
 
 // 监听路由变化，显示/隐藏加载指示器
 watch(
@@ -48,7 +60,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .app {
   min-height: 100vh;
   position: relative;

@@ -1,0 +1,82 @@
+@use 'variables' as *;
+
+// 响应式断点
+@mixin breakpoint($size) {
+  @if $size == xs {
+    @media (min-width: $breakpoint-xs) { @content; }
+  } @else if $size == sm {
+    @media (min-width: $breakpoint-sm) { @content; }
+  } @else if $size == md {
+    @media (min-width: $breakpoint-md) { @content; }
+  } @else if $size == lg {
+    @media (min-width: $breakpoint-lg) { @content; }
+  } @else if $size == xl {
+    @media (min-width: $breakpoint-xl) { @content; }
+  }
+}
+
+// 字体混合
+@mixin font-size($size) {
+  font-size: $size;
+  @include breakpoint(sm) {
+    font-size: $size * 1.1;
+  }
+  @include breakpoint(md) {
+    font-size: $size * 1.2;
+  }
+  @include breakpoint(lg) {
+    font-size: $size * 1.3;
+  }
+}
+
+// 卡片阴影
+@mixin card-shadow {
+  box-shadow: $shadow-md;
+  transition: box-shadow 0.3s ease;
+  
+  &:hover {
+    box-shadow: $shadow-lg;
+  }
+}
+
+// 卡片样式
+@mixin card-style($radius: $border-radius, $shadow: $shadow-md) {
+  background: $card-background;
+  border-radius: $radius;
+  box-shadow: $shadow;
+  padding: $spacing-lg;
+}
+
+// 按钮样式
+@mixin button-style($color, $text-color: $text-white) {
+  background-color: $color;
+  color: $text-color;
+  border: none;
+  border-radius: $border-radius;
+  padding: $spacing-sm $spacing-md;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    opacity: 0.9;
+    transform: translateY(-2px);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// 文本溢出省略
+@mixin text-ellipsis($lines: 1) {
+  @if $lines == 1 {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  } @else {
+    display: -webkit-box;
+    -webkit-line-clamp: $lines;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}

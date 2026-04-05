@@ -1,5 +1,6 @@
 <template>
   <!-- 答题行为跟踪组件（无 UI，纯逻辑组件） -->
+  <div class="answer-behavior-tracker" style="display: none"></div>
 </template>
 
 <script setup>

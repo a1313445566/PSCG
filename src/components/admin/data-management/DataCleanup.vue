@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="setting-card" style="margin-bottom: 30px">
     <h3 class="setting-title">数据清理</h3>
     <div style="padding: 20px">
@@ -190,7 +190,7 @@ onMounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .setting-card {
   background-color: white;
   border-radius: 10px;

@@ -465,11 +465,13 @@
               <span v-else style="color: red; font-weight: bold">✗ 错误</span>
             </div>
           </div>
+          <!-- eslint-disable-next-line vue/no-v-html -- 数据已在后端通过 xssFilter 过滤 -->
           <div class="question-content rich-text-content size-medium" v-html="item.content"></div>
           <div v-if="item.options && item.options.length > 0" class="question-options">
             <div v-for="(option, optIndex) in item.options" :key="optIndex" class="option-item">
               <span class="option-letter">{{ String.fromCharCode(65 + optIndex) }}.</span>
               <span class="option-text rich-text-content size-medium" v-html="option"></span>
+              <!-- eslint-disable-line vue/no-v-html -->
             </div>
           </div>
           <div class="question-answers">
@@ -484,6 +486,7 @@
           </div>
           <div v-if="item.explanation" class="question-explanation">
             <div class="explanation-label">解析:</div>
+            <!-- eslint-disable-next-line vue/no-v-html -- 后端已过滤 -->
             <div class="explanation-content" v-html="item.explanation"></div>
           </div>
           <div v-else class="question-explanation">
@@ -623,7 +626,9 @@ const handleGlobalClassChange = () => {
 const loadSubjects = async () => {
   try {
     subjects.value = await api.get('/subjects')
-  } catch (error) {}
+  } catch (error) {
+    // 静默处理错误
+  }
 }
 
 // 加载子分类（题库）数据
@@ -743,7 +748,9 @@ const loadUserStats = async () => {
 
   try {
     userStats.value = await api.get(`/users/stats/${currentUserId.value}`)
-  } catch (error) {}
+  } catch (error) {
+    // 静默处理错误
+  }
 }
 
 const loadRecentRecords = async () => {
@@ -920,7 +927,7 @@ watch(activeTab, newTab => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 @import '@/styles/rich-text.css';
 
 .leaderboard-view {

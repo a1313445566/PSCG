@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-dialog
     :model-value="dialogVisible"
     :title="
@@ -331,7 +331,7 @@ const showQuestionDetail = row => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .dialog-content {
   max-height: 82vh;
   overflow-y: auto;

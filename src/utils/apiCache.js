@@ -117,7 +117,7 @@ class ApiCache {
       this.set(key, data, ttl)
       return data
     } catch (error) {
-      // console.error('Fetch error:', error);
+      console.error('[ApiCache] 请求失败:', error.message)
       throw error
     }
   }

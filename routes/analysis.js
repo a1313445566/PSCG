@@ -403,7 +403,7 @@ router.get('/', async (req, res) => {
 router.get('/download', async (req, res) => {
   try {
     const {
-      type,
+      type: _type,
       studentId,
       grade,
       class: className,

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <el-card class="setting-card" shadow="hover">
     <template #header>
       <div class="card-header">
@@ -44,7 +44,7 @@ const updateInterfaceName = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .setting-card {
   border-radius: 12px !important;
 }

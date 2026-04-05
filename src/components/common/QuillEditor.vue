@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div v-if="isMounted" class="quill-wrapper">
     <!-- 自定义中文工具栏 -->
     <div v-if="showToolbar" ref="toolbarContainer" class="ql-toolbar ql-snow">
@@ -164,7 +164,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .quill-wrapper {
   width: 100%;
   height: 100%;

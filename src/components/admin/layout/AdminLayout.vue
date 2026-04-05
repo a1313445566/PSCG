@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="admin-layout">
     <!-- 密码验证对话框 -->
     <PasswordDialog
@@ -261,7 +261,7 @@ onErrorCaptured(err => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .admin-layout {
   width: 100%;
   height: 100vh;

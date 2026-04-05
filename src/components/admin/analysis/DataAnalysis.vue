@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="data-analysis">
     <!-- 页面标题 -->
     <div class="page-header">
@@ -258,7 +258,7 @@ onMounted(() => {
 onUnmounted(cleanup)
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .data-analysis {
   padding: 20px;
 }

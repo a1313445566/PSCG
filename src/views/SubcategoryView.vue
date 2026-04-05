@@ -77,7 +77,7 @@
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onMounted as onMountedRef } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import AppHeader from '../components/common/AppHeader.vue'
 import SubcategoryCard from '../components/quiz/SubcategoryCard.vue'
@@ -96,13 +96,15 @@ const subjectId = computed(() => parseInt(route.params.subjectId))
 
 // 当前学科
 const currentSubject = computed(() => {
-  // 直接使用从数据库获取的排序（已在后端按sort_order排序）
-  return (
-    questionStore.subjects.find(s => s.id === subjectId.value) || {
-      name: '未知学科',
-      subcategories: []
-    }
-  )
+  const foundSubject = questionStore.subjects.find(s => s.id === subjectId.value)
+  if (foundSubject) {
+    return foundSubject
+  }
+  return {
+    id: subjectId.value || 0,
+    name: '未知学科',
+    subcategories: []
+  }
 })
 
 // 题目数据（用于兼容，但不再预加载所有题目）
@@ -161,7 +163,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .subcategory-view {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);

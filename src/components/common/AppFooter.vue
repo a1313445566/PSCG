@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <footer class="app-footer">
     <div class="footer-content">
       <div class="footer-section">
@@ -30,7 +30,7 @@
 // Footer组件
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .app-footer {
   background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
   color: white;

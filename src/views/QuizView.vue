@@ -94,7 +94,7 @@ import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import AnswerBehaviorTracker from '../components/quiz/AnswerBehaviorTracker.vue'
 import ReadingPassageCard from '../components/student/ReadingPassageCard.vue'
 import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/questionStore'
-import { getApiBaseUrl } from '../utils/database'
+import { api } from '../utils/api'
 import { ElMessage } from 'element-plus'
 import { shuffleOptions } from '../utils/shuffleOptions'
 
@@ -195,7 +195,7 @@ watch(
 )
 
 // 解析阅读理解题的小题列表
-const parseReadingSubQuestions = (question, shuffleMapping) => {
+const parseReadingSubQuestions = (question, _shuffleMapping) => {
   let options = []
   try {
     options = typeof question.options === 'string' ? JSON.parse(question.options) : question.options
@@ -433,131 +433,212 @@ const generateSignature = async (data, timestamp, userId) => {
   return result
 }
 
-// 提交答案
-const submitAnswers = async () => {
-  // 防止重复提交
-  if (isSubmitting.value) return
+// 计算积分范围
+const calculatePointsRange = (totalQuestions, correctCount) => {
+  const wrongCount = totalQuestions - correctCount
 
+  // 普通题库积分规则：答对1分，答错扣1分，全对积分翻倍
+  let expectedMinPoints = -wrongCount // 全错的情况
+  let expectedMaxPoints = correctCount // 普通情况
+
+  if (correctCount === totalQuestions && totalQuestions > 0) {
+    expectedMaxPoints = correctCount * 2 // 全对翻倍
+  }
+
+  // 错题巩固题库积分规则：每道题累计正确3次+1分
+  if (isErrorCollection.value) {
+    // 错题巩固题库每道题最多+1分
+    expectedMaxPoints = totalQuestions
+    expectedMinPoints = 0
+  }
+
+  return { expectedMinPoints, expectedMaxPoints }
+}
+
+// 验证积分数据
+const validatePoints = result => {
+  const totalQuestions = result.totalQuestions || 0
+  const correctCount = result.correctCount || 0
+
+  const { expectedMinPoints, expectedMaxPoints } = calculatePointsRange(
+    totalQuestions,
+    correctCount
+  )
+
+  // 验证积分是否在合理范围内
+  if (result.points < expectedMinPoints || result.points > expectedMaxPoints) {
+    console.warn('积分数据异常，使用计算值:', {
+      received: result.points,
+      expectedMin: expectedMinPoints,
+      expectedMax: expectedMaxPoints
+    })
+
+    // 使用计算的最大可能积分作为替代
+    return Math.min(Math.max(result.points || 0, expectedMinPoints), expectedMaxPoints)
+  }
+
+  return result.points || 0
+}
+
+// 保存答题结果到 localStorage
+const saveQuizResult = (result, validatedPoints, timeSpentSeconds) => {
+  localStorage.setItem(
+    'quizResult',
+    JSON.stringify({
+      score: result.score,
+      correctCount: result.correctCount,
+      totalQuestions: result.totalQuestions,
+      results: result.results,
+      points: validatedPoints
+    })
+  )
+
+  // 存储用时数据到 localStorage
+  localStorage.setItem('timeSpent', timeSpentSeconds.toString())
+}
+
+// 更新错题巩固统计数据
+const updateErrorCollectionStats = result => {
+  if (isErrorCollection.value && result.stats) {
+    questionStore.errorCollectionStats = {
+      ...questionStore.errorCollectionStats,
+      ...result.stats
+    }
+  }
+}
+
+// 跳转到结果页面
+const navigateToResult = () => {
+  router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
+}
+
+// 检查所有题目是否已回答
+const checkAllQuestionsAnswered = () => {
   if (!hasAnsweredAll.value) {
     ElMessage.warning('请回答所有题目后再提交！')
-    return
+    return false
   }
+  return true
+}
 
+// 检查提交频率
+const checkSubmitFrequency = () => {
   if (!canSubmit.value) {
     ElMessage.warning('提交过于频繁，请稍后再试！')
-    return
+    return false
   }
 
-  // 检查时间戳，防止快速重复提交
   const currentTime = Date.now()
   if (currentTime - lastSubmitTime.value < 5000) {
     ElMessage.warning('提交过于频繁，请稍后再试！')
+    return false
+  }
+
+  return true
+}
+
+// 验证提交前置条件
+const validateSubmitPreconditions = () => {
+  if (isSubmitting.value) {
+    return false
+  }
+
+  if (!checkAllQuestionsAnswered()) {
+    return false
+  }
+
+  if (!checkSubmitFrequency()) {
+    return false
+  }
+
+  return true
+}
+
+// 提交答题行为数据
+const submitBehaviorData = async () => {
+  const userId = localStorage.getItem('userId')
+  if (!userId || !behaviorTracker.value) {
     return
   }
 
-  // 设置提交状态
-  isSubmitting.value = true
-  lastSubmitTime.value = currentTime
+  // 为每个题目提交行为数据
+  for (const question of currentQuestions.value) {
+    const userAnswer = userAnswers.value[question.id]
+    if (userAnswer) {
+      const isCorrect = isAnswerCorrect(question, userAnswer)
+      const finalAnswer = Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
+
+      await behaviorTracker.value.submitBehavior(
+        parseInt(userId),
+        question.id,
+        finalAnswer,
+        isCorrect
+      )
+    }
+  }
+
+  // 刷新缓冲区，确保所有数据已提交
+  await behaviorTracker.value.flushBuffer()
+}
+
+// 构建打乱映射数据
+const buildShuffleMappings = () => {
+  const shuffleMappings = {}
+  currentQuestions.value.forEach(q => {
+    shuffleMappings[q.id] = q.shuffleMapping
+  })
+  return shuffleMappings
+}
+
+// 构建提交数据
+const buildSubmitData = (timestamp, signature) => {
+  const shuffleMappings = buildShuffleMappings()
+  const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
+
+  return {
+    quizId: quizStore.quizId,
+    answers: userAnswers.value,
+    shuffleMappings,
+    timeSpent: timeSpentSeconds,
+    timestamp,
+    signature
+  }
+}
+
+// 生成提交签名
+const generateSubmitSignature = async (timestamp, userId) => {
+  const signatureData = {
+    quizId: quizStore.quizId,
+    answers: userAnswers.value,
+    timestamp
+  }
+
+  logSignatureDebug('准备提交答案', {
+    quizId: quizStore.quizId,
+    userId,
+    answerCount: Object.keys(userAnswers.value).length,
+    timestamp
+  })
+
+  const signature = await generateSignature(signatureData, timestamp, userId)
+
+  logSignatureDebug('签名生成完成，准备发送', {
+    signature: maskSignature(signature),
+    dataLength: JSON.stringify(signatureData).length
+  })
+
+  return signature
+}
+
+// 提交答案到后端 API
+const submitAnswersToApi = async submitData => {
+  logSignatureDebug('发送请求到后端', {
+    url: '/quiz/submit',
+    method: 'POST'
+  })
 
   try {
-    // 🔥 提交答题行为数据
-    const userId = localStorage.getItem('userId')
-    if (userId && behaviorTracker.value) {
-      // 为每个题目提交行为数据
-      for (const question of currentQuestions.value) {
-        const userAnswer = userAnswers.value[question.id]
-        if (userAnswer) {
-          const isCorrect = isAnswerCorrect(question, userAnswer)
-          const finalAnswer = Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
-
-          await behaviorTracker.value.submitBehavior(
-            parseInt(userId),
-            question.id,
-            finalAnswer,
-            isCorrect
-          )
-        }
-      }
-
-      // 刷新缓冲区，确保所有数据已提交
-      await behaviorTracker.value.flushBuffer()
-    }
-
-    // 生成时间戳和签名
-    const timestamp = Date.now()
-
-    logSignatureDebug('准备提交答案', {
-      quizId: quizStore.quizId,
-      userId,
-      answerCount: Object.keys(userAnswers.value).length,
-      timestamp
-    })
-
-    // 准备打乱映射数据
-    const shuffleMappings = {}
-    currentQuestions.value.forEach(q => {
-      shuffleMappings[q.id] = q.shuffleMapping
-    })
-
-    // 构建签名数据
-    const signatureData = {
-      quizId: quizStore.quizId,
-      answers: userAnswers.value,
-      timestamp
-    }
-
-    // 生成签名
-    const signature = await generateSignature(signatureData, timestamp, userId)
-
-    logSignatureDebug('签名生成完成，准备发送', {
-      signature: maskSignature(signature),
-      dataLength: JSON.stringify(signatureData).length
-    })
-
-    // 计算用时（秒）
-    const timeSpentSeconds = Math.round((Date.now() - startTime.value) / 1000)
-
-    // 调用后端API提交答案
-    const submitData = {
-      quizId: quizStore.quizId,
-      answers: userAnswers.value,
-      shuffleMappings, // 添加打乱映射（实际是 reverseMapping）
-      timeSpent: timeSpentSeconds,
-      timestamp,
-      signature
-    }
-
-    const apiUrl = `${getApiBaseUrl()}/quiz/submit`
-
-    logSignatureDebug('发送请求到后端', {
-      url: apiUrl,
-      method: 'POST'
-    })
-
-    // 获取 token 用于身份验证
-    const token = localStorage.getItem('token')
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // 使用 JWT token 进行身份验证（优先）
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify(submitData)
-    })
-
-    if (!response.ok) {
-      const errorData = await response.json()
-      logSignatureDebug('❌ 提交失败', {
-        status: response.status,
-        error: errorData.error
-      })
-      ElMessage.error(errorData.error || '提交答案失败')
-      return
-    }
-
-    const result = await response.json()
+    const result = await api.post('/quiz/submit', submitData, { showError: false })
 
     logSignatureDebug('✅ 提交成功', {
       score: result.score,
@@ -566,66 +647,56 @@ const submitAnswers = async () => {
       points: result.points
     })
 
+    return result
+  } catch (error) {
+    logSignatureDebug('❌ 提交失败', {
+      error: error.message
+    })
+    ElMessage.error(error.message || '提交答案失败')
+    return null
+  }
+}
+
+// 提交答案
+const submitAnswers = async () => {
+  // 验证前置条件
+  if (!validateSubmitPreconditions()) {
+    return
+  }
+
+  // 设置提交状态
+  const currentTime = Date.now()
+  isSubmitting.value = true
+  lastSubmitTime.value = currentTime
+
+  try {
+    // 提交答题行为数据
+    await submitBehaviorData()
+
+    // 生成签名和构建提交数据
+    const userId = localStorage.getItem('userId')
+    const timestamp = Date.now()
+    const signature = await generateSubmitSignature(timestamp, userId)
+    const submitData = buildSubmitData(timestamp, signature)
+
+    // 提交答案到后端 API
+    const result = await submitAnswersToApi(submitData)
+
+    if (!result) {
+      return
+    }
+
     // 验证积分数据
-    let validatedPoints = result.points || 0
+    const validatedPoints = validatePoints(result)
 
-    // 计算预期积分范围
-    const totalQuestions = result.totalQuestions || 0
-    const correctCount = result.correctCount || 0
-    const wrongCount = totalQuestions - correctCount
+    // 保存答题结果
+    saveQuizResult(result, validatedPoints, submitData.timeSpent)
 
-    // 普通题库积分规则：答对1分，答错扣1分，全对积分翻倍
-    let expectedMinPoints = -wrongCount // 全错的情况
-    let expectedMaxPoints = correctCount // 普通情况
-
-    if (correctCount === totalQuestions && totalQuestions > 0) {
-      expectedMaxPoints = correctCount * 2 // 全对翻倍
-    }
-
-    // 错题巩固题库积分规则：每道题累计正确3次+1分
-    if (isErrorCollection.value) {
-      // 错题巩固题库每道题最多+1分
-      expectedMaxPoints = totalQuestions
-      expectedMinPoints = 0
-    }
-
-    // 验证积分是否在合理范围内
-    if (result.points < expectedMinPoints || result.points > expectedMaxPoints) {
-      console.warn('积分数据异常，使用计算值:', {
-        received: result.points,
-        expectedMin: expectedMinPoints,
-        expectedMax: expectedMaxPoints
-      })
-
-      // 使用计算的最大可能积分作为替代
-      validatedPoints = Math.min(Math.max(result.points || 0, expectedMinPoints), expectedMaxPoints)
-    }
-
-    // 保存答题结果到localStorage
-    localStorage.setItem(
-      'quizResult',
-      JSON.stringify({
-        score: result.score,
-        correctCount: result.correctCount,
-        totalQuestions: result.totalQuestions,
-        results: result.results,
-        points: validatedPoints
-      })
-    )
-
-    // 如果是错题巩固题库，更新统计数据
-    if (isErrorCollection.value && result.stats) {
-      questionStore.errorCollectionStats = {
-        ...questionStore.errorCollectionStats,
-        ...result.stats
-      }
-    }
-
-    // 存储用时数据到localStorage
-    localStorage.setItem('timeSpent', timeSpentSeconds.toString())
+    // 更新错题巩固统计数据
+    updateErrorCollectionStats(result)
 
     // 跳转到结果页面
-    router.push(`/result/${subjectId.value}/${subcategoryId.value}`)
+    navigateToResult()
   } catch (error) {
     console.error('提交答案失败:', error)
     ElMessage.error('提交答案失败，请检查网络连接')
@@ -701,40 +772,23 @@ onMounted(async () => {
       class: parseInt(localStorage.getItem('userClass'))
     }
 
-    const apiUrl = `${getApiBaseUrl()}/quiz/start`
+    let data
 
-    // 获取 token 用于身份验证
-    const token = localStorage.getItem('token')
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // 使用 JWT token 进行身份验证（优先）
-        ...(token ? { Authorization: `Bearer ${token}` } : {})
-      },
-      body: JSON.stringify(startData)
-    })
-
-    if (!response.ok) {
+    try {
+      data = await api.post('/quiz/start', startData, { showError: false })
+    } catch (error) {
       // 特殊处理错题巩固题库为空的情况
-      if (isErrorCollection.value && response.status === 404) {
-        ElMessage.success('恭喜！您的错题巩固题库为空，所有错题都已巩固完成！')
-        router.push(`/subcategory/${subjectId.value}`)
-        return
+      if (error.message?.includes('404') || error.message?.includes('Not Found')) {
+        if (isErrorCollection.value) {
+          ElMessage.success('恭喜！您的错题巩固题库为空，所有错题都已巩固完成！')
+          router.push(`/subcategory/${subjectId.value}`)
+          return
+        }
       }
-
-      try {
-        const errorData = await response.json()
-        ElMessage.error(errorData.error || '开始答题失败')
-      } catch (e) {
-        ElMessage.error('开始答题失败')
-      }
+      ElMessage.error(error.message || '开始答题失败')
       router.push(`/subcategory/${subjectId.value}`)
       return
     }
-
-    const data = await response.json()
 
     // 保存quizId用于后续提交
     quizStore.quizId = data.quizId
@@ -838,17 +892,8 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
-/* 引入全局CSS变量 */
-:root {
-  --primary-color: #ff6b6b;
-  --accent-color: #ffd166;
-  --background-color: #f7fff7;
-  --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
-  --header-border-color: #ff9999;
-  --el-shadow-light: 0 6px 15px rgba(0, 0, 0, 0.1);
-  --el-border-radius-round: 20px;
-}
+<style scoped lang="scss">
+/* CSS 变量已在 src/styles/scss/abstracts/_variables.scss 中统一定义 */
 
 .quiz-view {
   min-height: 100vh;

@@ -106,8 +106,12 @@ class ApiClient {
     this.abortControllers.set(endpoint, controller)
 
     try {
-      // 获取 CSRF Token
-      const csrfToken = await getCSRFToken()
+      // 获取 CSRF Token - 重试机制确保获取成功
+      let csrfToken = await getCSRFToken()
+      if (!csrfToken && !['GET', 'HEAD', 'OPTIONS'].includes(options.method || 'GET')) {
+        console.warn('⚠️ CSRF Token 未就绪，尝试重新获取...')
+        csrfToken = await getCSRFToken()
+      }
 
       // 获取认证 Token (管理员或用户)
       const adminToken = sessionStorage.getItem('adminToken')
@@ -304,6 +308,7 @@ class ApiClient {
       const decoder = new TextDecoder()
       let buffer = ''
 
+      // eslint-disable-next-line no-constant-condition -- 流式读取需要无限循环
       while (true) {
         const { done, value } = await reader.read()
         if (done) break

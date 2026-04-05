@@ -1,0 +1,18 @@
+{
+  "timestamp": "2026-04-04T18:34:18.607Z",
+  "passed": 10,
+  "failed": 0,
+  "total": 10,
+  "tests": [
+    "calculatePointsRange - 普通题库全对应翻倍积分",
+    "calculatePointsRange - 普通题库部分正确",
+    "calculatePointsRange - 错题巩固题库规则",
+    "validatePoints - 积分在合理范围内",
+    "validatePoints - 异常积分自动修正",
+    "buildShuffleMappings - 正确构建映射数据",
+    "buildSubmitData - 提交数据字段完整",
+    "checkSubmitFrequency - 5秒内禁止重复提交",
+    "checkSubmitFrequency - 超过5秒允许提交",
+    "submitAnswers - 主函数调用链完整"
+  ]
+}

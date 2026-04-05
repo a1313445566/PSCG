@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <!-- 密码验证对话框 -->
   <el-dialog
     v-model="dialogVisible"
@@ -205,7 +205,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .dialog-footer {
   text-align: center;
 }

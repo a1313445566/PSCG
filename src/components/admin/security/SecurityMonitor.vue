@@ -396,7 +396,7 @@ import { formatDuration } from '../../../utils/format'
 import { escapeHtml } from '../../../utils/xss-filter'
 
 // 使用 Loading Hook
-const { withLoading, cleanup } = useLoading()
+const { withLoading: _withLoading, cleanup } = useLoading() // eslint-disable-line @typescript-eslint/no-unused-vars -- withLoading 暂未使用
 
 // Tab 状态
 const activeTab = ref('realtime')
@@ -779,7 +779,7 @@ onUnmounted(() => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .security-monitor {
   padding: 20px;
 }

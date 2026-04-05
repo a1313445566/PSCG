@@ -2,8 +2,9 @@ const express = require('express')
 const router = express.Router()
 const db = require('../services/database')
 const xssFilter = require('../utils/xss-filter')
+const base64Converter = require('../services/base64ImageConverter')
 const { getPaginationParams } = require('../utils/pagination')
-const fileRefService = require('../services/file-reference-service')
+const fileRefService = require('../services/fileReferenceService')
 
 /**
  * 验证判断题的选项和答案是否合法
@@ -26,13 +27,10 @@ function validateJudgmentQuestion(sanitizedOptions, answer) {
   // 验证答案与选项的对应关系：A=对, B=错
   const answerIndex = answer.charCodeAt(0) - 65 // 'A'→0, 'B'→1
   const expectedOption = sanitizedOptions[answerIndex]
-  if (
-    (answer === 'A' && expectedOption !== '对') ||
-    (answer === 'B' && expectedOption !== '错')
-  ) {
+  if ((answer === 'A' && expectedOption !== '对') || (answer === 'B' && expectedOption !== '错')) {
     return {
       valid: false,
-      error: '判断题答案与选项不匹配：答案A应对应"对"，答案B应对应"错"',
+      error: '判断题答案与选项不匹配：答案A应对应"对"，答案B应对应"错"'
     }
   }
   return { valid: true, error: null }
@@ -360,7 +358,7 @@ router.post('/', async (req, res) => {
       explanation = '',
       audio = null,
       image = null
-    } = req.body // eslint-disable-line prefer-const
+    } = req.body
 
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })
@@ -371,16 +369,42 @@ router.post('/', async (req, res) => {
     content = xssFilter.deepSanitize(content)
     explanation = xssFilter.sanitize(explanation)
 
-    // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
-    const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
-
-  // 判断题验证（复用统一验证函数）
-  if (type === 'judgment') {
-    const validation = validateJudgmentQuestion(sanitizedOptions, answer)
-    if (!validation.valid) {
-      return res.status(400).json({ error: validation.error })
+    // 自动转换 base64 图片为文件（防止数据库存储庞大的 base64 数据）
+    if (base64Converter.hasBase64Images(content)) {
+      const contentResult = await base64Converter.convertHtml(content)
+      content = contentResult.html
+      if (contentResult.convertedCount > 0) {
+        console.log(`[题目新增] ✅ 已转换 ${contentResult.convertedCount} 张 base64 图片`)
+      }
     }
-  }
+
+    if (base64Converter.hasBase64Images(explanation)) {
+      const explanationResult = await base64Converter.convertHtml(explanation)
+      explanation = explanationResult.html
+      if (explanationResult.convertedCount > 0) {
+        console.log(`[题目新增] ✅ 解析中已转换 ${explanationResult.convertedCount} 张 base64 图片`)
+      }
+    }
+
+    // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
+    const sanitizedOptions = await Promise.all(
+      options.map(async opt => {
+        const cleaned = xssFilter.recursiveSanitize(opt)
+        if (base64Converter.hasBase64Images(cleaned)) {
+          const result = await base64Converter.convertHtml(cleaned)
+          return result.html
+        }
+        return cleaned
+      })
+    )
+
+    // 判断题验证（复用统一验证函数）
+    if (type === 'judgment') {
+      const validation = validateJudgmentQuestion(sanitizedOptions, answer)
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error })
+      }
+    }
 
     // 处理 options 参数，确保它是一个数组
     const optionsJson = JSON.stringify(sanitizedOptions || [])
@@ -452,7 +476,7 @@ router.put('/:id', async (req, res) => {
   try {
     const { id } = req.params
     let { subjectId, subcategoryId, content, type, options, answer, explanation, audio, image } =
-      req.body // eslint-disable-line prefer-const
+      req.body
 
     if (!subjectId || !subcategoryId || !content || !type || !options || !answer) {
       res.status(400).json({ error: '题目信息不完整' })
@@ -463,16 +487,42 @@ router.put('/:id', async (req, res) => {
     content = xssFilter.deepSanitize(content)
     explanation = xssFilter.sanitize(explanation)
 
-    // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
-    const sanitizedOptions = options.map(opt => xssFilter.recursiveSanitize(opt))
-
-  // 判断题验证（复用统一验证函数，防止通过更新接口写入矛盾数据）
-  if (type === 'judgment') {
-    const validation = validateJudgmentQuestion(sanitizedOptions, answer)
-    if (!validation.valid) {
-      return res.status(400).json({ error: validation.error })
+    // 自动转换 base64 图片为文件（防止数据库存储庞大的 base64 数据）
+    if (base64Converter.hasBase64Images(content)) {
+      const contentResult = await base64Converter.convertHtml(content)
+      content = contentResult.html
+      if (contentResult.convertedCount > 0) {
+        console.log(`[题目编辑] ✅ 已转换 ${contentResult.convertedCount} 张 base64 图片`)
+      }
     }
-  }
+
+    if (base64Converter.hasBase64Images(explanation)) {
+      const explanationResult = await base64Converter.convertHtml(explanation)
+      explanation = explanationResult.html
+      if (explanationResult.convertedCount > 0) {
+        console.log(`[题目编辑] ✅ 解析中已转换 ${explanationResult.convertedCount} 张 base64 图片`)
+      }
+    }
+
+    // 过滤选项中的富文本内容（支持嵌套结构，如阅读理解题）
+    const sanitizedOptions = await Promise.all(
+      options.map(async opt => {
+        const cleaned = xssFilter.recursiveSanitize(opt)
+        if (base64Converter.hasBase64Images(cleaned)) {
+          const result = await base64Converter.convertHtml(cleaned)
+          return result.html
+        }
+        return cleaned
+      })
+    )
+
+    // 判断题验证（复用统一验证函数，防止通过更新接口写入矛盾数据）
+    if (type === 'judgment') {
+      const validation = validateJudgmentQuestion(sanitizedOptions, answer)
+      if (!validation.valid) {
+        return res.status(400).json({ error: validation.error })
+      }
+    }
 
     // 获取旧题目数据（用于对比文件引用）
     const oldQuestion = await db.get('SELECT * FROM questions WHERE id = ?', [id])

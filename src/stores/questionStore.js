@@ -11,8 +11,8 @@ import {
   importLocalData,
   updateSubject as updateSubjectApi,
   updateSubcategory as updateSubcategoryApi,
-  getGrades,
-  getClasses,
+  // getGrades, // eslint-disable-line no-unused-vars -- 暂未使用
+  // getClasses, // eslint-disable-line no-unused-vars -- 暂未使用
   addGrade,
   updateGrade,
   deleteGrade,
@@ -623,7 +623,8 @@ export const useQuestionStore = defineStore('question', {
     },
 
     // 更新学科列表
-    async updateSubjects(updatedSubjects) {
+    async updateSubjects(_updatedSubjects) {
+      // eslint-disable-line @typescript-eslint/no-unused-vars -- API 规范要求
       try {
         this.isLoading = true
         this.error = null

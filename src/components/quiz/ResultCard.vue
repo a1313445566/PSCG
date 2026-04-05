@@ -52,7 +52,7 @@
 
 <script setup>
 import { computed } from 'vue'
-import { MAX_CORRECT_COUNT, getProgressColor } from '../../utils/errorCollectionUtils'
+import { MAX_CORRECT_COUNT /*, getProgressColor */ } from '../../utils/errorCollectionUtils' // eslint-disable-line no-unused-vars -- getProgressColor 暂未使用
 
 const props = defineProps({
   score: {
@@ -167,7 +167,7 @@ const backToSubjects = () => {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .result-card {
   background: #ffffff;
   border-radius: 12px;

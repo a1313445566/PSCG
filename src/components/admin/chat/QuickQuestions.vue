@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div v-if="questions.length > 0" class="quick-questions">
     <div class="quick-header">
       <el-icon><ChatLineRound /></el-icon>
@@ -91,7 +91,7 @@ function handleQuestionClick(question) {
 }
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .quick-questions {
   margin-top: 12px;
   padding: 12px;

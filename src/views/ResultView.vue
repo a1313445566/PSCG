@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="result-view">
     <AppHeader />
 
@@ -238,7 +238,7 @@ onMounted(async () => {
 })
 </script>
 
-<style scoped>
+<style scoped lang="scss">
 .result-view {
   min-height: 100vh;
   background-color: #f5f7fa;
@@ -302,7 +302,7 @@ onMounted(async () => {
 }
 </style>
 
-<style scoped>
+<style scoped lang="scss">
 .result-view {
   min-height: 100vh;
   background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);

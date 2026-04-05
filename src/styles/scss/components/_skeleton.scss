@@ -1,0 +1,215 @@
+@use '../abstracts' as *;
+
+// ============================================
+// 骨架屏组件样式
+// ============================================
+
+// ============================================
+// 骨架屏基础
+// ============================================
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s infinite;
+  border-radius: 4px;
+}
+
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+// ============================================
+// 骨架屏元素
+// ============================================
+.skeleton-text {
+  height: 16px;
+  margin-bottom: $spacing-sm;
+  
+  &:last-child {
+    width: 60%;
+  }
+}
+
+.skeleton-title {
+  height: 24px;
+  width: 40%;
+  margin-bottom: $spacing-md;
+}
+
+.skeleton-avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+}
+
+.skeleton-avatar-sm {
+  width: 32px;
+  height: 32px;
+}
+
+.skeleton-avatar-lg {
+  width: 64px;
+  height: 64px;
+}
+
+.skeleton-image {
+  width: 100%;
+  height: 200px;
+}
+
+.skeleton-button {
+  width: 100px;
+  height: 36px;
+  border-radius: $border-radius-sm;
+}
+
+// ============================================
+// 骨架屏卡片
+// ============================================
+.skeleton-card {
+  background: $card-background;
+  border-radius: $border-radius;
+  padding: $spacing-lg;
+  box-shadow: $shadow-sm;
+}
+
+.skeleton-card-header {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  margin-bottom: $spacing-md;
+}
+
+.skeleton-card-body {
+  .skeleton-text {
+    margin-bottom: $spacing-sm;
+  }
+}
+
+.skeleton-card-footer {
+  display: flex;
+  gap: $spacing-sm;
+  margin-top: $spacing-md;
+  padding-top: $spacing-md;
+  border-top: 1px solid #ebeef5;
+}
+
+// ============================================
+// 骨架屏列表
+// ============================================
+.skeleton-list {
+  display: flex;
+  flex-direction: column;
+  gap: $spacing-md;
+}
+
+.skeleton-list-item {
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  padding: $spacing-md;
+  background: $card-background;
+  border-radius: $border-radius-sm;
+}
+
+.skeleton-list-content {
+  flex: 1;
+  
+  .skeleton-text {
+    margin-bottom: $spacing-xs;
+    
+    &:last-child {
+      width: 40%;
+    }
+  }
+}
+
+// ============================================
+// 骨架屏表格
+// ============================================
+.skeleton-table {
+  width: 100%;
+  
+  .skeleton-table-header {
+    display: flex;
+    gap: $spacing-md;
+    padding: $spacing-md;
+    background: #f5f7fa;
+    border-radius: $border-radius-sm $border-radius-sm 0 0;
+    
+    .skeleton-text {
+      flex: 1;
+      height: 14px;
+      margin: 0;
+    }
+  }
+  
+  .skeleton-table-row {
+    display: flex;
+    gap: $spacing-md;
+    padding: $spacing-md;
+    border-bottom: 1px solid #ebeef5;
+    
+    .skeleton-text {
+      flex: 1;
+      height: 14px;
+      margin: 0;
+    }
+  }
+}
+
+// ============================================
+// 骨架屏网格
+// ============================================
+.skeleton-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: $spacing-lg;
+}
+
+// ============================================
+// 骨架屏统计卡片
+// ============================================
+.skeleton-stat-card {
+  background: $card-background;
+  border-radius: $border-radius;
+  padding: $spacing-lg;
+  text-align: center;
+  
+  .skeleton-icon {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    margin: 0 auto $spacing-md;
+  }
+  
+  .skeleton-value {
+    height: 32px;
+    width: 60%;
+    margin: 0 auto $spacing-sm;
+  }
+  
+  .skeleton-label {
+    height: 14px;
+    width: 40%;
+    margin: 0 auto;
+  }
+}
+
+// ============================================
+// 响应式
+// ============================================
+@media (max-width: $breakpoint-md) {
+  .skeleton-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .skeleton-image {
+    height: 150px;
+  }
+}
