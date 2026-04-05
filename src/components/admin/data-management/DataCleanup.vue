@@ -135,7 +135,7 @@
     >
       <div class="verify-content">
         <p class="verify-message">{{ dialogMessage }}</p>
-        
+
         <div class="math-verify-section">
           <p class="math-title">请完成算术题验证：</p>
           <div class="math-problem-display">{{ mathProblem }}</div>
@@ -151,11 +151,7 @@
 
       <template #footer>
         <el-button @click="verifyDialogVisible = false">取消</el-button>
-        <el-button
-          type="primary"
-          :loading="verifyLoading"
-          @click="handleVerify"
-        >
+        <el-button type="primary" :loading="verifyLoading" @click="handleVerify">
           验证并执行
         </el-button>
       </template>
@@ -241,7 +237,7 @@ const handleVerify = () => {
     if (userAnswer === correctAnswer.value) {
       ElMessage.success('验证通过！')
       verifyDialogVisible.value = false
-      
+
       // 执行对应的操作
       if (currentCallback.value) {
         currentCallback.value()

@@ -70,6 +70,7 @@
         :backup-history="backupHistory"
         @backup-data="backupData"
         @upload-backup="uploadBackup"
+        @restore-from-history="restoreFromHistory"
         @download-backup="downloadBackup"
         @delete-backup="deleteBackup"
         @get-backup-history="getBackupHistory"
@@ -462,39 +463,76 @@ const uploadBackup = async file => {
 
     await api.postFormData('/restore', formData)
 
-    if (response.ok) {
-      const results = await Promise.allSettled([
-        questionStore.loadData(),
-        questionStore.loadQuestions({ excludeContent: true })
-      ])
+    if (!isComponentMounted) return
+    const results = await Promise.allSettled([
+      questionStore.loadData(),
+      questionStore.loadQuestions({ excludeContent: true })
+    ])
 
-      if (!isComponentMounted) return
+    if (!isComponentMounted) return
 
-      const failedOperations = results
-        .map((r, i) => {
-          if (r.status === 'rejected') {
-            const names = ['学科数据', '题目数据']
-            return `${names[i]}: ${r.reason?.message || '未知错误'}`
-          }
-          return null
-        })
-        .filter(Boolean)
+    const failedOperations = results
+      .map((r, i) => {
+        if (r.status === 'rejected') {
+          const names = ['学科数据', '题目数据']
+          return `${names[i]}: ${r.reason?.message || '未知错误'}`
+        }
+        return null
+      })
+      .filter(Boolean)
 
-      questionListRef.value?.refresh()
-      userManagementRef.value?.refresh()
+    questionListRef.value?.refresh()
+    userManagementRef.value?.refresh()
 
-      if (failedOperations.length > 0) {
-        message.warning(`数据已恢复，但部分数据刷新失败: ${failedOperations.join(', ')}`)
-      } else {
-        message.success('数据恢复成功')
-      }
+    if (failedOperations.length > 0) {
+      message.warning(`数据已恢复，但部分数据刷新失败: ${failedOperations.join(', ')}`)
     } else {
-      throw new Error('恢复数据失败')
+      message.success('数据恢复成功')
     }
   } catch (error) {
     console.error('上传备份文件失败:', error)
     if (isComponentMounted) {
       message.error('上传备份文件失败，请稍后重试')
+    }
+  }
+}
+
+const restoreFromHistory = async backupId => {
+  if (!isComponentMounted) return
+
+  try {
+    await api.post(`/restore/${backupId}`)
+
+    if (!isComponentMounted) return
+    const results = await Promise.allSettled([
+      questionStore.loadData(),
+      questionStore.loadQuestions({ excludeContent: true })
+    ])
+
+    if (!isComponentMounted) return
+
+    const failedOperations = results
+      .map((r, i) => {
+        if (r.status === 'rejected') {
+          const names = ['学科数据', '题目数据']
+          return `${names[i]}: ${r.reason?.message || '未知错误'}`
+        }
+        return null
+      })
+      .filter(Boolean)
+
+    questionListRef.value?.refresh()
+    userManagementRef.value?.refresh()
+
+    if (failedOperations.length > 0) {
+      message.warning(`数据已恢复，但部分数据刷新失败: ${failedOperations.join(', ')}`)
+    } else {
+      message.success('从历史备份恢复成功')
+    }
+  } catch (error) {
+    console.error('从历史备份恢复失败:', error)
+    if (isComponentMounted) {
+      message.error('从历史备份恢复失败，请稍后重试')
     }
   }
 }
@@ -564,36 +602,27 @@ const verifyBackup = async file => {
     const formData = new FormData()
     formData.append('backup', file.raw)
 
-    const response = await fetch(`${getApiBaseUrl()}/backup/verify`, {
-      method: 'POST',
-      body: formData
-    })
+    const result = await api.postFormData('/backup/verify', formData)
+    if (!isComponentMounted) return
 
-    if (response.ok) {
-      const result = await response.json()
-      if (!isComponentMounted) return
-
-      if (result.valid) {
-        const { ElMessageBox } = await import('element-plus')
-        ElMessageBox.alert(
-          `<div style="text-align: left;">
+    if (result.valid) {
+      const { ElMessageBox } = await import('element-plus')
+      ElMessageBox.alert(
+        `<div style="text-align: left;">
             <p><strong>验证结果:</strong> 备份文件有效</p>
             <p><strong>备份类型:</strong> ${result.type}</p>
             <p><strong>备份时间:</strong> ${new Date(result.timestamp).toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' })}</p>
             <p><strong>数据大小:</strong> ${result.size}</p>
             ${result.dataTypes ? `<p><strong>包含数据:</strong> ${result.dataTypes.join(', ')}</p>` : ''}
           </div>`,
-          '备份文件验证成功',
-          {
-            dangerouslyUseHTMLString: true,
-            confirmButtonText: '确定'
-          }
-        )
-      } else {
-        message.error(`备份文件验证失败: ${result.message}`)
-      }
+        '备份文件验证成功',
+        {
+          dangerouslyUseHTMLString: true,
+          confirmButtonText: '确定'
+        }
+      )
     } else {
-      throw new Error('验证失败')
+      message.error(`备份文件验证失败: ${result.message}`)
     }
   } catch (error) {
     console.error('验证备份文件失败:', error)

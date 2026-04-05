@@ -547,7 +547,7 @@ class Database {
   async healthCheck() {
     try {
       const startTime = Date.now()
-      
+
       // 检查连接池是否存在
       if (!this.pool) {
         return {
@@ -556,13 +556,13 @@ class Database {
           timestamp: new Date().toISOString()
         }
       }
-      
+
       // 尝试获取连接并执行简单查询
       const connection = await this.pool.getConnection()
       try {
         await connection.execute('SELECT 1')
         const responseTime = Date.now() - startTime
-        
+
         return {
           status: 'healthy',
           message: '数据库连接正常',

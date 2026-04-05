@@ -21,7 +21,11 @@
       <!-- 主体区域 -->
       <div class="layout-main">
         <!-- 侧边栏 -->
-        <AdminSidebar ref="sidebarRef" @menu-select="handleMenuSelect" @mobile-state-change="handleMobileStateChange" />
+        <AdminSidebar
+          ref="sidebarRef"
+          @menu-select="handleMenuSelect"
+          @mobile-state-change="handleMobileStateChange"
+        />
 
         <!-- 移动端遮罩层 -->
         <div v-if="showSidebarOverlay" class="sidebar-overlay" @click="handleOverlayClick" />
@@ -390,7 +394,7 @@ onErrorCaptured(err => {
   bottom: 0;
   background-color: rgba(0, 0, 0, 0.5);
   z-index: 999;
-  
+
   @media (max-width: 992px) {
     display: block;
   }

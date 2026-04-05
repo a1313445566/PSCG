@@ -9,7 +9,7 @@ const { execSync } = require('child_process')
 const upload = multer({
   dest: path.join(__dirname, '..', 'uploads'),
   limits: {
-    fileSize: 10 * 1024 * 1024 // 10MB限制
+    fileSize: 200 * 1024 * 1024 // 200MB限制（数据库备份文件可能较大）
   }
 })
 
@@ -176,7 +176,50 @@ router.post('/backup/verify', upload.single('backup'), (req, res) => {
   }
 })
 
-// 恢复数据
+// 从历史备份恢复数据
+router.post('/restore/:id', async (req, res) => {
+  try {
+    const { id } = req.params
+    const backupFileName = `${id}.db`
+    const backupFilePath = path.join(backupDir, backupFileName)
+
+    if (!fs.existsSync(backupFilePath)) {
+      return res.status(404).json({ error: '备份文件不存在' })
+    }
+
+    const dbConfig = require('../config/database')
+
+    const env = Object.assign({}, process.env, {
+      MYSQL_PWD: dbConfig.password
+    })
+
+    try {
+      const checkDbCommand = `mysql -h ${dbConfig.host} -u ${dbConfig.user} -e "CREATE DATABASE IF NOT EXISTS ${dbConfig.database};"`
+      execSync(checkDbCommand, { env })
+      console.log('数据库检查/创建成功')
+    } catch (checkError) {
+      console.error('数据库检查失败:', checkError)
+      return res.status(500).json({ error: '数据库连接失败，请检查配置' })
+    }
+
+    const command = `mysql -h ${dbConfig.host} -u ${dbConfig.user} ${dbConfig.database} < ${backupFilePath}`
+
+    try {
+      execSync(command, { env })
+      console.log('从历史备份恢复数据成功')
+    } catch (execError) {
+      console.error('恢复数据命令执行失败:', execError)
+      return res.status(500).json({ error: '恢复数据命令执行失败' })
+    }
+
+    res.json({ success: true, message: '数据恢复成功' })
+  } catch (error) {
+    console.error('从历史备份恢复失败:', error)
+    res.status(500).json({ error: '恢复数据失败' })
+  }
+})
+
+// 从上传文件恢复数据
 router.post('/restore', upload.single('backup'), async (req, res) => {
   try {
     if (!req.file) {
@@ -240,6 +283,30 @@ router.post('/restore', upload.single('backup'), async (req, res) => {
     }
     res.status(500).json({ error: '恢复数据失败' })
   }
+})
+
+// Multer 错误处理中间件
+router.use((err, req, res, _next) => {
+  console.error('[备份上传错误]', err.code, err.message)
+
+  if (err.code === 'LIMIT_FILE_SIZE') {
+    return res.status(400).json({
+      success: false,
+      error: '文件大小超过限制（最大 200MB）'
+    })
+  }
+
+  if (err.code === 'LIMIT_UNEXPECTED_FILE') {
+    return res.status(400).json({
+      success: false,
+      error: '意外的文件字段'
+    })
+  }
+
+  res.status(500).json({
+    success: false,
+    error: '上传失败: ' + (err.message || '未知错误')
+  })
 })
 
 module.exports = router

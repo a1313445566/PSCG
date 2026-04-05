@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="database-management">
     <div class="stats-overview">
       <div class="stat-card">
@@ -209,9 +209,13 @@
           </el-table-column>
           <el-table-column prop="size" label="大小" width="120" align="center" />
           <el-table-column prop="createdAt" label="创建时间" width="180" align="center" />
-          <el-table-column label="操作" width="180" align="center" fixed="right">
+          <el-table-column label="操作" width="240" align="center" fixed="right">
             <template #default="{ row }">
               <template v-if="row">
+                <el-button type="success" size="small" link @click="restoreFromHistory(row)">
+                  <el-icon><Refresh /></el-icon>
+                  恢复
+                </el-button>
                 <el-button type="primary" size="small" link @click="downloadBackup(row.id)">
                   <el-icon><Download /></el-icon>
                   下载
@@ -263,6 +267,7 @@ const props = defineProps({
 const emit = defineEmits([
   'backup-data',
   'restore-data',
+  'restore-from-history',
   'upload-backup',
   'download-backup',
   'delete-backup',
@@ -465,6 +470,23 @@ const showBackupHistory = async () => {
 
 const downloadBackup = backupId => {
   emit('download-backup', backupId)
+}
+
+const restoreFromHistory = backup => {
+  ElMessageBox.confirm(
+    `确定要使用备份 "${backup.filename}" 恢复数据吗？这将覆盖当前系统的所有数据，请谨慎操作！`,
+    '恢复确认',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  )
+    .then(() => {
+      backupHistoryVisible.value = false
+      emit('restore-from-history', backup.id)
+    })
+    .catch(() => {})
 }
 
 const deleteBackup = backupId => {
