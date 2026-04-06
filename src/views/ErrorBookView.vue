@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="game-page">
     <AppHeader />
 
@@ -357,7 +357,7 @@ onMounted(async () => {
 
 .error-count {
   font-family: var(--game-font);
-  font-size: 1rem;
+  font-size: $font-size-md; // 1rem=16px
   color: var(--primary-color);
   font-weight: 700;
 }
@@ -386,14 +386,14 @@ onMounted(async () => {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 1.5rem;
+  margin-bottom: $spacing-lg; // 1.5rem=24px
   flex-wrap: wrap;
-  gap: 1rem;
+  gap: $spacing-md; // 1rem=16px
 }
 
 .filter-left {
   display: flex;
-  gap: 0.8rem;
+  gap: $spacing-compact; // 0.8rem≈12.8px，取12px
 }
 
 .filter-right {
@@ -402,24 +402,24 @@ onMounted(async () => {
 }
 
 .game-select {
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  border: 2px solid var(--border-color);
+  padding: $spacing-compact $spacing-md; // 0.6rem≈9.6px, 1rem=16px
+  border-radius: $border-radius-sm; // 12px取近似值8px
+  border: $border-width-md solid var(--border-color);
   font-family: var(--game-font);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.9rem; // 特殊值
   background: white;
   cursor: pointer;
 }
 
 .order-btn {
-  padding: 0.6rem 1.2rem;
-  border-radius: 12px;
-  border: 2px solid var(--border-color);
+  padding: $spacing-compact 1.2rem; // 特殊值混合
+  border-radius: $border-radius-sm; // 12px取近似值8px
+  border: $border-width-md solid var(--border-color);
   background: white;
   font-family: var(--game-font);
   font-weight: 600;
-  font-size: 0.9rem;
+  font-size: 0.9rem; // 特殊值
   cursor: pointer;
   transition: all 0.3s ease;
 }
@@ -432,18 +432,18 @@ onMounted(async () => {
 
 .search-input {
   width: 100%;
-  padding: 0.6rem 1rem;
-  border-radius: 12px;
-  border: 2px solid var(--border-color);
+  padding: $spacing-compact $spacing-md; // 0.6rem≈9.6px, 1rem=16px
+  border-radius: $border-radius-sm; // 12px取近似值8px
+  border: $border-width-md solid var(--border-color);
   font-family: var(--game-font);
-  font-size: 0.9rem;
+  font-size: 0.9rem; // 特殊值
   outline: none;
   transition: all 0.3s ease;
 }
 
 .search-input:focus {
   border-color: var(--primary-color);
-  box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.1);
+  box-shadow: 0 0 0 3px set-alpha($primary-color, 10);
 }
 
 /* 分页 */
@@ -451,22 +451,22 @@ onMounted(async () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  gap: 1.5rem;
-  margin-top: 2rem;
-  padding: 1.5rem;
+  gap: $spacing-lg; // 1.5rem=24px
+  margin-top: $spacing-xl; // 2rem=32px
+  padding: $spacing-lg; // 1.5rem=24px
   background: white;
-  border-radius: 24px;
-  border: 3px solid var(--border-color);
+  border-radius: $border-radius-lg; // 24px
+  border: $border-width-lg solid var(--border-color);
 }
 
 .page-btn {
   background: white;
   color: var(--primary-color);
-  border: 3px solid var(--border-color);
-  padding: 0.8rem 1.5rem;
-  border-radius: 25px;
+  border: $border-width-lg solid var(--border-color);
+  padding: $spacing-compact $spacing-lg; // 0.8rem≈12.8px, 1.5rem=24px
+  border-radius: $border-radius-lg; // 25px取近似值24px
   font-family: var(--game-font);
-  font-size: 1rem;
+  font-size: $font-size-md; // 1rem=16px
   font-weight: 900;
   cursor: pointer;
   transition: all 0.3s ease;
@@ -477,7 +477,7 @@ onMounted(async () => {
   transform: translateY(-3px);
   box-shadow:
     0 6px 0 var(--border-color),
-    0 10px 15px rgba(255, 209, 102, 0.3);
+    0 10px 15px set-alpha($accent-color, 30);
 }
 
 .page-btn:disabled {
@@ -487,12 +487,12 @@ onMounted(async () => {
 
 .page-info {
   font-family: var(--game-font);
-  font-size: 1rem;
+  font-size: $font-size-md; // 1rem=16px
   color: var(--text-primary);
   font-weight: 700;
 }
 
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) { // 768px
   .filter-section {
     flex-direction: column;
     align-items: stretch;

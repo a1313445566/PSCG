@@ -29,14 +29,14 @@
 .section-label {
   font-size: 14px;
   font-weight: 500;
-  color: #606266;
+  color: $el-text-color-regular;
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
 .content-editor-wrapper {
-  border: 1px solid #dcdfe6;
+  border: 1px solid $border-gray-light;
   border-radius: 4px;
   overflow: hidden;
 
@@ -63,18 +63,18 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background: #f5f7fa;
+  background: $bg-gray-1;
   border-radius: 6px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid $border-gray-lighter;
 
   &:hover {
-    border-color: #409eff;
+    border-color: $el-blue-base;
   }
 }
 
 .option-letter {
   font-weight: 600;
-  color: #409eff;
+  color: $el-blue-base;
   min-width: 20px;
 }
 
@@ -104,9 +104,9 @@
   display: flex;
   gap: 20px;
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: linear-gradient(135deg, $bg-slate-50 0%, $bg-slate-100 100%);
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid $border-slate-200;
 }
 
 .judgment-card {
@@ -116,8 +116,8 @@
   justify-content: center;
   gap: 12px;
   padding: 16px 24px;
-  background: #ffffff;
-  border: 2px solid #e2e8f0;
+  background: $card-background;
+  border: 2px solid $border-slate-200;
   border-radius: 10px;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -126,7 +126,7 @@
   &:hover {
     transform: translateY(-2px);
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-    border-color: #94a3b8;
+    border-color: $border-slate-300;
   }
 
   &.is-active {
@@ -144,7 +144,7 @@
 
     .judgment-icon.correct {
       background: #22c55e;
-      color: #ffffff;
+      color: $text-white;
       box-shadow: 0 2px 8px rgba(34, 197, 94, 0.3);
     }
 
@@ -160,7 +160,7 @@
 
     .judgment-icon.wrong {
       background: #ef4444;
-      color: #ffffff;
+      color: $text-white;
       box-shadow: 0 2px 8px rgba(239, 68, 68, 0.3);
     }
 
@@ -199,7 +199,7 @@
 .judgment-text {
   font-size: 18px;
   font-weight: 600;
-  color: #475569;
+  color: $text-slate-600;
   transition: all 0.3s ease;
 }
 
@@ -223,7 +223,7 @@
 }
 
 .reading-sub-collapse {
-  border: 1px solid #e4e7ed;
+  border: 1px solid $border-gray-lighter;
   border-radius: 8px;
   overflow: visible;
 
@@ -237,8 +237,8 @@
   }
 
   :deep(.el-collapse-item__header) {
-    background-color: #f8fafc;
-    border-bottom: 1px solid #e4e7ed;
+    background-color: $bg-slate-50;
+    border-bottom: 1px solid $border-gray-lighter;
     padding: 0 16px;
     height: 48px;
     line-height: 48px;
@@ -268,7 +268,7 @@
 
 .sub-collapse-order {
   font-weight: 600;
-  color: #1e293b;
+  color: $text-slate-800;
 }
 
 .sub-answer-tag {
@@ -340,7 +340,7 @@
   align-items: center;
   font-size: 14px;
   font-weight: 500;
-  color: #475569;
+  color: $text-slate-600;
   margin-bottom: 8px;
 }
 
@@ -355,18 +355,18 @@
   align-items: center;
   gap: 8px;
   padding: 8px 12px;
-  background-color: #f8fafc;
-  border: 1px solid #e4e7ed;
+  background-color: $bg-slate-50;
+  border: 1px solid $border-gray-lighter;
   border-radius: 6px;
   transition: all 0.2s;
 
   &:hover {
-    border-color: #409eff;
+    border-color: $el-blue-base;
   }
 
   &.is-selected {
-    background-color: #ecf5ff;
-    border-color: #409eff;
+    background-color: $el-blue-light-1;
+    border-color: $el-blue-base;
   }
 
   .el-radio {
@@ -413,7 +413,7 @@
   gap: 8px;
   justify-content: flex-end;
   padding-top: 8px;
-  border-top: 1px solid #e4e7ed;
+  border-top: 1px solid $border-gray-lighter;
 }
 
 // ============================================
@@ -431,7 +431,7 @@
   label {
     width: 80px;
     flex-shrink: 0;
-    color: #606266;
+    color: $el-text-color-regular;
     font-weight: 500;
   }
 }
@@ -439,7 +439,7 @@
 .preview-content-box {
   flex: 1;
   padding: 12px;
-  background: #f5f7fa;
+  background: $bg-gray-1;
   border-radius: 4px;
   line-height: 1.6;
   word-break: break-word;
@@ -459,7 +459,7 @@
 .preview-option {
   padding: 10px 12px;
   margin-bottom: 8px;
-  background: #f5f7fa;
+  background: $bg-gray-1;
   border-radius: 4px;
   display: flex;
   align-items: flex-start;
@@ -469,7 +469,7 @@
 .option-label {
   flex-shrink: 0;
   font-weight: 600;
-  color: #409eff;
+  color: $el-blue-base;
 }
 
 .option-content {
@@ -493,9 +493,9 @@
 
 .preview-sub-question {
   padding: 12px;
-  background-color: #f8fafc;
+  background-color: $bg-slate-50;
   border-radius: 6px;
-  border: 1px solid #e4e7ed;
+  border: 1px solid $border-gray-lighter;
 
   .sub-question-header {
     display: flex;
@@ -506,7 +506,7 @@
 
   .sub-question-order {
     font-weight: 600;
-    color: #303133;
+    color: $text-dark;
   }
 
   .sub-question-content {

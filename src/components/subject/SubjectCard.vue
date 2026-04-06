@@ -51,13 +51,13 @@ const selectSubject = () => {
 <style scoped lang="scss">
 .subject-card {
   background: white;
-  border-radius: 24px;
-  padding: 2.5rem;
+  border-radius: $border-radius-lg;
+  padding: $spacing-section;
   text-align: center;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border: 3px solid var(--border-color);
+  box-shadow: $shadow-lg;
+  border: $border-width-lg solid var(--border-color);
   position: relative;
   overflow: hidden;
 }
@@ -69,14 +69,14 @@ const selectSubject = () => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  background: $header-gradient;
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
 
 .subject-card:hover {
   transform: translateY(-15px) scale(1.05) rotate(2deg);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2);
+  box-shadow: $shadow-xl;
   border-color: var(--primary-color);
   animation: cardHover 0.5s ease-in-out;
 }
@@ -90,8 +90,8 @@ const selectSubject = () => {
 }
 
 .subject-icon {
-  font-size: 5rem;
-  margin-bottom: 1.5rem;
+  font-size: 5rem; // 超大图标特殊值
+  margin-bottom: $spacing-lg;
   transition: all 0.3s ease;
   animation: pulse 2s infinite;
 }
@@ -103,84 +103,84 @@ const selectSubject = () => {
 
 .subject-name {
   font-family: var(--game-font);
-  font-size: 1.5rem;
+  font-size: $font-size-2xl;
   font-weight: 900;
   color: var(--text-primary);
-  margin-bottom: 1rem;
+  margin-bottom: $spacing-md;
   text-transform: uppercase;
   letter-spacing: 1px;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+  text-shadow: $text-shadow-base;
 }
 
 .subject-info {
-  font-size: 1rem;
+  font-size: $font-size-md;
   color: var(--text-secondary);
 }
 
 .question-count {
   background-color: var(--accent-color);
   color: var(--text-primary);
-  padding: 0.5rem 1.2rem;
-  border-radius: 25px;
+  padding: $spacing-sm $spacing-compact;
+  border-radius: $border-radius-lg;
   font-weight: 900;
-  font-size: 1.1rem;
-  border: 2px solid var(--accent-color);
-  box-shadow: 0 4px 0 #e6bf50;
+  font-size: $font-size-md; // 约17.6px，取近似值16px
+  border: $border-width-md solid var(--accent-color);
+  box-shadow: $shadow-btn-accent;
 }
 
 /* 学科颜色 */
 .subject-1 .subject-icon {
   color: var(--primary-color);
-  text-shadow: 3px 3px 6px rgba(255, 107, 107, 0.3);
+  text-shadow: $text-shadow-primary;
 }
 
 .subject-2 .subject-icon {
   color: var(--secondary-color);
-  text-shadow: 3px 3px 6px rgba(78, 205, 196, 0.3);
+  text-shadow: 3px 3px 6px set-alpha($secondary-color, 30);
 }
 
 .subject-3 .subject-icon {
   color: var(--accent-color);
-  text-shadow: 3px 3px 6px rgba(255, 209, 102, 0.3);
+  text-shadow: 3px 3px 6px set-alpha($accent-color, 30);
 }
 
 .subject-4 .subject-icon {
   color: var(--success-color);
-  text-shadow: 3px 3px 6px rgba(6, 214, 160, 0.3);
+  text-shadow: 3px 3px 6px set-alpha($success-color, 30);
 }
 
 .subject-5 .subject-icon {
   color: #9c27b0;
-  text-shadow: 3px 3px 6px rgba(156, 39, 176, 0.3);
+  text-shadow: 3px 3px 6px set-alpha(#9c27b0, 30);
 }
 
 .subject-6 .subject-icon {
   color: #4caf50;
-  text-shadow: 3px 3px 6px rgba(76, 175, 80, 0.3);
+  text-shadow: 3px 3px 6px set-alpha(#4caf50, 30);
 }
 
 .subject-7 .subject-icon {
   color: #2196f3;
-  text-shadow: 3px 3px 6px rgba(33, 150, 243, 0.3);
+  text-shadow: 3px 3px 6px set-alpha(#2196f3, 30);
 }
 
 .subject-8 .subject-icon {
   color: #f44336;
-  text-shadow: 3px 3px 6px rgba(244, 67, 54, 0.3);
+  text-shadow: 3px 3px 6px set-alpha(#f44336, 30);
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) {
   .subject-card {
-    padding: 2rem;
+    padding: $spacing-xl;
   }
 
   .subject-icon {
-    font-size: 4rem;
+    font-size: 4rem; // 移动端特殊值
   }
 
   .subject-name {
-    font-size: 1.3rem;
+    font-size: $font-size-xl; // 约20.8px，取近似值20px
   }
 }
 

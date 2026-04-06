@@ -567,24 +567,24 @@ onMounted(async () => {
 .stat-item-mini {
   text-align: center;
   padding: 1rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  background: $stat-item-gradient;
   border-radius: 12px;
-  border: 2px solid var(--border-color);
+  border: 2px solid $border-color;
 }
 
 .stat-item-mini .stat-value {
   display: block;
-  font-family: var(--game-font);
+  font-family: $game-font;
   font-size: 1.5rem;
   font-weight: 900;
-  color: var(--primary-color);
+  color: $primary-color;
 }
 
 .stat-item-mini .stat-label {
   display: block;
-  font-family: var(--game-font);
+  font-family: $game-font;
   font-size: 0.75rem;
-  color: var(--text-secondary);
+  color: $text-secondary;
   margin-top: 0.25rem;
   font-weight: 600;
 }
@@ -594,7 +594,7 @@ onMounted(async () => {
   width: 100%;
   height: 200px;
   border-radius: 8px;
-  background: #fafafa;
+  background: $bg-slate-50;
 }
 
 /* 紧凑型学科列表 */
@@ -610,9 +610,9 @@ onMounted(async () => {
   align-items: center;
   gap: 0.8rem;
   padding: 0.8rem 1rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: $bg-gradient-page;
   border-radius: 10px;
-  border: 2px solid var(--border-color);
+  border: 2px solid $border-color;
 }
 
 .subject-icon {
@@ -620,21 +620,21 @@ onMounted(async () => {
 }
 
 .subject-name {
-  font-family: var(--game-font);
+  font-family: $game-font;
   font-weight: 700;
   font-size: 0.9rem;
 }
 
 .progress-bar-mini {
   height: 8px;
-  background: #e0e0e0;
+  background: $border-color-lighter;
   border-radius: 4px;
   overflow: hidden;
 }
 
 .progress-bar-mini .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--primary-color), var(--secondary-color));
+  background: $section-header-gradient;
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -661,9 +661,9 @@ onMounted(async () => {
   gap: 1rem;
   margin-bottom: 1rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: $profile-gradient;
   border-radius: 12px;
-  color: white;
+  color: $text-white;
 }
 
 .style-badge {
@@ -693,7 +693,7 @@ onMounted(async () => {
   align-items: center;
   gap: 0.5rem;
   padding: 0.6rem 1rem;
-  background: #f8f9fa;
+  background: $bg-slate-50;
   border-radius: 8px;
   font-size: 0.9rem;
 }
@@ -734,9 +734,9 @@ onMounted(async () => {
   align-items: center;
   gap: 0.8rem;
   padding: 0.6rem 1rem;
-  background: #f8f9fa;
+  background: $bg-slate-50;
   border-radius: 8px;
-  font-family: var(--game-font);
+  font-family: $game-font;
   font-size: 0.85rem;
 }
 
@@ -764,7 +764,7 @@ onMounted(async () => {
   width: 100%;
   height: 300px;
   border-radius: 12px;
-  background: #fafafa;
+  background: $bg-slate-50;
   margin-top: 1rem;
 }
 

@@ -1,0 +1,412 @@
+.leaderboard-table {
+  background-color: white;
+  border-radius: 15px;
+  overflow: hidden;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin: 1rem 0;
+}
+
+/* 表格布局 */
+.table-layout {
+  width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin-bottom: 1rem;
+}
+
+.table-layout::-webkit-scrollbar {
+  height: 8px;
+  width: 8px;
+}
+
+.table-layout::-webkit-scrollbar-track {
+  background: $bg-slate-100;
+  border-radius: 10px;
+  margin: 0 10px;
+}
+
+.table-layout::-webkit-scrollbar-thumb {
+  background: $secondary-color;
+  border-radius: 10px;
+  transition: background 0.3s ease;
+}
+
+.table-layout::-webkit-scrollbar-thumb:hover {
+  background: $secondary-dark;
+}
+
+/* 确保表格内容不会溢出容器 */
+.table-layout table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+/* 优化表格布局，确保内容对齐 */
+.leaderboard-header,
+.leaderboard-row {
+  min-width: 600px;
+  box-sizing: border-box;
+}
+
+.leaderboard-header {
+  display: grid;
+  grid-template-columns: 70px 100px 90px 70px 70px 100px 100px;
+  background: $section-header-gradient;
+  color: $text-white;
+  font-weight: bold;
+  padding: 1rem;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.leaderboard-body {
+  max-height: none;
+  overflow-y: visible;
+}
+
+.leaderboard-row {
+  display: grid;
+  grid-template-columns: 70px 100px 90px 70px 70px 100px 100px;
+  padding: 1rem;
+  text-align: center;
+  border-bottom: 1px solid $border-color-lighter;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-row:hover {
+  background-color: $bg-slate-50;
+}
+
+.leaderboard-row.current-user {
+  background-color: $bg-slate-100;
+  border-left: 4px solid $secondary-color;
+}
+
+/* 卡片布局 */
+.card-layout {
+  display: none;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.leaderboard-card {
+  background: $stat-item-gradient;
+  border-radius: 12px;
+  padding: 1.2rem;
+  box-shadow: $shadow-md;
+  border: 1px solid $border-color-lighter;
+  transition: all 0.3s ease;
+}
+
+.leaderboard-card:hover {
+  transform: translateY(-2px);
+  box-shadow: $shadow-lg;
+}
+
+.leaderboard-card.current-user {
+  background: $stat-item-gradient;
+  border: 2px solid $secondary-color;
+}
+
+.card-header {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.rank-badge {
+  flex-shrink: 0;
+}
+
+.user-info {
+  flex: 1;
+  text-align: left;
+}
+
+.student-id {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+}
+
+.user-name {
+  font-size: 1.2rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  font-family: var(--game-font);
+  margin: 0.2rem 0;
+}
+
+.user-class {
+  font-size: 0.9rem;
+  color: #888;
+}
+
+.card-stats {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 0.8rem;
+}
+
+.stat-item {
+  text-align: center;
+  padding: 0.8rem;
+  background: rgba(74, 144, 226, 0.1);
+  border-radius: 8px;
+  border: 1px solid rgba(74, 144, 226, 0.2);
+}
+
+.stat-label {
+  font-size: 0.9rem;
+  color: #666;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.stat-value {
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--primary-color);
+  font-family: var(--game-font);
+}
+
+/* 排名样式 */
+.rank-number {
+  display: inline-block;
+  width: 32px;
+  height: 32px;
+  line-height: 32px;
+  border-radius: 50%;
+  background: $section-header-gradient;
+  color: $text-white;
+  font-weight: bold;
+  font-size: 1rem;
+  transition: all 0.3s ease;
+  font-family: $game-font;
+}
+
+/* Top 3 特殊样式 */
+.rank-number.rank-1 {
+  width: 40px;
+  height: 40px;
+  line-height: 40px;
+  font-size: 1.5rem;
+  background: $gold-gradient;
+  box-shadow: 0 4px 8px set-alpha($gold-color, 50);
+  animation: glow 2s infinite;
+  color: $text-primary !important;
+}
+
+.rank-number.rank-2 {
+  width: 36px;
+  height: 36px;
+  line-height: 36px;
+  font-size: 1.3rem;
+  background: $silver-gradient;
+  box-shadow: 0 4px 8px set-alpha($silver-color, 50);
+  animation: glow 2s infinite 0.3s;
+  color: $text-primary !important;
+}
+
+.rank-number.rank-3 {
+  width: 34px;
+  height: 34px;
+  line-height: 34px;
+  font-size: 1.2rem;
+  background: $bronze-gradient;
+  box-shadow: 0 4px 8px set-alpha($bronze-color, 50);
+  animation: glow 2s infinite 0.6s;
+  color: $text-primary !important;
+}
+
+/* Top 10 特殊样式 */
+.leaderboard-row:nth-child(-n + 3) {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.1), rgba(255, 255, 255, 0.8));
+  border: 2px solid rgba(255, 215, 0, 0.3);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-row:nth-child(-n + 3):hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.5);
+}
+
+.leaderboard-row:nth-child(-n + 10) {
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.05), rgba(255, 255, 255, 0.9));
+  border: 1px solid rgba(106, 17, 203, 0.2);
+  transition: all 0.4s ease;
+}
+
+.leaderboard-row:nth-child(-n + 10):hover {
+  transform: scale(1.01);
+  box-shadow: 0 4px 10px rgba(106, 17, 203, 0.3);
+}
+
+/* Top 10 卡片特殊样式 */
+.leaderboard-card:nth-child(-n + 3) {
+  background: linear-gradient(135deg, rgba(255, 215, 0, 0.15), rgba(255, 255, 255, 0.9));
+  border: 2px solid rgba(255, 215, 0, 0.4);
+  transform: scale(1.02);
+  box-shadow: 0 4px 12px rgba(255, 215, 0, 0.3);
+}
+
+.leaderboard-card:nth-child(-n + 3):hover {
+  transform: scale(1.04);
+  box-shadow: 0 6px 16px rgba(255, 215, 0, 0.5);
+}
+
+.leaderboard-card:nth-child(-n + 10) {
+  background: linear-gradient(135deg, rgba(106, 17, 203, 0.05), rgba(255, 255, 255, 0.9));
+  border: 1px solid rgba(106, 17, 203, 0.2);
+  transition: all 0.4s ease;
+}
+
+.leaderboard-card:nth-child(-n + 10):hover {
+  transform: scale(1.02);
+  box-shadow: 0 4px 10px rgba(106, 17, 203, 0.3);
+}
+
+/* 发光动画 */
+@keyframes glow {
+  0%,
+  100% {
+    box-shadow: 0 4px 8px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    box-shadow: 0 6px 16px rgba(255, 215, 0, 0.8);
+  }
+}
+
+.leaderboard-empty {
+  text-align: center;
+  padding: 3rem;
+  color: #999;
+}
+
+/* 响应式设计 */
+/* 大屏（>768px）：完整表格布局 */
+@media (min-width: 769px) {
+  .table-layout {
+    display: block;
+  }
+  .card-layout {
+    display: none;
+  }
+}
+
+/* 中屏（480px~768px）：横向滚动表格 */
+@media (max-width: 768px) {
+  .table-layout {
+    display: block;
+  }
+  .card-layout {
+    display: none;
+  }
+
+  .leaderboard-header,
+  .leaderboard-row {
+    grid-template-columns: 60px 90px 80px 60px 60px 90px 80px;
+    font-size: 14px;
+  }
+
+  .leaderboard-header,
+  .leaderboard-row {
+    padding: 0.8rem;
+  }
+
+  .rank-number {
+    width: 24px;
+    height: 24px;
+    line-height: 24px;
+    font-size: 12px;
+  }
+
+  .rank-number.rank-1 {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    font-size: 1.2rem;
+  }
+
+  .rank-number.rank-2 {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 1.1rem;
+  }
+
+  .rank-number.rank-3 {
+    width: 26px;
+    height: 26px;
+    line-height: 26px;
+    font-size: 1rem;
+  }
+}
+
+/* 小屏（<480px）：堆叠卡片布局 */
+@media (max-width: 480px) {
+  .table-layout {
+    display: none;
+  }
+  .card-layout {
+    display: flex;
+  }
+
+  .leaderboard-card {
+    padding: 1rem;
+  }
+
+  .card-header {
+    gap: 0.8rem;
+  }
+
+  .user-name {
+    font-size: 1.1rem;
+  }
+
+  .card-stats {
+    gap: 0.8rem;
+  }
+
+  .stat-item {
+    padding: 0.6rem;
+  }
+
+  .stat-value {
+    font-size: 1.2rem;
+  }
+
+  .rank-number {
+    width: 28px;
+    height: 28px;
+    line-height: 28px;
+    font-size: 1rem;
+  }
+
+  .rank-number.rank-1 {
+    width: 32px;
+    height: 32px;
+    line-height: 32px;
+    font-size: 1.3rem;
+  }
+
+  .rank-number.rank-2 {
+    width: 30px;
+    height: 30px;
+    line-height: 30px;
+    font-size: 1.2rem;
+  }
+
+  .rank-number.rank-3 {
+    width: 29px;
+    height: 29px;
+    line-height: 29px;
+    font-size: 1.1rem;
+  }
+}

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="result-view">
     <AppHeader />
 
@@ -241,39 +241,48 @@ onMounted(async () => {
 <style scoped lang="scss">
 .result-view {
   min-height: 100vh;
-  background-color: #f5f7fa;
-  padding: 20px;
+  background: $stat-item-gradient;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
+  background-repeat: repeat;
+  padding-bottom: 2rem;
 }
 
 .result-content {
   max-width: 1200px;
   margin: 0 auto;
+  padding: 2rem;
 }
 
 .section-title {
-  font-size: 20px;
-  font-weight: 600;
-  margin: 30px 0 20px;
-  color: #303133;
+  font-family: 'Fredoka One', 'Comic Sans MS', cursive;
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: $text-primary;
+  margin-bottom: 1.5rem;
+  text-align: center;
 }
 
 .wrong-questions-section {
-  margin-top: 30px;
+  margin-top: 3rem;
+  background: $card-background;
+  border-radius: 20px;
+  padding: 2rem;
+  box-shadow: $shadow-lg;
 }
 
 /* 错题巩固进度部分样式 */
 .error-collection-progress-section {
   margin-top: 30px;
-  background: #ffffff;
+  background: $card-background;
   border-radius: 8px;
   padding: 20px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-md;
 }
 
 .progress-item {
   margin-bottom: 20px;
   padding: 15px;
-  background: #f9f9f9;
+  background: $bg-slate-50;
   border-radius: 6px;
 }
 
@@ -285,7 +294,7 @@ onMounted(async () => {
 }
 
 .progress-question {
-  color: #303133;
+  color: $text-primary;
 }
 
 .progress-status {
@@ -298,40 +307,7 @@ onMounted(async () => {
 .progress-info {
   margin-top: 10px;
   font-size: 14px;
-  color: #606266;
-}
-</style>
-
-<style scoped lang="scss">
-.result-view {
-  min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
-  background-repeat: repeat;
-  padding-bottom: 2rem;
-}
-
-.result-content {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-.wrong-questions-section {
-  margin-top: 3rem;
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-}
-
-.section-title {
-  font-family: 'Fredoka One', 'Comic Sans MS', cursive;
-  font-size: 1.5rem;
-  font-weight: bold;
-  color: #333;
-  margin-bottom: 1.5rem;
-  text-align: center;
+  color: $text-secondary;
 }
 
 /* 响应式设计 */

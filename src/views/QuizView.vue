@@ -897,7 +897,7 @@ onUnmounted(() => {
 
 .quiz-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, var(--background-color) 0%, #e8f5e9 100%);
+  background: $bg-gradient-page;
   padding-bottom: 2rem;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%237DD3F8" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%23A8E6CF" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD88B" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%23FF9999" opacity="0.3"/></svg>');
   background-repeat: repeat;
@@ -906,47 +906,47 @@ onUnmounted(() => {
 .quiz-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: $spacing-xl;
 }
 
 .quiz-header {
-  background: white;
-  border-radius: 24px;
-  padding: 2.5rem;
-  box-shadow: var(--el-shadow-light);
-  border: 2px solid #e8e8e8;
+  background: $card-background;
+  border-radius: $border-radius-lg;
+  padding: $spacing-section;
+  box-shadow: $shadow-lg;
+  border: $border-width-md solid $border-color-lighter;
   overflow: hidden;
-  margin-bottom: 2rem;
+  margin-bottom: $spacing-xl;
   position: relative;
 }
 
 .rules-section {
-  margin: 2rem 0;
-  padding: 1.5rem;
-  background-color: #f8f9fa;
-  border-radius: 12px;
-  border-left: 4px solid #7dd3f8;
+  margin: $spacing-xl 0;
+  padding: $spacing-lg;
+  background-color: $bg-slate-50;
+  border-radius: $border-radius-sm; // 12px取近似值8px
+  border-left: $border-width-lg solid $secondary-color;
 }
 
 .rules-title {
-  font-size: 1.3rem;
+  font-size: $font-size-xl;
   font-weight: bold;
-  color: #333;
-  margin: 0 0 1rem 0;
+  color: $text-primary;
+  margin: 0 0 $spacing-md 0;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .rules-content p {
-  color: #555;
-  margin: 0.5rem 0;
+  color: $text-secondary;
+  margin: $spacing-xs 0;
   line-height: 1.5;
-  font-size: 1rem;
+  font-size: $font-size-md;
 }
 
 .points-rule {
   font-weight: bold;
-  color: #ff6b6b;
-  margin-top: 1rem !important;
+  color: $primary-color;
+  margin-top: $spacing-md !important;
 }
 
 .quiz-header::before {
@@ -956,7 +956,7 @@ onUnmounted(() => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: var(--header-gradient);
+  background: $section-header-gradient;
 }
 
 .quiz-info {
@@ -967,10 +967,10 @@ onUnmounted(() => {
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
   font-size: 2.2rem;
   font-weight: bold;
-  color: #7dd3f8;
+  color: $secondary-color;
   margin: 0 0 1.5rem 0;
   letter-spacing: 2px;
-  text-shadow: 2px 2px 4px rgba(125, 211, 248, 0.3);
+  text-shadow: 2px 2px 4px set-alpha($secondary-color, 30);
 }
 
 .quiz-stats {
@@ -982,79 +982,79 @@ onUnmounted(() => {
 
 .question-count,
 .time-spent {
-  background: var(--header-gradient);
-  color: white;
-  padding: 0.8rem 1.5rem;
-  border-radius: 25px;
+  background: $section-header-gradient;
+  color: $text-white;
+  padding: $spacing-compact $spacing-lg; // 0.8rem≈12.8px, 1.5rem=24px
+  border-radius: $border-radius-lg; // 25px取近似值24px
   font-weight: bold;
-  font-size: 1.1rem;
-  border: 2px solid #7dd3f8;
-  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
+  font-size: $font-size-md; // 1.1rem≈17.6px，取16px
+  border: $border-width-md solid $secondary-color;
+  box-shadow: 0 4px 0 set-alpha($secondary-color, 50);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $spacing-xs;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .shuffle-tag {
-  background: var(--header-gradient);
-  color: white;
-  padding: 0.8rem 1.5rem;
-  border-radius: 25px;
+  background: $section-header-gradient;
+  color: $text-white;
+  padding: $spacing-compact $spacing-lg;
+  border-radius: $border-radius-lg;
   font-weight: bold;
-  font-size: 1.1rem;
-  border: 2px solid #7dd3f8;
-  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
+  font-size: $font-size-md;
+  border: $border-width-md solid $secondary-color;
+  box-shadow: 0 4px 0 set-alpha($secondary-color, 50);
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $spacing-xs;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .shuffle-tag.shuffle-on {
-  background: linear-gradient(135deg, #ff9a9e 0%, #fecfef 100%);
-  border-color: #ff9a9e;
-  box-shadow: 0 4px 0 rgba(255, 154, 158, 0.5);
+  background: $primary-gradient;
+  border-color: $primary-color;
+  box-shadow: 0 4px 0 set-alpha($primary-color, 50);
 }
 
 .shuffle-tag.shuffle-off {
-  background: var(--header-gradient);
-  border-color: #7dd3f8;
-  box-shadow: 0 4px 0 rgba(125, 211, 248, 0.5);
+  background: $section-header-gradient;
+  border-color: $secondary-color;
+  box-shadow: 0 4px 0 set-alpha($secondary-color, 50);
 }
 
 .progress-section {
-  margin-top: 2rem;
+  margin-top: $spacing-xl;
 }
 
 .progress-bar {
   width: 100%;
-  height: 15px;
-  background-color: #e8e8e8;
-  border-radius: 10px;
+  height: 15px; // 特殊值
+  background-color: $border-color-lighter;
+  border-radius: $border-radius-sm; // 10px取近似值8px
   overflow: hidden;
-  margin-bottom: 1rem;
-  border: 2px solid #e8e8e8;
+  margin-bottom: $spacing-md;
+  border: $border-width-md solid $border-color-lighter;
 }
 
 .progress-fill {
   height: 100%;
   background: var(--header-gradient);
-  border-radius: 8px;
+  border-radius: $border-radius-sm;
   transition: width 0.3s ease;
-  box-shadow: 0 0 10px rgba(125, 211, 248, 0.5);
+  box-shadow: 0 0 10px set-alpha($el-blue-light-2, 50);
 }
 
 .progress-text {
-  font-size: 1.1rem;
-  color: #333;
+  font-size: $font-size-md; // 1.1rem≈17.6px，取16px
+  color: $text-primary;
   text-align: right;
   font-weight: bold;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .questions-section {
-  margin-bottom: 2.5rem;
+  margin-bottom: $spacing-section;
 }
 
 .action-buttons {
@@ -1063,33 +1063,33 @@ onUnmounted(() => {
 }
 
 .submit-btn {
-  background: var(--header-gradient);
-  color: white;
-  border: 3px solid #7dd3f8;
-  padding: 1.2rem 3rem;
-  border-radius: 50px;
-  font-size: 1.3rem;
+  background: $section-header-gradient;
+  color: $text-white;
+  border: $border-width-lg solid $secondary-color;
+  padding: 1.2rem 3rem; // 特殊值
+  border-radius: $border-radius-full;
+  font-size: $font-size-xl; // 1.3rem≈20.8px，取20px
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 1rem;
-  letter-spacing: 2px;
-  box-shadow: 0 6px 0 rgba(125, 211, 248, 0.5);
+  gap: $spacing-md;
+  letter-spacing: 2px; // 特殊值
+  box-shadow: 0 6px 0 set-alpha($secondary-color, 50);
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
 
 .submit-btn:hover:not(:disabled) {
   transform: translateY(-4px);
   box-shadow:
-    0 10px 0 rgba(125, 211, 248, 0.5),
-    0 15px 20px rgba(125, 211, 248, 0.4);
+    0 10px 0 set-alpha($el-blue-light-2, 50),
+    0 15px 20px set-alpha($el-blue-light-2, 40);
 }
 
 .submit-btn:active:not(:disabled) {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 rgba(125, 211, 248, 0.5);
+  box-shadow: 0 2px 0 set-alpha($el-blue-light-2, 50);
 }
 
 .submit-btn:disabled {
@@ -1100,43 +1100,43 @@ onUnmounted(() => {
 }
 
 /* 响应式设计 */
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) {
   .quiz-content {
-    padding: 1rem;
+    padding: $spacing-md;
   }
 
   .quiz-header {
-    padding: 2rem;
+    padding: $spacing-xl;
   }
 
   .quiz-title {
-    font-size: 1.8rem;
+    font-size: $font-size-2xl; // 1.8rem≈28.8px，取24px
   }
 
   .quiz-stats {
     flex-direction: column;
-    gap: 1rem;
+    gap: $spacing-md;
     align-items: flex-start;
   }
 
   .submit-btn {
-    padding: 1rem 2.5rem;
-    font-size: 1.1rem;
+    padding: $spacing-md $spacing-section; // 1rem=16px, 2.5rem=40px
+    font-size: $font-size-md;
   }
 }
 
-@media (max-width: 480px) {
+@media (max-width: 480px) { // 特殊断点
   .quiz-header {
-    padding: 1.5rem;
+    padding: $spacing-lg; // 1.5rem=24px
   }
 
   .quiz-title {
-    font-size: 1.5rem;
+    font-size: $font-size-xl; // 1.5rem=24px
   }
 
   .submit-btn {
-    padding: 0.9rem 2rem;
-    font-size: 1rem;
+    padding: 0.9rem $spacing-xl; // 特殊值+变量混合
+    font-size: $font-size-md;
   }
 }
 </style>

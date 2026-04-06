@@ -26,13 +26,13 @@
   td {
     padding: $spacing-sm $spacing-md;
     text-align: left;
-    border-bottom: 1px solid #ebeef5;
+    border-bottom: 1px solid $border-gray-lighter;
   }
 
   th {
     font-weight: 600;
     color: $text-primary;
-    background-color: #f5f7fa;
+    background-color: $bg-gray-1;
     white-space: nowrap;
   }
 
@@ -44,7 +44,7 @@
     transition: background-color 0.2s ease;
 
     &:hover {
-      background-color: #f5f7fa;
+      background-color: $bg-gray-1;
     }
   }
 }
@@ -54,7 +54,7 @@
 // ============================================
 .table-striped {
   tbody tr:nth-child(even) {
-    background-color: #fafafa;
+    background-color: $bg-gray-3;
   }
 }
 
@@ -91,7 +91,7 @@
   align-items: center;
   margin-bottom: $spacing-md;
   padding: $spacing-md;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid $border-gray-lighter;
 }
 
 .table-title {
@@ -162,7 +162,7 @@
     left: 0;
     right: 0;
     bottom: 0;
-    background: rgba(255, 255, 255, 0.7);
+    background: set-alpha($card-background, 70);
     display: flex;
     align-items: center;
     justify-content: center;

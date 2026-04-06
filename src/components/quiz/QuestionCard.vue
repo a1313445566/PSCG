@@ -147,12 +147,12 @@ const getQuestionTypeName = type =>
 @import '@/styles/rich-text.css';
 
 .question-card {
-  background: white;
+  background: $card-background;
   border-radius: 20px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: var(--el-shadow-light);
-  border: 2px solid #e8e8e8;
+  box-shadow: $shadow-md;
+  border: 2px solid $border-color-lighter;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -164,13 +164,13 @@ const getQuestionTypeName = type =>
     left: 0;
     right: 0;
     height: 5px;
-    background: var(--header-gradient);
+    background: $section-header-gradient;
     border-radius: 20px 20px 0 0;
     z-index: 1;
   }
 
   &:hover {
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+    box-shadow: $shadow-lg;
     transform: translateY(-2px);
   }
 }
@@ -181,32 +181,32 @@ const getQuestionTypeName = type =>
   align-items: center;
   margin-bottom: 0.5rem;
   padding-bottom: 0.5rem;
-  border-bottom: 2px dashed #f0f0f0;
+  border-bottom: 2px dashed $border-color-lighter;
 }
 
 .question-source {
   margin-bottom: 1rem;
   padding: 0.5rem 1rem;
-  background-color: #f8f9fa;
+  background-color: $bg-slate-50;
   border-radius: 10px;
-  border-left: 3px solid #7dd3f8;
+  border-left: 3px solid $secondary-color;
   font-size: 0.9rem;
   display: inline-block;
 }
 
 .source-label {
   font-weight: bold;
-  color: #666;
+  color: $text-secondary;
   margin-right: 0.5rem;
 }
 .source-name {
-  color: #4a90e2;
+  color: $secondary-color;
   font-weight: 500;
 }
 
 .question-number {
   font-weight: bold;
-  color: #7dd3f8;
+  color: $secondary-color;
   font-size: 1.1rem;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
 }
@@ -217,9 +217,9 @@ const getQuestionTypeName = type =>
   font-size: 0.8rem;
   font-weight: bold;
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-  background: var(--header-gradient);
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: $section-header-gradient;
+  color: $text-white;
+  text-shadow: $text-shadow-light;
 }
 
 .question-content {
@@ -229,8 +229,8 @@ const getQuestionTypeName = type =>
 }
 
 .error-collection-progress {
-  background: #f9f9f9;
-  border: 1px solid #e4e7ed;
+  background: $bg-slate-50;
+  border: 1px solid $border-color-lighter;
   border-radius: 8px;
   padding: 15px;
   margin: 15px 0;
@@ -244,18 +244,18 @@ const getQuestionTypeName = type =>
 }
 
 .progress-status {
-  color: #606266;
+  color: $text-secondary;
   font-size: 14px;
 }
 .progress-count {
-  color: #409eff;
+  color: $info-color;
   font-weight: 600;
 }
 
 .progress-bar-container {
   width: 100%;
   height: 8px;
-  background: #e4e7ed;
+  background: $border-color-lighter;
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 10px;
@@ -269,12 +269,12 @@ const getQuestionTypeName = type =>
 
 .progress-info {
   font-size: 12px;
-  color: #909399;
+  color: $text-tertiary;
 }
 
 .explanation {
-  background: #f8f9fa;
-  border-left: 4px solid #409eff;
+  background: $explanation-gradient;
+  border-left: 4px solid $info-color;
   padding: 1rem;
   border-radius: 8px;
   margin-top: 1rem;
@@ -282,13 +282,13 @@ const getQuestionTypeName = type =>
 
 .explanation-title {
   margin: 0 0 0.5rem 0;
-  color: #409eff;
+  color: $info-color;
   font-size: 1rem;
 }
 
 .explanation-content {
   margin: 0;
-  color: #606266;
+  color: $text-secondary;
   line-height: 1.6;
 }
 </style>

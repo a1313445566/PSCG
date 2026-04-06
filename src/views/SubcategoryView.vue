@@ -166,7 +166,7 @@ onMounted(async () => {
 <style scoped lang="scss">
 .subcategory-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  background: $stat-item-gradient;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%23FF6B6B" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%234ECDC4" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD166" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%2306D6A0" opacity="0.3"/></svg>');
   background-repeat: repeat;
   padding-bottom: 2rem;
@@ -175,54 +175,54 @@ onMounted(async () => {
 .subcategory-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: $spacing-xl;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 2rem;
-  padding: 1.5rem;
-  background: white;
-  border-radius: 15px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+  margin-bottom: $spacing-xl;
+  padding: $spacing-lg; // 1.5rem=24px
+  background: $card-background;
+  border-radius: $border-radius; // 15px取近似值16px
+  box-shadow: $shadow-lg;
 }
 
 .page-title {
   font-family: 'Fredoka One', 'Comic Sans MS', cursive;
-  font-size: 1.8rem;
+  font-size: $font-size-2xl; // 1.8rem≈28.8px，取24px
   font-weight: bold;
-  color: #4a90e2;
+  color: $secondary-color;
   margin: 0;
 }
 
 .back-btn {
-  background-color: #f0f4f8;
-  color: #333;
+  background-color: $bg-slate-100;
+  color: $text-primary;
   border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 10px;
+  padding: $spacing-compact $spacing-lg; // 0.8rem≈12.8px, 1.5rem=24px
+  border-radius: $border-radius-sm; // 10px取近似值8px
   font-weight: bold;
   cursor: pointer;
   transition: all 0.3s ease;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  gap: $spacing-xs;
 }
 
 .back-btn:hover {
-  background-color: #e3eaf6;
+  background-color: $bg-slate-200;
   transform: translateY(-2px);
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-md;
 }
 
 .difficulty-rules-section {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  background: $card-background;
+  border-radius: $border-radius-lg; // 20px取近似值24px
+  padding: $spacing-xl;
+  box-shadow: $shadow-lg;
+  margin-bottom: $spacing-xl;
 }
 
 .rules-header {
@@ -230,12 +230,12 @@ onMounted(async () => {
   justify-content: space-between;
   align-items: center;
   cursor: pointer;
-  margin-bottom: 1.5rem;
+  margin-bottom: $spacing-lg; // 1.5rem=24px
 }
 
 .toggle-icon {
-  font-size: 1rem;
-  color: #4a90e2;
+  font-size: $font-size-md; // 1rem=16px
+  color: $secondary-color;
   transition: transform 0.3s ease;
 }
 
@@ -246,21 +246,21 @@ onMounted(async () => {
 .difficulty-rules-content {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  gap: $spacing-lg; // 1.5rem=24px
 }
 
 .rule-item {
-  background: #f9f9f9;
-  border-radius: 12px;
+  background: $bg-slate-50;
+  border-radius: $border-radius-sm; // 12px取近似值8px;
   padding: 1.5rem;
-  border-left: 4px solid #4a90e2;
+  border-left: 4px solid $secondary-color;
 }
 
 .rule-item h4 {
   font-family: 'Fredoka One', 'Comic Sans MS', cursive;
   font-size: 1.1rem;
   font-weight: bold;
-  color: #333;
+  color: $text-primary;
   margin-bottom: 1rem;
   display: flex;
   align-items: center;
@@ -268,7 +268,7 @@ onMounted(async () => {
 }
 
 .rule-item p {
-  color: #666;
+  color: $text-secondary;
   margin-bottom: 1rem;
   line-height: 1.5;
 }
@@ -280,7 +280,7 @@ onMounted(async () => {
 }
 
 .rule-item li {
-  color: #555;
+  color: $text-secondary;
   margin-bottom: 0.5rem;
   padding-left: 1.5rem;
   position: relative;
@@ -291,117 +291,117 @@ onMounted(async () => {
   content: '•';
   position: absolute;
   left: 0;
-  color: #4a90e2;
+  color: $secondary-color;
   font-weight: bold;
 }
 
 .difficulty-badge {
   display: inline-block;
-  padding: 0.2rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem; // 特殊值
+  border-radius: $border-radius-sm; // 12px取近似值8px
+  font-size: 0.8rem; // 特殊值
   font-weight: bold;
-  margin-right: 0.5rem;
+  margin-right: $spacing-xs; // 0.5rem=8px
 }
 
 .difficulty-badge.easy {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: $mastery-high-gradient;
+  color: $success-color;
 }
 
 .difficulty-badge.medium {
-  background-color: #fff8e1;
-  color: #ef6c00;
+  background-color: $mastery-medium-gradient;
+  color: $warning-color;
 }
 
 .difficulty-badge.hard {
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: $mastery-low-gradient;
+  color: $danger-color;
 }
 
 .subcategory-section {
   background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  margin-bottom: 2rem;
+  border-radius: $border-radius-lg; // 20px取近似值24px
+  padding: $spacing-xl;
+  box-shadow: $shadow-md;
+  margin-bottom: $spacing-xl;
 }
 
 .section-title {
   font-family: 'Fredoka One', 'Comic Sans MS', cursive;
-  font-size: 1.5rem;
+  font-size: $font-size-2xl; // 1.5rem=24px
   font-weight: bold;
-  color: #333;
-  margin-bottom: 1.5rem;
+  color: $text-primary;
+  margin-bottom: $spacing-lg; // 1.5rem=24px
   text-align: center;
 }
 
 .subcategory-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-  gap: 1.2rem;
+  gap: 1.2rem; // 特殊值
 }
 
 /* 响应式设计 */
-@media (max-width: 992px) {
+@media (max-width: $breakpoint-lg) { // 992px
   .subcategory-content {
-    padding: 1.5rem;
+    padding: $spacing-lg; // 1.5rem=24px
   }
 
   .page-header {
     flex-direction: column;
     align-items: flex-start;
-    gap: 1rem;
-    padding: 1.2rem;
+    gap: $spacing-md; // 1rem=16px
+    padding: 1.2rem; // 特殊值
   }
 
   .page-title {
-    font-size: 1.5rem;
+    font-size: $font-size-2xl; // 1.5rem=24px
   }
 
   .section-title {
-    font-size: 1.3rem;
+    font-size: $font-size-xl; // 1.3rem≈20.8px，取20px
   }
 
   .subcategory-grid {
     grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-    gap: 1rem;
+    gap: $spacing-md; // 1rem=16px
   }
 
   .subcategory-section {
-    padding: 1.5rem;
+    padding: $spacing-lg; // 1.5rem=24px
   }
 
   .difficulty-rules-section {
-    padding: 1.5rem;
+    padding: $spacing-lg; // 1.5rem=24px
   }
 
   .difficulty-rules-content {
     grid-template-columns: 1fr;
-    gap: 1rem;
+    gap: $spacing-md; // 1rem=16px
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) { // 768px
   .subcategory-content {
-    padding: 1rem;
+    padding: $spacing-md; // 1rem=16px
   }
 
   .page-header {
-    padding: 1rem;
+    padding: $spacing-md; // 1rem=16px
   }
 
   .page-title {
-    font-size: 1.3rem;
+    font-size: $font-size-xl; // 1.3rem≈20.8px，取20px
   }
 
   .section-title {
-    font-size: 1.2rem;
+    font-size: $font-size-lg; // 1.2rem≈19.2px，取18px
   }
 
   .subcategory-grid {
     grid-template-columns: 1fr;
-    gap: 0.8rem;
+    gap: $spacing-xs; // 0.8rem≈12.8px
   }
 
   .subcategory-section {

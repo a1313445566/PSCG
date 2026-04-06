@@ -25,7 +25,7 @@ body:not(.admin-page) {
     font-weight: 900;
     margin-bottom: 1rem;
     color: $text-primary;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.1);
+    text-shadow: $text-shadow-base;
     letter-spacing: 1px;
   }
 
@@ -83,39 +83,35 @@ body:not(.admin-page) {
 
   .btn-primary {
     background-color: $primary-color;
-    color: white;
+    color: $text-white;
     border-color: $primary-color;
-    box-shadow: 0 6px 0 #d9534f;
+    box-shadow: $shadow-btn-primary;
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow:
-        0 10px 0 #d9534f,
-        0 15px 20px rgba(255, 107, 107, 0.3);
+      box-shadow: $shadow-btn-primary-hover;
     }
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 2px 0 #d9534f;
+      box-shadow: $shadow-btn-primary-active;
     }
   }
 
   .btn-secondary {
     background-color: $secondary-color;
-    color: white;
+    color: $text-white;
     border-color: $secondary-color;
-    box-shadow: 0 6px 0 #45b7aa;
+    box-shadow: $shadow-btn-secondary;
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow:
-        0 10px 0 #45b7aa,
-        0 15px 20px rgba(78, 205, 196, 0.3);
+      box-shadow: $shadow-btn-secondary-hover;
     }
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 2px 0 #45b7aa;
+      box-shadow: $shadow-btn-secondary-active;
     }
   }
 
@@ -123,18 +119,16 @@ body:not(.admin-page) {
     background-color: $accent-color;
     color: $text-primary;
     border-color: $accent-color;
-    box-shadow: 0 6px 0 #e6bf50;
+    box-shadow: $shadow-btn-accent;
 
     &:hover {
       transform: translateY(-4px);
-      box-shadow:
-        0 10px 0 #e6bf50,
-        0 15px 20px rgba(255, 209, 102, 0.3);
+      box-shadow: $shadow-btn-accent-hover;
     }
 
     &:active {
       transform: translateY(2px);
-      box-shadow: 0 2px 0 #e6bf50;
+      box-shadow: $shadow-btn-accent-active;
     }
   }
 
@@ -249,14 +243,14 @@ body:not(.admin-page) {
     font-size: 1.1rem;
     transition: all 0.3s ease;
     font-family: $game-font;
-    background-color: #fff;
+    background-color: $card-background;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
 
     &:focus {
       outline: none;
       border-color: $primary-color;
       box-shadow:
-        0 0 0 5px rgba(255, 107, 107, 0.2),
+        0 0 0 5px set-alpha($primary-color, 20),
         inset 0 2px 4px rgba(0, 0, 0, 0.1);
       transform: translateY(-2px);
     }
@@ -270,7 +264,7 @@ body:not(.admin-page) {
     font-size: 1.1rem;
     transition: all 0.3s ease;
     font-family: $game-font;
-    background-color: #fff;
+    background-color: $card-background;
     box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.1);
     cursor: pointer;
 
@@ -278,7 +272,7 @@ body:not(.admin-page) {
       outline: none;
       border-color: $primary-color;
       box-shadow:
-        0 0 0 5px rgba(255, 107, 107, 0.2),
+        0 0 0 5px set-alpha($primary-color, 20),
         inset 0 2px 4px rgba(0, 0, 0, 0.1);
       transform: translateY(-2px);
     }
@@ -510,7 +504,7 @@ body:not(.admin-page) {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #f3f3f3;
+  border: 4px solid $border-color-lighter;
   border-top: 4px solid $primary-color;
   border-radius: 50%;
   animation: spin 1s linear infinite;
@@ -520,7 +514,7 @@ body:not(.admin-page) {
 // 骨架屏样式
 // ============================================
 .skeleton {
-  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background: linear-gradient(90deg, $skeleton-base 25%, $shimmer 50%, $skeleton-base 75%);
   background-size: 200% 100%;
   animation: skeleton-loading 1.5s infinite;
   border-radius: 4px;
@@ -531,7 +525,7 @@ body:not(.admin-page) {
 }
 
 .skeleton-subject-card {
-  background: white;
+  background: $card-background;
   border-radius: 24px;
   padding: 2.5rem;
   text-align: center;
@@ -542,11 +536,11 @@ body:not(.admin-page) {
 }
 
 .skeleton-question-card {
-  background: white;
+  background: $card-background;
   border-radius: 16px;
   padding: 20px;
   box-shadow: $shadow-sm;
-  border: 2px solid #e8e8e8;
+  border: 2px solid $border-color-light;
   margin-bottom: 20px;
 }
 
@@ -573,13 +567,13 @@ body:not(.admin-page) {
   margin: 1.5rem 0;
   flex-wrap: wrap;
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  background: $bg-gradient-page;
   border-radius: 16px;
   border: 2px solid $border-color;
 }
 
 .first-place-skeleton {
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+  background: $bg-gradient-firstPlace;
   border-radius: 24px;
   padding: 1.5rem;
   box-shadow: $shadow-lg;
@@ -595,11 +589,11 @@ body:not(.admin-page) {
 }
 
 .leaderboard-skeleton {
-  background: white;
+  background: $card-background;
   border-radius: 16px;
   padding: 20px;
   box-shadow: $shadow-sm;
-  border: 2px solid #e8e8e8;
+  border: 2px solid $border-color-light;
 }
 
 .questions-skeleton {
@@ -617,7 +611,7 @@ body:not(.admin-page) {
   min-height: 50vh;
   padding: 40px 20px;
   text-align: center;
-  background: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+  background: $bg-gradient-error;
   border-radius: 16px;
   margin: 20px;
 
@@ -628,14 +622,14 @@ body:not(.admin-page) {
   }
 
   p {
-    color: #666;
+    color: $text-light;
     margin-bottom: 24px;
   }
 
   button {
     padding: 12px 24px;
     background: $primary-color;
-    color: white;
+    color: $text-white;
     border: none;
     border-radius: 8px;
     font-size: 16px;
@@ -644,7 +638,7 @@ body:not(.admin-page) {
 
     &:hover {
       transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(255, 107, 107, 0.3);
+      box-shadow: 0 4px 12px set-alpha($primary-color, 30);
     }
   }
 }
@@ -660,7 +654,7 @@ body:not(.admin-page) {
   min-height: 50vh;
   padding: 40px 20px;
   text-align: center;
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+  background: $bg-gradient-notFound;
   border-radius: 16px;
   margin: 20px;
 
@@ -671,7 +665,7 @@ body:not(.admin-page) {
   }
 
   p {
-    color: #666;
+    color: $text-light;
     margin-bottom: 24px;
   }
 
@@ -681,7 +675,7 @@ body:not(.admin-page) {
     font-size: 16px;
 
     &:hover {
-      color: #d9534f;
+      color: $danger-dark;
     }
   }
 }
@@ -693,7 +687,7 @@ body:not(.admin-page) {
 // 页面布局
 .game-page {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  background: $bg-gradient-page;
   padding-bottom: 2rem;
 }
 
@@ -705,7 +699,7 @@ body:not(.admin-page) {
 
 // 返回按钮
 .back-btn {
-  background: white;
+  background: $card-background;
   color: $primary-color;
   border: 3px solid $border-color;
   padding: 0.8rem 1.5rem;
@@ -723,7 +717,7 @@ body:not(.admin-page) {
     transform: translateX(-5px);
     box-shadow:
       0 6px 0 $border-color,
-      0 10px 15px rgba(255, 209, 102, 0.3);
+      0 10px 15px set-alpha($accent-color, 30);
   }
 
   &:active {
@@ -744,7 +738,7 @@ body:not(.admin-page) {
   font-weight: 900;
   color: $primary-color;
   margin: 0 0 0.5rem 0;
-  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
+  text-shadow: $text-shadow-primary;
   text-transform: uppercase;
   letter-spacing: 2px;
 }
@@ -798,38 +792,34 @@ body:not(.admin-page) {
 }
 
 .game-btn-primary {
-  background: linear-gradient(135deg, $primary-color 0%, #ff8787 100%);
-  color: white;
-  box-shadow: 0 4px 0 #e85555;
+  background: linear-gradient(135deg, $primary-color 0%, $primary-light 100%);
+  color: $text-white;
+  box-shadow: $shadow-btn-primary;
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow:
-      0 8px 0 #e85555,
-      0 12px 20px rgba(255, 107, 107, 0.4);
+    box-shadow: $shadow-btn-primary-hover;
   }
 
   &:active {
     transform: translateY(2px);
-    box-shadow: 0 2px 0 #e85555;
+    box-shadow: $shadow-btn-primary-active;
   }
 }
 
 .game-btn-success {
-  background: linear-gradient(135deg, $success-color 0%, #10d99a 100%);
-  color: white;
-  box-shadow: 0 4px 0 #05b584;
+  background: linear-gradient(135deg, $success-color 0%, $success-light 100%);
+  color: $text-white;
+  box-shadow: $shadow-btn-success;
 
   &:hover {
     transform: translateY(-5px);
-    box-shadow:
-      0 8px 0 #05b584,
-      0 12px 20px rgba(5, 181, 132, 0.4);
+    box-shadow: $shadow-btn-success-hover;
   }
 
   &:active {
     transform: translateY(2px);
-    box-shadow: 0 2px 0 #05b584;
+    box-shadow: $shadow-btn-success-active;
   }
 }
 
@@ -842,7 +832,7 @@ body:not(.admin-page) {
 
 // 列表项卡片
 .list-item-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: $bg-gradient-card;
   border-radius: 20px;
   padding: 1.5rem;
   cursor: pointer;
@@ -854,7 +844,7 @@ body:not(.admin-page) {
     transform: translateY(-5px);
     box-shadow:
       0 8px 0 $border-color,
-      0 12px 20px rgba(255, 209, 102, 0.4);
+      0 12px 20px set-alpha($accent-color, 40);
   }
 
   &:active {
@@ -875,7 +865,7 @@ body:not(.admin-page) {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: $bg-gradient-card;
   border-radius: 12px;
   border: 2px solid $border-color;
   transition: all 0.3s ease;
@@ -913,14 +903,14 @@ body:not(.admin-page) {
   font-family: $game-font;
   font-size: 1rem;
   font-weight: 700;
-  background: white;
+  background: $card-background;
   cursor: pointer;
   transition: all 0.3s ease;
 
   &:focus {
     outline: none;
     border-color: $primary-color;
-    box-shadow: 0 0 0 3px rgba(255, 107, 107, 0.2);
+    box-shadow: 0 0 0 3px set-alpha($primary-color, 20);
   }
 }
 
@@ -928,7 +918,7 @@ body:not(.admin-page) {
 .progress-bar {
   width: 100%;
   height: 12px;
-  background: #f0f0f0;
+  background: $skeleton-base;
   border-radius: 10px;
   overflow: hidden;
   border: 2px solid $border-color;
@@ -969,13 +959,13 @@ body:not(.admin-page) {
   top: -10px;
   right: -10px;
   background: $primary-color;
-  color: white;
+  color: $text-white;
   padding: 0.3rem 0.6rem;
   border-radius: 12px;
   font-size: 0.75rem;
   font-weight: 900;
   min-width: 1.5rem;
-  box-shadow: 0 2px 0 #e85555;
+  box-shadow: $shadow-btn-primary-active;
   font-family: $game-font;
 }
 

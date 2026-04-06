@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="profile-view">
     <AppHeader />
 
@@ -160,24 +160,24 @@ onMounted(async () => {
 <style scoped lang="scss">
 .profile-view {
   min-height: 100vh;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+  background: $stat-item-gradient;
   padding-bottom: 2rem;
 }
 
 .profile-content {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 2rem;
+  padding: $spacing-xl;
 }
 
 /* 个人信息卡片 */
 .profile-card {
-  background: white;
-  border-radius: 24px;
-  padding: 2.5rem;
-  margin-bottom: 2rem;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border: 3px solid var(--border-color);
+  background: $card-background;
+  border-radius: $border-radius-lg;
+  padding: $spacing-section;
+  margin-bottom: $spacing-xl;
+  box-shadow: $shadow-lg;
+  border: $border-width-lg solid $border-color;
   position: relative;
   overflow: hidden;
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -190,13 +190,13 @@ onMounted(async () => {
   left: 0;
   width: 100%;
   height: 6px;
-  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  background: $section-header-gradient;
 }
 
 .profile-header {
   display: flex;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: $spacing-comfortable; // 20px
 }
 
 .user-info {
@@ -204,43 +204,43 @@ onMounted(async () => {
 }
 
 .user-name {
-  font-size: 28px;
+  font-size: $font-size-3xl; // 28px
   font-weight: bold;
-  color: #333;
-  margin: 0 0 5px 0;
+  color: $text-primary;
+  margin: 0 0 5px 0; // 特殊值
 }
 
 .user-class {
-  font-size: 16px;
-  color: #666;
+  font-size: $font-size-md; // 16px
+  color: $text-secondary;
   margin: 0;
 }
 
 .profile-stats {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
-  gap: 20px;
+  gap: $spacing-comfortable; // 20px
 }
 
 .stat-item {
   text-align: center;
-  padding: 1.2rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
-  border-radius: 12px;
-  border: 2px solid var(--border-color);
+  padding: 1.2rem; // 特殊值
+  background: $stat-item-gradient;
+  border-radius: $border-radius-sm; // 12px取近似值8px
+  border: $border-width-md solid $border-color;
   transition: all 0.3s ease;
 }
 
 .stat-item:hover {
   transform: translateY(-3px);
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-md;
 }
 
 .stat-label {
   display: block;
-  font-family: var(--game-font);
+  font-family: $game-font;
   font-size: 0.9rem;
-  color: var(--text-secondary);
+  color: $text-secondary;
   margin-bottom: 0.3rem;
   font-weight: 700;
   text-transform: uppercase;
@@ -249,117 +249,117 @@ onMounted(async () => {
 
 .stat-value {
   display: block;
-  font-family: var(--game-font);
+  font-family: $game-font;
   font-size: 1.8rem;
   font-weight: 900;
-  color: var(--primary-color);
-  text-shadow: 2px 2px 4px rgba(255, 107, 107, 0.3);
+  color: $primary-color;
+  text-shadow: $primary-glow;
 }
 
 /* 统计数据 */
 .stats-section {
   background: white;
-  border-radius: 20px;
-  padding: 30px;
-  margin-bottom: 20px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  border-radius: $border-radius-lg; // 20px取近似值24px
+  padding: $spacing-section; // 30px≈$spacing-section(40px)或保留
+  margin-bottom: $spacing-comfortable; // 20px
+  box-shadow: $shadow-lg;
 }
 
 .section-title {
-  font-size: 20px;
+  font-size: $font-size-xl; // 20px
   font-weight: bold;
-  color: #333;
-  margin: 0 0 20px 0;
+  color: $text-primary;
+  margin: 0 0 $spacing-comfortable 0; // 20px
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  gap: 15px; // 特殊值
 }
 
 .stat-card {
   text-align: center;
-  padding: 1.5rem;
-  background: linear-gradient(135deg, var(--primary-color) 0%, #ff8787 100%);
-  border-radius: 20px;
-  color: white;
-  border: 3px solid var(--border-color);
-  box-shadow: 0 4px 0 #e85555;
+  padding: $spacing-lg; // 1.5rem=24px
+  background: $primary-gradient;
+  border-radius: $border-radius-lg; // 20px取近似值24px
+  color: $text-white;
+  border: $border-width-lg solid $border-color;
+  box-shadow: 0 4px 0 $mastery-low-shadow;
   transition: all 0.3s ease;
 }
 
 .stat-card:hover {
   transform: translateY(-5px);
   box-shadow:
-    0 8px 0 #e85555,
-    0 12px 20px rgba(255, 107, 107, 0.4);
+    0 8px 0 $mastery-low-shadow,
+    0 12px 20px set-alpha($primary-color, 40);
 }
 
 .stat-card:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 #e85555;
+  box-shadow: 0 2px 0 $mastery-low-shadow;
 }
 
 .stat-number {
   display: block;
-  font-family: var(--game-font);
-  font-size: 2rem;
+  font-family: $game-font;
+  font-size: $font-size-2xl; // 2rem=32px，取24px
   font-weight: 900;
-  margin-bottom: 0.3rem;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+  margin-bottom: 0.3rem; // 特殊值
+  text-shadow: $text-shadow-light;
 }
 
 .stat-desc {
   display: block;
-  font-family: var(--game-font);
-  font-size: 0.9rem;
+  font-family: $game-font;
+  font-size: 0.9rem; // 特殊值
   opacity: 0.95;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1px; // 特殊值
 }
 
 /* 快速入口 */
 .quick-entry-section {
-  background: white;
-  border-radius: 20px;
-  padding: 30px;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  background: $card-background;
+  border-radius: $border-radius-lg; // 20px取近似值24px
+  padding: $spacing-section; // 30px≈$spacing-section(40px)或保留
+  box-shadow: $shadow-lg;
 }
 
 .quick-entry-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
+  gap: 15px; // 特殊值
 }
 
 .entry-card {
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-  border-radius: 20px;
-  padding: 1.5rem;
+  background: $bg-gradient-page;
+  border-radius: $border-radius-lg; // 20px取近似值24px
+  padding: $spacing-lg; // 1.5rem=24px
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
-  border: 3px solid var(--border-color);
-  box-shadow: 0 4px 0 var(--accent-color);
+  border: $border-width-lg solid $border-color;
+  box-shadow: 0 4px 0 $accent-color;
 }
 
 .entry-card:hover {
   transform: translateY(-5px);
   box-shadow:
-    0 8px 0 var(--accent-color),
-    0 12px 20px rgba(255, 209, 102, 0.4);
+    0 8px 0 $accent-color,
+    0 12px 20px set-alpha($accent-color, 40);
 }
 
 .entry-card:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 var(--accent-color);
+  box-shadow: 0 2px 0 $accent-color;
 }
 
 .entry-icon {
-  font-size: 3rem;
-  margin-bottom: 0.8rem;
+  font-size: 3rem; // 特殊值
+  margin-bottom: 0.8rem; // 特殊值
 }
 
 .entry-content {
@@ -369,30 +369,30 @@ onMounted(async () => {
 .entry-label {
   display: block;
   font-family: var(--game-font);
-  font-size: 1rem;
+  font-size: $font-size-md; // 1rem=16px
   font-weight: 900;
   color: var(--text-primary);
   text-transform: uppercase;
-  letter-spacing: 1px;
+  letter-spacing: 1px; // 特殊值
 }
 
 .entry-badge {
   position: absolute;
-  top: -10px;
-  right: -10px;
-  background: var(--primary-color);
-  color: white;
-  padding: 0.3rem 0.6rem;
-  border-radius: 12px;
-  font-size: 0.75rem;
+  top: -10px; // 特殊值
+  right: -10px; // 特殊值
+  background: $primary-color;
+  color: $text-white;
+  padding: 0.3rem 0.6rem; // 特殊值
+  border-radius: $border-radius-sm; // 12px取近似值8px
+  font-size: 0.75rem; // 特殊值
   font-weight: 900;
-  min-width: 1.5rem;
-  box-shadow: 0 2px 0 #e85555;
-  font-family: var(--game-font);
+  min-width: 1.5rem; // 特殊值
+  box-shadow: 0 2px 0 $mastery-low-shadow;
+  font-family: $game-font;
 }
 
 /* 响应式 */
-@media (max-width: 768px) {
+@media (max-width: $breakpoint-md) {
   .stats-grid,
   .quick-entry-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -403,15 +403,15 @@ onMounted(async () => {
   }
 
   .user-name {
-    font-size: 24px;
+    font-size: $font-size-2xl; // 24px
   }
 
   .stat-number {
-    font-size: 24px;
+    font-size: $font-size-2xl; // 24px
   }
 
   .entry-icon {
-    font-size: 36px;
+    font-size: $font-size-4xl; // 36px，取32px
   }
 }
 

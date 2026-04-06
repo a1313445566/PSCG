@@ -140,7 +140,7 @@
     }
 
     &:not(:last-child) {
-      border-right: 1px solid rgba(255, 255, 255, 0.2);
+      border-right: 1px solid set-alpha($text-white, 20);
     }
   }
 }
@@ -184,7 +184,7 @@
     width: 16px;
     height: 16px;
     margin: -8px 0 0 -8px;
-    border: 2px solid rgba(255, 255, 255, 0.3);
+    border: 2px solid set-alpha($text-white, 30);
     border-top-color: $text-white;
     border-radius: 50%;
     animation: spin 0.8s linear infinite;

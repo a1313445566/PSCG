@@ -155,12 +155,12 @@ const getOptionLabel = index => {
 
 <style scoped lang="scss">
 .reading-result-card {
-  background: white;
+  background: $card-background;
   border-radius: 20px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-  border: 2px solid #e8e8e8;
+  box-shadow: $shadow-lg;
+  border: 2px solid $border-color-lighter;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -173,13 +173,13 @@ const getOptionLabel = index => {
   left: 0;
   right: 0;
   height: 5px;
-  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  background: $section-header-gradient;
   border-radius: 20px 20px 0 0;
 }
 
 .reading-result-card:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  border-color: #667eea;
+  box-shadow: $shadow-xl;
+  border-color: $secondary-color;
 }
 
 .passage-section {
@@ -207,15 +207,15 @@ const getOptionLabel = index => {
   font-size: 0.8rem;
   font-weight: bold;
   font-family: 'Microsoft YaHei', 微软雅黑，sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: $profile-gradient;
+  color: $text-white;
+  text-shadow: $text-shadow-light;
   flex-shrink: 0;
 }
 
 /* 阅读题专用样式 */
 .question-type-badge.type-reading {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: $danger-gradient;
 }
 
 .header-icon {
@@ -225,16 +225,16 @@ const getOptionLabel = index => {
 .header-text {
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: $text-primary;
 }
 
 .passage-content {
   padding: 16px;
-  background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+  background: $bg-slate-50;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid $border-color-lighter;
   line-height: 1.8;
-  color: #334155;
+  color: $text-secondary;
   font-size: 15px;
 }
 
@@ -257,20 +257,20 @@ const getOptionLabel = index => {
 
 .sub-question-result {
   padding: 16px;
-  background-color: #f8fafc;
+  background-color: $bg-slate-50;
   border-radius: 10px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid $border-color-lighter;
   transition: all 0.2s ease;
 }
 
 .sub-question-result.is-correct {
-  background-color: #f0fdf4;
-  border-color: #86efac;
+  background-color: $mastery-high-gradient;
+  border-color: $success-color;
 }
 
 .sub-question-result:not(.is-correct) {
-  background-color: #fef2f2;
-  border-color: #fecaca;
+  background-color: $mastery-low-gradient;
+  border-color: $danger-color;
 }
 
 .sub-question-header {
@@ -283,7 +283,7 @@ const getOptionLabel = index => {
 .sub-question-number {
   font-weight: 600;
   font-size: 15px;
-  color: #1e293b;
+  color: $text-primary;
 }
 
 .sub-question-answer {
@@ -295,25 +295,25 @@ const getOptionLabel = index => {
 }
 
 .answer-label {
-  color: #64748b;
+  color: $text-secondary;
 }
 
 .answer-value {
   font-weight: 600;
   padding: 2px 8px;
   border-radius: 4px;
-  background-color: #fee2e2;
-  color: #ef4444;
+  background-color: $mastery-low-gradient;
+  color: $danger-color;
 }
 
 .answer-value.is-correct {
-  background-color: #dcfce7;
-  color: #16a34a;
+  background-color: $mastery-high-gradient;
+  color: $success-color;
 }
 
 .answer-value.correct {
-  background-color: #dbeafe;
-  color: #3b82f6;
+  background-color: $bg-slate-100;
+  color: $info-color;
 }
 
 .correct-answer {
@@ -327,7 +327,7 @@ const getOptionLabel = index => {
 .sub-question-content {
   margin-bottom: 12px;
   line-height: 1.6;
-  color: #334155;
+  color: $text-secondary;
   font-size: 14px;
 }
 
@@ -345,34 +345,34 @@ const getOptionLabel = index => {
   gap: 8px;
   padding: 8px 12px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
-  background-color: #f8fafc;
+  border: 1px solid $border-color-lighter;
+  background-color: $bg-slate-50;
   transition: all 0.2s ease;
 }
 
 .option-item:hover {
-  border-color: #cbd5e1;
-  background-color: #f1f5f9;
+  border-color: $border-color;
+  background-color: $bg-slate-100;
 }
 
 .option-item.is-selected {
-  border-color: #fca5a5;
-  background-color: #fef2f2;
+  border-color: $danger-color;
+  background-color: $mastery-low-gradient;
 }
 
 .option-item.is-correct {
-  border-color: #86efac;
-  background-color: #f0fdf4;
+  border-color: $success-color;
+  background-color: $mastery-high-gradient;
 }
 
 .option-item.is-selected.is-correct {
-  border-color: #86efac;
-  background-color: #f0fdf4;
+  border-color: $success-color;
+  background-color: $mastery-high-gradient;
 }
 
 .option-label {
   font-weight: 600;
-  color: #1e293b;
+  color: $text-primary;
   min-width: 20px;
   flex-shrink: 0;
 }
@@ -380,7 +380,7 @@ const getOptionLabel = index => {
 .option-text {
   flex: 1;
   line-height: 1.5;
-  color: #334155;
+  color: $text-secondary;
   font-size: 14px;
 }
 

@@ -14,7 +14,8 @@ const createPathTraversalGuard = baseDir => {
       return res.status(400).send('Invalid path encoding')
     }
 
-    const normalizedPath = path.normalize(decodedPath)
+    const relativePath = decodedPath.replace(/^\/+/, '')
+    const normalizedPath = path.normalize(relativePath)
     const resolvedPath = path.resolve(baseDir, normalizedPath)
 
     if (!resolvedPath.startsWith(baseDir)) {

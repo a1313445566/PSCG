@@ -80,7 +80,7 @@
   justify-content: space-between;
   align-items: center;
   padding: $spacing-md $spacing-lg;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid $border-gray-lighter;
 }
 
 .modal-title {
@@ -121,7 +121,7 @@
   justify-content: flex-end;
   gap: $spacing-sm;
   padding: $spacing-md $spacing-lg;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid $border-gray-lighter;
 }
 
 // ============================================
@@ -260,7 +260,7 @@
   justify-content: space-between;
   align-items: center;
   padding: $spacing-md $spacing-lg;
-  border-bottom: 1px solid #ebeef5;
+  border-bottom: 1px solid $border-gray-lighter;
 }
 
 .drawer-body {
@@ -271,7 +271,7 @@
 
 .drawer-footer {
   padding: $spacing-md $spacing-lg;
-  border-top: 1px solid #ebeef5;
+  border-top: 1px solid $border-gray-lighter;
 }
 
 // ============================================

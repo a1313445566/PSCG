@@ -209,39 +209,39 @@ const handleSelect = option => {
   align-items: center;
   gap: 0.8rem;
   padding: 1rem;
-  border: 2px solid #e8e8e8;
+  border: 2px solid $border-color-lighter;
   border-radius: 15px;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
-  background: white;
+  background: $card-background;
   min-height: 80px;
   box-sizing: border-box;
   flex-wrap: wrap;
 
   &:hover:not(.correct):not(.wrong) {
-    border-color: #7dd3f8;
-    background-color: #f0f9ff;
+    border-color: $secondary-color;
+    background-color: $bg-slate-50;
     transform: translateX(5px);
-    box-shadow: 0 2px 8px rgba(125, 211, 248, 0.3);
+    box-shadow: 0 2px 8px set-alpha($secondary-color, 30);
   }
 
   &.selected {
-    border-color: #7dd3f8;
-    background-color: #e3f2fd;
-    box-shadow: 0 0 0 2px rgba(125, 211, 248, 0.3);
+    border-color: $secondary-color;
+    background-color: $bg-slate-100;
+    box-shadow: 0 0 0 2px set-alpha($secondary-color, 30);
   }
 
   &.correct {
-    border-color: #a8e6cf;
-    background-color: #e8f5e9;
-    box-shadow: 0 0 0 2px rgba(168, 230, 207, 0.3);
+    border-color: $success-color;
+    background-color: $mastery-high-gradient;
+    box-shadow: 0 0 0 2px set-alpha($success-color, 30);
   }
 
   &.wrong {
-    border-color: #ff6b6b;
-    background-color: #ffebee;
-    box-shadow: 0 0 0 2px rgba(255, 107, 107, 0.3);
+    border-color: $danger-color;
+    background-color: $mastery-low-gradient;
+    box-shadow: 0 0 0 2px set-alpha($danger-color, 30);
   }
 }
 
@@ -257,7 +257,7 @@ const handleSelect = option => {
   width: 30px;
   height: 30px;
   border-radius: 50%;
-  background-color: #e8e8e8;
+  background-color: $border-color-lighter;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -267,21 +267,21 @@ const handleSelect = option => {
 }
 
 .option-item.selected .option-label {
-  background: linear-gradient(135deg, #7dd3f8, #a8e6cf);
-  color: white;
-  box-shadow: 0 2px 4px rgba(125, 211, 248, 0.4);
+  background: $section-header-gradient;
+  color: $text-white;
+  box-shadow: 0 2px 4px set-alpha($secondary-color, 40);
 }
 
 .option-item.correct .option-label {
-  background: linear-gradient(135deg, #a8e6cf, #7dd3f8);
-  color: white;
-  box-shadow: 0 2px 4px rgba(168, 230, 207, 0.4);
+  background: $success-gradient;
+  color: $text-white;
+  box-shadow: 0 2px 4px set-alpha($success-color, 40);
 }
 
 .option-item.wrong .option-label {
-  background: linear-gradient(135deg, #ff6b6b, #ff9999);
-  color: white;
-  box-shadow: 0 2px 4px rgba(255, 107, 107, 0.4);
+  background: $danger-gradient;
+  color: $text-white;
+  box-shadow: 0 2px 4px set-alpha($danger-color, 40);
 }
 
 .option-text {
@@ -299,17 +299,17 @@ const handleSelect = option => {
 }
 
 .feedback-selected {
-  color: #409eff;
+  color: $info-color;
   font-weight: 600;
 }
 
 .feedback-correct {
-  color: #67c23a;
+  color: $success-color;
   font-weight: 600;
 }
 
 .feedback-wrong {
-  color: #f56c6c;
+  color: $danger-color;
   font-weight: 600;
 }
 

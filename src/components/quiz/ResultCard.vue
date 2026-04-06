@@ -169,10 +169,10 @@ const backToSubjects = () => {
 
 <style scoped lang="scss">
 .result-card {
-  background: #ffffff;
+  background: $card-background;
   border-radius: 12px;
   padding: 30px;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.1);
+  box-shadow: $shadow-md;
   margin-bottom: 30px;
 }
 
@@ -186,7 +186,7 @@ const backToSubjects = () => {
 .result-title {
   font-size: 24px;
   font-weight: 600;
-  color: #303133;
+  color: $text-primary;
   margin: 0;
 }
 
@@ -204,19 +204,19 @@ const backToSubjects = () => {
 .score-number {
   font-size: 64px;
   font-weight: 700;
-  color: #409eff;
+  color: $info-color;
   margin-right: 10px;
 }
 
 .score-divider {
   font-size: 32px;
-  color: #909399;
+  color: $text-tertiary;
   margin-right: 10px;
 }
 
 .score-total {
   font-size: 32px;
-  color: #909399;
+  color: $text-tertiary;
 }
 
 .stats-grid {
@@ -232,20 +232,20 @@ const backToSubjects = () => {
 
 .stat-label {
   font-size: 14px;
-  color: #606266;
+  color: $text-secondary;
   margin-bottom: 5px;
 }
 
 .stat-value {
   font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: $text-primary;
 }
 
 /* 错题巩固摘要样式 */
 .error-collection-summary {
-  background: #f0f9eb;
-  border: 1px solid #e1f5cb;
+  background: $mastery-high-gradient;
+  border: 1px solid $success-color;
   border-radius: 8px;
   padding: 15px;
   margin: 20px 0;
@@ -262,22 +262,22 @@ const backToSubjects = () => {
 }
 
 .summary-label {
-  color: #67c23a;
+  color: $success-color;
   font-weight: 500;
 }
 
 .summary-value {
-  color: #303133;
+  color: $text-primary;
   font-weight: 600;
 }
 
 .encouragement {
   text-align: center;
   font-size: 16px;
-  color: #606266;
+  color: $text-secondary;
   margin: 20px 0;
   padding: 15px;
-  background: #f5f7fa;
+  background: $bg-slate-50;
   border-radius: 8px;
 }
 
@@ -299,21 +299,21 @@ const backToSubjects = () => {
 }
 
 .action-btn.primary {
-  background: #409eff;
-  color: white;
+  background: $info-color;
+  color: $text-white;
 }
 
 .action-btn.primary:hover {
-  background: #66b1ff;
+  background: $info-light-color;
 }
 
 .action-btn.secondary {
-  background: #909399;
-  color: white;
+  background: $text-tertiary;
+  color: $text-white;
 }
 
 .action-btn.secondary:hover {
-  background: #a6a9ad;
+  background: $text-secondary;
 }
 
 @media (max-width: 768px) {

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="game-page">
     <AppHeader />
 
@@ -492,9 +492,9 @@ onMounted(async () => {
 
 .history-item {
   padding: 1.5rem;
-  background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+  background: $bg-gradient-page;
   border-radius: 16px;
-  border: 2px solid var(--border-color);
+  border: 2px solid $border-color;
   cursor: pointer;
   transition: all 0.3s ease;
   position: relative;
@@ -502,8 +502,8 @@ onMounted(async () => {
 
 .history-item:hover {
   transform: translateX(5px);
-  border-color: var(--primary-color);
-  box-shadow: 0 4px 12px rgba(255, 107, 107, 0.2);
+  border-color: $primary-color;
+  box-shadow: 0 4px 12px set-alpha($primary-color, 20);
 }
 
 .history-header {
@@ -584,8 +584,8 @@ onMounted(async () => {
 }
 
 .time-badge {
-  background: #f0f0f0;
-  color: var(--text-primary);
+  background: $border-color-lighter;
+  color: $text-primary;
 }
 
 .history-arrow {
@@ -612,13 +612,13 @@ onMounted(async () => {
   gap: 1.5rem;
   margin-top: 2rem;
   padding: 1.5rem;
-  background: white;
+  background: $card-background;
   border-radius: 24px;
-  border: 3px solid var(--border-color);
+  border: 3px solid $border-color;
 }
 
 .page-btn {
-  background: white;
+  background: $card-background;
   color: var(--primary-color);
   border: 3px solid var(--border-color);
   padding: 0.8rem 1.5rem;
@@ -672,7 +672,7 @@ onMounted(async () => {
   width: 100%;
   height: 350px;
   border-radius: 12px;
-  background: #fafafa;
+  background: $bg-slate-50;
   padding: 1rem;
 }
 </style>

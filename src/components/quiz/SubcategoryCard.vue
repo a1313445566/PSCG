@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="subcategory-card" @click="selectSubcategory">
     <div class="subcategory-icon">{{ subjectIcons[subcategory.iconIndex || 0] }}</div>
     <div class="subcategory-name">{{ subcategory.name }}</div>
@@ -143,15 +143,15 @@ const selectSubcategory = () => {
   left: 0;
   width: 100%;
   height: 3px;
-  background: linear-gradient(90deg, #f5a623, #ffd166);
+  background: $gold-gradient;
   transform: scaleX(0);
   transition: transform 0.3s ease;
 }
 
 .subcategory-card:hover {
   transform: translateY(-8px) scale(1.02);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.15);
-  border-color: #f5a623;
+  box-shadow: $shadow-lg;
+  border-color: $gold-color;
 }
 
 .subcategory-card:hover::before {
@@ -165,7 +165,7 @@ const selectSubcategory = () => {
 .subcategory-icon {
   font-size: 2.5rem;
   margin-bottom: 0.8rem;
-  color: #f5a623;
+  color: $gold-color;
   transition: all 0.3s ease;
 }
 
@@ -177,7 +177,7 @@ const selectSubcategory = () => {
   font-family: 'Fredoka One', 'Comic Sans MS', cursive;
   font-size: 1rem;
   font-weight: bold;
-  color: #333;
+  color: $text-primary;
   margin-bottom: 0.6rem;
   line-height: 1.2;
   display: -webkit-box;
@@ -195,12 +195,12 @@ const selectSubcategory = () => {
 }
 
 .question-count {
-  background-color: #f0f4f8;
+  background-color: $bg-slate-100;
   padding: 0.3rem 0.6rem;
   border-radius: 12px;
   font-size: 0.8rem;
   font-weight: bold;
-  color: #666;
+  color: $text-secondary;
 }
 
 .difficulty {
@@ -211,18 +211,18 @@ const selectSubcategory = () => {
 }
 
 .difficulty-easy {
-  background-color: #e8f5e9;
-  color: #2e7d32;
+  background-color: $mastery-high-gradient;
+  color: $success-color;
 }
 
 .difficulty-medium {
-  background-color: #fff8e1;
-  color: #ef6c00;
+  background-color: $mastery-medium-gradient;
+  color: $warning-color;
 }
 
 .difficulty-hard {
-  background-color: #ffebee;
-  color: #c62828;
+  background-color: $mastery-low-gradient;
+  color: $danger-color;
 }
 
 /* 难度提示样式 */
@@ -273,7 +273,7 @@ const selectSubcategory = () => {
 .tooltip-title {
   font-weight: bold;
   margin-bottom: 5px;
-  color: #ffd166;
+  color: $gold-color;
 }
 
 .tooltip-content div {

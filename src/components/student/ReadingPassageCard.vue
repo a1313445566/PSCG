@@ -120,12 +120,12 @@ onMounted(() => {
 
 <style scoped lang="scss">
 .reading-passage-card {
-  background: white;
+  background: $card-background;
   border-radius: 20px;
   padding: 1.5rem;
   margin-bottom: 1.5rem;
-  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
-  border: 2px solid #e8e8e8;
+  box-shadow: $shadow-lg;
+  border: 2px solid $border-color-lighter;
   transition: all 0.3s ease;
   position: relative;
   overflow: hidden;
@@ -138,20 +138,20 @@ onMounted(() => {
   left: 0;
   right: 0;
   height: 5px;
-  background: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+  background: $section-header-gradient;
   border-radius: 20px 20px 0 0;
 }
 
 .reading-passage-card:hover {
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
-  border-color: #667eea;
+  box-shadow: $shadow-xl;
+  border-color: $secondary-color;
 }
 
 .passage-section {
   padding: 20px;
-  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  background: $bg-slate-50;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid $border-color-lighter;
   margin-bottom: 24px;
 }
 
@@ -163,7 +163,7 @@ onMounted(() => {
   margin-bottom: 16px;
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: $text-primary;
 }
 
 .header-left {
@@ -179,23 +179,23 @@ onMounted(() => {
   font-size: 0.8rem;
   font-weight: bold;
   font-family: 'Microsoft YaHei', 微软雅黑，sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2);
+  background: $profile-gradient;
+  color: $text-white;
+  text-shadow: $text-shadow-light;
   flex-shrink: 0;
 }
 
 /* 阅读题专用样式 */
 .question-type-badge.type-reading {
-  background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  background: $danger-gradient;
 }
 
 .passage-content {
   line-height: 1.8;
   font-size: 15px;
-  color: #334155;
+  color: $text-secondary;
   padding: 16px;
-  background-color: white;
+  background-color: $card-background;
   border-radius: 8px;
 }
 
@@ -210,24 +210,24 @@ onMounted(() => {
 
 :deep(.passage-content th),
 :deep(.passage-content td) {
-  border: 1px solid #d0d7de;
+  border: 1px solid $border-color-lighter;
   padding: 10px 14px;
   text-align: left;
   word-break: break-word;
 }
 
 :deep(.passage-content th) {
-  background-color: #f6f8fa;
+  background-color: $bg-slate-100;
   font-weight: 600;
-  color: #24292e;
+  color: $text-primary;
 }
 
 :deep(.passage-content tr:nth-child(even)) {
-  background-color: #f6f8fa;
+  background-color: $bg-slate-50;
 }
 
 :deep(.passage-content tr:hover) {
-  background-color: #f0f7ff;
+  background-color: $bg-slate-100;
 }
 
 :deep(.passage-content .table-wrapper) {
@@ -247,7 +247,7 @@ onMounted(() => {
   gap: 8px;
   font-size: 16px;
   font-weight: 600;
-  color: #1e293b;
+  color: $text-primary;
 }
 
 .sub-questions-list {
@@ -258,20 +258,20 @@ onMounted(() => {
 
 .sub-question-item {
   padding: 16px;
-  background-color: #ffffff;
+  background-color: $card-background;
   border-radius: 12px;
-  border: 2px solid #e2e8f0;
+  border: 2px solid $border-color-lighter;
   transition: all 0.3s ease;
 }
 
 .sub-question-item:hover {
-  border-color: #667eea;
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.1);
+  border-color: $secondary-color;
+  box-shadow: 0 4px 12px set-alpha($secondary-color, 10);
 }
 
 .sub-question-item.is-answered {
-  border-color: #10b981;
-  background-color: #f0fdf4;
+  border-color: $success-color;
+  background-color: $mastery-high-gradient;
 }
 
 .sub-question-number {
@@ -287,8 +287,8 @@ onMounted(() => {
   justify-content: center;
   width: 28px;
   height: 28px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
+  background: $profile-gradient;
+  color: $text-white;
   border-radius: 50%;
   font-weight: 600;
   font-size: 14px;
@@ -299,7 +299,7 @@ onMounted(() => {
   flex: 1;
   line-height: 1.6;
   font-size: 15px;
-  color: #1e293b;
+  color: $text-primary;
 }
 
 .sub-question-options {
@@ -314,25 +314,25 @@ onMounted(() => {
   align-items: flex-start;
   gap: 8px;
   padding: 12px 16px;
-  background-color: #f8fafc;
-  border: 2px solid #e2e8f0;
+  background-color: $bg-slate-50;
+  border: 2px solid $border-color-lighter;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
 }
 
 .option-item:hover:not(.is-disabled) {
-  border-color: #667eea;
-  background-color: #f0f4ff;
+  border-color: $secondary-color;
+  background-color: $bg-slate-100;
 }
 
 .option-item.is-selected {
-  border-color: #667eea;
-  background-color: #eef2ff;
+  border-color: $secondary-color;
+  background-color: $bg-slate-100;
 }
 
 .option-item.is-selected .option-label {
-  color: #667eea;
+  color: $secondary-color;
   font-weight: 600;
 }
 
@@ -343,14 +343,14 @@ onMounted(() => {
 
 .option-label {
   font-weight: 500;
-  color: #475569;
+  color: $text-secondary;
   flex-shrink: 0;
 }
 
 .option-content {
   flex: 1;
   line-height: 1.5;
-  color: #334155;
+  color: $text-secondary;
 }
 
 :deep(.passage-content img),

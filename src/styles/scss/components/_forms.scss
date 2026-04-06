@@ -33,7 +33,7 @@
 .form-input {
   width: 100%;
   padding: $spacing-sm $spacing-md;
-  border: 1px solid #dcdfe6;
+  border: 1px solid $border-gray-light;
   border-radius: $border-radius-sm;
   font-size: 14px;
   color: $text-primary;
@@ -47,12 +47,12 @@
   }
 
   &:disabled {
-    background-color: #f5f7fa;
+    background-color: $bg-gray-1;
     cursor: not-allowed;
   }
 
   &::placeholder {
-    color: #c0c4cc;
+    color: $el-text-color-placeholder;
   }
 }
 
@@ -83,7 +83,7 @@
 .form-select {
   width: 100%;
   padding: $spacing-sm $spacing-md;
-  border: 1px solid #dcdfe6;
+  border: 1px solid $border-gray-light;
   border-radius: $border-radius-sm;
   font-size: 14px;
   color: $text-primary;
@@ -98,7 +98,7 @@
   }
 
   &:disabled {
-    background-color: #f5f7fa;
+    background-color: $bg-gray-1;
     cursor: not-allowed;
   }
 }
@@ -203,8 +203,8 @@
     display: flex;
     align-items: center;
     padding: 0 $spacing-md;
-    background-color: #f5f7fa;
-    border: 1px solid #dcdfe6;
+    background-color: $bg-gray-1;
+    border: 1px solid $border-gray-light;
     font-size: 14px;
     color: $text-light;
 

@@ -109,7 +109,9 @@ const localValue = computed({
 - 缩进：2 空格
 - 支持 SCSS 语法
 - 颜色值使用变量（`_variables.scss`）
-
+- 禁止内联样式，必须使用 SCSS 变量和函数
+- 大于100 行的样式代码需要抽离到独立的 SCSS 文件中
+- 禁止使用 硬编码的 RGB 值，必须使用 SCSS 变量和函数
 ### 3.4 注释规范
 ```javascript
 // ✅ 关键逻辑必须加中文注释

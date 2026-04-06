@@ -8,6 +8,7 @@ $danger-color: #ef476f;
 $success-color: #06d6a0;
 $warning-color: #ffd166;
 $info-color: #118ab2;
+$info-light-color: #3b82f6;
 
 // ============================================
 // 背景色
@@ -19,8 +20,9 @@ $sidebar-background: #292f36;
 // ============================================
 // 文字颜色
 // ============================================
-$text-primary: #292f36;
-$text-secondary: #4ecdc4;
+$text-primary: #1e293b;
+$text-secondary: #64748b;
+$text-tertiary: #94a3b8;
 $text-light: #848484;
 $text-white: #ffffff;
 
@@ -28,9 +30,15 @@ $text-white: #ffffff;
 // 边框与圆角
 // ============================================
 $border-color: #ffd166;
-$border-radius: 16px;
+$border-width: 1px;
+$border-width-md: 2px;
+$border-width-lg: 3px;
+$border-radius-xs: 4px;
 $border-radius-sm: 8px;
+$border-radius: 16px;
 $border-radius-lg: 24px;
+$border-radius-xl: 32px;
+$border-radius-full: 50px; // 胶囊形
 
 // ============================================
 // 阴影
@@ -38,6 +46,7 @@ $border-radius-lg: 24px;
 $shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.1);
 $shadow-md: 0 4px 15px rgba(0, 0, 0, 0.15);
 $shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.2);
+$shadow-xl: 0 12px 35px rgba(0, 0, 0, 0.25);
 
 // ============================================
 // 字体
@@ -48,14 +57,33 @@ $admin-font:
   sans-serif;
 
 // ============================================
+// 字号（标准化）
+// ============================================
+$font-size-xs: 12px;
+$font-size-sm: 13px;
+$font-size-base: 14px;
+$font-size-md: 16px;
+$font-size-lg: 18px;
+$font-size-xl: 20px;
+$font-size-2xl: 24px;
+$font-size-3xl: 28px;
+$font-size-4xl: 32px;
+
+// ============================================
 // 间距（标准化）
 // ============================================
+$spacing-2xs: 2px;
 $spacing-xs: 4px;
 $spacing-sm: 8px;
 $spacing-md: 16px;
 $spacing-lg: 24px;
 $spacing-xl: 32px;
 $spacing-2xl: 48px;
+$spacing-3xl: 64px;
+// 补充高频中间值（不覆盖已有变量语义）
+$spacing-compact: 12px;
+$spacing-comfortable: 20px;
+$spacing-section: 40px;
 
 // ============================================
 // 断点
@@ -154,6 +182,95 @@ $border-gray-light: #dcdfe6;
 $border-gray-lighter: #e4e7ed;
 
 // ============================================
+// 新增：Slate 色系（Tailwind 风格灰色）
+// ============================================
+$text-slate-600: #475569;
+$text-slate-700: #334155;
+$text-slate-800: #1e293b;
+$text-slate-900: #0f172a;
+$text-dark: #303133;
+$bg-slate-50: #f8fafc;
+$bg-slate-100: #f1f5f9;
+$bg-slate-200: #e2e8f0;
+$border-slate-200: #e2e8f0;
+$border-slate-300: #cbd5e1;
+
+// ============================================
+// 新增：骨架屏颜色
+// ============================================
+$skeleton-base: #f0f0f0;
+$shimmer: #e0e0e0;
+
+// ============================================
+// 新增：按钮 3D 阴影颜色
+// ============================================
+$shadow-btn-primary: 0 6px 0 #e85555;
+$shadow-btn-primary-hover: 0 10px 0 #e85555, 0 15px 20px set-alpha($primary-color, 30);
+$shadow-btn-primary-active: 0 2px 0 #e85555;
+$shadow-btn-secondary: 0 6px 0 #45b7aa;
+$shadow-btn-secondary-hover: 0 10px 0 #45b7aa, 0 15px 20px set-alpha($secondary-color, 30);
+$shadow-btn-secondary-active: 0 2px 0 #45b7aa;
+$shadow-btn-accent: 0 6px 0 #e6bf50;
+$shadow-btn-accent-hover: 0 10px 0 #e6bf50, 0 15px 20px set-alpha($accent-color, 30);
+$shadow-btn-accent-active: 0 2px 0 #e6bf50;
+$shadow-btn-success: 0 4px 0 #05b584;
+$shadow-btn-success-hover: 0 8px 0 #05b584, 0 12px 20px set-alpha($success-color, 40);
+$shadow-btn-success-active: 0 2px 0 #05b584;
+
+// 渐变辅助色
+$primary-light: #ff8787;
+$success-light: #10d99a;
+$danger-dark: #d9534f;
+$primary-dark: #5568d3;
+$secondary-dark: #45b7aa;
+$success-dark: #059669;
+$accent-gold: #ffd700;
+$profile-btn-shadow: 0 4px 0 #5568d3;
+$profile-btn-hover-shadow: 0 7px 0 #5568d3, 0 10px 15px set-alpha(#667eea, 40);
+$primary-glow: 2px 2px 4px set-alpha($primary-color, 30);
+$accent-glow: 2px 2px 4px set-alpha($accent-color, 30);
+$primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$success-gradient: linear-gradient(135deg, #10b981 0%, #059669 100%);
+$danger-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+$profile-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+$section-header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
+$stat-item-gradient: linear-gradient(135deg, #e3f2fd 0%, #bbdefb 100%);
+$gold-gradient: linear-gradient(135deg, #ffd700, #ffa500);
+$silver-gradient: linear-gradient(135deg, #c0c0c0, #a9a9a9);
+$bronze-gradient: linear-gradient(135deg, #cd7f32, #b87333);
+$explanation-gradient: linear-gradient(135deg, #f0f4ff 0%, #e6efff 100%);
+$gold-color: #ffd700;
+$silver-color: #c0c0c0;
+$bronze-color: #cd7f32;
+$mastery-high-gradient: linear-gradient(135deg, #d4edda 0%, #c3e6cb 100%);
+$mastery-medium-gradient: linear-gradient(135deg, #fff3cd 0%, #ffeeba 100%);
+$mastery-low-gradient: linear-gradient(135deg, #f8d7da 0%, #f5c6cb 100%);
+$mastery-high-shadow: #05b584;
+$mastery-low-shadow: #e85555;
+
+// ============================================
+// 新增：页面渐变背景
+// ============================================
+$bg-gradient-page: linear-gradient(135deg, #f8f9fa 0%, #e3f2fd 100%);
+$bg-gradient-error: linear-gradient(135deg, #fff5f5 0%, #ffe8e8 100%);
+$bg-gradient-notFound: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%);
+$bg-gradient-card: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+$bg-gradient-firstPlace: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+
+// ============================================
+// 新增：文字阴影
+// ============================================
+$text-shadow-base: 2px 2px 4px rgba(0, 0, 0, 0.1);
+$text-shadow-light: 0 1px 2px rgba(0, 0, 0, 0.2);
+$text-shadow-primary: 2px 2px 4px set-alpha($primary-color, 30);
+
+// ============================================
+// 新增：边框扩展色
+// ============================================
+$border-color-light: #e8e8e8;
+$border-color-lighter: #f3f3f3;
+
+// ============================================
 // 新增：表单背景色
 // ============================================
 $form-bg-primary: #fef5e7;
@@ -227,9 +344,38 @@ $avatar-planet: #a6e191;
   --text-secondary: #{$text-secondary};
   --text-light: #{$text-light};
   --border-color: #{$border-color};
-  --shadow: #{$shadow-md};
   --border-radius: #{$border-radius};
+  --border-radius-sm: #{$border-radius-sm};
+  --border-radius-xs: #{$border-radius-xs};
+  --border-radius-lg: #{$border-radius-lg};
+  --border-radius-xl: #{$border-radius-xl};
+  --border-radius-full: #{$border-radius-full};
+  --shadow: #{$shadow-md};
   --game-font: #{$game-font};
+
+  // 间距
+  --spacing-2xs: #{$spacing-2xs};
+  --spacing-xs: #{$spacing-xs};
+  --spacing-sm: #{$spacing-sm};
+  --spacing-md: #{$spacing-md};
+  --spacing-lg: #{$spacing-lg};
+  --spacing-xl: #{$spacing-xl};
+  --spacing-2xl: #{$spacing-2xl};
+  --spacing-3xl: #{$spacing-3xl};
+  --spacing-compact: #{$spacing-compact};
+  --spacing-comfortable: #{$spacing-comfortable};
+  --spacing-section: #{$spacing-section};
+
+  // 字号
+  --font-size-xs: #{$font-size-xs};
+  --font-size-sm: #{$font-size-sm};
+  --font-size-base: #{$font-size-base};
+  --font-size-md: #{$font-size-md};
+  --font-size-lg: #{$font-size-lg};
+  --font-size-xl: #{$font-size-xl};
+  --font-size-2xl: #{$font-size-2xl};
+  --font-size-3xl: #{$font-size-3xl};
+  --font-size-4xl: #{$font-size-4xl};
 
   // Header 组件变量
   --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
