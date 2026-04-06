@@ -48,12 +48,19 @@ async function scanDocsDir(dir, basePath = '', marked) {
       // 使用 marked 预渲染 HTML
       const html = marked.parse(content)
 
+      // 获取文件真实的时间戳
+      const stats = fs.statSync(fullPath)
+      const createdAt = stats.birthtime.toISOString()
+      const updatedAt = stats.mtime.toISOString()
+
       items.push({
         type: 'file',
         name: entry.name,
         title,
         path: relativePath.replace(/\\/g, '/'),
-        html
+        html,
+        createdAt,
+        updatedAt
       })
     }
   }

@@ -24,13 +24,6 @@
       </div>
 
       <div class="header-right">
-        <el-button type="primary" class="create-btn" @click="createNewDoc">
-          <el-icon><Plus /></el-icon>
-          <span>新建文档</span>
-        </el-button>
-        <div class="user-avatar">
-          <el-avatar :size="32" icon="UserFilled" />
-        </div>
       </div>
     </header>
 
@@ -54,7 +47,6 @@
             node-key="id"
             :highlight-current="true"
             :filter-node-method="filterNode"
-            :default-expand-all="true"
             class="doc-tree"
             @node-click="handleNodeClick"
           >
@@ -69,7 +61,7 @@
                 </span>
                 <span class="node-label" :title="data.label">{{ data.label }}</span>
                 <span v-if="data.type === 'file'" class="node-meta">
-                  {{ formatDate(data.updatedAt) }}
+                  {{ formatDate(data.createdAt) }}
                 </span>
               </div>
             </template>
@@ -105,8 +97,8 @@
 
             <div class="sort-options">
               <el-select v-model="sortBy" placeholder="排序方式" size="default">
-                <el-option label="最近更新" value="updatedAt" />
                 <el-option label="创建时间" value="createdAt" />
+                <el-option label="最近更新" value="updatedAt" />
                 <el-option label="名称" value="name" />
               </el-select>
             </div>
@@ -123,9 +115,8 @@
           <div v-if="filteredDocs.length === 0" class="empty-state">
             <el-empty description="暂无文档" :image-size="120">
               <template #description>
-                <p class="empty-text">还没有文档，点击右上角"新建文档"开始创建</p>
+                <p class="empty-text">当前暂无文档内容</p>
               </template>
-              <el-button type="primary" @click="createNewDoc">立即创建</el-button>
             </el-empty>
           </div>
 
@@ -141,25 +132,13 @@
                 <div class="card-icon">
                   <el-icon :size="24"><Document /></el-icon>
                 </div>
-                <el-dropdown trigger="click" @command="cmd => handleDocAction(cmd, doc)">
-                  <button class="more-btn" @click.stop>
-                    <el-icon><MoreFilled /></el-icon>
-                  </button>
-                  <template #dropdown>
-                    <el-dropdown-menu>
-                      <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                      <el-dropdown-item command="rename">重命名</el-dropdown-item>
-                      <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
               </div>
 
               <h3 class="card-title">{{ doc.title }}</h3>
               <p class="card-desc">{{ doc.description || '暂无描述' }}</p>
 
               <div class="card-footer">
-                <span class="update-time">{{ formatDate(doc.updatedAt) }} 更新</span>
+                <span class="update-time">{{ formatDate(doc.createdAt) }} 创建</span>
                 <div class="card-tags">
                   <el-tag
                     v-for="tag in (doc.tags || []).slice(0, 2)"
@@ -198,24 +177,9 @@
                 show-overflow-tooltip
               />
 
-              <el-table-column prop="updatedAt" label="更新时间" width="180">
+              <el-table-column prop="createdAt" label="创建时间" width="180">
                 <template #default="{ row }">
-                  {{ formatDate(row.updatedAt) }}
-                </template>
-              </el-table-column>
-
-              <el-table-column label="操作" width="120" fixed="right">
-                <template #default="{ row }">
-                  <el-dropdown trigger="click" @command="cmd => handleDocAction(cmd, row)">
-                    <el-button text type="primary" size="small">操作</el-button>
-                    <template #dropdown>
-                      <el-dropdown-menu>
-                        <el-dropdown-item command="edit">编辑</el-dropdown-item>
-                        <el-dropdown-item command="rename">重命名</el-dropdown-item>
-                        <el-dropdown-item command="delete" divided>删除</el-dropdown-item>
-                      </el-dropdown-menu>
-                    </template>
-                  </el-dropdown>
+                  {{ formatDate(row.createdAt) }}
                 </template>
               </el-table-column>
             </el-table>
@@ -245,8 +209,8 @@
             </div>
 
             <div class="info-section">
-              <label>更新时间</label>
-              <p>{{ formatDate(selectedDoc?.updatedAt) }}</p>
+              <label>创建时间</label>
+              <p>{{ formatDate(selectedDoc?.createdAt) }}</p>
             </div>
 
             <div v-if="selectedDoc?.tags?.length" class="info-section">
@@ -262,13 +226,6 @@
                   {{ tag }}
                 </el-tag>
               </div>
-            </div>
-
-            <div class="panel-actions">
-              <el-button type="primary" style="width: 100%" @click="editDocument(selectedDoc)">
-                <el-icon><Edit /></el-icon>
-                编辑文档
-              </el-button>
             </div>
           </div>
         </aside>
@@ -299,20 +256,16 @@
 <script setup>
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage } from 'element-plus'
 import {
   Search,
-  Plus,
   ArrowLeft,
-  UserFilled,
   Grid,
   List,
   Document,
   Folder,
   FolderOpened,
-  MoreFilled,
   Close,
-  Edit,
   Expand,
   Fold
 } from '@element-plus/icons-vue'
@@ -327,7 +280,7 @@ const selectedDoc = ref(null)
 const isSidebarCollapsed = ref(false)
 const treeRef = ref(null)
 const viewMode = ref('grid')
-const sortBy = ref('updatedAt')
+const sortBy = ref('createdAt')
 const showDocViewer = ref(false)
 const currentDoc = ref(null)
 
@@ -351,7 +304,8 @@ function transformToTreeData(items) {
       path: item.path,
       title: item.title,
       html: item.html,
-      updatedAt: item.updatedAt || new Date().toISOString(),
+      createdAt: item.createdAt || null,
+      updatedAt: item.updatedAt || null,
       tags: item.tags || [],
       description: item.description || ''
     }
@@ -379,6 +333,7 @@ const allDocs = computed(() => {
           ...node,
           id: node.id,
           title: node.label,
+          createdAt: node.createdAt,
           updatedAt: node.updatedAt
         })
       }
@@ -454,6 +409,7 @@ function handleNodeClick(data) {
       title: data.label,
       path: data.path,
       html: data.html,
+      createdAt: data.createdAt,
       updatedAt: data.updatedAt,
       tags: data.tags,
       description: data.description
@@ -475,55 +431,6 @@ function openDocument(doc) {
     showDocViewer.value = true
   } else {
     selectedDoc.value = doc
-  }
-}
-
-// 编辑文档
-function editDocument(doc) {
-  ElMessage.info(`正在打开编辑器: ${doc.title}`)
-  // TODO: 集成富文本编辑器
-}
-
-// 创建新文档
-function createNewDoc() {
-  ElMessage.success('新建文档功能开发中...')
-  // TODO: 实现新建文档逻辑
-}
-
-// 文档操作
-async function handleDocAction(command, doc) {
-  switch (command) {
-    case 'edit':
-      editDocument(doc)
-      break
-    case 'rename':
-      try {
-        const { value } = await ElMessageBox.prompt('请输入新的文档名称', '重命名', {
-          confirmButtonText: '确定',
-          cancelButtonText: '取消',
-          inputValue: doc.title
-        })
-        if (value) {
-          ElMessage.success(`已重命名为: ${value}`)
-          // TODO: 调用API更新文档名称
-        }
-      } catch {
-        // 取消操作
-      }
-      break
-    case 'delete':
-      try {
-        await ElMessageBox.confirm(`确定要删除文档"${doc.title}"吗？此操作不可恢复。`, '删除确认', {
-          confirmButtonText: '确定删除',
-          cancelButtonText: '取消',
-          type: 'warning'
-        })
-        ElMessage.success('删除成功')
-        // TODO: 调用API删除文档
-      } catch {
-        // 取消操作
-      }
-      break
   }
 }
 

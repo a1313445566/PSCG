@@ -4,9 +4,10 @@
   "version": "0.0.0",
   "scripts": {
     "dev": "vite",
-    "build": "vite build",
+    "build": "npm run generate:docs && vite build",
     "preview": "vite preview",
     "server": "node server.cjs",
+    "generate:docs": "node scripts/generate-docs.js",
     "lint": "eslint . --fix",
     "format": "prettier --write \"src/**/*.{js,ts,vue,css,scss,json}\" \"routes/**/*.js\" \"services/**/*.js\" \"middleware/**/*.js\" \"utils/**/*.js\"",
     "lint:check": "eslint .",
