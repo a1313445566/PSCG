@@ -94,6 +94,89 @@ $el-border-color-light: #e4e7ed;
 $el-border-radius: $border-radius-sm;
 
 // ============================================
+// 新增：渐变色系（用户端场景化变量）
+// ============================================
+
+// Header 渐变
+$header-gradient-start: #7dd3f8;
+$header-gradient-mid: #a8e6cf;
+$header-gradient-end: #ffd88b;
+$header-gradient: linear-gradient(90deg, #{$header-gradient-start} 0%, #{$header-gradient-mid} 50%, #{$header-gradient-end} 100%);
+
+// Purple 渐变（音频播放器等）
+$gradient-purple-start: #667eea;
+$gradient-purple-end: #764ba2;
+$gradient-purple: linear-gradient(135deg, #{$gradient-purple-start} 0%, #{$gradient-purple-end} 100%);
+
+// Pink 渐变（音频播放器等）
+$gradient-pink-start: #f093fb;
+$gradient-pink-end: #f5576c;
+$gradient-pink: linear-gradient(135deg, #{$gradient-pink-start} 0%, #{$gradient-pink-end} 100%);
+
+// ============================================
+// 新增：Element Plus 扩展蓝色系
+// ============================================
+$el-blue-base: #409eff;
+$el-blue-light-1: #ecf5ff;
+$el-blue-light-2: #d9ecff;
+$el-blue-light-3: #b3d8ff;
+$el-blue-light-4: #79bbff;
+$el-blue-light-5: #409eff;
+$el-blue-light-6: #a0cfff;
+$el-blue-light-7: #337ecc;
+$el-blue-light-8: #2b7bc0;
+$el-blue-light-9: #1d5b90;
+
+// ============================================
+// 新增：背景灰色系
+// ============================================
+$bg-gray-1: #f5f7fa;
+$bg-gray-2: #f0f2f5;
+$bg-gray-3: #fafafa;
+$bg-gray-4: #e8f4ff;
+$bg-gray-5: #d9ecff;
+$bg-gray-6: #e4e7ed;
+
+// ============================================
+// 新增：边框灰色系
+// ============================================
+$border-gray-light: #dcdfe6;
+$border-gray-lighter: #e4e7ed;
+
+// ============================================
+// 新增：表单背景色
+// ============================================
+$form-bg-primary: #fef5e7;
+$form-bg-secondary: #fdebd0;
+$form-bg-error: #fff5f5;
+$form-bg-info: #e8f4ff;
+
+// ============================================
+// 新增：SVG 图形颜色（用于内联样式）
+// ============================================
+
+// Kawaii 角色颜色
+$kawaii-skin: #f6e05e;
+$kawaii-helmet: #e8f4fd;
+$kawaii-eye: #2d3748;
+$kawaii-ear-inner: #f687b3;
+$kawaii-cheek: #fc8181;
+$kawaii-foot: #4a5568;
+
+// 表单图标颜色
+$icon-dark: #2d3748;
+$icon-orange: #f6ad55;
+$icon-blue: #409eff;
+$icon-gray: #606266;
+
+// 头像/吉祥物颜色
+$avatar-astronaut: #83d0f1;
+$avatar-cat: #ffb347;
+$avatar-ghost: #e8e8e8;
+$avatar-burger: #f6ad55;
+$avatar-planet: #a6e191;
+
+// ============================================
 // CSS 自定义属性（用于 :root 覆盖 Element Plus）
 // ============================================
 :root {
@@ -141,4 +224,62 @@ $el-border-radius: $border-radius-sm;
   // Header 组件变量
   --header-gradient: linear-gradient(90deg, #7dd3f8 0%, #a8e6cf 50%, #ffd88b 100%);
   --header-border-color: #ff9999;
+
+  // ============================================
+  // 新增：场景化变量（CSS 版，供内联样式使用）
+  // ============================================
+
+  // Header 渐变
+  --header-gradient-start: #{$header-gradient-start};
+  --header-gradient-mid: #{$header-gradient-mid};
+  --header-gradient-end: #{$header-gradient-end};
+
+  // 渐变系列
+  --gradient-purple: #{$gradient-purple};
+  --gradient-pink: #{$gradient-pink};
+
+  // 背景灰
+  --bg-gray-1: #{$bg-gray-1};
+  --bg-gray-2: #{$bg-gray-2};
+  --bg-gray-3: #{$bg-gray-3};
+  --bg-gray-4: #{$bg-gray-4};
+  --bg-gray-5: #{$bg-gray-5};
+  --bg-gray-6: #{$bg-gray-6};
+
+  // 边框灰
+  --border-gray-light: #{$border-gray-light};
+  --border-gray-lighter: #{$border-gray-lighter};
+
+  // 表单背景
+  --form-bg-primary: #{$form-bg-primary};
+  --form-bg-secondary: #{$form-bg-secondary};
+  --form-bg-error: #{$form-bg-error};
+  --form-bg-info: #{$form-bg-info};
+
+  // Element Plus 蓝
+  --el-blue-base: #{$el-blue-base};
+  --el-blue-light-1: #{$el-blue-light-1};
+  --el-blue-light-2: #{$el-blue-light-2};
+  --el-blue-light-3: #{$el-blue-light-3};
+
+  // Kawaii 颜色
+  --kawaii-skin: #{$kawaii-skin};
+  --kawaii-helmet: #{$kawaii-helmet};
+  --kawaii-eye: #{$kawaii-eye};
+  --kawaii-ear-inner: #{$kawaii-ear-inner};
+  --kawaii-cheek: #{$kawaii-cheek};
+  --kawaii-foot: #{$kawaii-foot};
+
+  // 图标颜色
+  --icon-dark: #{$icon-dark};
+  --icon-orange: #{$icon-orange};
+  --icon-blue: #{$icon-blue};
+  --icon-gray: #{$icon-gray};
+
+  // 头像颜色
+  --avatar-astronaut: #{$avatar-astronaut};
+  --avatar-cat: #{$avatar-cat};
+  --avatar-ghost: #{$avatar-ghost};
+  --avatar-burger: #{$avatar-burger};
+  --avatar-planet: #{$avatar-planet};
 }
