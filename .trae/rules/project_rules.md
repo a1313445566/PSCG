@@ -1,9 +1,15 @@
 # TRAE 项目规则（Project Rules）
 
-> 适用范围：Vue3 + Element Plus + Express + MySQL 全栈学习系统  
-> 版本：v2.0 | 最后更新：2026-04-05  
-> 优先级：**高于个人规则**  
+> 适用范围：Vue3 + Element Plus + Express + MySQL 全栈学习系统
+> 版本：v3.0 | 最后更新：2026-04-07
+> 优先级：**高于个人规则**
 > 参考标准：飞书 TRAE Rules 最佳实践 + 行业提示词工程规范
+>
+> **v3.0 更新说明**：
+> - ✅ 样式规范全面升级：新增 SCSS 变量体系强制要求
+> - ✅ 新增完整的样式变量使用规范（颜色/间距/字号/圆角/边框宽度）
+> - ✅ 新增 color.adjust() 函数使用指南
+> - ✅ 新增硬编码禁止清单和样式抽离规范
 
 ---
 
@@ -104,14 +110,75 @@ const localValue = computed({
 | 组合式函数 | useXxx | `usePagination.js` |
 | CSS 类名 | kebab-case | `.question-card` |
 
-### 3.3 样式规范
-- 必须使用 `scoped` 作用域
-- 缩进：2 空格
-- 支持 SCSS 语法
-- 颜色值使用变量（`_variables.scss`）
-- 禁止内联样式，必须使用 SCSS 变量和函数
-- 大于100 行的样式代码需要抽离到独立的 SCSS 文件中
-- 禁止使用 硬编码的 RGB 值，必须使用 SCSS 变量和函数
+### 3.3 样式规范（v3.0 重大更新）
+
+> ⚠️ **2026-04-07 重要更新**：项目已完成样式变量化改造，所有新代码必须遵守以下规范
+
+#### 3.3.0 核心原则（强制）
+
+1. **禁止硬编码**：颜色、间距、字号、圆角、边框宽度必须使用 SCSS 变量
+2. **变量优先级**：SCSS 变量 > CSS 变量 > 硬编码（仅允许透明黑等极少数例外）
+3. **函数替代**：使用 `color.adjust()` 替代已弃用的 `lighten()/darken()`
+4. **样式抽离**：`.vue` 文件中 `<style>` 超过 200 行且占比 > 30% 时，必须抽离为独立 `.scss` 文件
+5. **全局注入**：Vite 已配置 `additionalData`，无需手动导入 `_variables.scss`
+
+#### 3.3.1 必须使用 SCSS 变量
+
+- ✅ 颜色值使用变量（`_variables.scss`）
+- ✅ 禁止内联样式，必须使用 SCSS 变量和函数
+- ✅ 禁止使用硬编码的 RGB 值，必须使用 SCSS 变量和函数
+- ✅ 大于100 行的样式代码需要抽离到独立的 SCSS 文件中
+
+**常用变量速查**：
+
+| 类型 | 示例 | 说明 |
+|------|------|------|
+| 颜色 | `$primary-color`, `$text-primary`, `$admin-bg` | 禁止 `#ff6b6b` 等 |
+| 间距 | `$spacing-md`(16px), `$spacing-lg`(24px) | 禁止 `padding: 16px` |
+| 字号 | `$font-size-base`(14px), `$font-size-lg`(18px) | 禁止 `font-size: 14px` |
+| 圆角 | `$border-radius-sm`(8px), `$border-radius-lg`(24px) | 禁止 `border-radius: 8px` |
+| 边框宽度 | `$border-width`(1px), `$border-width-md`(2px) | 禁止 `border: 1px solid` |
+| 渐变 | `$bg-gradient-page`, `$header-gradient` | 禁止手写 `linear-gradient(...)` |
+| 阴影 | `$shadow-md`, `$shadow-btn-primary` | 禁止手写 `box-shadow: ...` |
+
+#### 3.3.2 color.adjust() 函数（强制）
+
+```scss
+@use 'sass:color';
+
+// ❌ 已弃用
+background: lighten($color, 10%);
+border-color: darken($color, 10%);
+
+// ✅ 推荐使用
+background: color.adjust($color, $lightness: 10%);
+border-color: color.adjust($color, $lightness: -10%);
+```
+
+#### 3.3.3 样式文件抽离规则
+
+当满足以下条件时，**必须**将 `<style>` 抽离为独立 `.scss`：
+- `<style>` 行数 > 200 行 且 样式占比 > 30%
+- 或文件总行数 > 600 行
+
+#### 3.3.4 允许的例外（需注释说明）
+
+```scss
+// ✅ 允许：透明纯黑（过于通用）
+background: rgba(0, 0, 0, 0.5);  // 通用遮罩层
+
+// ✅ 允许：SVG 图形颜色数据
+.icon { fill: #2d3748; }  // SVG 内联色
+
+// ✅ 允许：Element Plus 深度覆盖
+:deep(.el-button) { --el-button-bg-color: #409eff; }
+```
+
+#### 3.3.5 详细文档
+
+完整的变量列表和使用示例，请参阅：
+- [样式变量使用指南](../DOCS/开发规范/样式变量使用指南.md)
+- [编码规范 - CSS/SCSS 章节](../DOCS/开发文档/编码规范.md#三-css--scss-规范)
 ### 3.4 注释规范
 ```javascript
 // ✅ 关键逻辑必须加中文注释
@@ -362,5 +429,6 @@ Closes #123
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v3.0 | 2026-04-07 | **重大更新：样式规范全面升级，新增 SCSS 变量体系强制要求、color.adjust() 函数、硬编码禁止清单、样式抽离规范** |
 | v2.0 | 2026-04-05 | 重构规则结构，增加表格、示例、检查清单 |
 | v1.0 | 2026-03-29 | 初始版本 |

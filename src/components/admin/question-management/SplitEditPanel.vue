@@ -577,20 +577,22 @@ const syncToParent = () => {
   }
 }
 
-// ========== 判断题答案选择（本地+父组件同步） ==========
+// ========== 判断题答案选择（先更新 localData 保持UI同步，再sync到父组件） ==========
 const handleJudgmentSelect = val => {
   if (localData.value) {
     localData.value.selectedAnswers = [val]
   }
+  syncToParent()
   emit('update:modelJudgmentAnswer', val)
 }
 
-// ========== 普通题目选项操作（本地同步 + emit通知父组件） ==========
+// ========== 普通题目选项操作（先更新 localData 保持UI同步，再sync到父组件） ==========
 const handleAddOption = () => {
   if (localData.value?.options) {
     if (localData.value.options.length >= 6) return
     localData.value.options.push('')
   }
+  syncToParent()
   emit('add-option')
 }
 
@@ -602,10 +604,11 @@ const handleRemoveOption = index => {
     localData.value.selectedAnswers =
       localData.value.selectedAnswers?.filter(a => a !== letter) || []
   }
+  syncToParent()
   emit('remove-option', index)
 }
 
-// ========== 阅读理解小题操作（先更新 localData 保持UI同步，再emit通知父组件） ==========
+// ========== 阅读理解小题操作（先更新 localData 保持UI同步，再sync到父组件） ==========
 const handleAddSubQuestion = () => {
   if (localData.value?.readingSubQuestions) {
     if (localData.value.readingSubQuestions.length >= 10) return
@@ -616,6 +619,7 @@ const handleAddSubQuestion = () => {
       explanation: ''
     })
   }
+  syncToParent()
   emit('add-sub-question')
 }
 
@@ -624,6 +628,7 @@ const handleRemoveSubQuestion = sqIndex => {
     if (localData.value.readingSubQuestions.length <= 1) return
     localData.value.readingSubQuestions.splice(sqIndex, 1)
   }
+  syncToParent()
   emit('remove-sub-question', sqIndex)
 }
 
@@ -633,6 +638,7 @@ const handleAddSubOption = sqIndex => {
     if (subQ.options.length >= 6) return
     subQ.options.push('')
   }
+  syncToParent()
   emit('add-sub-option', sqIndex)
 }
 
@@ -645,6 +651,7 @@ const handleRemoveSubOption = (sqIndex, optIdx) => {
     const removedLetter = String.fromCharCode(65 + optIdx)
     if (subQ.answer === removedLetter) subQ.answer = 'A'
   }
+  syncToParent()
   emit('remove-sub-option', { sqIndex, optIdx })
 }
 
@@ -656,6 +663,7 @@ const handleMoveSubQuestion = (sqIndex, direction) => {
   const temp = list[sqIndex]
   list[sqIndex] = list[newIndex]
   list[newIndex] = temp
+  syncToParent()
   emit('move-sub-question', { sqIndex, direction })
 }
 </script>

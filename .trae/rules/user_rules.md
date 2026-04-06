@@ -1,9 +1,14 @@
 # TRAE 个人规则（User Rules）
 
-> 适用范围：所有项目 | 全局生效  
-> 版本：v2.0 | 最后更新：2026-04-05  
-> 优先级：**低于项目规则**  
+> 适用范围：所有项目 | 全局生效
+> 版本：v3.0 | 最后更新：2026-04-07
+> 优先级：**低于项目规则**
 > 参考标准：飞书 TRAE Rules 最佳实践 + 行业提示词工程规范
+>
+> **v3.0 更新说明**：
+> - ✅ 新增样式开发规范章节
+> - ✅ 新增 SCSS 变量使用检查清单
+> - ✅ 强化代码质量底线中的样式要求
 
 ---
 
@@ -50,6 +55,95 @@ npm run format
 | 安全性 | 无明显安全漏洞 |
 | 兼容性 | 响应式设计，兼容主流浏览器 |
 | 性能 | 大数据场景无卡顿、无内存泄漏 |
+| **样式** | **必须使用 SCSS 变量，禁止硬编码颜色/间距/字号** |
+| **样式** | **使用 color.adjust() 替代 lighten/darken** |
+
+---
+
+## 三、样式开发规范（v3.0 新增）
+
+> 适用于所有涉及前端样式开发的项目
+
+### 3.1 核心原则
+
+1. **变量优先**：颜色、间距、字号、圆角必须使用预定义的 SCSS 变量
+2. **零硬编码**：禁止在 CSS/SCSS 中直接写 `#ff6b6b`、`16px` 等硬编码值
+3. **函数替代**：使用 `color.adjust()` 替代已弃用的 `lighten()/darken()`
+4. **及时抽离**：样式超过 200 行时立即抽离为独立 `.scss` 文件
+
+### 3.2 SCSS 变量使用检查清单
+
+开发新组件或修改样式时，请逐项检查：
+
+- [ ] 颜色值是否使用了 `$primary-color`、`$text-primary` 等变量？
+- [ ] 间距是否使用了 `$spacing-md`、`$spacing-lg` 等变量？
+- [ ] 字号是否使用了 `$font-size-base`、`$font-size-lg` 等变量？
+- [ ] 圆角是否使用了 `$border-radius-sm`、`$border-radius-lg` 等变量？
+- [ ] 边框宽度是否使用了 `$border-width`、`$border-width-md` 变量？
+- [ ] 渐变是否使用了 `$bg-gradient-page`、`$header-gradient` 等变量？
+- [ ] 阴影是否使用了 `$shadow-sm`、`$shadow-btn-primary` 等变量？
+- [ ] 是否使用了 `color.adjust()` 而非 `lighten()/darken()`？
+- [ ] 如果是 RGBA 颜色，是否使用了 `set-alpha()` 函数？
+- [ ] 样式行数是否超过 200 行？如果是，是否已抽离为独立 `.scss` 文件？
+
+### 3.3 常见错误示例
+
+```scss
+// ❌ 错误1：硬编码颜色
+.button {
+  background: #ff6b6b;
+}
+
+// ✅ 正确1：使用颜色变量
+.button {
+  background: $primary-color;
+}
+
+// ❌ 错误2：硬编码间距和字号
+.card {
+  padding: 16px;
+  font-size: 14px;
+}
+
+// ✅ 正确2：使用间距和字号变量
+.card {
+  padding: $spacing-md;
+  font-size: $font-size-base;
+}
+
+// ❌ 错误3：使用已弃用函数
+.element {
+  background: lighten($color, 10%);
+}
+
+// ✅ 正确3：使用 color.adjust()
+@use 'sass:color';
+.element {
+  background: color.adjust($color, $lightness: 10%);
+}
+```
+
+### 3.4 允许的例外情况
+
+以下情况允许硬编码（但需添加注释说明）：
+
+```scss
+// ✅ 透明纯黑（过于通用）
+.overlay { background: rgba(0, 0, 0, 0.5); } // 通用遮罩层
+
+// ✅ SVG 图形颜色（非 CSS 样式）
+.icon { fill: #2d3748; } // SVG 内联图形色
+
+// ✅ Element Plus 深度覆盖（遵循库格式）
+:deep(.el-button) { --el-button-bg-color: #409eff; }
+```
+
+### 3.5 学习资源
+
+详细的变量列表和使用示例：
+- 项目内文档：[样式变量使用指南](../DOCS/开发规范/样式变量使用指南.md)
+- 项目内文档：[编码规范 - CSS/SCSS 章节](../DOCS/开发文档/编码规范.md#三-css--scss-规范)
+- 变量定义文件：`src/styles/scss/abstracts/_variables.scss`
 
 ---
 
@@ -234,5 +328,6 @@ const calculateScore = (answers, questions) => {
 
 | 版本 | 日期 | 变更内容 |
 |------|------|----------|
+| v3.0 | 2026-04-07 | **新增样式开发规范章节、SCSS 变量使用检查清单、强化代码质量底线中的样式要求** |
 | v2.0 | 2026-04-05 | 重构规则结构，增加表格、示例、错误处理规范 |
 | v1.0 | 2026-03-29 | 初始版本 |
