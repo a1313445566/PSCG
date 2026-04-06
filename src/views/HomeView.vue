@@ -390,5 +390,4 @@ onUnmounted(() => {
 })
 </script>
 
-
 <style scoped lang="scss" src="./styles/HomeView.scss"></style>

@@ -205,16 +205,24 @@ $shimmer: #e0e0e0;
 // 新增：按钮 3D 阴影颜色
 // ============================================
 $shadow-btn-primary: 0 6px 0 #e85555;
-$shadow-btn-primary-hover: 0 10px 0 #e85555, 0 15px 20px set-alpha($primary-color, 30);
+$shadow-btn-primary-hover:
+  0 10px 0 #e85555,
+  0 15px 20px set-alpha($primary-color, 30);
 $shadow-btn-primary-active: 0 2px 0 #e85555;
 $shadow-btn-secondary: 0 6px 0 #45b7aa;
-$shadow-btn-secondary-hover: 0 10px 0 #45b7aa, 0 15px 20px set-alpha($secondary-color, 30);
+$shadow-btn-secondary-hover:
+  0 10px 0 #45b7aa,
+  0 15px 20px set-alpha($secondary-color, 30);
 $shadow-btn-secondary-active: 0 2px 0 #45b7aa;
 $shadow-btn-accent: 0 6px 0 #e6bf50;
-$shadow-btn-accent-hover: 0 10px 0 #e6bf50, 0 15px 20px set-alpha($accent-color, 30);
+$shadow-btn-accent-hover:
+  0 10px 0 #e6bf50,
+  0 15px 20px set-alpha($accent-color, 30);
 $shadow-btn-accent-active: 0 2px 0 #e6bf50;
 $shadow-btn-success: 0 4px 0 #05b584;
-$shadow-btn-success-hover: 0 8px 0 #05b584, 0 12px 20px set-alpha($success-color, 40);
+$shadow-btn-success-hover:
+  0 8px 0 #05b584,
+  0 12px 20px set-alpha($success-color, 40);
 $shadow-btn-success-active: 0 2px 0 #05b584;
 
 // 渐变辅助色
@@ -226,7 +234,9 @@ $secondary-dark: #45b7aa;
 $success-dark: #059669;
 $accent-gold: #ffd700;
 $profile-btn-shadow: 0 4px 0 #5568d3;
-$profile-btn-hover-shadow: 0 7px 0 #5568d3, 0 10px 15px set-alpha(#667eea, 40);
+$profile-btn-hover-shadow:
+  0 7px 0 #5568d3,
+  0 10px 15px set-alpha(#667eea, 40);
 $primary-glow: 2px 2px 4px set-alpha($primary-color, 30);
 $accent-glow: 2px 2px 4px set-alpha($accent-color, 30);
 $primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);

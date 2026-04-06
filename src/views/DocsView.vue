@@ -23,8 +23,7 @@
         />
       </div>
 
-      <div class="header-right">
-      </div>
+      <div class="header-right"></div>
     </header>
 
     <!-- 主内容区域 -->
@@ -461,6 +460,5 @@ function goBack() {
   router.back()
 }
 </script>
-
 
 <style scoped lang="scss" src="./styles/DocsView.scss"></style>

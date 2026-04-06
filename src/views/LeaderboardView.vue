@@ -345,7 +345,12 @@
     <div
       v-if="selectedUser"
       class="user-detail-info"
-      style="margin-bottom: $spacing-comfortable; padding: 15px; background-color: var(--bg-gray-2); border-radius: $border-radius-sm"
+      style="
+        margin-bottom: $spacing-comfortable;
+        padding: 15px;
+        background-color: var(--bg-gray-2);
+        border-radius: $border-radius-sm;
+      "
     >
       <div style="display: flex; gap: $spacing-comfortable; flex-wrap: wrap">
         <div>
@@ -414,7 +419,12 @@
     <div
       v-if="selectedAnswerRecord"
       class="answer-detail-info"
-      style="margin-bottom: $spacing-comfortable; padding: 15px; background-color: var(--bg-gray-2); border-radius: $border-radius-sm"
+      style="
+        margin-bottom: $spacing-comfortable;
+        padding: 15px;
+        background-color: var(--bg-gray-2);
+        border-radius: $border-radius-sm;
+      "
     >
       <div style="display: flex; gap: $spacing-comfortable; flex-wrap: wrap">
         <div>
@@ -936,6 +946,5 @@ watch(activeTab, newTab => {
   }
 })
 </script>
-
 
 <style scoped lang="scss" src="./styles/LeaderboardView.scss"></style>

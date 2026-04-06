@@ -492,7 +492,8 @@ onMounted(async () => {
   font-weight: 700;
 }
 
-@media (max-width: $breakpoint-md) { // 768px
+@media (max-width: $breakpoint-md) {
+  // 768px
   .filter-section {
     flex-direction: column;
     align-items: stretch;

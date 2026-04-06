@@ -355,7 +355,8 @@ onMounted(async () => {
 }
 
 /* 响应式设计 */
-@media (max-width: $breakpoint-lg) { // 992px
+@media (max-width: $breakpoint-lg) {
+  // 992px
   .subcategory-content {
     padding: $spacing-lg; // 1.5rem=24px
   }
@@ -394,7 +395,8 @@ onMounted(async () => {
   }
 }
 
-@media (max-width: $breakpoint-md) { // 768px
+@media (max-width: $breakpoint-md) {
+  // 768px
   .subcategory-content {
     padding: $spacing-md; // 1rem=16px
   }

@@ -280,5 +280,4 @@ onMounted(async () => {
 })
 </script>
 
-
 <style scoped lang="scss" src="./styles/LearningProgressView.scss"></style>

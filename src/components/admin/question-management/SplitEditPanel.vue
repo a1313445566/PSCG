@@ -577,12 +577,12 @@ const syncToParent = () => {
   }
 }
 
-// ========== 判断题答案选择（先更新 localData 保持UI同步，再sync到父组件） ==========
+// ========== 判断题答案选择（更新 localData + 单字段同步到父组件） ==========
 const handleJudgmentSelect = val => {
   if (localData.value) {
     localData.value.selectedAnswers = [val]
   }
-  syncToParent()
+  // 判断题选答案只需同步单个字段，无需全量 syncToParent()
   emit('update:modelJudgmentAnswer', val)
 }
 

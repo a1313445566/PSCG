@@ -112,5 +112,4 @@ onUnmounted(() => {
 })
 </script>
 
-
 <style scoped lang="scss" src="./styles/LeaderboardTable.scss"></style>

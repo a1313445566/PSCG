@@ -132,10 +132,12 @@ export function useSplitEdit(props, options = {}) {
 
       // 设置数据（统一转换为数字，确保与props.subjects中的ID类型一致）
       splitEditData.value = {
-        subjectId: data.subjectId || data.subject_id ? Number(data.subjectId || data.subject_id) : null,
-        subcategoryId: data.subcategoryId || data.subcategory_id
-          ? Number(data.subcategoryId || data.subcategory_id)
-          : null,
+        subjectId:
+          data.subjectId || data.subject_id ? Number(data.subjectId || data.subject_id) : null,
+        subcategoryId:
+          data.subcategoryId || data.subcategory_id
+            ? Number(data.subcategoryId || data.subcategory_id)
+            : null,
         type: data.type,
         difficulty: data.difficulty || 1,
         content: data.content || '',

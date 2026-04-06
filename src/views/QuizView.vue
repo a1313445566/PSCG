@@ -5,7 +5,20 @@
     <!-- 答题行为追踪组件（无UI，纯逻辑） -->
     <AnswerBehaviorTracker ref="behaviorTracker" />
 
-    <div class="quiz-content">
+    <!-- 答题卡：fixed 浮动在左侧 -->
+    <aside class="quiz-sidebar">
+      <AnswerCard
+        :questions="currentQuestions"
+        :user-answers="userAnswers"
+        :reading-answers="readingAnswers"
+        :current-question-id="currentQuestionId"
+        @question-click="scrollToQuestion"
+      />
+    </aside>
+
+    <!-- 主内容区域：独立居中 -->
+    <div class="quiz-container">
+      <!-- 题目头部信息 -->
       <div class="quiz-header">
         <div class="quiz-info">
           <h2 class="quiz-title">{{ currentSubject.name }} - {{ currentSubcategory.name }}</h2>
@@ -41,6 +54,7 @@
         </div>
       </div>
 
+      <!-- 题目列表区域 -->
       <div class="questions-section">
         <div v-if="currentQuestions.length > 0">
           <!-- 普通题目渲染 -->
@@ -51,6 +65,7 @@
               :question-number="index + 1"
               :user-answer="userAnswers[question.id]"
               :show-result="false"
+              :data-question-id="question.id"
               @select-option="option => selectOption(question.id, option, question.type)"
               @mouseenter="handleQuestionHover(question.id, true)"
               @mouseleave="handleQuestionHover(question.id, false)"
@@ -70,6 +85,7 @@
         </div>
       </div>
 
+      <!-- 提交按钮区域 -->
       <div class="action-buttons">
         <button
           class="submit-btn"
@@ -93,6 +109,7 @@ import QuestionCard from '../components/quiz/QuestionCard.vue'
 import SkeletonLoader from '../components/common/SkeletonLoader.vue'
 import AnswerBehaviorTracker from '../components/quiz/AnswerBehaviorTracker.vue'
 import ReadingPassageCard from '../components/student/ReadingPassageCard.vue'
+import AnswerCard from '../components/quiz/AnswerCard.vue'
 import { useQuestionStore, useQuizStore, useSettingsStore } from '../stores/questionStore'
 import { api } from '../utils/api'
 import { ElMessage } from 'element-plus'
@@ -180,6 +197,9 @@ const hasAnsweredAll = computed(() => {
 // 阅读理解题答案存储：{ 题目ID: { 小题索引: 答案 } }
 const readingAnswers = ref({})
 
+// 当前题目ID（用于答题卡高亮）
+const currentQuestionId = ref(null)
+
 // 监听阅读理解题答案变化，自动同步到 userAnswers
 watch(
   readingAnswers,
@@ -249,6 +269,9 @@ const formatTime = seconds => {
 
 // 选择选项
 const selectOption = (questionId, option, questionType = 'single') => {
+  // 更新当前题目ID
+  currentQuestionId.value = questionId
+
   // 如果是新题目，开始追踪
   if (currentTrackingQuestionId.value !== questionId) {
     behaviorTracker.value?.startTracking(questionId)
@@ -265,6 +288,30 @@ const selectOption = (questionId, option, questionType = 'single') => {
   }
 
   quizStore.submitAnswer(questionId, option, questionType)
+}
+
+// 滚动到指定题目
+const scrollToQuestion = index => {
+  const questionId = currentQuestions.value[index]?.id
+  if (!questionId) return
+
+  // 更新当前题目ID
+  currentQuestionId.value = questionId
+
+  // 查找对应的题目元素并滚动
+  const questionElement = document.querySelector(`[data-question-id="${questionId}"]`)
+  if (questionElement) {
+    questionElement.scrollIntoView({
+      behavior: 'smooth',
+      block: 'center'
+    })
+
+    // 添加高亮效果
+    questionElement.classList.add('highlight-question')
+    setTimeout(() => {
+      questionElement.classList.remove('highlight-question')
+    }, 2000)
+  }
 }
 
 // 处理题目悬停（犹豫追踪）
@@ -902,15 +949,52 @@ onUnmounted(() => {
 .quiz-view {
   min-height: 100vh;
   background: $bg-gradient-page;
-  padding-bottom: 2rem;
+  padding-bottom: $spacing-xl;
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%237DD3F8" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%23A8E6CF" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD88B" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%23FF9999" opacity="0.3"/></svg>');
   background-repeat: repeat;
 }
 
-.quiz-content {
-  max-width: 1200px;
+/* 答题卡：fixed 浮动在左侧（不遮挡内容） */
+.quiz-sidebar {
+  position: fixed;
+  top: 200px;
+  /* 内容左边缘=50vw-450px，答题卡右边缘贴近内容左侧 */
+  /* left + 220px(width) + 6px(gap) = 50vw-450px → left = 50vw - 676px */
+  left: calc(50% - 645px);
+  width: 220px;
+  z-index: 100;
+  max-height: calc(100vh - 220px);
+  overflow-y: auto;
+}
+
+/* 主内容区域：完全独立居中 */
+.quiz-container {
+  width: 900px;
+  max-width: 100%;
   margin: 0 auto;
-  padding: $spacing-xl;
+  border-radius: 0;
+  padding: 32px;
+  box-sizing: border-box;
+}
+
+/* 题目高亮效果 */
+:deep(.highlight-question) {
+  animation: highlight-pulse 2s ease-in-out;
+  border-radius: $border-radius-lg;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 set-alpha($primary-color, 50);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px set-alpha($primary-color, 20);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
 }
 
 .quiz-header {
@@ -1104,17 +1188,13 @@ onUnmounted(() => {
 }
 
 /* 响应式设计 */
-@media (max-width: $breakpoint-md) {
-  .quiz-content {
-    padding: $spacing-md;
-  }
-
+@media (max-width: $breakpoint-lg) {
   .quiz-header {
     padding: $spacing-xl;
   }
 
   .quiz-title {
-    font-size: $font-size-2xl; // 1.8rem≈28.8px，取24px
+    font-size: $font-size-2xl;
   }
 
   .quiz-stats {
@@ -1124,22 +1204,55 @@ onUnmounted(() => {
   }
 
   .submit-btn {
-    padding: $spacing-md $spacing-section; // 1rem=16px, 2.5rem=40px
+    padding: $spacing-md $spacing-section;
     font-size: $font-size-md;
   }
 }
 
-@media (max-width: 480px) { // 特殊断点
+@media (max-width: $breakpoint-md) {
+  .quiz-sidebar {
+    display: none;
+  }
+
+  .quiz-container {
+    padding: $spacing-md;
+    max-width: 100%;
+  }
+
   .quiz-header {
-    padding: $spacing-lg; // 1.5rem=24px
+    padding: $spacing-xl;
   }
 
   .quiz-title {
-    font-size: $font-size-xl; // 1.5rem=24px
+    font-size: $font-size-2xl;
   }
 
   .submit-btn {
-    padding: 0.9rem $spacing-xl; // 特殊值+变量混合
+    padding: $spacing-md $spacing-section;
+    font-size: $font-size-md;
+  }
+}
+
+@media (max-width: 480px) {
+  /* 特殊断点 */
+  .quiz-container {
+    padding: $spacing-sm;
+  }
+
+  .quiz-sidebar {
+    display: none; /* 小屏幕隐藏答题卡 */
+  }
+
+  .quiz-header {
+    padding: $spacing-lg;
+  }
+
+  .quiz-title {
+    font-size: $font-size-xl;
+  }
+
+  .submit-btn {
+    padding: 0.9rem $spacing-xl;
     font-size: $font-size-md;
   }
 }
