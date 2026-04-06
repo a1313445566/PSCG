@@ -954,12 +954,11 @@ onUnmounted(() => {
   background-repeat: repeat;
 }
 
-/* 答题卡：fixed 浮动在左侧（不遮挡内容） */
+/* 答题卡：fixed 浮动在左侧 */
 .quiz-sidebar {
   position: fixed;
   top: 200px;
-  /* 内容左边缘=50vw-450px，答题卡右边缘贴近内容左侧 */
-  /* left + 220px(width) + 6px(gap) = 50vw-450px → left = 50vw - 676px */
+  /* 内容区左边缘 = 50vw - 450px，答题卡紧贴左侧 */
   left: calc(50% - 645px);
   width: 220px;
   z-index: 100;
