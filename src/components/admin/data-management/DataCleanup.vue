@@ -1,4 +1,5 @@
-﻿﻿<template>
+﻿﻿
+<template>
   <div class="data-cleanup-container">
     <div class="cleanup-section">
       <div class="section-header">

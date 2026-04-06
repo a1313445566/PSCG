@@ -43,7 +43,9 @@ $shadow-lg: 0 8px 25px rgba(0, 0, 0, 0.2);
 // 字体
 // ============================================
 $game-font: 'Comic Sans MS', 'Arial', sans-serif;
-$admin-font: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial, sans-serif;
+$admin-font:
+  'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', Arial,
+  sans-serif;
 
 // ============================================
 // 间距（标准化）
@@ -101,12 +103,21 @@ $el-border-radius: $border-radius-sm;
 $header-gradient-start: #7dd3f8;
 $header-gradient-mid: #a8e6cf;
 $header-gradient-end: #ffd88b;
-$header-gradient: linear-gradient(90deg, #{$header-gradient-start} 0%, #{$header-gradient-mid} 50%, #{$header-gradient-end} 100%);
+$header-gradient: linear-gradient(
+  90deg,
+  #{$header-gradient-start} 0%,
+  #{$header-gradient-mid} 50%,
+  #{$header-gradient-end} 100%
+);
 
 // Purple 渐变（音频播放器等）
 $gradient-purple-start: #667eea;
 $gradient-purple-end: #764ba2;
-$gradient-purple: linear-gradient(135deg, #{$gradient-purple-start} 0%, #{$gradient-purple-end} 100%);
+$gradient-purple: linear-gradient(
+  135deg,
+  #{$gradient-purple-start} 0%,
+  #{$gradient-purple-end} 100%
+);
 
 // Pink 渐变（音频播放器等）
 $gradient-pink-start: #f093fb;
@@ -121,7 +132,6 @@ $el-blue-light-1: #ecf5ff;
 $el-blue-light-2: #d9ecff;
 $el-blue-light-3: #b3d8ff;
 $el-blue-light-4: #79bbff;
-$el-blue-light-5: #409eff;
 $el-blue-light-6: #a0cfff;
 $el-blue-light-7: #337ecc;
 $el-blue-light-8: #2b7bc0;

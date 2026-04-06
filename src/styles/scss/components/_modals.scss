@@ -98,7 +98,7 @@
   cursor: pointer;
   padding: 4px;
   transition: color 0.2s ease;
-  
+
   &:hover {
     color: $text-primary;
   }
@@ -129,39 +129,39 @@
 // ============================================
 .modal-confirm {
   text-align: center;
-  
+
   .modal-body {
     padding: $spacing-xl;
   }
-  
+
   .confirm-icon {
     font-size: 48px;
     margin-bottom: $spacing-md;
-    
+
     &.warning {
       color: $warning-color;
     }
-    
+
     &.danger {
       color: $danger-color;
     }
-    
+
     &.success {
       color: $success-color;
     }
-    
+
     &.info {
       color: $info-color;
     }
   }
-  
+
   .confirm-title {
     font-size: 18px;
     font-weight: 600;
     color: $text-primary;
     margin-bottom: $spacing-sm;
   }
-  
+
   .confirm-message {
     font-size: 14px;
     color: $text-light;
@@ -190,26 +190,26 @@
   z-index: 1001;
   display: flex;
   flex-direction: column;
-  
+
   &.drawer-left {
     left: 0;
     height: 100vh;
     animation: slideInLeft 0.3s ease;
   }
-  
+
   &.drawer-right {
     right: 0;
     height: 100vh;
     animation: slideInRight 0.3s ease;
   }
-  
+
   &.drawer-top {
     left: 0;
     right: 0;
     width: 100vw;
     animation: slideInTop 0.3s ease;
   }
-  
+
   &.drawer-bottom {
     left: 0;
     right: 0;
@@ -220,23 +220,39 @@
 }
 
 @keyframes slideInLeft {
-  from { transform: translateX(-100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes slideInRight {
-  from { transform: translateX(100%); }
-  to { transform: translateX(0); }
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
 }
 
 @keyframes slideInTop {
-  from { transform: translateY(-100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(-100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 @keyframes slideInBottom {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+  to {
+    transform: translateY(0);
+  }
 }
 
 .drawer-header {
@@ -266,7 +282,7 @@
     width: 95vw;
     margin: $spacing-md;
   }
-  
+
   .modal-sm,
   .modal-md,
   .modal-lg,

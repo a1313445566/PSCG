@@ -22,7 +22,7 @@
   color: #bfcbd9;
   transition: width 0.3s ease;
   flex-shrink: 0;
-  
+
   &.collapsed {
     width: 64px;
   }
@@ -34,7 +34,7 @@
   align-items: center;
   justify-content: center;
   background-color: #263445;
-  
+
   .logo {
     font-size: 18px;
     font-weight: 600;
@@ -44,7 +44,7 @@
 
 .sidebar-menu {
   padding: $spacing-sm 0;
-  
+
   .menu-item {
     display: flex;
     align-items: center;
@@ -52,30 +52,30 @@
     color: #bfcbd9;
     cursor: pointer;
     transition: all 0.3s ease;
-    
+
     .menu-icon {
       width: 24px;
       margin-right: $spacing-sm;
     }
-    
+
     .menu-title {
       flex: 1;
     }
-    
+
     &:hover {
       background-color: #263445;
       color: #fff;
     }
-    
+
     &.active {
       background-color: $primary-color;
       color: #fff;
     }
   }
-  
+
   .submenu {
     padding-left: $spacing-xl;
-    
+
     .menu-item {
       font-size: 14px;
       padding: $spacing-xs $spacing-md;
@@ -113,28 +113,28 @@
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  
+
   .toggle-btn {
     font-size: 20px;
     cursor: pointer;
     color: $text-light;
-    
+
     &:hover {
       color: $text-primary;
     }
   }
-  
+
   .breadcrumb {
     display: flex;
     align-items: center;
     gap: $spacing-xs;
     font-size: 14px;
     color: $text-light;
-    
+
     .separator {
       margin: 0 4px;
     }
-    
+
     .current {
       color: $text-primary;
     }
@@ -145,17 +145,17 @@
   display: flex;
   align-items: center;
   gap: $spacing-md;
-  
+
   .header-action {
     font-size: 18px;
     color: $text-light;
     cursor: pointer;
     position: relative;
-    
+
     &:hover {
       color: $primary-color;
     }
-    
+
     .badge {
       position: absolute;
       top: -5px;
@@ -167,20 +167,20 @@
       border-radius: 10px;
     }
   }
-  
+
   .user-info {
     display: flex;
     align-items: center;
     gap: $spacing-sm;
     cursor: pointer;
-    
+
     .avatar {
       width: 32px;
       height: 32px;
       border-radius: 50%;
       object-fit: cover;
     }
-    
+
     .username {
       font-size: 14px;
       color: $text-primary;
@@ -207,7 +207,7 @@
   align-items: center;
   gap: $spacing-xs;
   border-bottom: 1px solid #ebeef5;
-  
+
   .tab-item {
     display: flex;
     align-items: center;
@@ -218,16 +218,16 @@
     font-size: 12px;
     color: $text-primary;
     cursor: pointer;
-    
+
     .close-icon {
       font-size: 12px;
       color: $text-light;
-      
+
       &:hover {
         color: $danger-color;
       }
     }
-    
+
     &.active {
       background-color: $primary-color;
       color: #fff;
@@ -259,12 +259,12 @@
     top: 0;
     bottom: 0;
     z-index: 200;
-    
+
     &.open {
       left: 0;
     }
   }
-  
+
   .sidebar-overlay {
     display: none;
     position: fixed;
@@ -274,7 +274,7 @@
     bottom: 0;
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 199;
-    
+
     &.show {
       display: block;
     }
@@ -285,7 +285,7 @@
   .admin-content {
     padding: $spacing-md;
   }
-  
+
   .header-right .username {
     display: none;
   }

@@ -3,15 +3,25 @@
 // 响应式断点
 @mixin breakpoint($size) {
   @if $size == xs {
-    @media (min-width: $breakpoint-xs) { @content; }
+    @media (min-width: $breakpoint-xs) {
+      @content;
+    }
   } @else if $size == sm {
-    @media (min-width: $breakpoint-sm) { @content; }
+    @media (min-width: $breakpoint-sm) {
+      @content;
+    }
   } @else if $size == md {
-    @media (min-width: $breakpoint-md) { @content; }
+    @media (min-width: $breakpoint-md) {
+      @content;
+    }
   } @else if $size == lg {
-    @media (min-width: $breakpoint-lg) { @content; }
+    @media (min-width: $breakpoint-lg) {
+      @content;
+    }
   } @else if $size == xl {
-    @media (min-width: $breakpoint-xl) { @content; }
+    @media (min-width: $breakpoint-xl) {
+      @content;
+    }
   }
 }
 
@@ -33,7 +43,7 @@
 @mixin card-shadow {
   box-shadow: $shadow-md;
   transition: box-shadow 0.3s ease;
-  
+
   &:hover {
     box-shadow: $shadow-lg;
   }
@@ -56,12 +66,12 @@
   padding: $spacing-sm $spacing-md;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:hover {
     opacity: 0.9;
     transform: translateY(-2px);
   }
-  
+
   &:active {
     transform: translateY(0);
   }

@@ -21,27 +21,28 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 14px;
-  
-  th, td {
+
+  th,
+  td {
     padding: $spacing-sm $spacing-md;
     text-align: left;
     border-bottom: 1px solid #ebeef5;
   }
-  
+
   th {
     font-weight: 600;
     color: $text-primary;
     background-color: #f5f7fa;
     white-space: nowrap;
   }
-  
+
   td {
     color: $text-primary;
   }
-  
+
   tbody tr {
     transition: background-color 0.2s ease;
-    
+
     &:hover {
       background-color: #f5f7fa;
     }
@@ -61,7 +62,8 @@
 // 紧凑表格
 // ============================================
 .table-compact {
-  th, td {
+  th,
+  td {
     padding: $spacing-xs $spacing-sm;
     font-size: 13px;
   }
@@ -73,7 +75,7 @@
 .table-selectable {
   tbody tr {
     cursor: pointer;
-    
+
     &.selected {
       background-color: set-alpha($primary-color, 10);
     }
@@ -110,17 +112,17 @@
 .sortable {
   cursor: pointer;
   user-select: none;
-  
+
   .sort-icon {
     margin-left: 4px;
     opacity: 0.3;
     transition: opacity 0.2s ease;
   }
-  
+
   &:hover .sort-icon {
     opacity: 0.6;
   }
-  
+
   &.asc .sort-icon,
   &.desc .sort-icon {
     opacity: 1;
@@ -135,13 +137,13 @@
   text-align: center;
   padding: $spacing-2xl;
   color: $text-light;
-  
+
   .empty-icon {
     font-size: 48px;
     margin-bottom: $spacing-md;
     opacity: 0.5;
   }
-  
+
   .empty-text {
     font-size: 14px;
   }
@@ -152,7 +154,7 @@
 // ============================================
 .table-loading {
   position: relative;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -175,7 +177,7 @@
   left: 0;
   background: inherit;
   z-index: 1;
-  
+
   &::after {
     content: '';
     position: absolute;
@@ -193,7 +195,7 @@
   right: 0;
   background: inherit;
   z-index: 1;
-  
+
   &::before {
     content: '';
     position: absolute;
@@ -215,14 +217,15 @@
     align-items: flex-start;
     gap: $spacing-sm;
   }
-  
+
   .table-toolbar {
     width: 100%;
     justify-content: flex-end;
   }
-  
+
   .table {
-    th, td {
+    th,
+    td {
       padding: $spacing-xs $spacing-sm;
       font-size: 13px;
     }

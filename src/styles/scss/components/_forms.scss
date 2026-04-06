@@ -20,7 +20,7 @@
   font-size: 14px;
   font-weight: 500;
   color: $text-primary;
-  
+
   .required {
     color: $danger-color;
     margin-left: 2px;
@@ -39,18 +39,18 @@
   color: $text-primary;
   background-color: $card-background;
   transition: all 0.3s ease;
-  
+
   &:focus {
     outline: none;
     border-color: $primary-color;
     box-shadow: 0 0 0 3px set-alpha($primary-color, 10);
   }
-  
+
   &:disabled {
     background-color: #f5f7fa;
     cursor: not-allowed;
   }
-  
+
   &::placeholder {
     color: #c0c4cc;
   }
@@ -90,13 +90,13 @@
   background-color: $card-background;
   cursor: pointer;
   transition: all 0.3s ease;
-  
+
   &:focus {
     outline: none;
     border-color: $primary-color;
     box-shadow: 0 0 0 3px set-alpha($primary-color, 10);
   }
-  
+
   &:disabled {
     background-color: #f5f7fa;
     cursor: not-allowed;
@@ -114,7 +114,7 @@
   cursor: pointer;
   font-size: 14px;
   color: $text-primary;
-  
+
   input {
     width: 16px;
     height: 16px;
@@ -129,7 +129,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: $spacing-md;
-  
+
   .form-group {
     flex: 1;
     min-width: 200px;
@@ -144,7 +144,7 @@
   flex-wrap: wrap;
   align-items: flex-end;
   gap: $spacing-md;
-  
+
   .form-group {
     margin-bottom: 0;
   }
@@ -155,7 +155,7 @@
 // ============================================
 .form-input-error {
   border-color: $danger-color;
-  
+
   &:focus {
     border-color: $danger-color;
     box-shadow: 0 0 0 3px set-alpha($danger-color, 10);
@@ -173,7 +173,7 @@
 // ============================================
 .form-input-success {
   border-color: $success-color;
-  
+
   &:focus {
     border-color: $success-color;
     box-shadow: 0 0 0 3px set-alpha($success-color, 10);
@@ -185,20 +185,20 @@
 // ============================================
 .input-group {
   display: flex;
-  
+
   .form-input {
     flex: 1;
     border-radius: 0;
-    
+
     &:first-child {
       border-radius: $border-radius-sm 0 0 $border-radius-sm;
     }
-    
+
     &:last-child {
       border-radius: 0 $border-radius-sm $border-radius-sm 0;
     }
   }
-  
+
   .input-group-addon {
     display: flex;
     align-items: center;
@@ -207,12 +207,12 @@
     border: 1px solid #dcdfe6;
     font-size: 14px;
     color: $text-light;
-    
+
     &:first-child {
       border-right: none;
       border-radius: $border-radius-sm 0 0 $border-radius-sm;
     }
-    
+
     &:last-child {
       border-left: none;
       border-radius: 0 $border-radius-sm $border-radius-sm 0;
@@ -234,11 +234,11 @@
 // ============================================
 .search-input {
   position: relative;
-  
+
   .form-input {
     padding-left: 36px;
   }
-  
+
   .search-icon {
     position: absolute;
     left: $spacing-sm;
@@ -246,7 +246,7 @@
     transform: translateY(-50%);
     color: $text-light;
   }
-  
+
   .clear-btn {
     position: absolute;
     right: $spacing-sm;
@@ -257,7 +257,7 @@
     color: $text-light;
     cursor: pointer;
     padding: 4px;
-    
+
     &:hover {
       color: $text-primary;
     }
@@ -270,12 +270,12 @@
 @media (max-width: $breakpoint-sm) {
   .form-row {
     flex-direction: column;
-    
+
     .form-group {
       min-width: 100%;
     }
   }
-  
+
   .form-inline {
     flex-direction: column;
     align-items: stretch;

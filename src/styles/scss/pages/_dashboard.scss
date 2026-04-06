@@ -11,7 +11,7 @@
     gap: $spacing-lg;
     margin-bottom: $spacing-lg;
   }
-  
+
   .stat-card {
     background: $card-background;
     border-radius: $border-radius;
@@ -20,7 +20,7 @@
     display: flex;
     align-items: center;
     gap: $spacing-md;
-    
+
     .stat-icon {
       width: 56px;
       height: 56px;
@@ -29,96 +29,96 @@
       align-items: center;
       justify-content: center;
       font-size: 24px;
-      
+
       &.primary {
         background-color: set-alpha($primary-color, 10);
         color: $primary-color;
       }
-      
+
       &.success {
         background-color: set-alpha($success-color, 10);
         color: $success-color;
       }
-      
+
       &.warning {
         background-color: set-alpha($warning-color, 10);
         color: $warning-color;
       }
-      
+
       &.info {
         background-color: set-alpha($info-color, 10);
         color: $info-color;
       }
     }
-    
+
     .stat-content {
       flex: 1;
-      
+
       .stat-value {
         font-size: 28px;
         font-weight: 700;
         color: $text-primary;
         line-height: 1.2;
       }
-      
+
       .stat-label {
         font-size: 14px;
         color: $text-light;
         margin-top: 4px;
       }
     }
-    
+
     .stat-trend {
       font-size: 12px;
       display: flex;
       align-items: center;
       gap: 4px;
-      
+
       &.up {
         color: $success-color;
       }
-      
+
       &.down {
         color: $danger-color;
       }
     }
   }
-  
+
   .dashboard-grid {
     display: grid;
     grid-template-columns: 2fr 1fr;
     gap: $spacing-lg;
   }
-  
+
   .chart-card {
     background: $card-background;
     border-radius: $border-radius;
     padding: $spacing-lg;
     box-shadow: $shadow-sm;
-    
+
     .card-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
       margin-bottom: $spacing-md;
-      
+
       .card-title {
         font-size: 16px;
         font-weight: 600;
         color: $text-primary;
       }
-      
+
       .card-actions {
         display: flex;
         gap: $spacing-xs;
       }
     }
-    
+
     .chart-container {
       height: 300px;
     }
   }
-  
+
   .activity-list {
     .activity-item {
       display: flex;
@@ -126,11 +126,11 @@
       gap: $spacing-md;
       padding: $spacing-md 0;
       border-bottom: 1px solid #ebeef5;
-      
+
       &:last-child {
         border-bottom: none;
       }
-      
+
       .activity-icon {
         width: 36px;
         height: 36px;
@@ -140,32 +140,32 @@
         justify-content: center;
         font-size: 16px;
         flex-shrink: 0;
-        
+
         &.success {
           background-color: set-alpha($success-color, 10);
           color: $success-color;
         }
-        
+
         &.warning {
           background-color: set-alpha($warning-color, 10);
           color: $warning-color;
         }
-        
+
         &.info {
           background-color: set-alpha($info-color, 10);
           color: $info-color;
         }
       }
-      
+
       .activity-content {
         flex: 1;
-        
+
         .activity-title {
           font-size: 14px;
           color: $text-primary;
           margin-bottom: 4px;
         }
-        
+
         .activity-time {
           font-size: 12px;
           color: $text-light;
@@ -173,12 +173,12 @@
       }
     }
   }
-  
+
   .quick-actions {
     display: grid;
     grid-template-columns: repeat(2, 1fr);
     gap: $spacing-md;
-    
+
     .action-btn {
       display: flex;
       flex-direction: column;
@@ -189,18 +189,18 @@
       border-radius: $border-radius;
       cursor: pointer;
       transition: all 0.3s ease;
-      
+
       &:hover {
         background: set-alpha($primary-color, 10);
         transform: translateY(-2px);
       }
-      
+
       .action-icon {
         font-size: 24px;
         color: $primary-color;
         margin-bottom: $spacing-sm;
       }
-      
+
       .action-label {
         font-size: 14px;
         color: $text-primary;
@@ -233,13 +233,13 @@
     .stats-grid {
       grid-template-columns: 1fr;
     }
-    
+
     .stat-card {
       .stat-content .stat-value {
         font-size: 24px;
       }
     }
-    
+
     .quick-actions {
       grid-template-columns: 1fr;
     }

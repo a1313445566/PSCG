@@ -24,7 +24,7 @@
       </div>
 
       <div class="header-right">
-        <el-button type="primary" @click="createNewDoc" class="create-btn">
+        <el-button type="primary" class="create-btn" @click="createNewDoc">
           <el-icon><Plus /></el-icon>
           <span>新建文档</span>
         </el-button>
@@ -55,8 +55,8 @@
             :highlight-current="true"
             :filter-node-method="filterNode"
             :default-expand-all="true"
-            @node-click="handleNodeClick"
             class="doc-tree"
+            @node-click="handleNodeClick"
           >
             <template #default="{ node, data }">
               <div class="tree-node" :class="{ 'is-file': data.type === 'file' }">
@@ -68,7 +68,9 @@
                   <el-icon v-else><Document /></el-icon>
                 </span>
                 <span class="node-label" :title="data.label">{{ data.label }}</span>
-                <span v-if="data.type === 'file'" class="node-meta">{{ formatDate(data.updatedAt) }}</span>
+                <span v-if="data.type === 'file'" class="node-meta">
+                  {{ formatDate(data.updatedAt) }}
+                </span>
               </div>
             </template>
           </el-tree>
@@ -84,16 +86,16 @@
               <button
                 class="view-btn"
                 :class="{ active: viewMode === 'grid' }"
-                @click="viewMode = 'grid'"
                 title="卡片视图"
+                @click="viewMode = 'grid'"
               >
                 <el-icon><Grid /></el-icon>
               </button>
               <button
                 class="view-btn"
                 :class="{ active: viewMode === 'list' }"
-                @click="viewMode = 'list'"
                 title="列表视图"
+                @click="viewMode = 'list'"
               >
                 <el-icon><List /></el-icon>
               </button>
@@ -139,7 +141,7 @@
                 <div class="card-icon">
                   <el-icon :size="24"><Document /></el-icon>
                 </div>
-                <el-dropdown trigger="click" @command="(cmd) => handleDocAction(cmd, doc)">
+                <el-dropdown trigger="click" @command="cmd => handleDocAction(cmd, doc)">
                   <button class="more-btn" @click.stop>
                     <el-icon><MoreFilled /></el-icon>
                   </button>
@@ -159,7 +161,12 @@
               <div class="card-footer">
                 <span class="update-time">{{ formatDate(doc.updatedAt) }} 更新</span>
                 <div class="card-tags">
-                  <el-tag v-for="tag in (doc.tags || []).slice(0, 2)" :key="tag" size="small" type="info">
+                  <el-tag
+                    v-for="tag in (doc.tags || []).slice(0, 2)"
+                    :key="tag"
+                    size="small"
+                    type="info"
+                  >
                     {{ tag }}
                   </el-tag>
                 </div>
@@ -169,7 +176,12 @@
 
           <!-- 列表视图 -->
           <div v-else class="docs-list">
-            <el-table :data="filteredDocs" style="width: 100%" @row-click="openDocument" highlight-current-row>
+            <el-table
+              :data="filteredDocs"
+              style="width: 100%"
+              highlight-current-row
+              @row-click="openDocument"
+            >
               <el-table-column prop="title" label="文档名称" min-width="300">
                 <template #default="{ row }">
                   <div class="list-item-title">
@@ -179,7 +191,12 @@
                 </template>
               </el-table-column>
 
-              <el-table-column prop="description" label="描述" min-width="200" show-overflow-tooltip />
+              <el-table-column
+                prop="description"
+                label="描述"
+                min-width="200"
+                show-overflow-tooltip
+              />
 
               <el-table-column prop="updatedAt" label="更新时间" width="180">
                 <template #default="{ row }">
@@ -189,7 +206,7 @@
 
               <el-table-column label="操作" width="120" fixed="right">
                 <template #default="{ row }">
-                  <el-dropdown trigger="click" @command="(cmd) => handleDocAction(cmd, row)">
+                  <el-dropdown trigger="click" @command="cmd => handleDocAction(cmd, row)">
                     <el-button text type="primary" size="small">操作</el-button>
                     <template #dropdown>
                       <el-dropdown-menu>
@@ -232,17 +249,23 @@
               <p>{{ formatDate(selectedDoc?.updatedAt) }}</p>
             </div>
 
-            <div class="info-section" v-if="selectedDoc?.tags?.length">
+            <div v-if="selectedDoc?.tags?.length" class="info-section">
               <label>标签</label>
               <div class="tag-list">
-                <el-tag v-for="tag in selectedDoc.tags" :key="tag" size="small" type="info" style="margin: 2px">
+                <el-tag
+                  v-for="tag in selectedDoc.tags"
+                  :key="tag"
+                  size="small"
+                  type="info"
+                  style="margin: 2px"
+                >
                   {{ tag }}
                 </el-tag>
               </div>
             </div>
 
             <div class="panel-actions">
-              <el-button type="primary" @click="editDocument(selectedDoc)" style="width: 100%">
+              <el-button type="primary" style="width: 100%" @click="editDocument(selectedDoc)">
                 <el-icon><Edit /></el-icon>
                 编辑文档
               </el-button>
@@ -261,7 +284,11 @@
       class="doc-viewer-dialog"
       :close-on-click-modal="false"
     >
-      <div v-if="currentDoc?.html" class="viewer-content markdown-body" v-html="currentDoc.html"></div>
+      <div
+        v-if="currentDoc?.html"
+        class="viewer-content markdown-body"
+        v-html="currentDoc.html"
+      ></div>
       <div v-else class="viewer-empty">
         <el-empty description="该文档暂无内容" />
       </div>
@@ -371,9 +398,9 @@ const filteredDocs = computed(() => {
   // 搜索过滤
   if (searchQuery.value.trim()) {
     const query = searchQuery.value.toLowerCase()
-    docs = docs.filter(doc =>
-      doc.title.toLowerCase().includes(query) ||
-      doc.description?.toLowerCase().includes(query)
+    docs = docs.filter(
+      doc =>
+        doc.title.toLowerCase().includes(query) || doc.description?.toLowerCase().includes(query)
     )
   }
 
@@ -486,15 +513,11 @@ async function handleDocAction(command, doc) {
       break
     case 'delete':
       try {
-        await ElMessageBox.confirm(
-          `确定要删除文档"${doc.title}"吗？此操作不可恢复。`,
-          '删除确认',
-          {
-            confirmButtonText: '确定删除',
-            cancelButtonText: '取消',
-            type: 'warning'
-          }
-        )
+        await ElMessageBox.confirm(`确定要删除文档"${doc.title}"吗？此操作不可恢复。`, '删除确认', {
+          confirmButtonText: '确定删除',
+          cancelButtonText: '取消',
+          type: 'warning'
+        })
         ElMessage.success('删除成功')
         // TODO: 调用API删除文档
       } catch {
@@ -555,16 +578,8 @@ $radius-lg: 12px;
   min-height: 100vh;
   background: $bg-base;
   font-family:
-    -apple-system,
-    BlinkMacSystemFont,
-    'Segoe UI',
-    Roboto,
-    'Helvetica Neue',
-    Arial,
-    'Noto Sans SC',
-    'PingFang SC',
-    'Microsoft YaHei',
-    sans-serif;
+    -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans SC',
+    'PingFang SC', 'Microsoft YaHei', sans-serif;
   display: flex;
   flex-direction: column;
 }

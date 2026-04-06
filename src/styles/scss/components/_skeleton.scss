@@ -29,7 +29,7 @@
 .skeleton-text {
   height: 16px;
   margin-bottom: $spacing-sm;
-  
+
   &:last-child {
     width: 60%;
   }
@@ -119,10 +119,10 @@
 
 .skeleton-list-content {
   flex: 1;
-  
+
   .skeleton-text {
     margin-bottom: $spacing-xs;
-    
+
     &:last-child {
       width: 40%;
     }
@@ -134,27 +134,27 @@
 // ============================================
 .skeleton-table {
   width: 100%;
-  
+
   .skeleton-table-header {
     display: flex;
     gap: $spacing-md;
     padding: $spacing-md;
     background: #f5f7fa;
     border-radius: $border-radius-sm $border-radius-sm 0 0;
-    
+
     .skeleton-text {
       flex: 1;
       height: 14px;
       margin: 0;
     }
   }
-  
+
   .skeleton-table-row {
     display: flex;
     gap: $spacing-md;
     padding: $spacing-md;
     border-bottom: 1px solid #ebeef5;
-    
+
     .skeleton-text {
       flex: 1;
       height: 14px;
@@ -180,20 +180,20 @@
   border-radius: $border-radius;
   padding: $spacing-lg;
   text-align: center;
-  
+
   .skeleton-icon {
     width: 48px;
     height: 48px;
     border-radius: 50%;
     margin: 0 auto $spacing-md;
   }
-  
+
   .skeleton-value {
     height: 32px;
     width: 60%;
     margin: 0 auto $spacing-sm;
   }
-  
+
   .skeleton-label {
     height: 14px;
     width: 40%;
@@ -208,7 +208,7 @@
   .skeleton-grid {
     grid-template-columns: 1fr;
   }
-  
+
   .skeleton-image {
     height: 150px;
   }
