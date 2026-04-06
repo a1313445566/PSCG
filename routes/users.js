@@ -54,7 +54,7 @@ router.get('/', async (req, res) => {
     // 如果limit为0或负数，返回所有用户（向后兼容）
     if (limit === '0' || (limit && parseInt(limit) <= 0)) {
       const query = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED)`
-      var users = await db.all(query, params)
+      const users = await db.all(query, params)
 
       // 添加统计数据
       if (withStats === 'true' && users.length > 0) {
@@ -75,7 +75,7 @@ router.get('/', async (req, res) => {
 
     // 2. 获取分页数据
     const dataQuery = `SELECT ${USER_FIELDS} FROM users ${whereClause} ORDER BY CAST(student_id AS UNSIGNED) LIMIT ${limitNum} OFFSET ${offset}`
-    var users = await db.all(dataQuery, params)
+    const users = await db.all(dataQuery, params)
 
     // 3. 添加统计数据
     if (withStats === 'true' && users.length > 0) {
@@ -116,7 +116,7 @@ async function attachUserStats(users) {
       statsMap[stat.user_id] = stat
     })
 
-    for (var user of users) {
+    for (const user of users) {
       const stats = statsMap[user.id] || {
         totalSessions: 0,
         totalQuestions: 0,
@@ -128,7 +128,7 @@ async function attachUserStats(users) {
     }
   } catch (error) {
     console.warn('[attachUserStats] 批量获取用户统计数据失败:', error)
-    for (var user of users) {
+    for (const user of users) {
       user.total_sessions = 0
       user.avg_accuracy = 0
     }
