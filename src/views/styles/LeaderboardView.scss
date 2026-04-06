@@ -32,11 +32,21 @@
   background: $card-background;
   border-radius: 24px;
   padding: 2.5rem;
-  box-shadow: $shadow-lg;
-  border: 3px solid $border-color;
+  box-shadow:
+    0 2px 8px rgba(255, 107, 107, 0.08),
+    0 8px 24px rgba(0, 0, 0, 0.06);
+  border: none;
   position: relative;
   overflow: hidden;
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px);
+    box-shadow:
+      0 4px 12px rgba(255, 107, 107, 0.12),
+      0 12px 32px rgba(0, 0, 0, 0.1);
+  }
 }
 
 .leaderboard-section::before {
@@ -81,8 +91,10 @@
   padding: 1.5rem;
   background: $bg-gradient-page;
   border-radius: 16px;
-  border: 3px solid $border-color;
-  box-shadow: $shadow-lg;
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(255, 209, 102, 0.08),
+    0 4px 16px rgba(0, 0, 0, 0.05);
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   overflow-x: auto;
   scrollbar-width: thin;
@@ -110,9 +122,11 @@
 .filter-section .el-select {
   min-width: 180px;
   border-radius: 16px;
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.12);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.08),
+    0 4px 12px rgba(255, 107, 107, 0.1);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  border: 3px solid $border-color;
+  border: none;
   background: $card-background;
   overflow: hidden;
   position: relative;
@@ -220,9 +234,11 @@
   font-weight: 900;
   padding: 0.8rem 1.8rem;
   background: var(--header-gradient);
-  border: 3px solid var(--border-color);
+  border: none;
   color: white;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 4px 12px rgba(125, 211, 248, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.12);
   transition: all 0.3s ease;
   font-family: var(--game-font);
   text-transform: uppercase;
@@ -232,13 +248,16 @@
 
 .back-home-btn .el-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
-  border-color: var(--primary-color);
+  box-shadow:
+    0 6px 16px rgba(125, 211, 248, 0.4),
+    0 12px 28px rgba(0, 0, 0, 0.18);
 }
 
 .back-home-btn .el-button:active {
   transform: translateY(0);
-  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 3px 8px rgba(125, 211, 248, 0.25),
+    0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .leaderboard-content-row {
@@ -253,8 +272,10 @@
   background: white;
   border-radius: 16px;
   padding: 1.5rem;
-  border: 3px solid var(--border-color);
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(255, 209, 102, 0.08);
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   flex: 1;
   min-width: 300px;
@@ -265,13 +286,23 @@
   background: white;
   border-radius: 20px;
   padding: 1.5rem;
-  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--border-color);
+  box-shadow:
+    0 2px 8px rgba(255, 215, 0, 0.15),
+    0 8px 24px rgba(0, 0, 0, 0.08);
+  border: none;
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
   min-width: 300px;
   min-height: 210px;
   flex: 1;
   max-width: 440px;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+
+  &:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow:
+      0 4px 16px rgba(255, 215, 0, 0.2),
+      0 12px 32px rgba(0, 0, 0, 0.12);
+  }
 }
 
 .first-place-header {
@@ -330,7 +361,10 @@
   padding: 1rem;
   background: $stat-item-gradient;
   border-radius: 12px;
-  border: 2px solid $border-color;
+  border: none;
+  box-shadow:
+    0 1px 3px rgba(0, 0, 0, 0.06),
+    0 3px 8px rgba(255, 209, 102, 0.08);
 }
 
 .first-place-stats .stat-label {
@@ -416,8 +450,10 @@
   background-color: white;
   border-radius: 12px;
   overflow: hidden;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--border-color);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(78, 205, 196, 0.08);
+  border: none;
   margin-top: 1.5rem;
 }
 
@@ -544,8 +580,10 @@
   color: $text-light;
   background-color: $bg-slate-50;
   border-radius: 12px;
-  box-shadow: $shadow-md;
-  border: 2px solid $border-color;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(255, 107, 107, 0.06);
+  border: none;
   margin-top: 1.5rem;
   font-family: $game-font;
   font-size: 1.2rem;
@@ -568,9 +606,11 @@
   padding: 2rem;
   text-align: center;
   color: white;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 4px 12px rgba(125, 211, 248, 0.3),
+    0 8px 20px rgba(0, 0, 0, 0.12);
   transition: all 0.3s ease;
-  border: 3px solid var(--border-color);
+  border: none;
   position: relative;
   overflow: hidden;
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
@@ -578,7 +618,9 @@
 
 .stat-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.2);
+  box-shadow:
+    0 8px 20px rgba(125, 211, 248, 0.4),
+    0 12px 28px rgba(0, 0, 0, 0.18);
 }
 
 .stat-icon {
@@ -651,7 +693,10 @@
   padding: 1.5rem;
   background: var(--header-gradient);
   border-radius: 12px;
-  border: 2px solid var(--border-color);
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(125, 211, 248, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.1);
   font-family: var(--game-font);
 }
 
@@ -666,7 +711,10 @@
   padding: 1.5rem;
   background: var(--header-gradient);
   border-radius: 12px;
-  border: 2px solid var(--border-color);
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(125, 211, 248, 0.25),
+    0 4px 12px rgba(0, 0, 0, 0.1);
   font-family: var(--game-font);
 }
 
@@ -686,14 +734,18 @@
   background: white;
   border-radius: 12px;
   padding: 20px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--border-color);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(78, 205, 196, 0.08);
+  border: none;
   transition: all 0.3s ease;
 }
 
 .question-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.15);
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.1),
+    0 6px 16px rgba(78, 205, 196, 0.12);
 }
 
 .question-card-header {
@@ -861,8 +913,10 @@
   padding: 1rem;
   background: white;
   border-radius: 16px;
-  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--border-color);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 12px rgba(125, 211, 248, 0.08);
+  border: none;
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -886,8 +940,10 @@
 
 .pagination .el-select {
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--border-color);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 3px 10px rgba(125, 211, 248, 0.1);
+  border: none;
   background: white;
   transition: all 0.3s ease;
 }
@@ -927,8 +983,10 @@
 .pagination .el-pagination__editor .el-input {
   width: 60px;
   border-radius: 12px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  border: 2px solid var(--border-color);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 3px 10px rgba(125, 211, 248, 0.1);
+  border: none;
   transition: all 0.3s ease;
 }
 
@@ -959,12 +1017,14 @@
   border-radius: 12px;
   padding: 0.5rem 1rem;
   background: white;
-  border: 2px solid var(--border-color);
+  border: none;
   color: var(--text-primary);
   font-family: var(--game-font);
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 3px 10px rgba(125, 211, 248, 0.1);
 }
 
 .pagination .el-pagination__button:hover:not(:disabled) {
@@ -984,12 +1044,14 @@
   border-radius: 12px;
   padding: 0.5rem 0.8rem;
   background: white;
-  border: 2px solid var(--border-color);
+  border: none;
   color: var(--text-primary);
   font-family: var(--game-font);
   font-weight: 600;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow:
+    0 2px 6px rgba(0, 0, 0, 0.08),
+    0 3px 10px rgba(125, 211, 248, 0.1);
   margin: 0 0.25rem;
 }
 

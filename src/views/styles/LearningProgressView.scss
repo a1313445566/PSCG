@@ -18,7 +18,7 @@
 .back-btn {
   background: $card-background;
   color: $primary-color;
-  border: 3px solid $border-color;
+  border: none;
   padding: 0.8rem 1.5rem;
   border-radius: 25px;
   cursor: pointer;
@@ -26,7 +26,9 @@
   font-size: 1rem;
   font-weight: 900;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 0 $border-color;
+  box-shadow:
+    0 2px 8px rgba(255, 107, 107, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.08);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -34,13 +36,15 @@
 .back-btn:hover {
   transform: translateX(-5px);
   box-shadow:
-    0 6px 0 $border-color,
-    0 10px 15px set-alpha($accent-color, 30);
+    0 4px 12px rgba(255, 107, 107, 0.25),
+    0 8px 20px rgba(0, 0, 0, 0.12);
 }
 
 .back-btn:active {
   transform: translateX(-2px);
-  box-shadow: 0 2px 0 $border-color;
+  box-shadow:
+    0 2px 6px rgba(255, 107, 107, 0.2),
+    0 3px 8px rgba(0, 0, 0, 0.06);
 }
 
 /* 标题 */
@@ -99,15 +103,17 @@
   align-items: center;
   gap: 1rem;
   transition: all 0.3s ease;
-  border: 3px solid var(--border-color);
-  box-shadow: 0 4px 0 var(--border-color);
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(0, 0, 0, 0.04);
 }
 
 .overview-card:hover {
   transform: translateY(-5px);
   box-shadow:
-    0 8px 0 $border-color,
-    0 12px 20px set-alpha($accent-color, 40);
+    0 8px 16px rgba(0, 0, 0, 0.1),
+    0 12px 24px rgba(255, 209, 102, 0.15);
 }
 
 .overview-card.mastered {
@@ -160,7 +166,10 @@
   background: $stat-item-gradient;
   border-radius: 20px;
   padding: 1.5rem;
-  border: 3px solid $border-color;
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.05),
+    0 4px 16px rgba(0, 0, 0, 0.03);
 }
 
 .mastery-header {
@@ -208,20 +217,24 @@
   padding: 1.5rem;
   cursor: pointer;
   transition: all 0.3s ease;
-  border: 3px solid $border-color;
-  box-shadow: 0 4px 0 $border-color;
+  border: none;
+  box-shadow:
+    0 2px 8px rgba(78, 205, 196, 0.1),
+    0 4px 16px rgba(0, 0, 0, 0.06);
 }
 
 .subject-card:hover {
   transform: translateY(-5px);
   box-shadow:
-    0 8px 0 $border-color,
-    0 12px 20px set-alpha($accent-color, 40);
+    0 8px 20px rgba(78, 205, 196, 0.15),
+    0 12px 28px rgba(0, 0, 0, 0.1);
 }
 
 .subject-card:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 $border-color;
+  box-shadow:
+    0 2px 6px rgba(78, 205, 196, 0.1),
+    0 3px 8px rgba(0, 0, 0, 0.04);
 }
 
 .subject-header {
@@ -341,8 +354,10 @@
   border-radius: 24px;
   padding: 4rem 2rem;
   text-align: center;
-  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
-  border: 3px solid var(--border-color);
+  box-shadow:
+    0 4px 16px rgba(0, 0, 0, 0.08),
+    0 8px 24px rgba(255, 107, 107, 0.08);
+  border: none;
   animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
@@ -370,7 +385,7 @@
 .start-btn {
   background: $primary-gradient;
   color: $text-white;
-  border: 3px solid $border-color;
+  border: none;
   padding: 1rem 2rem;
   border-radius: 25px;
   font-family: $game-font;
@@ -378,7 +393,9 @@
   font-weight: 900;
   cursor: pointer;
   transition: all 0.3s ease;
-  box-shadow: 0 4px 0 $mastery-low-shadow;
+  box-shadow:
+    0 4px 12px rgba(102, 126, 234, 0.4),
+    0 8px 20px rgba(0, 0, 0, 0.15);
   text-transform: uppercase;
   letter-spacing: 1px;
 }
@@ -386,13 +403,15 @@
 .start-btn:hover {
   transform: translateY(-5px);
   box-shadow:
-    0 8px 0 $mastery-low-shadow,
-    0 12px 20px set-alpha($primary-color, 40);
+    0 8px 20px rgba(102, 126, 234, 0.5),
+    0 12px 28px rgba(0, 0, 0, 0.2);
 }
 
 .start-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 $mastery-low-shadow;
+  box-shadow:
+    0 2px 6px rgba(102, 126, 234, 0.3),
+    0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 /* 响应式 */

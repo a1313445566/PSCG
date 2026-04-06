@@ -32,7 +32,13 @@
           @save="saveSplitEdit"
           @save-and-next="saveAndNext"
           @close="closeSplitEdit"
+          @sync-data="handleSyncData"
           @subject-change="onSplitEditSubjectChange"
+          @subcategory-change="
+            val => {
+              if (splitEditData.value) splitEditData.value.subcategoryId = val
+            }
+          "
           @update:model-judgment-answer="
             val => {
               if (splitEditData.value) splitEditData.value.selectedAnswers = [val]
@@ -236,9 +242,15 @@ const {
 } = useAudioPlayer()
 
 const handleAudioChange = file => originalHandleSplitEditAudioChange(file, splitEditData)
-// const deleteSplitEditAudio = () => originalDeleteSplitEditAudio(splitEditData) // eslint-disable-line no-unused-vars -- 暂未使用
 
-// 防抖定时器
+// 保存前同步面板最新数据到 splitEditData（彻底解决字段不同步问题）
+const handleSyncData = latestData => {
+  if (splitEditData.value && latestData) {
+    Object.keys(latestData).forEach(key => {
+      splitEditData.value[key] = latestData[key]
+    })
+  }
+}
 let searchTimer = null
 
 // 当前学科名称

@@ -8,7 +8,7 @@
         </span>
       </div>
       <div class="edit-panel-actions">
-        <el-button type="primary" size="small" :loading="saving" @click="$emit('save')">
+        <el-button type="primary" size="small" :loading="saving" @click="handleSave">
           <el-icon><Check /></el-icon>
           {{ editMode === 'add' ? '添加' : '保存' }}
         </el-button>
@@ -17,7 +17,7 @@
           type="success"
           size="small"
           :loading="saving"
-          @click="$emit('save-and-next')"
+          @click="handleSaveAndNext"
         >
           <el-icon><Right /></el-icon>
           保存并下一个
@@ -97,8 +97,8 @@
           <div class="judgment-options">
             <div
               class="judgment-card"
-              :class="{ 'is-active': modelJudgmentAnswer === 'A' }"
-              @click="$emit('update:modelJudgmentAnswer', 'A')"
+              :class="{ 'is-active': localData.selectedAnswers?.[0] === 'A' }"
+              @click="handleJudgmentSelect('A')"
             >
               <div class="judgment-icon correct">
                 <el-icon><Check /></el-icon>
@@ -107,8 +107,8 @@
             </div>
             <div
               class="judgment-card"
-              :class="{ 'is-active': modelJudgmentAnswer === 'B' }"
-              @click="$emit('update:modelJudgmentAnswer', 'B')"
+              :class="{ 'is-active': localData.selectedAnswers?.[0] === 'B' }"
+              @click="handleJudgmentSelect('B')"
             >
               <div class="judgment-icon wrong">
                 <el-icon><Close /></el-icon>
@@ -122,7 +122,7 @@
         <div v-else-if="localData && localData.type !== 'reading'" class="quick-edit-section">
           <label class="section-label">
             答案选项
-            <el-button type="primary" size="small" text @click="$emit('add-option')">
+            <el-button type="primary" size="small" text @click="handleAddOption">
               <el-icon><Plus /></el-icon>
               添加
             </el-button>
@@ -146,7 +146,7 @@
                   placeholder="输入选项内容"
                   class="quick-option-input"
                 />
-                <el-button type="danger" size="small" text @click="$emit('remove-option', index)">
+                <el-button type="danger" size="small" text @click="handleRemoveOption(index)">
                   <el-icon><Delete /></el-icon>
                 </el-button>
               </div>
@@ -158,7 +158,7 @@
         <div v-else class="quick-edit-section">
           <label class="section-label">
             小题列表
-            <el-button type="primary" size="small" text @click="$emit('add-sub-question')">
+            <el-button type="primary" size="small" text @click="handleAddSubQuestion">
               <el-icon><Plus /></el-icon>
               添加小题（{{ modelReadingSubQuestions?.length || 0 }}/20）
             </el-button>
@@ -207,7 +207,7 @@
                       type="primary"
                       size="small"
                       text
-                      @click.stop="$emit('add-sub-option', sqIndex)"
+                      @click.stop="handleAddSubOption(sqIndex)"
                     >
                       添加选项
                     </el-button>
@@ -232,7 +232,7 @@
                         type="danger"
                         size="small"
                         text
-                        @click.stop="$emit('remove-sub-option', { sqIndex, optIdx })"
+                        @click.stop="handleRemoveSubOption(sqIndex, optIdx)"
                       >
                         <el-icon><Delete /></el-icon>
                       </el-button>
@@ -254,14 +254,14 @@
                   <el-button
                     size="small"
                     :disabled="sqIndex === 0"
-                    @click="$emit('move-sub-question', { sqIndex, direction: -1 })"
+                    @click="handleMoveSubQuestion(sqIndex, -1)"
                   >
                     上移
                   </el-button>
                   <el-button
                     size="small"
                     :disabled="sqIndex === modelReadingSubQuestions.length - 1"
-                    @click="$emit('move-sub-question', { sqIndex, direction: 1 })"
+                    @click="handleMoveSubQuestion(sqIndex, 1)"
                   >
                     下移
                   </el-button>
@@ -269,7 +269,7 @@
                     type="danger"
                     size="small"
                     :disabled="modelReadingSubQuestions.length <= 1"
-                    @click="$emit('remove-sub-question', sqIndex)"
+                    @click="handleRemoveSubQuestion(sqIndex)"
                   >
                     删除小题
                   </el-button>
@@ -393,8 +393,9 @@ const emit = defineEmits([
   'save',
   'save-and-next',
   'close',
-  'update:data',
+  'sync-data',
   'subject-change',
+  'subcategory-change',
   'update:modelJudgmentAnswer',
   'add-option',
   'remove-option',
@@ -409,26 +410,43 @@ const emit = defineEmits([
 
 const localData = ref(null)
 
+// 监听类型变化，判断题自动设置固定选项（本地同步）
 watch(
-  () => props.data,
-  newData => {
-    if (newData) {
-      localData.value = JSON.parse(JSON.stringify(newData))
-    } else {
-      localData.value = null
+  () => localData.value?.type,
+  newType => {
+    if (!localData.value) return
+    if (newType === 'judgment') {
+      localData.value.options = ['对', '错']
+      localData.value.selectedAnswers = ['A']
+    } else if (
+      localData.value.options?.length === 2 &&
+      localData.value.options[0] === '对' &&
+      localData.value.options[1] === '错'
+    ) {
+      // 从判断题切回普通题型，重置为4个空选项
+      localData.value.options = ['', '', '', '']
+      localData.value.selectedAnswers = []
     }
-  },
-  { immediate: true, deep: true }
+  }
 )
 
+// 用引用比较区分「切换题目」和「内部操作」
+// - 引用变化（newData !== oldData）= 切换题目 → 完整同步 localData
+// - 引用不变但内部变化 = 添加小题/修改选项等 → 跳过，避免 el-select 重置
 watch(
-  localData,
-  newLocalData => {
-    if (newLocalData) {
-      emit('update:data', JSON.parse(JSON.stringify(newLocalData)))
+  () => props.data,
+  (newData, oldData) => {
+    if (!newData) {
+      localData.value = null
+      return
     }
+    // 引用变化才同步（切换题目时 splitEditData 会被整体替换）
+    if (newData !== oldData) {
+      localData.value = JSON.parse(JSON.stringify(newData))
+    }
+    // 引用不变的深层变化（如 push 小题）直接跳过，localData 内部已通过 computed 保持一致
   },
-  { deep: true }
+  { immediate: true }
 )
 
 const modelSubjectId = computed({
@@ -446,6 +464,8 @@ const modelSubcategoryId = computed({
     if (localData.value) {
       localData.value.subcategoryId = val
     }
+    // 同步到父组件的 splitEditData（保存验证需要）
+    emit('subcategory-change', val)
   }
 })
 
@@ -490,6 +510,8 @@ const modelSelectedAnswers = computed({
   set: val => {
     if (localData.value) {
       localData.value.selectedAnswers = val
+      // 同步到父组件（checkbox 选答案时触发）
+      emit('sync-data', JSON.parse(JSON.stringify(localData.value)))
     }
   }
 })
@@ -526,8 +548,115 @@ const handleAudioChange = file => {
 }
 
 const handleSubjectChange = val => {
-  modelSubjectId.value = val
+  // 更新本地数据
+  if (localData.value) {
+    localData.value.subjectId = val
+    // 学科变化时立即清空题库选择，避免显示旧学科的题库
+    localData.value.subcategoryId = null
+  }
+
+  // 通知父组件（关键！让 useSplitEdit.js 同步更新 splitEditData.subjectId）
   emit('subject-change', val)
+}
+
+// 保存时将面板最新 localData 整体同步给父组件（彻底解决字段不同步问题）
+const handleSave = () => {
+  syncToParent()
+  emit('save')
+}
+
+const handleSaveAndNext = () => {
+  syncToParent()
+  emit('save-and-next')
+}
+
+// 将 localData 所有字段同步到父组件的 splitEditData
+const syncToParent = () => {
+  if (localData.value) {
+    emit('sync-data', JSON.parse(JSON.stringify(localData.value)))
+  }
+}
+
+// ========== 判断题答案选择（本地+父组件同步） ==========
+const handleJudgmentSelect = val => {
+  if (localData.value) {
+    localData.value.selectedAnswers = [val]
+  }
+  emit('update:modelJudgmentAnswer', val)
+}
+
+// ========== 普通题目选项操作（本地同步 + emit通知父组件） ==========
+const handleAddOption = () => {
+  if (localData.value?.options) {
+    if (localData.value.options.length >= 6) return
+    localData.value.options.push('')
+  }
+  emit('add-option')
+}
+
+const handleRemoveOption = index => {
+  if (localData.value?.options) {
+    const letter = String.fromCharCode(65 + index)
+    localData.value.options.splice(index, 1)
+    // 同步移除答案中的该选项
+    localData.value.selectedAnswers =
+      localData.value.selectedAnswers?.filter(a => a !== letter) || []
+  }
+  emit('remove-option', index)
+}
+
+// ========== 阅读理解小题操作（先更新 localData 保持UI同步，再emit通知父组件） ==========
+const handleAddSubQuestion = () => {
+  if (localData.value?.readingSubQuestions) {
+    if (localData.value.readingSubQuestions.length >= 10) return
+    localData.value.readingSubQuestions.push({
+      content: '',
+      options: ['', '', '', ''],
+      answer: 'A',
+      explanation: ''
+    })
+  }
+  emit('add-sub-question')
+}
+
+const handleRemoveSubQuestion = sqIndex => {
+  if (localData.value?.readingSubQuestions) {
+    if (localData.value.readingSubQuestions.length <= 1) return
+    localData.value.readingSubQuestions.splice(sqIndex, 1)
+  }
+  emit('remove-sub-question', sqIndex)
+}
+
+const handleAddSubOption = sqIndex => {
+  if (localData.value?.readingSubQuestions?.[sqIndex]) {
+    const subQ = localData.value.readingSubQuestions[sqIndex]
+    if (subQ.options.length >= 6) return
+    subQ.options.push('')
+  }
+  emit('add-sub-option', sqIndex)
+}
+
+const handleRemoveSubOption = (sqIndex, optIdx) => {
+  if (localData.value?.readingSubQuestions?.[sqIndex]) {
+    const subQ = localData.value.readingSubQuestions[sqIndex]
+    if (subQ.options.length <= 2) return
+    subQ.options.splice(optIdx, 1)
+    // 如果删除的是当前答案，重置为A
+    const removedLetter = String.fromCharCode(65 + optIdx)
+    if (subQ.answer === removedLetter) subQ.answer = 'A'
+  }
+  emit('remove-sub-option', { sqIndex, optIdx })
+}
+
+const handleMoveSubQuestion = (sqIndex, direction) => {
+  if (!localData.value?.readingSubQuestions) return
+  const list = localData.value.readingSubQuestions
+  const newIndex = sqIndex + direction
+  if (newIndex < 0 || newIndex >= list.length) return
+  const temp = list[sqIndex]
+  list[sqIndex] = list[newIndex]
+  list[newIndex] = temp
+  emit('move-sub-question', { sqIndex, direction })
 }
 </script>
 

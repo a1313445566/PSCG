@@ -5,7 +5,10 @@
     <div class="game-content">
       <!-- 返回按钮 -->
       <div class="back-section">
-        <button class="back-btn" @click="goBack">← 返回个人中心</button>
+        <button class="back-btn" @click="goBack">
+          <el-icon><ArrowLeft /></el-icon>
+          <span>返回个人中心</span>
+        </button>
       </div>
 
       <!-- 标题 -->
@@ -129,6 +132,7 @@
 <script setup>
 import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import AppHeader from '@/components/common/AppHeader.vue'
 import { api } from '@/utils/api'
 import { useLoading } from '@/composables/useLoading'

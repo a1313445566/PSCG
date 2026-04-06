@@ -17,7 +17,11 @@ export function useSplitEdit(props, options = {}) {
   // 分屏编辑的子分类列表
   const splitEditSubcategories = computed(() => {
     if (!splitEditData.value?.subjectId) return []
-    const subject = props.subjects.find(s => s.id == splitEditData.value.subjectId)
+
+    // 统一转换为字符串比较，避免类型不匹配导致的联动失效
+    const targetId = String(splitEditData.value.subjectId)
+    const subject = props.subjects.find(s => String(s.id) === targetId)
+
     return subject ? subject.subcategories || [] : []
   })
 
@@ -126,10 +130,12 @@ export function useSplitEdit(props, options = {}) {
         }
       }
 
-      // 设置数据
+      // 设置数据（统一转换为数字，确保与props.subjects中的ID类型一致）
       splitEditData.value = {
-        subjectId: data.subjectId || data.subject_id,
-        subcategoryId: data.subcategoryId || data.subcategory_id,
+        subjectId: data.subjectId || data.subject_id ? Number(data.subjectId || data.subject_id) : null,
+        subcategoryId: data.subcategoryId || data.subcategory_id
+          ? Number(data.subcategoryId || data.subcategory_id)
+          : null,
         type: data.type,
         difficulty: data.difficulty || 1,
         content: data.content || '',
@@ -315,8 +321,11 @@ export function useSplitEdit(props, options = {}) {
     }
   }
 
-  // 分屏编辑学科变化
-  const onSplitEditSubjectChange = () => {
+  // 分屏编辑学科变化（同步更新splitEditData，修复级联联动BUG）
+  const onSplitEditSubjectChange = newSubjectId => {
+    if (splitEditData.value && newSubjectId !== undefined) {
+      splitEditData.value.subjectId = newSubjectId
+    }
     splitEditData.value.subcategoryId = null
   }
 

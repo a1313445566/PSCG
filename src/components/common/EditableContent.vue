@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <div class="editable-content">
     <QuillEditor
       ref="quillRef"
@@ -96,13 +96,17 @@ const onQuillReady = quill => {
               console.error('Base64 图片转换失败:', error)
               // 如果转换失败，直接插入原始 HTML
               const range = quill.getSelection(true)
-              quill.clipboard.dangerouslyPasteHTML(range.index, match[0])
+              if (range) {
+                quill.clipboard.dangerouslyPasteHTML(range.index, match[0])
+              }
             }
           }
         } else {
           // 没有 base64 图片，正常粘贴 HTML
           const range = quill.getSelection(true)
-          quill.clipboard.dangerouslyPasteHTML(range.index, html)
+          if (range) {
+            quill.clipboard.dangerouslyPasteHTML(range.index, html)
+          }
         }
       })
     }

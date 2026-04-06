@@ -50,14 +50,16 @@ const selectSubject = () => {
 
 <style scoped lang="scss">
 .subject-card {
-  background: white;
-  border-radius: $border-radius-lg;
-  padding: $spacing-section;
+  background: linear-gradient(135deg, #f8f9ff 0%, #ffffff 100%);
+  border-radius: $border-radius;
+  padding: $spacing-xl;
   text-align: center;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow: $shadow-lg;
-  border: $border-width-lg solid var(--border-color);
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+  box-shadow:
+    0 2px 8px rgba(0, 0, 0, 0.06),
+    0 4px 16px rgba(78, 205, 196, 0.08);
+  border: none;
   position: relative;
   overflow: hidden;
 }
@@ -75,10 +77,10 @@ const selectSubject = () => {
 }
 
 .subject-card:hover {
-  transform: translateY(-15px) scale(1.05) rotate(2deg);
-  box-shadow: $shadow-xl;
-  border-color: var(--primary-color);
-  animation: cardHover 0.5s ease-in-out;
+  transform: translateY(-8px) scale(1.03);
+  box-shadow:
+    0 8px 20px rgba(78, 205, 196, 0.2),
+    0 12px 32px rgba(0, 0, 0, 0.1);
 }
 
 .subject-card:hover::before {
@@ -90,15 +92,13 @@ const selectSubject = () => {
 }
 
 .subject-icon {
-  font-size: 5rem; // 超大图标特殊值
+  font-size: 4rem;
   margin-bottom: $spacing-lg;
-  transition: all 0.3s ease;
-  animation: pulse 2s infinite;
+  transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 .subject-card:hover .subject-icon {
-  transform: rotate(20deg) scale(1.2);
-  animation: bounce 1s ease-in-out;
+  transform: scale(1.15) rotate(-5deg);
 }
 
 .subject-name {
@@ -118,14 +118,17 @@ const selectSubject = () => {
 }
 
 .question-count {
-  background-color: var(--accent-color);
-  color: var(--text-primary);
-  padding: $spacing-sm $spacing-compact;
-  border-radius: $border-radius-lg;
+  background: linear-gradient(135deg, $accent-color 0%, #ffb84d 100%);
+  color: $text-primary;
+  padding: $spacing-sm $spacing-md;
+  border-radius: $border-radius-full;
   font-weight: 900;
-  font-size: $font-size-md; // 约17.6px，取近似值16px
-  border: $border-width-md solid var(--accent-color);
-  box-shadow: $shadow-btn-accent;
+  font-size: $font-size-base;
+  border: none;
+  box-shadow:
+    0 2px 6px rgba(255, 209, 102, 0.3),
+    0 3px 10px rgba(0, 0, 0, 0.08);
+  display: inline-block;
 }
 
 /* 学科颜色 */

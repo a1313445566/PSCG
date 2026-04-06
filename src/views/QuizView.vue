@@ -276,10 +276,12 @@ const handleQuestionHover = (questionId, isEnter) => {
   }
 }
 
-// 判断答案是否正确
+// 判断答案是否正确（注意：答题模式下 question 不含 correct_answer，由后端判题）
 const isAnswerCorrect = (question, userAnswer) => {
   if (!userAnswer) return false
   const correctAnswer = question.correct_answer || question.answer
+  // 防御：答题开始接口不返回正确答案（安全设计），此时返回 null 让调用方跳过
+  if (!correctAnswer) return null
   let isCorrect = false
   if (question.type === 'multiple') {
     const correctAnswers = Array.isArray(correctAnswer) ? correctAnswer : correctAnswer.split('')
@@ -566,13 +568,15 @@ const submitBehaviorData = async () => {
     const userAnswer = userAnswers.value[question.id]
     if (userAnswer) {
       const isCorrect = isAnswerCorrect(question, userAnswer)
+      // 答题模式下 question 不含正确答案，isCorrect 为 null 时跳过判题
+      const finalIsCorrect = isCorrect === null ? false : isCorrect
       const finalAnswer = Array.isArray(userAnswer) ? userAnswer.join('') : userAnswer
 
       await behaviorTracker.value.submitBehavior(
         parseInt(userId),
         question.id,
         finalAnswer,
-        isCorrect
+        finalIsCorrect
       )
     }
   }

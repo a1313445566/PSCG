@@ -5,7 +5,10 @@
     <div class="subcategory-content">
       <div class="page-header">
         <h2 class="page-title">{{ currentSubject.name }}</h2>
-        <button class="back-btn" @click="backToHome">🔙 返回学科选择</button>
+        <button class="back-btn" @click="backToHome">
+          <el-icon><ArrowLeft /></el-icon>
+          <span>返回学科选择</span>
+        </button>
       </div>
 
       <!-- 错题巩固题库 -->
@@ -79,6 +82,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import AppHeader from '../components/common/AppHeader.vue'
 import SubcategoryCard from '../components/quiz/SubcategoryCard.vue'
 import ErrorCollectionCard from '../components/quiz/ErrorCollectionCard.vue'
@@ -198,23 +202,31 @@ onMounted(async () => {
 }
 
 .back-btn {
-  background-color: $bg-slate-100;
-  color: $text-primary;
-  border: none;
-  padding: $spacing-compact $spacing-lg; // 0.8rem≈12.8px, 1.5rem=24px
-  border-radius: $border-radius-sm; // 10px取近似值8px
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
   display: flex;
   align-items: center;
   gap: $spacing-xs;
-}
+  background: $card-background;
+  border: $border-width solid $secondary-color;
+  color: $secondary-color;
+  padding: $spacing-sm $spacing-lg; // 8px, 24px
+  border-radius: $border-radius-lg; // 24px 胶囊形
+  font-size: $font-size-md; // 16px
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.25s ease;
+  box-shadow: $shadow-sm;
 
-.back-btn:hover {
-  background-color: $bg-slate-200;
-  transform: translateY(-2px);
-  box-shadow: $shadow-md;
+  &:hover {
+    background: $secondary-color;
+    color: $text-white;
+    transform: translateY(-2px);
+    box-shadow: $shadow-md;
+  }
+
+  &:active {
+    transform: translateY(0);
+    box-shadow: $shadow-sm;
+  }
 }
 
 .difficulty-rules-section {

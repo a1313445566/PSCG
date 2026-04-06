@@ -73,6 +73,16 @@
               <span class="answer-value correct">{{ sqResult.correctAnswer }}</span>
             </span>
           </div>
+
+          <!-- 小题解析 -->
+          <div v-if="getSubQuestionExplanation(index + 1)" class="sub-question-explanation">
+            <div class="explanation-header">
+              <span class="explanation-icon">💡</span>
+              <span class="explanation-label">解析</span>
+            </div>
+            <!-- eslint-disable-next-line vue/no-v-html -- 后端已过滤 -->
+            <div class="explanation-content" v-html="getSubQuestionExplanation(index + 1)"></div>
+          </div>
         </div>
       </div>
     </div>
@@ -150,6 +160,13 @@ const getSubQuestionOptions = order => {
 // 获取选项标签（A, B, C, D）
 const getOptionLabel = index => {
   return String.fromCharCode(65 + index)
+}
+
+// 获取小题解析
+const getSubQuestionExplanation = order => {
+  const subQuestions = parseSubQuestions()
+  const subQuestion = subQuestions[order - 1]
+  return subQuestion ? subQuestion.explanation || '' : ''
 }
 </script>
 
@@ -321,6 +338,38 @@ const getOptionLabel = index => {
   align-items: center;
   gap: 4px;
   margin-left: 16px;
+}
+
+/* 小题解析样式 */
+.sub-question-explanation {
+  margin-top: 12px;
+  background: $explanation-gradient;
+  border-left: 4px solid $info-color;
+  padding: 12px 16px;
+  border-radius: $border-radius-sm;
+}
+
+.explanation-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+
+.explanation-icon {
+  font-size: 16px;
+}
+
+.explanation-label {
+  font-weight: 600;
+  color: $info-color;
+  font-size: $font-size-base;
+}
+
+.explanation-content {
+  line-height: 1.6;
+  color: $text-secondary;
+  font-size: $font-size-base;
 }
 
 /* 小题内容样式 */

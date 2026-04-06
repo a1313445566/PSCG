@@ -6,9 +6,10 @@
         <div class="leaderboard-header-container">
           <h2 class="section-title">🏆 排行榜</h2>
           <div class="header-buttons">
-            <router-link to="/home" class="back-home-btn">
-              <el-button type="primary">返回首页</el-button>
-            </router-link>
+            <button class="back-btn" @click="goBack">
+              <el-icon><ArrowLeft /></el-icon>
+              <span>返回首页</span>
+            </button>
           </div>
         </div>
         <el-tabs v-model="activeTab" class="leaderboard-tabs">
@@ -504,6 +505,8 @@
 
 <script setup>
 import { ref, onMounted, watch } from 'vue'
+import { useRouter } from 'vue-router'
+import { ArrowLeft } from '@element-plus/icons-vue'
 import { ElButton, ElTabs, ElTabPane, ElSelect, ElOption, ElDialog } from 'element-plus'
 import 'element-plus/dist/index.css'
 import { api } from '../utils/api'
@@ -515,6 +518,13 @@ const subjects = ref([])
 const selectedSubjectId = ref(null)
 const subcategories = ref([])
 const selectedSubcategoryId = ref(null)
+
+const router = useRouter()
+
+// 返回首页
+function goBack() {
+  router.push('/home')
+}
 const globalLeaderboard = ref([])
 const subjectLeaderboard = ref([])
 const currentUserId = ref(localStorage.getItem('userId'))

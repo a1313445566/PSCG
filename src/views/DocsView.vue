@@ -275,7 +275,6 @@ const router = useRouter()
 // 响应式数据
 const docsData = ref({ tree: [], stats: null })
 const searchQuery = ref('')
-const selectedItem = ref(null)
 const selectedDoc = ref(null)
 const isSidebarCollapsed = ref(false)
 const treeRef = ref(null)
