@@ -160,8 +160,8 @@ onMounted(async () => {
 <style scoped lang="scss">
 .profile-view {
   min-height: 100vh;
-  background: $stat-item-gradient;
-  padding-bottom: 2rem;
+  background: $bg-gradient-page;
+  padding-bottom: $spacing-xl;
 }
 
 .profile-content {
@@ -178,25 +178,16 @@ onMounted(async () => {
   margin-bottom: $spacing-xl;
   box-shadow: $shadow-lg;
   border: $border-width-lg solid $border-color;
-  position: relative;
-  overflow: hidden;
-  animation: fadeIn 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.profile-card::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 6px;
-  background: $section-header-gradient;
+  animation: fadeIn 0.6s ease;
 }
 
 .profile-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  margin-bottom: $spacing-comfortable; // 20px
+  margin-bottom: $spacing-comfortable;
+  flex-wrap: wrap;
+  gap: $spacing-comfortable;
 }
 
 .user-info {
@@ -204,36 +195,37 @@ onMounted(async () => {
 }
 
 .user-name {
-  font-size: $font-size-3xl; // 28px
+  font-size: $font-size-3xl;
   font-weight: bold;
   color: $text-primary;
-  margin: 0 0 5px 0; // 特殊值
+  margin: 0 0 $spacing-xs 0;
 }
 
 .user-class {
-  font-size: $font-size-md; // 16px
+  font-size: $font-size-md;
   color: $text-secondary;
   margin: 0;
 }
 
 .profile-stats {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: $spacing-comfortable; // 20px
+  display: flex;
+  gap: $spacing-comfortable;
+  flex-wrap: wrap;
 }
 
 .stat-item {
+  flex: 1;
+  min-width: 120px;
   text-align: center;
-  padding: 1.2rem; // 特殊值
+  padding: $spacing-lg;
   background: $stat-item-gradient;
-  border-radius: $border-radius-sm; // 12px取近似值8px
+  border-radius: $border-radius-lg;
   border: $border-width-md solid $border-color;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .stat-item:hover {
   transform: translateY(-3px);
-  box-shadow: $shadow-md;
 }
 
 .stat-label {
@@ -241,7 +233,7 @@ onMounted(async () => {
   font-family: $game-font;
   font-size: 0.9rem;
   color: $text-secondary;
-  margin-bottom: 0.3rem;
+  margin-bottom: $spacing-xs;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -250,116 +242,101 @@ onMounted(async () => {
 .stat-value {
   display: block;
   font-family: $game-font;
-  font-size: 1.8rem;
+  font-size: 2rem;
   font-weight: 900;
   color: $primary-color;
-  text-shadow: $primary-glow;
 }
 
 /* 统计数据 */
 .stats-section {
-  background: white;
-  border-radius: $border-radius-lg; // 20px取近似值24px
-  padding: $spacing-section; // 30px≈$spacing-section(40px)或保留
-  margin-bottom: $spacing-comfortable; // 20px
+  background: $card-background;
+  border-radius: $border-radius-lg;
+  padding: $spacing-section;
+  margin-bottom: $spacing-xl;
   box-shadow: $shadow-lg;
 }
 
 .section-title {
-  font-size: $font-size-xl; // 20px
+  font-size: $font-size-xl;
   font-weight: bold;
   color: $text-primary;
-  margin: 0 0 $spacing-comfortable 0; // 20px
+  margin: 0 0 $spacing-comfortable 0;
+  display: flex;
+  align-items: center;
+  gap: $spacing-sm;
 }
 
 .stats-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px; // 特殊值
+  gap: $spacing-lg;
 }
 
 .stat-card {
   text-align: center;
-  padding: $spacing-lg; // 1.5rem=24px
-  background: $primary-gradient;
-  border-radius: $border-radius-lg; // 20px取近似值24px
-  color: $text-white;
+  padding: $spacing-lg;
+  background: $bg-gradient-page;
+  border-radius: $border-radius-lg;
   border: $border-width-lg solid $border-color;
-  box-shadow: 0 4px 0 $mastery-low-shadow;
-  transition: all 0.3s ease;
+  transition: transform 0.3s ease;
 }
 
 .stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow:
-    0 8px 0 $mastery-low-shadow,
-    0 12px 20px set-alpha($primary-color, 40);
-}
-
-.stat-card:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 $mastery-low-shadow;
+  transform: translateY(-3px);
 }
 
 .stat-number {
   display: block;
   font-family: $game-font;
-  font-size: $font-size-2xl; // 2rem=32px，取24px
+  font-size: $font-size-2xl;
   font-weight: 900;
-  margin-bottom: 0.3rem; // 特殊值
-  text-shadow: $text-shadow-light;
+  color: $primary-color;
+  margin-bottom: $spacing-xs;
 }
 
 .stat-desc {
   display: block;
   font-family: $game-font;
-  font-size: 0.9rem; // 特殊值
-  opacity: 0.95;
+  font-size: 0.9rem;
+  color: $text-secondary;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 1px; // 特殊值
+  letter-spacing: 1px;
 }
 
 /* 快速入口 */
 .quick-entry-section {
   background: $card-background;
-  border-radius: $border-radius-lg; // 20px取近似值24px
-  padding: $spacing-section; // 30px≈$spacing-section(40px)或保留
+  border-radius: $border-radius-lg;
+  padding: $spacing-section;
   box-shadow: $shadow-lg;
 }
 
 .quick-entry-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
-  gap: 15px; // 特殊值
+  gap: $spacing-lg;
 }
 
 .entry-card {
   background: $bg-gradient-page;
-  border-radius: $border-radius-lg; // 20px取近似值24px
-  padding: $spacing-lg; // 1.5rem=24px
+  border-radius: $border-radius-lg;
+  padding: $spacing-lg;
   cursor: pointer;
   transition: all 0.3s ease;
   text-align: center;
   border: $border-width-lg solid $border-color;
-  box-shadow: 0 4px 0 $accent-color;
+  position: relative;
 }
 
 .entry-card:hover {
-  transform: translateY(-5px);
-  box-shadow:
-    0 8px 0 $accent-color,
-    0 12px 20px set-alpha($accent-color, 40);
-}
-
-.entry-card:active {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 $accent-color;
+  transform: translateY(-3px);
+  box-shadow: $shadow-md;
 }
 
 .entry-icon {
-  font-size: 3rem; // 特殊值
-  margin-bottom: 0.8rem; // 特殊值
+  font-size: 2.5rem;
+  margin-bottom: $spacing-sm;
 }
 
 .entry-content {
@@ -368,26 +345,25 @@ onMounted(async () => {
 
 .entry-label {
   display: block;
-  font-family: var(--game-font);
-  font-size: $font-size-md; // 1rem=16px
+  font-family: $game-font;
+  font-size: $font-size-md;
   font-weight: 900;
-  color: var(--text-primary);
+  color: $text-primary;
   text-transform: uppercase;
-  letter-spacing: 1px; // 特殊值
+  letter-spacing: 1px;
 }
 
 .entry-badge {
   position: absolute;
-  top: -10px; // 特殊值
-  right: -10px; // 特殊值
+  top: -8px;
+  right: -8px;
   background: $primary-color;
   color: $text-white;
-  padding: 0.3rem 0.6rem; // 特殊值
-  border-radius: $border-radius-sm; // 12px取近似值8px
-  font-size: 0.75rem; // 特殊值
+  padding: 0.25rem 0.5rem;
+  border-radius: $border-radius-sm;
+  font-size: 0.75rem;
   font-weight: 900;
-  min-width: 1.5rem; // 特殊值
-  box-shadow: 0 2px 0 $mastery-low-shadow;
+  min-width: 1.5rem;
   font-family: $game-font;
 }
 
@@ -399,33 +375,39 @@ onMounted(async () => {
   }
 
   .profile-stats {
-    grid-template-columns: repeat(2, 1fr);
+    flex-direction: column;
+  }
+
+  .stat-item {
+    width: 100%;
   }
 
   .user-name {
-    font-size: $font-size-2xl; // 24px
+    font-size: $font-size-2xl;
   }
 
   .stat-number {
-    font-size: $font-size-2xl; // 24px
+    font-size: $font-size-2xl;
   }
 
   .entry-icon {
-    font-size: $font-size-4xl; // 36px，取32px
+    font-size: 2rem;
   }
 }
 
 @media (max-width: 480px) {
-  .stats-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
+  .stats-grid,
   .quick-entry-grid {
     grid-template-columns: 1fr;
   }
 
+  .profile-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
   .profile-stats {
-    grid-template-columns: 1fr;
+    width: 100%;
   }
 }
 </style>
