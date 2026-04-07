@@ -1,14 +1,19 @@
 -- ========================================
 -- 管理员权限系统 - 数据库迁移脚本
 -- 创建日期：2026-04-07
--- 版本：v2.0 (修复版)
+-- 版本：v2.1 (字符集修复版)
 -- 修复内容：
 --   1. 添加字段存在性检查，防止重复执行报错
 --   2. 分离外键创建步骤，确保外键正确生效
 --   3. 添加部署验证步骤
+--   4. 修复字符集冲突问题（utf8mb4）
 -- ========================================
 
-SET @existing_database = DATABASE();
+SET NAMES utf8mb4;
+SET CHARACTER SET utf8mb4;
+SET collation_connection = utf8mb4_unicode_ci;
+
+SET @existing_database = CONVERT(DATABASE() USING utf8mb4);
 SELECT CONCAT('📦 开始执行权限系统迁移脚本... 当前数据库: ', @existing_database) AS info;
 
 -- ========================================
@@ -119,10 +124,12 @@ SET @constraint_exists = (
   AND CONSTRAINT_NAME = 'fk_role'
 );
 
-IF @constraint_exists > 0 THEN
-  ALTER TABLE admin_credentials DROP FOREIGN KEY fk_role;
-  SELECT '⚠️ 删除旧的外键约束 fk_role' AS info;
-END IF;
+SET @sql = IF(@constraint_exists > 0,
+  'ALTER TABLE admin_credentials DROP FOREIGN KEY fk_role',
+  'SELECT ''外键约束不存在，跳过删除'' AS info');
+PREPARE stmt FROM @sql;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
 
 -- 创建新的外键约束
 ALTER TABLE admin_credentials
@@ -195,9 +202,9 @@ SELECT '✅ 第 5 步完成：现有管理员已分配角色' AS status;
 -- ========================================
 -- 部署验证（自动执行）
 -- ========================================
-SELECT '========================================' AS separator;
+SELECT '========================================' AS `sep`;
 SELECT '🎉 权限系统迁移完成！正在执行验证...' AS info;
-SELECT '========================================' AS separator;
+SELECT '========================================' AS `sep`;
 
 -- 验证 1：检查表是否存在
 SELECT
@@ -233,9 +240,9 @@ FROM (
 ) AS t;
 
 -- 验证 4：显示当前数据摘要
-SELECT '----------------------------------------' AS separator;
+SELECT '----------------------------------------' AS `sep`;
 SELECT '📊 当前系统数据摘要:' AS title;
-SELECT '----------------------------------------' AS separator;
+SELECT '----------------------------------------' AS `sep`;
 
 SELECT
   r.id,
@@ -247,6 +254,6 @@ LEFT JOIN admin_credentials a ON a.role_id = r.id
 GROUP BY r.id, r.name, r.is_preset
 ORDER BY r.id;
 
-SELECT '========================================' AS separator;
+SELECT '========================================' AS `sep`;
 SELECT '🚀 迁移脚本执行完毕！可以启动应用了！' AS success;
-SELECT '========================================' AS separator;
+SELECT '========================================' AS `sep`;

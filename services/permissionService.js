@@ -17,14 +17,13 @@ const adminUserSchema = z.object({
 const permissionService = {
   async getRoles(page = 1, limit = 20) {
     const offset = (page - 1) * limit
-    
-    // 参数化查询，防止 SQL 注入
+
+    // MySQL 不支持在 LIMIT/OFFSET 中使用参数化，需用字符串拼接（已做 parseInt 安全处理）
     const safeLimit = Math.max(1, Math.min(parseInt(limit), 100))
     const safeOffset = parseInt(offset) || 0
 
     const [rows] = await db.pool.execute(
-      'SELECT id, name, description, permissions, is_preset, created_at, updated_at FROM admin_roles ORDER BY id ASC LIMIT ? OFFSET ?',
-      [safeLimit, safeOffset]
+      `SELECT id, name, description, permissions, is_preset, created_at, updated_at FROM admin_roles ORDER BY id ASC LIMIT ${safeLimit} OFFSET ${safeOffset}`
     )
 
     const [countResult] = await db.pool.execute('SELECT COUNT(*) as total FROM admin_roles')
@@ -107,7 +106,7 @@ const permissionService = {
       whereValues.push(filters.role_id)
     }
 
-    // 参数化查询，防止 SQL 注入
+    // MySQL 不支持在 LIMIT/OFFSET 中使用参数化，需用字符串拼接（已做 parseInt 安全处理）
     const safeLimit = Math.max(1, Math.min(parseInt(limit), 100))
     const safeOffset = parseInt(offset) || 0
 
@@ -118,8 +117,8 @@ const permissionService = {
        LEFT JOIN admin_roles r ON a.role_id = r.id
        ${whereClause}
        ORDER BY a.id DESC
-       LIMIT ? OFFSET ?`,
-      [...whereValues, safeLimit, safeOffset]
+       LIMIT ${safeLimit} OFFSET ${safeOffset}`,
+      whereValues
     )
 
     const [countResult] = await db.pool.execute(

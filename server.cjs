@@ -42,7 +42,9 @@ app.use(
     frameguard: { action: 'deny' },
     noSniff: true,
     xssFilter: false,
-    referrerPolicy: { policy: 'strict-origin-when-cross-origin' }
+    referrerPolicy: { policy: 'strict-origin-when-cross-origin' },
+    crossOriginOpenerPolicy: false,
+    originAgentCluster: false
   })
 )
 app.use(compression())
