@@ -103,6 +103,7 @@ const startErrorCollectionQuiz = () => {
   border-radius: 20px;
   font-weight: bold;
   font-size: 0.9rem;
+  box-shadow: none;
 }
 
 .no-questions {

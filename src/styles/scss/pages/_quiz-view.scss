@@ -183,7 +183,7 @@ $breakpoint-mobile-sm: 480px;
   flex-wrap: wrap;
 }
 
-.question-count,
+.quiz-view .question-count,
 .time-spent,
 .shuffle-tag {
   background: $section-header-gradient;
@@ -193,7 +193,7 @@ $breakpoint-mobile-sm: 480px;
   font-weight: bold;
   font-size: $font-size-md;
   border: $border-width-md solid $secondary-color;
-  box-shadow: $shadow-btn-secondary;
+  box-shadow: none;
   display: flex;
   align-items: center;
   gap: $spacing-xs;
@@ -204,7 +204,7 @@ $breakpoint-mobile-sm: 480px;
   &.shuffle-on {
     background: $primary-gradient;
     border-color: $primary-color;
-    box-shadow: $shadow-btn-primary;
+    box-shadow: none;
   }
 
   &.shuffle-off {

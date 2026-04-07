@@ -72,17 +72,17 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: $profile-btn-shadow;
+  box-shadow: none;
 }
 
 .profile-btn:hover {
   transform: translateY(-3px);
-  box-shadow: $profile-btn-hover-shadow;
+  box-shadow: none;
 }
 
 .profile-btn:active {
   transform: translateY(2px);
-  box-shadow: 0 2px 0 $primary-dark;
+  box-shadow: none;
 }
 
 .logout-btn {
@@ -96,18 +96,18 @@
   transition: all 0.3s ease;
   text-transform: uppercase;
   letter-spacing: 1px;
-  box-shadow: $shadow-btn-primary;
+  box-shadow: none;
 }
 
 .logout-btn:hover {
   background-color: $primary-color;
   transform: translateY(-3px);
-  box-shadow: $shadow-btn-primary-hover;
+  box-shadow: none;
 }
 
 .logout-btn:active {
   transform: translateY(2px);
-  box-shadow: $shadow-btn-primary-active;
+  box-shadow: none;
 }
 
 .user-stats {
@@ -370,7 +370,7 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   border: 2px solid $primary-color;
-  box-shadow: $shadow-btn-primary;
+  box-shadow: none;
   font-size: 1rem;
   margin-top: 0.5rem;
   width: fit-content;
@@ -506,7 +506,7 @@
   text-transform: uppercase;
   letter-spacing: 1px;
   border: 2px solid $primary-color;
-  box-shadow: $shadow-btn-primary;
+  box-shadow: none;
   font-size: 1rem;
   align-self: flex-start;
   margin-top: 0.5rem;
@@ -517,12 +517,12 @@
 .view-full-link:hover {
   background-color: $primary-color;
   transform: translateY(-3px);
-  box-shadow: $shadow-btn-primary-hover;
+  box-shadow: none;
 }
 
 .view-full-link:active {
   transform: translateY(2px);
-  box-shadow: $shadow-btn-primary-active;
+  box-shadow: none;
 }
 
 /* 第一名卡片样式 */

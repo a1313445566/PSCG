@@ -158,10 +158,11 @@ onMounted(async () => {
   margin-bottom: 15px;
   text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
+  font-size: var(--font-size-4xl);
 }
 
 .header-subtitle {
-  font-size: var(--el-font-size-base);
+  font-size: var(--el-font-size-md);
   color: var(--el-color-white);
   line-height: 1.6;
   letter-spacing: 1px;
