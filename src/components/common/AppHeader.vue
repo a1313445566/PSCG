@@ -152,7 +152,6 @@ onMounted(async () => {
 }
 
 .header-title {
-  font-size: var(--el-font-size-extra-large);
   font-weight: bold;
   color: var(--el-color-white);
   margin-bottom: 15px;
@@ -162,6 +161,7 @@ onMounted(async () => {
 }
 
 .header-subtitle {
+  font-size: var(--el-font-size-md);
   color: var(--el-color-white);
   line-height: 1.6;
   letter-spacing: 1px;
