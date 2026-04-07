@@ -219,7 +219,7 @@
                       class="sub-option-row"
                       :class="{ 'is-selected': sq.answer === String.fromCharCode(65 + optIdx) }"
                     >
-                      <el-radio v-model="sq.answer" :label="String.fromCharCode(65 + optIdx)">
+                      <el-radio v-model="sq.answer" :value="String.fromCharCode(65 + optIdx)">
                         {{ String.fromCharCode(65 + optIdx) }}
                       </el-radio>
                       <EditableContent

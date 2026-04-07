@@ -104,7 +104,9 @@ import {
   ChatDotRound,
   Cpu,
   Close,
-  Menu
+  Menu,
+  Setting,
+  UserFilled as UserFilledIcon
 } from '@element-plus/icons-vue'
 
 const {
@@ -118,8 +120,15 @@ const {
   filterSubcategoryId,
   setFilterSubject,
   setFilterSubcategory,
-  clearFilter
+  clearFilter,
+  isContentManagement,
+  initializeState,
+  hasPermission
 } = useAdminLayout()
+
+// 从父组件注入权限
+const permissions = inject('permissions', ref({}))
+const permissionsLoaded = inject('permissionsLoaded', ref(false))
 
 // 从父组件注入 subjects
 const subjects = inject('subjects', ref([]))
@@ -187,7 +196,9 @@ const iconMap = {
   Clock,
   TrendCharts,
   ChatDotRound,
-  Cpu
+  Cpu,
+  Setting,
+  UserFilled: UserFilledIcon
 }
 
 // 获取图标组件
@@ -195,21 +206,30 @@ const getIconComponent = iconName => {
   return iconMap[iconName] || Document
 }
 
-// 顶级菜单节点（用于折叠状态）
-const topLevelNodes = computed(() => [
-  { key: 'dashboard', label: '数据概览', icon: 'DataLine' },
-  { key: 'questions', label: '题目管理', icon: 'Document' },
-  { key: 'subjects', label: '学科管理', icon: 'Reading' },
-  { key: 'grades-classes', label: '年级班级', icon: 'School' },
-  { key: 'user-data', label: '答题数据', icon: 'UserFilled' },
-  { key: 'user-management', label: '用户管理', icon: 'User' },
-  { key: 'data-analysis', label: '数据分析', icon: 'TrendCharts' },
-  { key: 'ai-chat', label: 'AI 助手', icon: 'ChatDotRound' },
-  { key: 'ai-models', label: '模型管理', icon: 'Cpu' },
-  { key: 'basic-settings', label: '基础设置', icon: 'Tools' },
-  { key: 'database', label: '数据库管理', icon: 'Coin' },
-  { key: 'security', label: '安全中心', icon: 'Lock' }
-])
+// 顶级菜单节点（用于折叠状态）- 根据权限过滤
+const topLevelNodes = computed(() => {
+  if (isContentManagement.value) {
+    return [
+      { key: 'admin-permission', label: '管理员管理', icon: 'UserFilled' }
+    ]
+  }
+  const allNodes = [
+    { key: 'dashboard', label: '数据概览', icon: 'DataLine', permissionKey: 'dashboard' },
+    { key: 'questions', label: '题目管理', icon: 'Document', permissionKey: 'questions' },
+    { key: 'subjects', label: '学科管理', icon: 'Reading', permissionKey: 'subjects' },
+    { key: 'grades-classes', label: '年级班级', icon: 'School', permissionKey: 'grades-classes' },
+    { key: 'user-data', label: '答题数据', icon: 'UserFilled', permissionKey: 'user-stats' },
+    { key: 'user-management', label: '用户管理', icon: 'User', permissionKey: 'user-management' },
+    { key: 'data-analysis', label: '数据分析', icon: 'TrendCharts', permissionKey: 'data-analysis' },
+    { key: 'ai-chat', label: 'AI 助手', icon: 'ChatDotRound', permissionKey: 'ai-chat' },
+    { key: 'ai-models', label: '模型管理', icon: 'Cpu', permissionKey: 'ai-models' },
+    { key: 'basic-settings', label: '基础设置', icon: 'Tools', permissionKey: 'basic-settings' },
+    { key: 'database', label: '数据库管理', icon: 'Coin', permissionKey: 'database' },
+    { key: 'security', label: '安全中心', icon: 'Lock', permissionKey: 'security' }
+  ]
+  // 根据权限过滤
+  return allNodes.filter(node => hasPermission(node.permissionKey, 'view'))
+})
 
 // 树形数据配置
 const treeProps = {
@@ -237,11 +257,46 @@ const currentNodeKey = computed(() => {
 
 // 是否在题目管理相关页面
 const isQuestionsActive = computed(() => {
+  if (isContentManagement.value) return false
   return activeMenu.value === 'questions' || filterSubjectId.value || filterSubcategoryId.value
 })
 
-// 树形菜单数据
+// 树形菜单数据 - 根据权限过滤
 const menuTreeData = computed(() => {
+  if (isContentManagement.value) {
+    const menuItems = []
+    // 角色管理权限
+    if (hasPermission('admin-roles', 'view')) {
+      menuItems.push({
+        id: 'role-management',
+        label: '角色管理',
+        icon: 'Setting',
+        isMenu: true
+      })
+    }
+    // 管理员用户权限
+    if (hasPermission('admin-users', 'view')) {
+      menuItems.push({
+        id: 'admin-user-management',
+        label: '管理员用户',
+        icon: 'User',
+        isMenu: true
+      })
+    }
+    // 如果没有任何子菜单，返回空数组
+    if (menuItems.length === 0) return []
+    
+    return [
+      {
+        id: 'admin-permission',
+        label: '管理员管理',
+        icon: 'UserFilled',
+        isMenu: true,
+        children: menuItems
+      }
+    ]
+  }
+
   const subjectsValue = subjects.value || []
 
   // 构建学科筛选节点
@@ -264,14 +319,21 @@ const menuTreeData = computed(() => {
     }))
   }))
 
-  return [
-    {
+  const allMenus = []
+
+  // 数据概览
+  if (hasPermission('dashboard', 'view')) {
+    allMenus.push({
       id: 'dashboard',
       label: '数据概览',
       icon: 'DataLine',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 题目管理
+  if (hasPermission('questions', 'view')) {
+    allMenus.push({
       id: 'questions',
       label: '题目管理',
       icon: 'Document',
@@ -287,88 +349,141 @@ const menuTreeData = computed(() => {
         },
         ...subjectFilterNodes
       ]
-    },
-    {
+    })
+  }
+
+  // 学科管理
+  if (hasPermission('subjects', 'view')) {
+    allMenus.push({
       id: 'subjects',
       label: '学科管理',
       icon: 'FolderOpened',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 年级班级
+  if (hasPermission('grades-classes', 'view')) {
+    allMenus.push({
       id: 'grades-classes',
       label: '年级班级',
       icon: 'School',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 用户数据（需要 user-stats 或 recent-records 权限）
+  const userDataChildren = []
+  if (hasPermission('user-stats', 'view')) {
+    userDataChildren.push({
+      id: 'user-stats',
+      label: '用户答题统计',
+      icon: 'Histogram',
+      isMenu: true
+    })
+  }
+  if (hasPermission('recent-records', 'view')) {
+    userDataChildren.push({
+      id: 'recent-records',
+      label: '答题记录',
+      icon: 'Clock',
+      isMenu: true
+    })
+  }
+  if (userDataChildren.length > 0) {
+    allMenus.push({
       id: 'user-data',
       label: '用户数据',
       icon: 'UserFilled',
       isMenu: true,
-      children: [
-        {
-          id: 'user-stats',
-          label: '用户答题统计',
-          icon: 'Histogram',
-          isMenu: true
-        },
-        {
-          id: 'recent-records',
-          label: '答题记录',
-          icon: 'Clock',
-          isMenu: true
-        }
-      ]
-    },
-    {
+      children: userDataChildren
+    })
+  }
+
+  // 用户管理
+  if (hasPermission('user-management', 'view')) {
+    allMenus.push({
       id: 'user-management',
       label: '用户管理',
       icon: 'User',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 数据分析
+  if (hasPermission('data-analysis', 'view')) {
+    allMenus.push({
       id: 'data-analysis',
       label: '数据分析',
       icon: 'TrendCharts',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // AI 助手
+  if (hasPermission('ai-chat', 'view')) {
+    allMenus.push({
       id: 'ai-chat',
       label: 'AI 助手',
       icon: 'ChatDotRound',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 模型管理
+  if (hasPermission('ai-models', 'view')) {
+    allMenus.push({
       id: 'ai-models',
       label: '模型管理',
       icon: 'Cpu',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 基础设置
+  if (hasPermission('basic-settings', 'view')) {
+    allMenus.push({
       id: 'basic-settings',
       label: '基础设置',
       icon: 'Tools',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 数据库管理
+  if (hasPermission('database', 'view')) {
+    allMenus.push({
       id: 'database',
       label: '数据库管理',
       icon: 'Coin',
       isMenu: true
-    },
-    {
+    })
+  }
+
+  // 安全中心
+  if (hasPermission('security', 'view')) {
+    allMenus.push({
       id: 'security',
       label: '安全中心',
       icon: 'Lock',
       isMenu: true
-    }
-  ]
+    })
+  }
+
+  return allMenus
 })
 
 // 节点点击处理
 const handleNodeClick = (data, _node) => {
+  // 如果是内容管理系统的父节点，默认展开并选中第一个子节点
+  if (isContentManagement.value && data.id === 'admin-permission') {
+    setActiveMenu('role-management')
+    emit('menu-select', 'role-management')
+    // 自动展开父节点
+    expandedKeys.value = ['admin-permission']
+  }
   // 如果是"全部题目"
-  if (data.id === 'all-questions') {
+  else if (data.id === 'all-questions') {
     setActiveMenu('questions')
     emit('menu-select', 'questions')
     clearFilter()
@@ -477,6 +592,9 @@ onUnmounted(() => {
 
 // 组件挂载时检测
 onMounted(() => {
+  // 初始化状态（从 localStorage 恢复）
+  initializeState()
+  
   checkMobile()
   window.addEventListener('resize', checkMobile)
 })

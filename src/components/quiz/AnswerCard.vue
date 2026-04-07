@@ -33,14 +33,14 @@
             'is-reading': question.type === 'reading'
           }
         ]"
-        @click="handleQuestionClick(index)"
         :title="`第 ${index + 1} 题${question.type === 'reading' ? ' (阅读理解)' : ''}`"
+        @click="handleQuestionClick(index)"
       >
         {{ index + 1 }}
       </button>
     </div>
 
-    <div class="answer-card-legend" v-if="hasReadingQuestions">
+    <div v-if="hasReadingQuestions" class="answer-card-legend">
       <div class="legend-item">
         <span class="legend-dot legend-reading"></span>
         <span class="legend-text">阅读理解</span>

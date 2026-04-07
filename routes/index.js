@@ -28,6 +28,7 @@ const userStatsRoutes = require('./user-stats')
 const chatRoutes = require('./chat')
 const healthRoutes = require('./health')
 const toolsRoutes = require('./tools')
+const adminPermissionsRoutes = require('./admin-permissions')
 
 const routes = [
   { path: '/data', handler: dataRoutes },
@@ -44,6 +45,7 @@ const routes = [
   { path: '', handler: backupRoutes, comment: '内部路由: /backup, /restore' },
   { path: '/error-collection', handler: errorCollectionRoutes },
   { path: '/admin', handler: adminRoutes },
+  { path: '/admin/permissions', handler: adminPermissionsRoutes },
   { path: '/upload', handler: uploadRoutes },
   { path: '/dashboard', handler: dashboardRoutes },
   { path: '/answer-behavior', handler: answerBehaviorRoutes },

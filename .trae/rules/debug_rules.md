@@ -113,6 +113,47 @@ if (q.type === 'judgment') {
 
 ---
 
+### 案例 2：管理员权限 API 返回 401（2026-04-08）
+**现象**：管理员登录成功后，访问 `/api/admin/permissions/*` 返回 401 Unauthorized
+
+**排查路径（数据流追踪法）**：
+1. ✅ **数据库层** - 管理员数据正确（role_id=1, status=active）
+2. ✅ **前端层** - Token 存储/传递正常（adminToken 存在，长度183）
+3. ✅ **网络传输** - Bearer Token 正确传递
+4. ❌ **后端中间件层** - **发现多个 Bug**
+
+**发现的 Bug（共 4 类）**：
+
+| Bug 类型 | 影响文件 | 错误代码 | 正确代码 |
+|----------|----------|----------|----------|
+| ① 错误的数据库模块引用 | `middleware/adminAuth.js:7`, `services/permissionService.js:2` | `require('../config/database')` | `require('../services/database')` |
+| ② 错误的调用方法 | adminAuth.js:65, permissionService.js (13处) | `db.execute()` | `db.pool.execute()` |
+| ③ MySQL LIMIT/OFFSET 参数化限制 | permissionService.js:19,105 | `'LIMIT ? OFFSET ?'` | `` `LIMIT ${limit} OFFSET ${offset}` `` |
+| ④ response 函数签名错误 | routes/admin-permissions.js | `response.success(result, msg)` | `response.success(res, result, msg)` |
+
+**根因分析**：
+- 新开发的权限系统沿用了错误的数据库模块引用方式
+- MySQL 的 prepared statement 不支持在 `LIMIT/OFFSET` 中使用参数占位符
+- 使用工具函数前未查看其函数签名
+
+**修复验证**：
+```bash
+$ node test-admin-api.js
+✅ 登录成功 (200)
+✅ 角色列表 API 成功 (200) - 返回 2 个角色
+✅ 管理员用户列表 API 成功 (200) - 返回 1 个管理员
+```
+
+**经验教训**：
+1. 数据库模块必须使用 `services/database` 而非 `config/database`
+2. MySQL2 Pool 对象使用 `pool.execute()` 方法
+3. LIMIT/OFFSET 不能用参数化，需用字符串拼接 + parseInt()
+4. 使用工具函数前必须先查看函数签名和参数顺序
+
+**详细记录**：[管理员权限系统_401错误排查记录.md](../DOCS/技术文档/管理员权限系统_401错误排查记录.md)
+
+---
+
 ## 七、执行要求
 
 1. **所有开发人员必须遵守**

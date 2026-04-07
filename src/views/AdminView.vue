@@ -5,100 +5,113 @@
     @menu-change="handleMenuChange"
     @authenticated="handleAuthenticated"
   >
-    <!-- 数据概览 -->
-    <DashboardView v-if="activeMenu === 'dashboard'" />
+    <!-- 内容管理系统视图 -->
+    <template v-if="isContentManagement">
+      <!-- 角色管理 -->
+      <RoleManagement v-if="activeMenu === 'role-management'" />
+      <!-- 管理员用户 -->
+      <AdminUserManagement v-else-if="activeMenu === 'admin-user-management'" />
+      <!-- 默认显示角色管理 -->
+      <RoleManagement v-else />
+    </template>
 
-    <!-- 题目管理 -->
-    <div v-else-if="activeMenu === 'questions'" class="question-management">
-      <QuestionList
-        ref="questionListRef"
-        :subjects="subjects"
-        @delete-question="deleteQuestion"
-        @show-batch-add-dialog="batchAddDialogVisible = true"
-      />
-    </div>
+    <!-- 管理后台视图 -->
+    <template v-else>
+      <!-- 数据概览 -->
+      <DashboardView v-if="activeMenu === 'dashboard'" />
 
-    <!-- 学科管理 -->
-    <div v-else-if="activeMenu === 'subjects'" class="subject-management">
-      <SubjectManagement @manage-subcategories="manageSubcategories" />
-    </div>
+      <!-- 题目管理 -->
+      <div v-else-if="activeMenu === 'questions'" class="question-management">
+        <QuestionList
+          ref="questionListRef"
+          :subjects="subjects"
+          @delete-question="deleteQuestion"
+          @show-batch-add-dialog="batchAddDialogVisible = true"
+        />
+      </div>
 
-    <!-- 年级班级 -->
-    <div v-else-if="activeMenu === 'grades-classes'" class="grades-classes-management">
-      <GradeClassManagement />
-    </div>
+      <!-- 学科管理 -->
+      <div v-else-if="activeMenu === 'subjects'" class="subject-management">
+        <SubjectManagement @manage-subcategories="manageSubcategories" />
+      </div>
 
-    <!-- 用户答题统计 -->
-    <UserStatsView v-else-if="activeMenu === 'user-stats'" />
+      <!-- 年级班级 -->
+      <div v-else-if="activeMenu === 'grades-classes'" class="grades-classes-management">
+        <GradeClassManagement />
+      </div>
 
-    <!-- 最近答题记录 -->
-    <RecentRecordsView v-else-if="activeMenu === 'recent-records'" />
+      <!-- 用户答题统计 -->
+      <UserStatsView v-else-if="activeMenu === 'user-stats'" />
 
-    <!-- 用户管理 -->
-    <div v-else-if="activeMenu === 'user-management'" class="user-management-view">
-      <UserManagement
-        ref="userManagementRef"
-        :grades="grades"
-        :classes="classes"
-        @update-users="updateUserList"
-      />
-    </div>
+      <!-- 最近答题记录 -->
+      <RecentRecordsView v-else-if="activeMenu === 'recent-records'" />
 
-    <!-- 基础设置 -->
-    <div v-else-if="activeMenu === 'basic-settings'" class="basic-settings">
-      <InterfaceNameSetting
-        :interface-name="interfaceName"
-        @update-interface-name="updateInterfaceName"
-      />
+      <!-- 用户管理 -->
+      <div v-else-if="activeMenu === 'user-management'" class="user-management-view">
+        <UserManagement
+          ref="userManagementRef"
+          :grades="grades"
+          :classes="classes"
+          @update-users="updateUserList"
+        />
+      </div>
 
-      <AnswerSetting
-        :randomize-answers="randomizeAnswers"
-        :randomize-error-collection-answers="randomizeErrorCollectionAnswers"
-        :fixed-question-count="fixedQuestionCount"
-        :min-question-count="minQuestionCount"
-        :max-question-count="maxQuestionCount"
-        :fixed-question-count-value="fixedQuestionCountValue"
-        :subjects="subjects"
-        :subject-question-counts="subjectQuestionCounts"
-        @update-settings="updateAnswerSettings"
-      />
-    </div>
+      <!-- 基础设置 -->
+      <div v-else-if="activeMenu === 'basic-settings'" class="basic-settings">
+        <InterfaceNameSetting
+          :interface-name="interfaceName"
+          @update-interface-name="updateInterfaceName"
+        />
 
-    <!-- 数据库管理 -->
-    <div v-else-if="activeMenu === 'database'" class="data-management">
-      <BackupRestore
-        :backup-history="backupHistory"
-        @backup-data="backupData"
-        @upload-backup="uploadBackup"
-        @restore-from-history="restoreFromHistory"
-        @download-backup="downloadBackup"
-        @delete-backup="deleteBackup"
-        @get-backup-history="getBackupHistory"
-        @verify-backup="verifyBackup"
-      />
-      <DataCleanup
-        @clear-all-data="clearAllData"
-        @clear-user-records="clearUserRecords"
-        @clear-leaderboard="clearLeaderboard"
-        @clear-grades="clearGrades"
-        @clear-classes="clearClasses"
-      />
-    </div>
+        <AnswerSetting
+          :randomize-answers="randomizeAnswers"
+          :randomize-error-collection-answers="randomizeErrorCollectionAnswers"
+          :fixed-question-count="fixedQuestionCount"
+          :min-question-count="minQuestionCount"
+          :max-question-count="maxQuestionCount"
+          :fixed-question-count-value="fixedQuestionCountValue"
+          :subjects="subjects"
+          :subject-question-counts="subjectQuestionCounts"
+          @update-settings="updateAnswerSettings"
+        />
+      </div>
 
-    <!-- 安全中心 -->
-    <SecurityMonitor v-else-if="activeMenu === 'security'" />
+      <!-- 数据库管理 -->
+      <div v-else-if="activeMenu === 'database'" class="data-management">
+        <BackupRestore
+          :backup-history="backupHistory"
+          @backup-data="backupData"
+          @upload-backup="uploadBackup"
+          @restore-from-history="restoreFromHistory"
+          @download-backup="downloadBackup"
+          @delete-backup="deleteBackup"
+          @get-backup-history="getBackupHistory"
+          @verify-backup="verifyBackup"
+        />
+        <DataCleanup
+          @clear-all-data="clearAllData"
+          @clear-user-records="clearUserRecords"
+          @clear-leaderboard="clearLeaderboard"
+          @clear-grades="clearGrades"
+          @clear-classes="clearClasses"
+        />
+      </div>
 
-    <!-- 数据分析 -->
-    <DataAnalysis v-else-if="activeMenu === 'data-analysis'" />
+      <!-- 安全中心 -->
+      <SecurityMonitor v-else-if="activeMenu === 'security'" />
 
-    <!-- AI 助手 -->
-    <ChatContainer v-else-if="activeMenu === 'ai-chat'" />
+      <!-- 数据分析 -->
+      <DataAnalysis v-else-if="activeMenu === 'data-analysis'" />
 
-    <!-- 模型管理 -->
-    <ModelManager v-else-if="activeMenu === 'ai-models'" />
+      <!-- AI 助手 -->
+      <ChatContainer v-else-if="activeMenu === 'ai-chat'" />
 
-    <!-- 默认显示数据概览 -->
-    <DashboardView v-else />
+      <!-- 模型管理 -->
+      <ModelManager v-else-if="activeMenu === 'ai-models'" />
+
+      <!-- 默认显示数据概览 -->
+      <DashboardView v-else />
+    </template>
 
     <!-- 学科题库管理对话框 -->
     <SubcategoryDialog
@@ -176,9 +189,17 @@ const ModelManager = defineAsyncComponent(
   () => import('../components/admin/models/ModelManager.vue')
 )
 
+// 权限管理组件
+const RoleManagement = defineAsyncComponent(
+  () => import('../components/admin/permission/RoleManagement.vue')
+)
+const AdminUserManagement = defineAsyncComponent(
+  () => import('../components/admin/permission/AdminUserManagement.vue')
+)
+
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
-const { activeMenu, setActiveMenu } = useAdminLayout()
+const { activeMenu, setActiveMenu, isContentManagement } = useAdminLayout()
 const { cleanup: cleanupLoading } = useLoading()
 
 // 系统标题

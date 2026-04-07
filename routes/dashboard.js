@@ -11,6 +11,7 @@ const db = require('../services/database')
 /**
  * 获取统计数据
  * GET /api/dashboard/stats
+ * 需要管理员权限
  */
 router.get('/stats', adminAuth, async (req, res) => {
   try {
@@ -93,7 +94,8 @@ router.get('/stats', adminAuth, async (req, res) => {
 /**
  * 获取答题趋势数据
  * GET /api/dashboard/trend
- * @param {number} days - 天数，默认7天
+ * @param {number} days - 天数，默认 7 天
+ * 需要管理员权限
  */
 router.get('/trend', adminAuth, async (req, res) => {
   try {
@@ -138,6 +140,7 @@ router.get('/trend', adminAuth, async (req, res) => {
 /**
  * 获取学科答题分布
  * GET /api/dashboard/subject-distribution
+ * 需要管理员权限
  */
 router.get('/subject-distribution', adminAuth, async (req, res) => {
   try {
@@ -167,7 +170,8 @@ router.get('/subject-distribution', adminAuth, async (req, res) => {
 /**
  * 获取最近答题记录
  * GET /api/dashboard/recent-activities
- * @param {number} limit - 数量限制，默认10
+ * @param {number} limit - 数量限制，默认 10
+ * 需要管理员权限
  */
 router.get('/recent-activities', adminAuth, async (req, res) => {
   try {

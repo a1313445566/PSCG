@@ -131,6 +131,28 @@ export const actionFailed = (action, reason = '') => {
   error(message)
 }
 
+/**
+ * 通用消息提示函数（兼容旧代码）
+ * @param {string} message - 提示消息
+ * @param {string} type - 类型：success/warning/info/error
+ * @param {number} duration - 显示时长（毫秒）
+ */
+export const showMessage = (message, type = 'info', duration) => {
+  switch (type) {
+    case 'success':
+      success(message, duration)
+      break
+    case 'error':
+      error(message, duration)
+      break
+    case 'warning':
+      warning(message, duration)
+      break
+    default:
+      info(message, duration)
+  }
+}
+
 // 默认导出所有方法
 export default {
   success,
@@ -142,5 +164,6 @@ export default {
   confirmBatch,
   notify,
   actionSuccess,
-  actionFailed
+  actionFailed,
+  showMessage
 }

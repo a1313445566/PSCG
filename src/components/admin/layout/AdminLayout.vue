@@ -13,6 +13,7 @@
       <!-- 顶部栏 -->
       <AdminHeader
         :system-title="systemTitle"
+        :admin-username="adminUsername"
         @refresh="handleRefresh"
         @logout="handleLogout"
         @mobile-menu-click="handleMobileMenuClick"
@@ -32,8 +33,14 @@
 
         <!-- 内容区域 -->
         <div class="layout-content">
+          <!-- 权限加载中提示 -->
+          <div v-if="!isPermissionsReady" class="loading-container">
+            <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
+            <p>正在加载权限数据，请稍候...</p>
+          </div>
+
           <!-- 数据加载中提示 -->
-          <div v-if="!isDataReady" class="loading-container">
+          <div v-else-if="!isDataReady" class="loading-container">
             <el-icon class="loading-icon"><i class="el-icon-loading"></i></el-icon>
             <p>正在加载数据，请稍候...</p>
           </div>
@@ -60,6 +67,7 @@ import {
 import { useQuestionStore, useSettingsStore } from '../../../stores/questionStore'
 import message from '../../../utils/message'
 import { useLoading } from '../../../composables/useLoading'
+import { useAdminLayout } from '../../../composables/useAdminLayout'
 import AdminSidebar from './AdminSidebar.vue'
 import AdminHeader from './AdminHeader.vue'
 import PasswordDialog from '../auth/PasswordDialog.vue'
@@ -67,6 +75,7 @@ import PasswordDialog from '../auth/PasswordDialog.vue'
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
 const { cleanup: cleanupLoading } = useLoading()
+const { permissions, permissionsLoaded, loadPermissions, hasPermission } = useAdminLayout()
 
 // 侧边栏 ref
 const sidebarRef = ref(null)
@@ -89,6 +98,11 @@ provide(
   computed(() => props.subjects)
 )
 
+// 提供权限相关数据给子组件
+provide('permissions', permissions)
+provide('permissionsLoaded', permissionsLoaded)
+provide('hasPermission', hasPermission)
+
 // Emits
 const emit = defineEmits(['menu-change', 'authenticated'])
 
@@ -99,6 +113,11 @@ const adminUsername = ref('')
 
 // 数据就绪状态
 const isDataReady = ref(false)
+
+// 权限是否已加载（控制组件渲染）
+const isPermissionsReady = computed(() => {
+  return permissionsLoaded.value
+})
 
 // 组件挂载状态
 let isComponentMounted = true
@@ -115,10 +134,14 @@ const handlePasswordVerify = isVerified => {
     isAuthenticated.value = true
     passwordDialogVisible.value = false
 
-    // 刷新页面以确保状态正确
+    // 不刷新页面，直接加载数据
     setTimeout(() => {
-      window.location.reload()
-    }, 500)
+      if (isComponentMounted) {
+        loadPageData().catch(error => {
+          console.error('[AdminLayout] 加载数据失败:', error)
+        })
+      }
+    }, 100)
   }
 }
 
@@ -226,6 +249,9 @@ const loadPageData = async () => {
   }
 
   try {
+    await loadSingleData('权限数据', () => loadPermissions())
+    if (!isComponentMounted) return
+
     await loadSingleData('核心数据', () => questionStore.loadData())
     if (!isComponentMounted) return
 

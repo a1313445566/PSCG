@@ -1,113 +1,136 @@
-/**
- * 后台管理布局状态管理 Hook
- *
- * 管理侧边栏折叠、菜单选中、侧边栏宽度等状态
- */
 import { ref, computed } from 'vue'
+import api from '../utils/api'
 
-// 全局状态（模块级别单例）
+const currentView = ref('default')
+
+// 侧边栏状态
 const isCollapse = ref(false)
-const sidebarWidth = ref(220)
 const activeMenu = ref('dashboard')
+const currentWidth = ref(240)
+const filterSubjectId = ref(null)
+const filterSubcategoryId = ref(null)
 
-// 学科筛选状态
-const filterSubjectId = ref('')
-const filterSubcategoryId = ref('')
+// 权限状态
+const permissions = ref({})
+const permissionsLoaded = ref(false)
 
-/**
- * 后台管理布局 Hook
- * @returns {Object} 布局状态和方法
- */
 export function useAdminLayout() {
-  /**
-   * 切换折叠状态
-   */
+  const setCurrentView = view => {
+    currentView.value = view
+    localStorage.setItem('admin_current_view', view)
+
+    if (view === 'content-management') {
+      activeMenu.value = 'role-management'
+      localStorage.setItem('admin_active_menu', 'role-management')
+    } else {
+      activeMenu.value = 'dashboard'
+      localStorage.setItem('admin_active_menu', 'dashboard')
+    }
+  }
+
+  const isContentManagement = computed(() => currentView.value === 'content-management')
+
   const toggleCollapse = () => {
     isCollapse.value = !isCollapse.value
+    localStorage.setItem('admin_sidebar_collapse', isCollapse.value ? 'true' : 'false')
   }
 
-  /**
-   * 设置当前激活菜单
-   * @param {string} key - 菜单键
-   */
-  const setActiveMenu = key => {
-    activeMenu.value = key
+  const setActiveMenu = menu => {
+    activeMenu.value = menu
+    localStorage.setItem('admin_active_menu', menu)
   }
 
-  /**
-   * 设置侧边栏宽度
-   * @param {number} width - 宽度值
-   */
   const setSidebarWidth = width => {
-    sidebarWidth.value = Math.max(180, Math.min(350, width))
+    currentWidth.value = width
+    localStorage.setItem('admin_sidebar_width', width)
   }
 
-  /**
-   * 设置学科筛选
-   */
   const setFilterSubject = subjectId => {
     filterSubjectId.value = subjectId
-    filterSubcategoryId.value = ''
   }
 
-  /**
-   * 设置题库筛选
-   */
-  const setFilterSubcategory = (subjectId, subcategoryId) => {
-    filterSubjectId.value = subjectId
+  const setFilterSubcategory = subcategoryId => {
     filterSubcategoryId.value = subcategoryId
   }
 
-  /**
-   * 清除筛选
-   */
   const clearFilter = () => {
-    filterSubjectId.value = ''
-    filterSubcategoryId.value = ''
+    filterSubjectId.value = null
+    filterSubcategoryId.value = null
   }
 
-  // 展开宽度
-  const expandedWidth = computed(() => sidebarWidth.value)
+  // 加载权限数据
+  const loadPermissions = async () => {
+    try {
+      const res = await api.get('/admin/permissions/my-permissions')
 
-  // 折叠宽度
-  const collapsedWidth = 64
+      // 后端返回格式是 {permissions, roleId, isSuper}，没有 success 字段
+      const permissionsData = res.data.data || res.data
 
-  // 当前实际宽度
-  const currentWidth = computed(() => (isCollapse.value ? collapsedWidth : expandedWidth.value))
-
-  // 当前菜单标题
-  const currentMenuTitle = computed(() => {
-    const titleMap = {
-      dashboard: '数据概览',
-      questions: '题目管理',
-      subjects: '学科管理',
-      'grades-classes': '年级班级',
-      'user-data': '用户数据',
-      'user-stats': '用户答题统计',
-      'recent-records': '最近答题记录',
-      'user-management': '用户管理',
-      'basic-settings': '基础设置',
-      database: '数据库管理',
-      security: '安全中心'
+      if (permissionsData && permissionsData.permissions !== undefined) {
+        permissions.value = permissionsData.permissions || {}
+        permissionsLoaded.value = true
+      } else {
+        permissionsLoaded.value = true
+      }
+    } catch (error) {
+      // 如果加载失败，默认给予所有权限（降级处理）
+      permissionsLoaded.value = true
     }
-    return titleMap[activeMenu.value] || '数据概览'
-  })
+  }
+
+  // 检查是否有某个模块的权限
+  const hasPermission = (moduleKey, action = 'view') => {
+    if (!permissionsLoaded.value || Object.keys(permissions.value).length === 0) {
+      return true // 权限未加载时默认允许
+    }
+    return permissions.value[moduleKey]?.[action] === true
+  }
+
+  // 初始化时恢复保存的状态
+  const initializeState = () => {
+    const savedCollapse = localStorage.getItem('admin_sidebar_collapse')
+    if (savedCollapse) {
+      isCollapse.value = savedCollapse === 'true'
+    }
+
+    const savedWidth = localStorage.getItem('admin_sidebar_width')
+    if (savedWidth) {
+      currentWidth.value = parseInt(savedWidth) || 240
+    }
+
+    const savedView = localStorage.getItem('admin_current_view')
+    if (savedView) {
+      currentView.value = savedView
+    }
+
+    const savedMenu = localStorage.getItem('admin_active_menu')
+    if (savedMenu) {
+      activeMenu.value = savedMenu
+    } else {
+      activeMenu.value =
+        currentView.value === 'content-management' ? 'role-management' : 'dashboard'
+    }
+  }
 
   return {
+    currentView,
+    setCurrentView,
+    isContentManagement,
     isCollapse,
-    sidebarWidth,
     activeMenu,
+    currentWidth,
     toggleCollapse,
     setActiveMenu,
     setSidebarWidth,
-    expandedWidth,
-    collapsedWidth,
-    currentWidth,
-    currentMenuTitle,
     filterSubjectId,
     filterSubcategoryId,
     setFilterSubject,
     setFilterSubcategory,
-    clearFilter
+    clearFilter,
+    initializeState,
+    permissions,
+    permissionsLoaded,
+    loadPermissions,
+    hasPermission
   }
 }

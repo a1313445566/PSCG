@@ -350,8 +350,14 @@ export const useQuestionStore = defineStore('question', {
               console.error('加载班级失败:', error)
               return []
             }),
-            api.get('/subjects/stats').catch(() => []),
-            api.get('/questions/subcategories/stats').catch(() => ({}))
+            api.get('/subjects/stats').catch(error => {
+              console.error('加载学科统计失败:', error)
+              return []
+            }),
+            api.get('/questions/subcategories/stats').catch(error => {
+              console.error('加载子分类统计失败:', error)
+              return {}
+            })
           ])
 
         // 检查应用是否仍然挂载

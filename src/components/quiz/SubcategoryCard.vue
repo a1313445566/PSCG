@@ -3,7 +3,7 @@
     <div class="subcategory-icon">{{ subjectIcons[subcategory.iconIndex || 0] }}</div>
     <div class="subcategory-name">{{ subcategory.name }}</div>
     <div class="subcategory-info">
-      <span class="question-count" >{{ questionCount }} 题</span>
+      <span class="question-count">{{ questionCount }} 题</span>
       <div class="difficulty-wrapper">
         <span class="difficulty" :class="difficultyClass">
           {{ difficultyLevel }}
