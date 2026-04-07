@@ -61,11 +61,11 @@
           <template v-for="(question, index) in currentQuestions" :key="question.id">
             <QuestionCard
               v-if="question.type !== 'reading'"
+              :ref="(el: InstanceType<typeof QuestionCard> | null) => { if (el) questionRefs[question.id] = el }"
               :question="question"
               :question-number="index + 1"
               :user-answer="userAnswers[question.id]"
               :show-result="false"
-              :data-question-id="question.id"
               @select-option="option => selectOption(question.id, option, question.type)"
               @mouseenter="handleQuestionHover(question.id, true)"
               @mouseleave="handleQuestionHover(question.id, false)"
@@ -123,6 +123,9 @@ const settingsStore = useSettingsStore()
 
 // 答题行为追踪组件引用
 const behaviorTracker = ref(null)
+
+// 题目组件引用映射（使用 Vue ref 替代 DOM 查询）
+const questionRefs = ref({})
 
 // 当前正在答题的题目ID（用于追踪）
 const currentTrackingQuestionId = ref(null)
@@ -290,7 +293,7 @@ const selectOption = (questionId, option, questionType = 'single') => {
   quizStore.submitAnswer(questionId, option, questionType)
 }
 
-// 滚动到指定题目
+// 滚动到指定题目（使用 Vue ref 系统替代 DOM 查询）
 const scrollToQuestion = index => {
   const questionId = currentQuestions.value[index]?.id
   if (!questionId) return
@@ -298,18 +301,18 @@ const scrollToQuestion = index => {
   // 更新当前题目ID
   currentQuestionId.value = questionId
 
-  // 查找对应的题目元素并滚动
-  const questionElement = document.querySelector(`[data-question-id="${questionId}"]`)
-  if (questionElement) {
-    questionElement.scrollIntoView({
+  // 通过 Vue ref 获取组件实例，再访问其 $el 进行滚动
+  const questionComponent = questionRefs.value[questionId]
+  if (questionComponent?.$el) {
+    questionComponent.$el.scrollIntoView({
       behavior: 'smooth',
       block: 'center'
     })
 
     // 添加高亮效果
-    questionElement.classList.add('highlight-question')
+    questionComponent.$el.classList.add('highlight-question')
     setTimeout(() => {
-      questionElement.classList.remove('highlight-question')
+      questionComponent.$el.classList.remove('highlight-question')
     }, 2000)
   }
 }
@@ -944,315 +947,5 @@ onUnmounted(() => {
 </script>
 
 <style scoped lang="scss">
-/* CSS 变量已在 src/styles/scss/abstracts/_variables.scss 中统一定义 */
-
-.quiz-view {
-  min-height: 100vh;
-  background: $bg-gradient-page;
-  padding-bottom: $spacing-xl;
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%237DD3F8" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%23A8E6CF" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD88B" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%23FF9999" opacity="0.3"/></svg>');
-  background-repeat: repeat;
-}
-
-/* 答题卡：fixed 浮动在左侧 */
-.quiz-sidebar {
-  position: fixed;
-  top: 200px;
-  /* 内容区左边缘 = 50vw - 450px，答题卡紧贴左侧 */
-  left: calc(50% - 645px);
-  width: 220px;
-  z-index: 100;
-  max-height: calc(100vh - 220px);
-  overflow-y: auto;
-}
-
-/* 主内容区域：完全独立居中 */
-.quiz-container {
-  width: 900px;
-  max-width: 100%;
-  margin: 0 auto;
-  border-radius: 0;
-  padding: 32px;
-  box-sizing: border-box;
-}
-
-/* 题目高亮效果 */
-:deep(.highlight-question) {
-  animation: highlight-pulse 2s ease-in-out;
-  border-radius: $border-radius-lg;
-}
-
-@keyframes highlight-pulse {
-  0% {
-    box-shadow: 0 0 0 0 set-alpha($primary-color, 50);
-  }
-
-  50% {
-    box-shadow: 0 0 0 10px set-alpha($primary-color, 20);
-  }
-
-  100% {
-    box-shadow: 0 0 0 0 transparent;
-  }
-}
-
-.quiz-header {
-  background: $card-background;
-  border-radius: $border-radius-lg;
-  padding: $spacing-section;
-  box-shadow: $shadow-lg;
-  border: $border-width-md solid $border-color-lighter;
-  overflow: hidden;
-  margin-bottom: $spacing-xl;
-  position: relative;
-}
-
-.rules-section {
-  margin: $spacing-xl 0;
-  padding: $spacing-lg;
-  background-color: $bg-slate-50;
-  border-radius: $border-radius-sm; // 12px取近似值8px
-  border-left: $border-width-lg solid $secondary-color;
-}
-
-.rules-title {
-  font-size: $font-size-xl;
-  font-weight: bold;
-  color: $text-primary;
-  margin: 0 0 $spacing-md 0;
-  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-}
-
-.rules-content p {
-  color: $text-secondary;
-  margin: $spacing-xs 0;
-  line-height: 1.5;
-  font-size: $font-size-md;
-}
-
-.points-rule {
-  font-weight: bold;
-  color: $primary-color;
-  margin-top: $spacing-md !important;
-}
-
-.quiz-header::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 6px;
-  background: $section-header-gradient;
-}
-
-.quiz-info {
-  margin-bottom: 2rem;
-}
-
-.quiz-title {
-  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-  font-size: 2.2rem;
-  font-weight: bold;
-  color: $secondary-color;
-  margin: 0 0 1.5rem 0;
-  letter-spacing: 2px;
-  text-shadow: 2px 2px 4px set-alpha($secondary-color, 30);
-}
-
-.quiz-stats {
-  display: flex;
-  gap: 2rem;
-  align-items: center;
-  flex-wrap: wrap;
-}
-
-.question-count,
-.time-spent {
-  background: $section-header-gradient;
-  color: $text-white;
-  padding: $spacing-compact $spacing-lg; // 0.8rem≈12.8px, 1.5rem=24px
-  border-radius: $border-radius-lg; // 25px取近似值24px
-  font-weight: bold;
-  font-size: $font-size-md; // 1.1rem≈17.6px，取16px
-  border: $border-width-md solid $secondary-color;
-  box-shadow: 0 4px 0 set-alpha($secondary-color, 50);
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-}
-
-.shuffle-tag {
-  background: $section-header-gradient;
-  color: $text-white;
-  padding: $spacing-compact $spacing-lg;
-  border-radius: $border-radius-lg;
-  font-weight: bold;
-  font-size: $font-size-md;
-  border: $border-width-md solid $secondary-color;
-  box-shadow: 0 4px 0 set-alpha($secondary-color, 50);
-  display: flex;
-  align-items: center;
-  gap: $spacing-xs;
-  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-}
-
-.shuffle-tag.shuffle-on {
-  background: $primary-gradient;
-  border-color: $primary-color;
-  box-shadow: 0 4px 0 set-alpha($primary-color, 50);
-}
-
-.shuffle-tag.shuffle-off {
-  background: $section-header-gradient;
-  border-color: $secondary-color;
-  box-shadow: 0 4px 0 set-alpha($secondary-color, 50);
-}
-
-.progress-section {
-  margin-top: $spacing-xl;
-}
-
-.progress-bar {
-  width: 100%;
-  height: 15px; // 特殊值
-  background-color: $border-color-lighter;
-  border-radius: $border-radius-sm; // 10px取近似值8px
-  overflow: hidden;
-  margin-bottom: $spacing-md;
-  border: $border-width-md solid $border-color-lighter;
-}
-
-.progress-fill {
-  height: 100%;
-  background: var(--header-gradient);
-  border-radius: $border-radius-sm;
-  transition: width 0.3s ease;
-  box-shadow: 0 0 10px set-alpha($el-blue-light-2, 50);
-}
-
-.progress-text {
-  font-size: $font-size-md; // 1.1rem≈17.6px，取16px
-  color: $text-primary;
-  text-align: right;
-  font-weight: bold;
-  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-}
-
-.questions-section {
-  margin-bottom: $spacing-section;
-}
-
-.action-buttons {
-  display: flex;
-  justify-content: center;
-}
-
-.submit-btn {
-  background: $section-header-gradient;
-  color: $text-white;
-  border: $border-width-lg solid $secondary-color;
-  padding: 1.2rem 3rem; // 特殊值
-  border-radius: $border-radius-full;
-  font-size: $font-size-xl; // 1.3rem≈20.8px，取20px
-  font-weight: bold;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  display: flex;
-  align-items: center;
-  gap: $spacing-md;
-  letter-spacing: 2px; // 特殊值
-  box-shadow: 0 6px 0 set-alpha($secondary-color, 50);
-  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
-}
-
-.submit-btn:hover:not(:disabled) {
-  transform: translateY(-4px);
-  box-shadow:
-    0 10px 0 set-alpha($el-blue-light-2, 50),
-    0 15px 20px set-alpha($el-blue-light-2, 40);
-}
-
-.submit-btn:active:not(:disabled) {
-  transform: translateY(2px);
-  box-shadow: 0 2px 0 set-alpha($el-blue-light-2, 50);
-}
-
-.submit-btn:disabled {
-  opacity: 0.7;
-  cursor: not-allowed;
-  transform: none;
-  box-shadow: none;
-}
-
-/* 响应式设计 */
-@media (max-width: $breakpoint-lg) {
-  .quiz-header {
-    padding: $spacing-xl;
-  }
-
-  .quiz-title {
-    font-size: $font-size-2xl;
-  }
-
-  .quiz-stats {
-    flex-direction: column;
-    gap: $spacing-md;
-    align-items: flex-start;
-  }
-
-  .submit-btn {
-    padding: $spacing-md $spacing-section;
-    font-size: $font-size-md;
-  }
-}
-
-@media (max-width: $breakpoint-md) {
-  .quiz-sidebar {
-    display: none;
-  }
-
-  .quiz-container {
-    padding: $spacing-md;
-    max-width: 100%;
-  }
-
-  .quiz-header {
-    padding: $spacing-xl;
-  }
-
-  .quiz-title {
-    font-size: $font-size-2xl;
-  }
-
-  .submit-btn {
-    padding: $spacing-md $spacing-section;
-    font-size: $font-size-md;
-  }
-}
-
-@media (max-width: 480px) {
-  /* 特殊断点 */
-  .quiz-container {
-    padding: $spacing-sm;
-  }
-
-  .quiz-sidebar {
-    display: none; /* 小屏幕隐藏答题卡 */
-  }
-
-  .quiz-header {
-    padding: $spacing-lg;
-  }
-
-  .quiz-title {
-    font-size: $font-size-xl;
-  }
-
-  .submit-btn {
-    padding: 0.9rem $spacing-xl;
-    font-size: $font-size-md;
-  }
-}
+@use '@/styles/scss/pages/quiz-view.scss';
 </style>

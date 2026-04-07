@@ -1,0 +1,371 @@
+@use 'sass:color';
+@use '../abstracts/variables' as *;
+
+// ============================================
+// 答题页面专属变量（页面级语义化）
+// ============================================
+
+// 答题卡布局
+$quiz-sidebar-width: 220px;
+$quiz-sidebar-top-offset: 200px;
+$quiz-sidebar-left-offset: 645px;
+
+// 主内容区
+$quiz-container-width: 900px;
+$quiz-container-padding: $spacing-xl; // 32px
+
+// 标题样式
+$quiz-title-font-size: 2.2rem;
+$quiz-title-spacing: 1.5rem;
+$quiz-title-letter-spacing: 2px; // 字体特性，保持固定值
+$quiz-info-gap: 2rem;
+$quiz-info-margin-bottom: 2rem;
+
+// 装饰条
+$header-decoration-height: 6px;
+
+// 进度条
+$progress-bar-height: 15px;
+
+// 提交按钮（特殊尺寸）
+$submit-btn-padding-y: 1.2rem;
+$submit-btn-padding-x: 3rem;
+$submit-btn-letter-spacing: 2px; // 字体特性
+$submit-btn-shadow-offset: 6px;
+$submit-btn-hover-offset: 10px;
+$submit-btn-active-offset: 2px;
+
+// 响应式断点补充
+$breakpoint-mobile-sm: 480px;
+
+// ============================================
+// 答题页面主容器
+// ============================================
+
+.quiz-view {
+  min-height: 100vh;
+  background: $bg-gradient-page;
+  padding-bottom: $spacing-xl;
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="100" height="100" viewBox="0 0 100 100"><rect width="100" height="100" fill="%23F7FFF7"/><circle cx="20" cy="20" r="2" fill="%237DD3F8" opacity="0.3"/><circle cx="80" cy="40" r="2" fill="%23A8E6CF" opacity="0.3"/><circle cx="40" cy="80" r="2" fill="%23FFD88B" opacity="0.3"/><circle cx="60" cy="60" r="2" fill="%23FF9999" opacity="0.3"/></svg>');
+  background-repeat: repeat;
+}
+
+// ============================================
+// 答题卡侧边栏（fixed 浮动）
+// ============================================
+
+.quiz-sidebar {
+  position: fixed;
+  top: $quiz-sidebar-top-offset;
+  left: calc(50% - #{$quiz-sidebar-left-offset});
+  width: $quiz-sidebar-width;
+  z-index: 100;
+  max-height: calc(100vh - #{$quiz-sidebar-top-offset});
+  overflow-y: auto;
+}
+
+// ============================================
+// 主内容区域
+// ============================================
+
+.quiz-container {
+  width: $quiz-container-width;
+  max-width: 100%;
+  margin: 0 auto;
+  border-radius: 0;
+  padding: $quiz-container-padding;
+  box-sizing: border-box;
+}
+
+// ============================================
+// 题目高亮动画
+// ============================================
+
+:deep(.highlight-question) {
+  animation: highlight-pulse 2s ease-in-out;
+  border-radius: $border-radius-lg;
+}
+
+@keyframes highlight-pulse {
+  0% {
+    box-shadow: 0 0 0 0 set-alpha($primary-color, 50);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px set-alpha($primary-color, 20);
+  }
+
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+  }
+}
+
+// ============================================
+// 题目头部信息卡片
+// ============================================
+
+.quiz-header {
+  background: $card-background;
+  border-radius: $border-radius-lg;
+  padding: $spacing-section;
+  box-shadow: $shadow-lg;
+  border: $border-width-md solid $border-color-lighter;
+  overflow: hidden;
+  margin-bottom: $spacing-xl;
+  position: relative;
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: $header-decoration-height;
+    background: $section-header-gradient;
+  }
+}
+
+// ============================================
+// 答题规则区域
+// ============================================
+
+.rules-section {
+  margin: $spacing-xl 0;
+  padding: $spacing-lg;
+  background-color: $bg-slate-50;
+  border-radius: $border-radius-sm;
+  border-left: $border-width-lg solid $secondary-color;
+}
+
+.rules-title {
+  font-size: $font-size-xl;
+  font-weight: bold;
+  color: $text-primary;
+  margin: 0 0 $spacing-md 0;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
+}
+
+.rules-content p {
+  color: $text-secondary;
+  margin: $spacing-xs 0;
+  line-height: 1.5;
+  font-size: $font-size-md;
+}
+
+.points-rule {
+  font-weight: bold;
+  color: $primary-color;
+  margin-top: $spacing-md !important;
+}
+
+// ============================================
+// 答题信息区域
+// ============================================
+
+.quiz-info {
+  margin-bottom: $quiz-info-margin-bottom;
+}
+
+.quiz-title {
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
+  font-size: $quiz-title-font-size;
+  font-weight: bold;
+  color: $secondary-color;
+  margin: 0 0 $quiz-title-spacing 0;
+  letter-spacing: $quiz-title-letter-spacing;
+  text-shadow: $text-shadow-primary;
+}
+
+.quiz-stats {
+  display: flex;
+  gap: $quiz-info-gap;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.question-count,
+.time-spent,
+.shuffle-tag {
+  background: $section-header-gradient;
+  color: $text-white;
+  padding: $spacing-compact $spacing-lg;
+  border-radius: $border-radius-lg;
+  font-weight: bold;
+  font-size: $font-size-md;
+  border: $border-width-md solid $secondary-color;
+  box-shadow: $shadow-btn-secondary;
+  display: flex;
+  align-items: center;
+  gap: $spacing-xs;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
+}
+
+.shuffle-tag {
+  &.shuffle-on {
+    background: $primary-gradient;
+    border-color: $primary-color;
+    box-shadow: $shadow-btn-primary;
+  }
+
+  &.shuffle-off {
+    background: $section-header-gradient;
+    border-color: $secondary-color;
+    box-shadow: $shadow-btn-secondary;
+  }
+}
+
+// ============================================
+// 进度条区域
+// ============================================
+
+.progress-section {
+  margin-top: $spacing-xl;
+}
+
+.progress-bar {
+  width: 100%;
+  height: $progress-bar-height;
+  background-color: $border-color-lighter;
+  border-radius: $border-radius-sm;
+  overflow: hidden;
+  margin-bottom: $spacing-md;
+  border: $border-width-md solid $border-color-lighter;
+}
+
+.progress-fill {
+  height: 100%;
+  background: $header-gradient;
+  border-radius: $border-radius-sm;
+  transition: width 0.3s ease;
+  box-shadow: 0 0 10px set-alpha($el-blue-light-2, 50);
+}
+
+.progress-text {
+  font-size: $font-size-md;
+  color: $text-primary;
+  text-align: right;
+  font-weight: bold;
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
+}
+
+// ============================================
+// 题目列表与操作按钮
+// ============================================
+
+.questions-section {
+  margin-bottom: $spacing-section;
+}
+
+.action-buttons {
+  display: flex;
+  justify-content: center;
+}
+
+.submit-btn {
+  background: $section-header-gradient;
+  color: $text-white;
+  border: $border-width-lg solid $secondary-color;
+  padding: $submit-btn-padding-y $submit-btn-padding-x;
+  border-radius: $border-radius-full;
+  font-size: $font-size-xl;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  gap: $spacing-md;
+  letter-spacing: $submit-btn-letter-spacing;
+  box-shadow: 0 #{$submit-btn-shadow-offset} 0 set-alpha($secondary-color, 50);
+  font-family: 'Microsoft YaHei', 微软雅黑, sans-serif;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-4px);
+    box-shadow:
+      0 #{$submit-btn-hover-offset} 0 set-alpha($el-blue-light-2, 50),
+      0 15px 20px set-alpha($el-blue-light-2, 40);
+  }
+
+  &:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 #{$submit-btn-active-offset} 0 set-alpha($el-blue-light-2, 50);
+  }
+
+  &:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
+    box-shadow: none;
+  }
+}
+
+// ============================================
+// 响应式设计
+// ============================================
+
+@media (max-width: $breakpoint-lg) {
+  .quiz-header {
+    padding: $spacing-xl;
+  }
+
+  .quiz-title {
+    font-size: $font-size-2xl;
+  }
+
+  .quiz-stats {
+    flex-direction: column;
+    gap: $spacing-md;
+    align-items: flex-start;
+  }
+
+  .submit-btn {
+    padding: $spacing-md $spacing-section;
+    font-size: $font-size-md;
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .quiz-sidebar {
+    display: none;
+  }
+
+  .quiz-container {
+    padding: $spacing-md;
+    max-width: 100%;
+  }
+
+  .quiz-header {
+    padding: $spacing-xl;
+  }
+
+  .quiz-title {
+    font-size: $font-size-2xl;
+  }
+
+  .submit-btn {
+    padding: $spacing-md $spacing-section;
+    font-size: $font-size-md;
+  }
+}
+
+@media (max-width: $breakpoint-mobile-sm) {
+  .quiz-container {
+    padding: $spacing-sm;
+  }
+
+  .quiz-sidebar {
+    display: none;
+  }
+
+  .quiz-header {
+    padding: $spacing-lg;
+  }
+
+  .quiz-title {
+    font-size: $font-size-xl;
+  }
+
+  .submit-btn {
+    padding: 0.9rem $spacing-xl;
+    font-size: $font-size-md;
+  }
+}
