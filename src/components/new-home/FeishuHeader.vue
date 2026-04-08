@@ -44,7 +44,7 @@ const route = useRoute()
 const { fetchVisibleMenus } = useNavigationMenus()
 
 // 根据名称获取图标组件（使用配置文件）
-const getIconComponent = (iconName) => {
+const getIconComponent = iconName => {
   return getConfigIconComponent(iconName)
 }
 

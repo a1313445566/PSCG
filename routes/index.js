@@ -30,6 +30,7 @@ const healthRoutes = require('./health')
 const toolsRoutes = require('./tools')
 const adminPermissionsRoutes = require('./admin-permissions')
 const adminNavigationRoutes = require('./admin-navigation')
+const adminProductCardsRoutes = require('./admin-product-cards')
 
 const routes = [
   { path: '/data', handler: dataRoutes },
@@ -47,7 +48,9 @@ const routes = [
   { path: '/error-collection', handler: errorCollectionRoutes },
   { path: '/admin', handler: adminRoutes },
   { path: '/admin/permissions', handler: adminPermissionsRoutes },
-  { path: '/admin', handler: adminNavigationRoutes },
+  { path: '/admin/navigation', handler: adminNavigationRoutes },
+  { path: '/product-cards', handler: adminProductCardsRoutes, comment: '前台公开接口' },
+  { path: '/admin/product-cards', handler: adminProductCardsRoutes, comment: '后台管理接口' },
   { path: '/upload', handler: uploadRoutes },
   { path: '/dashboard', handler: dashboardRoutes },
   { path: '/answer-behavior', handler: answerBehaviorRoutes },

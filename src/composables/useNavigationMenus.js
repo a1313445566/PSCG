@@ -14,7 +14,7 @@ export function useNavigationMenus() {
     error.value = null
 
     try {
-      const res = await api.get('/admin/navigation-menus')
+      const res = await api.get('/admin/navigation/menus')
       const data = res.data.data || res.data
       menus.value = Array.isArray(data) ? data : []
       return menus.value
@@ -31,7 +31,7 @@ export function useNavigationMenus() {
   // 获取可见菜单（前台导航栏使用）
   const fetchVisibleMenus = async () => {
     try {
-      const res = await api.get('/admin/navigation-menus/visible')
+      const res = await api.get('/admin/navigation/menus/visible')
       const data = res.data.data || res.data
       return Array.isArray(data) ? data : []
     } catch (err) {
@@ -46,7 +46,7 @@ export function useNavigationMenus() {
     loading.value = true
 
     try {
-      const res = await api.post('/admin/navigation-menus', menuData)
+      const res = await api.post('/admin/navigation/menus', menuData)
       const newMenu = res.data.data
 
       // 更新本地列表
@@ -72,7 +72,7 @@ export function useNavigationMenus() {
     loading.value = true
 
     try {
-      const res = await api.put(`/admin/navigation-menus/${id}`, menuData)
+      const res = await api.put(`/admin/navigation/menus/${id}`, menuData)
       const updatedMenu = res.data.data
 
       // 更新本地列表
@@ -99,7 +99,7 @@ export function useNavigationMenus() {
     loading.value = true
 
     try {
-      await api.delete(`/admin/navigation-menus/${id}`)
+      await api.delete(`/admin/navigation/menus/${id}`)
 
       // 从本地列表移除
       menus.value = menus.value.filter(m => m.id !== id)
@@ -120,7 +120,7 @@ export function useNavigationMenus() {
     loading.value = true
 
     try {
-      await api.put('/admin/navigation-menus/sort', { menus: sortedMenus })
+      await api.put('/admin/navigation/menus/sort', { menus: sortedMenus })
 
       // 更新本地列表的排序值
       sortedMenus.forEach(item => {

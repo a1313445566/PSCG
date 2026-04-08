@@ -9,6 +9,8 @@
     <template v-if="isContentManagement">
       <!-- 导航菜单管理 -->
       <NavigationManagement v-if="activeMenu === 'navigation-management'" />
+      <!-- 产品卡片管理 -->
+      <ProductCardManagement v-else-if="activeMenu === 'product-card-management'" />
       <!-- 角色管理 -->
       <RoleManagement v-else-if="activeMenu === 'role-management'" />
       <!-- 管理员用户 -->
@@ -150,6 +152,7 @@ import AnswerSetting from '../components/admin/basic-settings/AnswerSetting.vue'
 import SubjectManagement from '../components/admin/basic-settings/SubjectManagement.vue'
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
 import NavigationManagement from '../components/admin/navigation/NavigationManagement.vue'
+import ProductCardManagement from '../components/admin/content-management/ProductCardManagement.vue'
 
 // 异步组件
 const QuestionList = defineAsyncComponent(

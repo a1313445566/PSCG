@@ -267,19 +267,28 @@ const isQuestionsActive = computed(() => {
 // 树形菜单数据 - 根据权限过滤
 const menuTreeData = computed(() => {
   if (isContentManagement.value) {
-    const menuItems = []
-    // 导航菜单管理权限
+    const topLevelMenus = []
+    const adminMenuItems = []
+
+    // 导航菜单管理 - 作为独立顶级菜单
     if (hasPermission('basic-settings', 'view')) {
-      menuItems.push({
+      topLevelMenus.push({
         id: 'navigation-management',
         label: '导航菜单管理',
         icon: 'Grid',
         isMenu: true
       })
+      topLevelMenus.push({
+        id: 'product-card-management',
+        label: '产品卡片管理',
+        icon: 'Postcard',
+        isMenu: true
+      })
     }
+
     // 角色管理权限
     if (hasPermission('admin-roles', 'view')) {
-      menuItems.push({
+      adminMenuItems.push({
         id: 'role-management',
         label: '角色管理',
         icon: 'Setting',
@@ -288,25 +297,29 @@ const menuTreeData = computed(() => {
     }
     // 管理员用户权限
     if (hasPermission('admin-users', 'view')) {
-      menuItems.push({
+      adminMenuItems.push({
         id: 'admin-user-management',
         label: '管理员用户',
         icon: 'User',
         isMenu: true
       })
     }
-    // 如果没有任何子菜单，返回空数组
-    if (menuItems.length === 0) return []
 
-    return [
-      {
+    // 如果有管理员子菜单，添加管理员管理节点
+    if (adminMenuItems.length > 0) {
+      topLevelMenus.push({
         id: 'admin-permission',
         label: '管理员管理',
         icon: 'UserFilled',
         isMenu: true,
-        children: menuItems
-      }
-    ]
+        children: adminMenuItems
+      })
+    }
+
+    // 如果没有任何菜单，返回空数组
+    if (topLevelMenus.length === 0) return []
+
+    return topLevelMenus
   }
 
   const subjectsValue = subjects.value || []

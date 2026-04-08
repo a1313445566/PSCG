@@ -50,31 +50,37 @@
       &:nth-child(1).is-active {
         background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(79, 70, 229, 0.02) 100%);
         .card-arrow { opacity: 1; transform: translateX(2px); }
+        .card-icon-wrap { color: #3730a3; }
       }
 
       &:nth-child(2).is-active {
         background: linear-gradient(135deg, rgba(147, 51, 234, 0.08) 0%, rgba(147, 51, 234, 0.02) 100%);
         .card-arrow { opacity: 1; transform: translateX(2px); }
+        .card-icon-wrap { color: #6d28d9; }
       }
 
       &:nth-child(3).is-active {
         background: linear-gradient(135deg, rgba(219, 39, 119, 0.08) 0%, rgba(219, 39, 119, 0.02) 100%);
         .card-arrow { opacity: 1; transform: translateX(2px); }
+        .card-icon-wrap { color: #be185d; }
       }
 
       &:nth-child(4).is-active {
         background: linear-gradient(135deg, rgba(5, 150, 105, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%);
         .card-arrow { opacity: 1; transform: translateX(2px); }
+        .card-icon-wrap { color: #047857; }
       }
 
       &:nth-child(5).is-active {
         background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(217, 119, 6, 0.02) 100%);
         .card-arrow { opacity: 1; transform: translateX(2px); }
+        .card-icon-wrap { color: #b45309; }
       }
 
       &:nth-child(6).is-active {
         background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
         .card-arrow { opacity: 1; transform: translateX(2px); }
+        .card-icon-wrap { color: #4338ca; }
       }
 
       // 卡片主体：左内容 + 右箭头
@@ -99,42 +105,22 @@
         text-align: left;
       }
 
-      // 图标容器
+      // 图标容器（纯色 + 光晕层次感）
       .card-icon-wrap {
-        width: 40px;
-        height: 40px;
-        border-radius: $border-radius-lg;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
-        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
         color: #4f46e5;
+        transition: all 0.25s ease;
+        filter: drop-shadow(0 2px 6px rgba(79, 70, 229, 0.3));
 
-        &--purple {
-          background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
-          color: #9333ea;
-        }
-
-        &--pink {
-          background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
-          color: #db2777;
-        }
-
-        &--green {
-          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
-          color: #059669;
-        }
-
-        &--orange {
-          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-          color: #d97706;
-        }
-
-        &--indigo {
-          background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
-          color: #4f46e5;
-        }
+        &--purple { color: #7c3aed; filter: drop-shadow(0 2px 6px rgba(124, 58, 237, 0.3)); }
+        &--pink { color: #db2777; filter: drop-shadow(0 2px 6px rgba(219, 39, 119, 0.3)); }
+        &--green { color: #059669; filter: drop-shadow(0 2px 6px rgba(5, 150, 105, 0.3)); }
+        &--orange { color: #d97706; filter: drop-shadow(0 2px 6px rgba(217, 119, 6, 0.3)); }
+        &--indigo { color: #6366f1; filter: drop-shadow(0 2px 6px rgba(99, 102, 241, 0.3)); }
+        &--blue { color: #2563eb; filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.3)); }
 
         .card-icon {
           color: inherit;
@@ -264,11 +250,8 @@
         }
 
         .card-icon-wrap {
-          width: 36px;
-          height: 36px;
-
           .card-icon {
-            font-size: 18px !important;
+            font-size: 30px !important;
           }
         }
 
@@ -308,12 +291,8 @@
         }
 
         .card-icon-wrap {
-          width: 32px;
-          height: 32px;
-          border-radius: $border-radius-sm;
-
           .card-icon {
-            font-size: 16px !important;
+            font-size: 28px !important;
           }
         }
 

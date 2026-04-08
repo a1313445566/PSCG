@@ -8,14 +8,11 @@ const menuSchema = z.object({
   path: z.string().min(1).max(500),
   icon: z.string().max(50).optional().nullable(),
   sort_order: z.number().int().default(0),
-  is_visible: z.preprocess(
-    val => {
-      if (typeof val === 'boolean') return val
-      if (typeof val === 'number') return val === 1
-      return true
-    },
-    z.boolean().default(true)
-  )
+  is_visible: z.preprocess(val => {
+    if (typeof val === 'boolean') return val
+    if (typeof val === 'number') return val === 1
+    return true
+  }, z.boolean().default(true))
 })
 
 const updateMenuSchema = z.object({
@@ -24,14 +21,11 @@ const updateMenuSchema = z.object({
   path: z.string().min(1).max(500).optional(),
   icon: z.string().max(50).nullable().optional(),
   sort_order: z.number().int().optional(),
-  is_visible: z.preprocess(
-    val => {
-      if (typeof val === 'boolean') return val
-      if (typeof val === 'number') return val === 1
-      return true
-    },
-    z.boolean().optional()
-  )
+  is_visible: z.preprocess(val => {
+    if (typeof val === 'boolean') return val
+    if (typeof val === 'number') return val === 1
+    return true
+  }, z.boolean().optional())
 })
 
 const navigationService = {

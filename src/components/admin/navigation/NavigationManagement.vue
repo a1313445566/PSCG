@@ -182,18 +182,14 @@
             show-word-limit
           />
 
-          <div class="form-tip" v-if="formData.type === 'route'">
+          <div v-if="formData.type === 'route'" class="form-tip">
             💡 选择预设页面会自动填充菜单名称和图标，也可手动输入自定义路径
           </div>
         </el-form-item>
 
         <!-- 图标（可选） -->
         <el-form-item label="图标" prop="icon">
-          <el-popover
-            placement="bottom-start"
-            :width="680"
-            trigger="click"
-          >
+          <el-popover placement="bottom-start" :width="680" trigger="click">
             <template #reference>
               <div class="icon-selector-trigger">
                 <el-icon v-if="formData.icon" class="selected-icon">
@@ -209,8 +205,8 @@
               <!-- 清除选项 -->
               <div
                 class="icon-item clear-option"
-                @click="selectIcon('')"
                 :class="{ active: !formData.icon }"
+                @click="selectIcon('')"
               >
                 <span>无</span>
               </div>
@@ -220,8 +216,8 @@
                 v-for="icon in availableIcons"
                 :key="icon.name"
                 class="icon-item"
-                @click="selectIcon(icon.name)"
                 :class="{ active: formData.icon === icon.name }"
+                @click="selectIcon(icon.name)"
               >
                 <el-icon :size="20">
                   <component :is="icon.component" />
@@ -232,7 +228,8 @@
           </el-popover>
 
           <div class="form-tip">
-            点击选择图标，当前已选：<strong>{{ formData.icon || '无' }}</strong>
+            点击选择图标，当前已选：
+            <strong>{{ formData.icon || '无' }}</strong>
           </div>
         </el-form-item>
 
@@ -261,17 +258,13 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 import { Plus, Refresh, Rank, ArrowDown } from '@element-plus/icons-vue'
-import {
-  availableIcons,
-  iconCategories,
-  getIconComponent
-} from '@/config/elementIconsConfig'
+import { availableIcons, iconCategories, getIconComponent } from '@/config/elementIconsConfig'
 import { useNavigationMenus } from '../../../composables/useNavigationMenus'
 
 const { menus, loading, fetchMenus, createMenu, updateMenu, deleteMenu } = useNavigationMenus()
 
 // 选择图标的方法
-const selectIcon = (iconName) => {
+const selectIcon = iconName => {
   formData.icon = iconName
 }
 
@@ -641,8 +634,9 @@ const resetForm = () => {
         overflow: hidden;
         text-overflow: ellipsis;
         white-space: nowrap;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
-                 'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif; // 系统默认字体
+        font-family:
+          -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+          'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif; // 系统默认字体
       }
     }
   }
@@ -724,8 +718,9 @@ const resetForm = () => {
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
-               'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      font-family:
+        -apple-system, BlinkMacSystemFont, 'Segoe UI', 'PingFang SC', 'Hiragino Sans GB',
+        'Microsoft YaHei', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     }
   }
 }

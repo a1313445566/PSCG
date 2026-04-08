@@ -321,7 +321,31 @@ class Database {
           last_hit_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
           INDEX idx_query_hash (query_hash),
           INDEX idx_hit_count (hit_count)
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`,
+
+        // 创建产品卡片配置表
+        `CREATE TABLE IF NOT EXISTS product_cards (
+          id INT PRIMARY KEY AUTO_INCREMENT,
+          title VARCHAR(100) NOT NULL COMMENT '标题',
+          description VARCHAR(200) DEFAULT NULL COMMENT '副标题/描述',
+          icon_type ENUM('element-plus', 'custom') NOT NULL DEFAULT 'element-plus'
+            COMMENT '图标类型：element-plus=内置图标, custom=自定义文件',
+          icon_name VARCHAR(50) DEFAULT NULL COMMENT 'Element Plus 图标名称（如 Reading）',
+          icon_url VARCHAR(255) DEFAULT NULL COMMENT '自定义图标URL路径（如 /images/custom-icon.png）',
+          icon_class VARCHAR(50) DEFAULT NULL COMMENT '图标CSS类名（如 card-icon--purple）',
+          link_type ENUM('route', 'url') NOT NULL DEFAULT 'route'
+            COMMENT '链接类型：route=内部路由, url=外部URL',
+          link_value VARCHAR(255) NOT NULL DEFAULT '/' COMMENT '跳转值（路由路径或完整URL）',
+          tag VARCHAR(20) DEFAULT NULL COMMENT '标签（hot/new/recommended等）',
+          sort_order INT NOT NULL DEFAULT 0 COMMENT '排序序号（越小越靠前）',
+          is_visible TINYINT(1) NOT NULL DEFAULT 1 COMMENT '是否可见（1=可见, 0=隐藏）',
+          created_at DATETIME DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+          updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
+          INDEX idx_sort_order (sort_order),
+          INDEX idx_is_visible (is_visible),
+          INDEX idx_visible_sort (is_visible, sort_order)
+        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        COMMENT='产品卡片配置表'`
       ]
 
       for (const sql of tables) {
@@ -330,6 +354,14 @@ class Database {
 
       // 添加新的索引
       await this.addIndexes()
+
+      // 初始化默认产品卡片数据
+      try {
+        const productCardService = require('./productCardService')
+        await productCardService.initDefaultData()
+      } catch (error) {
+        console.warn('初始化默认产品卡片数据失败（可忽略如果表不存在）:', error.message)
+      }
 
       console.log('表结构创建成功')
     } catch (error) {

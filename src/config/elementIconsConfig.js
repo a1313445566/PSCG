@@ -653,7 +653,7 @@ export const iconCategories = {
  * @param {string} iconName - 图标名称
  * @returns {Component|null} - Vue 组件或 null
  */
-export const getIconComponent = (iconName) => {
+export const getIconComponent = iconName => {
   const icon = availableIcons.find(item => item.name === iconName)
   return icon ? icon.component : null
 }
@@ -663,7 +663,7 @@ export const getIconComponent = (iconName) => {
  * @param {string} category - 分类名称
  * @returns {Array} - 该分类下的所有图标
  */
-export const getIconsByCategory = (category) => {
+export const getIconsByCategory = category => {
   return availableIcons.filter(item => item.category === category)
 }
 
