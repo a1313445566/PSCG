@@ -20,8 +20,8 @@ export function useAdminLayout() {
     localStorage.setItem('admin_current_view', view)
 
     if (view === 'content-management') {
-      activeMenu.value = 'role-management'
-      localStorage.setItem('admin_active_menu', 'role-management')
+      activeMenu.value = 'navigation-management'
+      localStorage.setItem('admin_active_menu', 'navigation-management')
     } else {
       activeMenu.value = 'dashboard'
       localStorage.setItem('admin_active_menu', 'dashboard')

@@ -1,0 +1,266 @@
+/* ============================================
+   飞书风格顶部导航栏 - 精致版（Premium Design）
+   路径: src/styles/scss/components/new-home/FeishuHeader.scss
+   规范: v3.0 样式变量化强制要求
+   设计理念：简约、精致、专业
+   ============================================ */
+
+.feishu-header {
+  background: rgba(255, 255, 255, 0.95); // 微透明毛玻璃效果
+  backdrop-filter: blur(10px); // 毛玻璃模糊
+  color: $new-text-primary;
+  height: 60px;
+  position: sticky;
+  top: 0;
+  z-index: 1000;
+ // border-bottom: 1px solid rgba(226, 232, 240, 0.6); // 精致分隔线
+  transition: box-shadow 0.3s ease;
+
+  &.is-scrolled {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+  }
+
+  .header-container {
+      width: 100%;
+      height: 100%;
+      margin: 0 auto;
+    display: flex;
+    align-items: center;
+    padding: 0 $spacing-xl 0 0;
+
+    /* Logo（独立 - 最左侧，固定宽度） */
+    .logo {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      text-decoration: none;
+      transition: opacity 0.3s ease;
+      padding-left: 12px;
+
+      .logo-img {
+        height: 36px;
+        width: auto;
+        object-fit: contain;
+      }
+
+      &:hover {
+        opacity: 0.85;
+      }
+    }
+
+    /* 中间：导航菜单（占据剩余空间，内容居中） */
+    .header-center {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+
+      .nav-menu {
+        border-bottom: none !important;
+        background: transparent !important;
+
+        :deep(.el-menu-item) {
+          color: $text-slate-600;
+          font-size: 14px;
+          font-weight: 450;
+          padding: 4px 12px;
+          border-radius: $border-radius-sm;
+          transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1); // 平滑曲线
+          border-bottom: none !important;
+          position: relative;
+          height: auto; // 自适应高度
+          line-height: 1.5;
+          display: flex; // 使用 flex 布局
+          align-items: center; // 垂直居中
+          gap: 6px; // 图标与文字间距
+
+          /* 菜单图标样式 */
+          .menu-icon {
+            font-size: 16px;
+            vertical-align: middle;
+            transition: transform 0.25s ease;
+
+            /* 悬停时图标轻微放大 */
+            :hover > & {
+              transform: scale(1.1);
+            }
+          }
+
+          /* 悬停效果：微妙的高亮 */
+          &:hover {
+            color: $new-primary;
+            background-color: transparent;
+
+            /* 底部指示器动画 */
+            &::after {
+              width: 100%;
+            }
+          }
+
+          /* 底部装饰线（默认隐藏） */
+          &::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 2px;
+            background: linear-gradient(90deg, $new-primary, $new-primary-light);
+            border-radius: 1px;
+            transition: width 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+          }
+
+          /* 激活状态：优雅的高亮 */
+          &.is-active {
+            color: $new-primary;
+            background-color: transparent; // 移除背景框
+            font-weight: 500;
+
+            /* 显示底部指示器 */
+            &::after {
+              width: 70%;
+            }
+          }
+        }
+      }
+    }
+
+    /* 右侧：登录按钮（固定宽度，紧贴右侧） */
+    .header-right {
+      flex: 0 0 auto;
+      display: flex;
+      align-items: center;
+      gap: $spacing-md; // 缩小间距
+
+      /* 链接样式 - 简洁优雅 */
+      .header-link {
+        font-size: $font-size-sm;
+        font-weight: 450;
+        color: $text-slate-600;
+        transition: all 0.25s ease;
+        position: relative;
+
+        &:hover {
+          color: $new-primary;
+
+          /* 下划线动画 */
+          &::after {
+            width: 100%;
+          }
+        }
+
+        /* 链接下划线（默认隐藏） */
+        &::after {
+          content: '';
+          position: absolute;
+          bottom: -2px;
+          left: 0;
+          width: 0;
+          height: 1px;
+          background-color: $new-primary;
+          transition: width 0.25s ease;
+        }
+      }
+
+      /* 登录按钮 - 渐变 + 阴影 */
+      .login-button {
+        border-radius: $border-radius-sm;
+        padding: 4px 16px;
+        font-size: 13px;
+        font-weight: 500;
+        letter-spacing: 0.3px;
+        text-align: justify;
+        background: linear-gradient(135deg, #{$new-primary} 0%, #{$new-primary-dark} 100%); // 渐变背景
+        border: none; // 移除边框
+        box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25); // 柔和阴影
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+        &:hover {
+          transform: translateY(-1px); // 上浮效果
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35); // 加深阴影
+          background: linear-gradient(135deg, #{$new-primary-hover} 0%, #{$new-primary} 100%); // 渐变变化
+        }
+
+        &:active {
+          transform: translateY(0); // 点击下沉
+          box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2); // 减弱阴影
+        }
+      }
+    }
+  }
+}
+
+/* ============================================
+   响应式 - 平板端（精致适配）
+   ============================================ */
+@media (max-width: $breakpoint-md) {
+  .feishu-header {
+    padding: $spacing-xs 0;
+
+    .header-container {
+      padding: 0 $spacing-lg;
+
+      .logo {
+        .logo-img {
+          height: 32px;
+        }
+      }
+
+      .header-center {
+        .nav-menu {
+          :deep(.el-menu-item) {
+            padding: 6px 10px; // 更紧凑
+            font-size: $font-size-sm;
+
+            /* 平板端隐藏底部指示器 */
+            &::after {
+              display: none;
+            }
+          }
+        }
+      }
+
+      .header-right {
+        gap: $spacing-sm;
+
+        .header-link {
+          display: none; // 隐藏链接节省空间
+        }
+
+        .login-button {
+          padding: 5px 14px;
+          font-size: $font-size-xs;
+          box-shadow: 0 1px 4px rgba(59, 130, 246, 0.2); // 减弱阴影
+        }
+      }
+    }
+  }
+}
+
+/* ============================================
+   响应式 - 手机端（极简模式）
+   ============================================ */
+@media (max-width: $breakpoint-sm) {
+  .feishu-header {
+    .header-container {
+      .header-center {
+        .nav-menu {
+          display: none;
+        }
+      }
+
+      .logo {
+        .logo-img {
+          height: 28px;
+        }
+      }
+
+      .header-right {
+        .login-button {
+          padding: 5px 12px;
+          font-size: 11px;
+        }
+      }
+    }
+  }
+}

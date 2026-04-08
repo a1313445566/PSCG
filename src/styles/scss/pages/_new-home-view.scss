@@ -1,0 +1,345 @@
+/* ============================================
+   首页视图 - NewHomeView 样式（独立抽离）
+   路径: src/styles/scss/pages/_new-home-view.scss
+   设计语言: 飞书风格产品卡片
+   ============================================ */
+
+.new-home-view {
+  min-height: 100vh;
+  background: #ffffff;
+  font-family: 'PingFang SC', sans-serif;
+
+  // ==================== 产品卡片区域 ====================
+  .product-cards {
+    margin-bottom: $new-section-gap-lg;
+    padding: $spacing-lg 0;
+    width: 100%;
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(6, 1fr);
+      gap: 0;
+    }
+
+    .product-card {
+      position: relative;
+      background: #ffffff;
+      border-right: 1px solid $border-slate-200;
+      border-bottom: 1px solid $border-slate-200;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      padding: $spacing-lg $spacing-md;
+
+      &:first-child {
+        border-top: 1px solid $border-slate-200;
+        border-left: 1px solid $border-slate-200;
+      }
+
+      @for $i from 2 through 6 {
+        &:nth-child(#{$i}) {
+          border-top: 1px solid $border-slate-200;
+          @if $i % 6 != 1 {
+            border-left: none;
+          } @else {
+            border-left: 1px solid $border-slate-200;
+          }
+        }
+      }
+
+      // ==================== 6张卡片独立渐变（鼠标移入后保留）====================
+      &:nth-child(1).is-active {
+        background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(79, 70, 229, 0.02) 100%);
+        .card-arrow { opacity: 1; transform: translateX(2px); }
+      }
+
+      &:nth-child(2).is-active {
+        background: linear-gradient(135deg, rgba(147, 51, 234, 0.08) 0%, rgba(147, 51, 234, 0.02) 100%);
+        .card-arrow { opacity: 1; transform: translateX(2px); }
+      }
+
+      &:nth-child(3).is-active {
+        background: linear-gradient(135deg, rgba(219, 39, 119, 0.08) 0%, rgba(219, 39, 119, 0.02) 100%);
+        .card-arrow { opacity: 1; transform: translateX(2px); }
+      }
+
+      &:nth-child(4).is-active {
+        background: linear-gradient(135deg, rgba(5, 150, 105, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%);
+        .card-arrow { opacity: 1; transform: translateX(2px); }
+      }
+
+      &:nth-child(5).is-active {
+        background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(217, 119, 6, 0.02) 100%);
+        .card-arrow { opacity: 1; transform: translateX(2px); }
+      }
+
+      &:nth-child(6).is-active {
+        background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
+        .card-arrow { opacity: 1; transform: translateX(2px); }
+      }
+
+      // 卡片主体：左内容 + 右箭头
+      .card-body {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: $spacing-sm;
+      }
+
+      // 左侧：图标 + 文字
+      .card-main {
+        display: flex;
+        align-items: flex-start;
+        gap: $spacing-md;
+        min-width: 0;
+        flex: 1;
+        padding-left: $spacing-lg;
+        padding-right: $spacing-lg;
+        margin-top: 0;
+        margin-bottom: 0;
+        text-align: left;
+      }
+
+      // 图标容器
+      .card-icon-wrap {
+        width: 40px;
+        height: 40px;
+        border-radius: $border-radius-lg;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%);
+        color: #4f46e5;
+
+        &--purple {
+          background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%);
+          color: #9333ea;
+        }
+
+        &--pink {
+          background: linear-gradient(135deg, #fce7f3 0%, #fbcfe8 100%);
+          color: #db2777;
+        }
+
+        &--green {
+          background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%);
+          color: #059669;
+        }
+
+        &--orange {
+          background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+          color: #d97706;
+        }
+
+        &--indigo {
+          background: linear-gradient(135deg, #e0e7ff 0%, #c7d2fe 100%);
+          color: #4f46e5;
+        }
+
+        .card-icon {
+          color: inherit;
+        }
+      }
+
+      // 文字区域
+      .card-text {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        min-width: 0;
+        flex: 1;
+      }
+
+      // 标题（飞书规范）
+      .card-title {
+        font-family: 'PingFang SC', sans-serif;
+        font-style: normal;
+        font-weight: 600;
+        font-size: $font-size-lg;
+        line-height: 1.56;
+        color: var(--text-title);
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      // 描述（飞书规范）
+      .card-description {
+        font-family: 'PingFang SC', sans-serif;
+        font-style: normal;
+        font-weight: 400;
+        font-size: $font-size-base;
+        line-height: 1.57;
+        color: var(--icon-n1);
+        letter-spacing: 0.01em;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      // 右箭头
+      .card-arrow {
+        color: $text-secondary;
+        opacity: 0;
+        transition: all 0.25s ease;
+        flex-shrink: 0;
+        margin-top: 10px;
+      }
+
+      // 标签（HOT / 新）
+      .card-tag {
+        position: absolute;
+        top: 8px;
+        right: 8px;
+        font-size: 10px;
+        font-weight: 600;
+        padding: 1px 6px;
+        border-radius: 4px;
+        line-height: 1.6;
+        letter-spacing: 0.02em;
+
+        &--hot {
+          background: #fef2f2;
+          color: #dc2626;
+          border: 1px solid #fecaca;
+        }
+
+        &--new {
+          background: #eff6ff;
+          color: #2563eb;
+          border: 1px solid #bfdbfe;
+        }
+      }
+    }
+  }
+
+  // ==================== 容器布局 ====================
+  .home-container {
+    max-width: 100%;
+    margin: 0;
+    padding: 0;
+
+    .home-content {
+      margin-bottom: $spacing-2xl;
+    }
+  }
+}
+
+// ==================== 中屏端（< 1400px → 3列）====================
+@media (max-width: $breakpoint-xl) {
+  .new-home-view {
+    .product-cards {
+      .card-grid {
+        grid-template-columns: repeat(3, 1fr);
+      }
+
+      .product-card {
+        .card-main {
+          padding-left: $spacing-md;
+          padding-right: $spacing-md;
+        }
+      }
+    }
+  }
+}
+
+// ==================== 平板端（< 992px → 2列）====================
+@media (max-width: $breakpoint-lg) {
+  .new-home-view {
+    .product-cards {
+      padding: $spacing-md 0;
+
+      .card-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+
+      .product-card {
+        padding: $spacing-md;
+
+        .card-main {
+          gap: $spacing-sm;
+          padding-left: $spacing-sm;
+          padding-right: $spacing-sm;
+        }
+
+        .card-icon-wrap {
+          width: 36px;
+          height: 36px;
+
+          .card-icon {
+            font-size: 18px !important;
+          }
+        }
+
+        .card-title {
+          font-size: 13px;
+        }
+
+        .card-description {
+          font-size: 11px;
+        }
+      }
+    }
+
+    .home-container {
+      padding: $spacing-lg;
+    }
+  }
+}
+
+// ==================== 手机端（< 768px → 1列）====================
+@media (max-width: $breakpoint-md) {
+  .new-home-view {
+    .product-cards {
+      padding: $spacing-sm 0;
+
+      .card-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .product-card {
+        padding: $spacing-sm $spacing-xs;
+
+        .card-main {
+          gap: $spacing-sm;
+          padding-left: $spacing-xs;
+          padding-right: $spacing-xs;
+        }
+
+        .card-icon-wrap {
+          width: 32px;
+          height: 32px;
+          border-radius: $border-radius-sm;
+
+          .card-icon {
+            font-size: 16px !important;
+          }
+        }
+
+        .card-text {
+          gap: 2px;
+        }
+
+        .card-title {
+          font-size: 12px;
+        }
+
+        .card-description {
+          font-size: 11px;
+        }
+
+        .card-arrow {
+          display: none;
+        }
+
+        .card-tag {
+          top: 4px;
+          right: 4px;
+          font-size: 9px;
+          padding: 0 4px;
+        }
+      }
+    }
+  }
+}

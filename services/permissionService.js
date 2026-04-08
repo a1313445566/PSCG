@@ -201,7 +201,7 @@ const permissionService = {
     if (id === currentAdminId) {
       throw new Error('不能删除自己')
     }
-    
+
     // 保护默认超级管理员账号
     const [userRows] = await db.pool.execute(
       'SELECT username FROM admin_credentials WHERE id = ?',
@@ -211,7 +211,7 @@ const permissionService = {
     if (user && user.username === 'admin') {
       throw new Error('默认超级管理员不能删除')
     }
-    
+
     const [result] = await db.pool.execute('DELETE FROM admin_credentials WHERE id = ?', [id])
     return result.affectedRows > 0
   }

@@ -27,7 +27,7 @@ const emit = defineEmits(['update:visible', 'submit'])
 // 使用计算属性处理 v-model
 const visible = computed({
   get: () => props.visible,
-  set: (value) => emit('update:visible', value)
+  set: value => emit('update:visible', value)
 })
 
 const formRef = ref(null)
@@ -109,17 +109,20 @@ const handleSubmit = async () => {
   }
 }
 
-watch(() => props.visible, (val) => {
-  if (val) {
-    resetForm()
+watch(
+  () => props.visible,
+  val => {
+    if (val) {
+      resetForm()
+    }
   }
-})
+)
 </script>
 
 <template>
   <el-dialog
-    :title="isEdit ? '编辑管理员' : '新建管理员'"
     v-model="visible"
+    :title="isEdit ? '编辑管理员' : '新建管理员'"
     width="500px"
     @close="handleClose"
   >
@@ -127,20 +130,15 @@ watch(() => props.visible, (val) => {
       <el-form-item label="用户名">
         <el-input v-model="form.username" placeholder="请输入用户名" :disabled="isEdit" />
       </el-form-item>
-      <el-form-item label="密码" v-if="!isEdit">
+      <el-form-item v-if="!isEdit" label="密码">
         <el-input v-model="form.password" type="password" placeholder="请输入密码（至少6位）" />
       </el-form-item>
       <el-form-item label="角色">
         <el-select v-model="form.role_id" placeholder="请选择角色" style="width: 100%">
-          <el-option
-            v-for="role in roles"
-            :key="role.id"
-            :label="role.name"
-            :value="role.id"
-          />
+          <el-option v-for="role in roles" :key="role.id" :label="role.name" :value="role.id" />
         </el-select>
       </el-form-item>
-      <el-form-item label="状态" v-if="isEdit">
+      <el-form-item v-if="isEdit" label="状态">
         <el-radio-group v-model="form.status">
           <el-radio value="active">启用</el-radio>
           <el-radio value="disabled">禁用</el-radio>
@@ -149,9 +147,7 @@ watch(() => props.visible, (val) => {
     </el-form>
     <template #footer>
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
-        确定
-      </el-button>
+      <el-button type="primary" :loading="loading" @click="handleSubmit">确定</el-button>
     </template>
   </el-dialog>
 </template>

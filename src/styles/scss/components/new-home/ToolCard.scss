@@ -1,0 +1,220 @@
+/* ============================================
+   工具卡片 - ToolCard 样式（独立抽离）
+   路径: src/styles/scss/components/new-home/ToolCard.scss
+   规范: v3.0 样式变量化强制要求
+   ============================================ */
+
+.tc {
+  position: relative;
+  border-radius: $new-card-radius-lg;
+  overflow: hidden;
+  cursor: pointer;
+  aspect-ratio: 1 / 1;
+
+  /* 默认边框和阴影 */
+  border: $border-width solid $border-slate-200;
+  box-shadow: $shadow-sm;
+  background: $card-background;
+  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+
+  &:hover {
+    border-color: $border-slate-300;
+    box-shadow:
+      0 4px 8px -4px rgba(31, 35, 41, 0.08),
+      0 8px 20px -4px rgba(31, 35, 41, 0.06);
+  }
+
+  /* ---- 悬停发光层（无旋转，仅静态渐变）---- */
+  &__glow {
+    display: none; // 已禁用
+  }
+
+  /* ---- 主体（flex 列布局）---- */
+  &__body {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    height: 100%;
+
+    // 微妙背景纹理
+    &::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      opacity: 0.03;
+      background:
+        radial-gradient(circle at 20% 80%, var(--c-a, #dbeafe) 0%, transparent 50%),
+        radial-gradient(circle at 80% 15%, var(--c-b, #93c5fd) 0%, transparent 40%);
+      pointer-events: none;
+    }
+  }
+
+  /* ---- 上半：信息区（与源码一致）---- */
+  &__upper {
+    padding: $spacing-md;
+    padding-bottom: $spacing-sm;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: $spacing-sm;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* meta 行 */
+  &__meta {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  &__dot {
+    width: 18px;
+    height: 18px;
+    border-radius: $border-radius-full;
+    flex-shrink: 0;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15); // SVG 阴影例外
+  }
+
+  &__author {
+    font-size: $font-size-sm;
+    color: $text-tertiary;
+    line-height: 22px;
+  }
+
+  &__views {
+    margin-left: auto;
+    font-size: $font-size-xs;
+    color: $border-slate-300;
+    flex-shrink: 0;
+  }
+
+  /* 标题 */
+  &__name {
+    font-size: $font-size-md;
+    font-weight: 600;
+    color: $text-primary;
+    line-height: 1.4;
+    margin: 0;
+  }
+
+  /* ---- 下半：封面视觉区（flex:1 占满剩余空间）---- */
+  &__lower {
+    flex: 1;
+    position: relative;
+    margin-top: -$spacing-md; // 与 header 区域重叠，和源码一致
+    padding-top: $spacing-xl;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 0;
+  }
+
+  // 装饰块 — 更大更淡，与目标效果一致
+  &__deco {
+    position: absolute;
+    top: $spacing-3xl;
+    left: 50%;
+    transform: translateX(-50%) rotate(-18deg);
+    width: 68%;
+    height: auto;
+    aspect-ratio: 182/198;
+    border-radius: $border-radius-sm;
+    opacity: 0.08;
+    transition: transform 0.35s ease;
+    box-shadow: 0 0 20px rgba(0, 72, 94, 0.08); // 特殊阴影保留
+  }
+
+  &:hover &__deco {
+    transform: translateX(-50%) rotate(-10deg);
+  }
+
+  // 封面主色块 — 上圆角，与目标效果一致
+  &__cover {
+    position: relative;
+    z-index: 5;
+    margin-top: auto;
+    transform: translateY(4px);
+    width: 68%;
+    height: auto;
+    aspect-ratio: 182/177;
+    border-radius: $border-radius-sm $border-radius-sm 0 0;
+    box-shadow: 0 0 12px rgba(0, 14, 71, 0.18); // 特殊阴影保留
+    transition: transform 0.3s ease-out;
+  }
+
+  &:hover &__cover {
+    transform: translateY(-1px);
+  }
+
+  // 悬停按钮栏
+  &__bar {
+    position: absolute;
+    bottom: 14px; // 特殊间距保留
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    gap: $spacing-2xs + $spacing-xs; // 8px
+    opacity: 0;
+    transition: all 0.3s ease;
+    translate: 0 12px;
+  }
+
+  &:hover &__bar {
+    opacity: 1;
+    translate: 0 0;
+  }
+
+  // 按钮
+  &__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: $spacing-2xs;
+    height: auto;
+    padding: $spacing-sm $spacing-compact; // 7px 13px
+    border-radius: $border-radius-full;
+    background: rgba($text-slate-800, 0.7); // 使用变量颜色
+    backdrop-filter: blur(6px);
+    border: $border-width solid rgba($text-white, 0.25);
+    color: $text-white;
+    font-size: $font-size-xs;
+    cursor: pointer;
+    transition: background 0.15s;
+    white-space: nowrap;
+
+    &:hover { background: rgba($text-slate-800, 0.85); }
+    &:active { background: rgba($text-slate-800, 0.95); }
+
+    svg {
+      width: $font-size-xs; // 14px
+      height: $font-size-xs;
+      flex-shrink: 0;
+    }
+
+    &--sm {
+      padding: $spacing-sm; // 7px
+    }
+  }
+}
+
+/* CSS 变量 */
+.tc { --c-a: #dbeafe; --c-b: #93c5fd; } // SVG 渐变色例外
+
+/* 响应式 */
+@media (max-width: $breakpoint-md) {
+  .tc {
+    &__upper { padding: 12px 12px 6px; gap: 8px; } // 响应式特殊值保留
+    &__dot { width: 15px; height: 15px; } // 响应式特殊值保留
+    &__author { font-size: $font-size-xs; }
+    &__views { font-size: 11px; } // 响应式特殊值保留
+    &__name { font-size: $font-size-base; }
+    &__cover { width: 60%; border-radius: $border-radius-sm $border-radius-sm 0 0; }
+    &__bar { bottom: 10px; gap: 6px; } // 响应式特殊值保留
+    &__btn { padding: 6px 10px; font-size: 11px; &--sm { padding: 6px; } } // 响应式特殊值保留
+  }
+}

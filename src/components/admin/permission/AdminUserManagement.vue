@@ -22,7 +22,7 @@ const fetchAdminUsers = async () => {
     console.log('[AdminUserManagement] 没有管理员查看权限，跳过加载')
     return
   }
-  
+
   loading.value = true
   try {
     const res = await api.get('/admin/permissions/users')
@@ -40,7 +40,7 @@ const fetchRoles = async () => {
   if (!hasPermission || !hasPermission('admin-roles', 'view')) {
     return
   }
-  
+
   try {
     const res = await api.get('/admin/permissions/roles')
     roles.value = res.data.data || []
@@ -66,7 +66,7 @@ const handleEdit = user => {
     showMessage('默认超级管理员不能编辑', 'warning')
     return
   }
-  
+
   currentUser.value = { ...user }
   isEdit.value = true
   dialogVisible.value = true
@@ -78,7 +78,7 @@ const handleDelete = async (id, username) => {
     showMessage('默认超级管理员不能删除', 'warning')
     return
   }
-  
+
   try {
     await ElMessageBox.confirm('确定要删除该管理员吗？', '确认删除', {
       confirmButtonText: '确定',
@@ -164,11 +164,7 @@ onMounted(() => {
       <el-table-column label="操作" width="220" fixed="right">
         <template #default="{ row }">
           <!-- 默认超级管理员不能编辑和删除 -->
-          <el-button 
-            link 
-            :disabled="row.username === 'admin'"
-            @click="handleEdit(row)"
-          >
+          <el-button link :disabled="row.username === 'admin'" @click="handleEdit(row)">
             <el-icon><Edit /></el-icon>
             编辑
           </el-button>
@@ -177,9 +173,9 @@ onMounted(() => {
             重置密码
           </el-button>
           <!-- 默认超级管理员不能删除 -->
-          <el-button 
-            link 
-            type="danger" 
+          <el-button
+            link
+            type="danger"
             :disabled="row.username === 'admin'"
             @click="handleDelete(row.id, row.username)"
           >

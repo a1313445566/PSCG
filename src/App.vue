@@ -64,6 +64,7 @@ onUnmounted(() => {
 .app {
   min-height: 100vh;
   position: relative;
+  background-color: rgb(255, 255, 255);
 }
 
 .fade-enter-active,

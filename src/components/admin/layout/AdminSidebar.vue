@@ -209,9 +209,7 @@ const getIconComponent = iconName => {
 // 顶级菜单节点（用于折叠状态）- 根据权限过滤
 const topLevelNodes = computed(() => {
   if (isContentManagement.value) {
-    return [
-      { key: 'admin-permission', label: '管理员管理', icon: 'UserFilled' }
-    ]
+    return [{ key: 'admin-permission', label: '管理员管理', icon: 'UserFilled' }]
   }
   const allNodes = [
     { key: 'dashboard', label: '数据概览', icon: 'DataLine', permissionKey: 'dashboard' },
@@ -220,7 +218,12 @@ const topLevelNodes = computed(() => {
     { key: 'grades-classes', label: '年级班级', icon: 'School', permissionKey: 'grades-classes' },
     { key: 'user-data', label: '答题数据', icon: 'UserFilled', permissionKey: 'user-stats' },
     { key: 'user-management', label: '用户管理', icon: 'User', permissionKey: 'user-management' },
-    { key: 'data-analysis', label: '数据分析', icon: 'TrendCharts', permissionKey: 'data-analysis' },
+    {
+      key: 'data-analysis',
+      label: '数据分析',
+      icon: 'TrendCharts',
+      permissionKey: 'data-analysis'
+    },
     { key: 'ai-chat', label: 'AI 助手', icon: 'ChatDotRound', permissionKey: 'ai-chat' },
     { key: 'ai-models', label: '模型管理', icon: 'Cpu', permissionKey: 'ai-models' },
     { key: 'basic-settings', label: '基础设置', icon: 'Tools', permissionKey: 'basic-settings' },
@@ -265,6 +268,15 @@ const isQuestionsActive = computed(() => {
 const menuTreeData = computed(() => {
   if (isContentManagement.value) {
     const menuItems = []
+    // 导航菜单管理权限
+    if (hasPermission('basic-settings', 'view')) {
+      menuItems.push({
+        id: 'navigation-management',
+        label: '导航菜单管理',
+        icon: 'Grid',
+        isMenu: true
+      })
+    }
     // 角色管理权限
     if (hasPermission('admin-roles', 'view')) {
       menuItems.push({
@@ -285,7 +297,7 @@ const menuTreeData = computed(() => {
     }
     // 如果没有任何子菜单，返回空数组
     if (menuItems.length === 0) return []
-    
+
     return [
       {
         id: 'admin-permission',
@@ -594,7 +606,7 @@ onUnmounted(() => {
 onMounted(() => {
   // 初始化状态（从 localStorage 恢复）
   initializeState()
-  
+
   checkMobile()
   window.addEventListener('resize', checkMobile)
 })

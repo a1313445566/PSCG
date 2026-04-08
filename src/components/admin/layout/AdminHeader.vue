@@ -437,11 +437,7 @@ onUnmounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.15) 0%,
-    transparent 40%
-  );
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.15) 0%, transparent 40%);
   pointer-events: none;
 }
 

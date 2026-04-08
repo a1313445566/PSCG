@@ -1,0 +1,13 @@
+# 新首页组件目录
+
+此目录用于存放新首页（独立门户页面）的专用组件。
+
+## 组件清单
+
+- AdminLoginButton.vue - 右上角管理员登录按钮
+- CmsContentSection.vue - CMS 内容区域
+- NavigationCards.vue - 大卡片式导航（管理工具）
+- TeachingTools.vue - 教学工具卡片
+- CmsArticleCard.vue - 单个文章卡片
+- NavCard.vue - 单个导航卡片
+- ToolCard.vue - 单个工具卡片

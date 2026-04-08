@@ -56,7 +56,7 @@ async function adminAuth(req, res, next) {
     // 从数据库获取管理员权限信息
     let adminRows
     try {
-      [adminRows] = await db.pool.execute(
+      ;[adminRows] = await db.pool.execute(
         `SELECT a.id, a.username, a.role_id, r.name as role_name, r.is_preset, r.permissions
          FROM admin_credentials a
          LEFT JOIN admin_roles r ON a.role_id = r.id
@@ -73,17 +73,16 @@ async function adminAuth(req, res, next) {
     }
 
     const admin = adminRows[0]
-    
+
     // 基于角色名称和预设标记判断是否为超级管理员（而非硬编码ID）
     // 超级管理员特征：预设角色 + 角色名称为"超级管理员"
     const isSuper = admin.is_preset === 1 && admin.role_name === '超级管理员'
-    
+
     let permissions = {}
     if (admin.permissions) {
       try {
-        permissions = typeof admin.permissions === 'string' 
-          ? JSON.parse(admin.permissions) 
-          : admin.permissions
+        permissions =
+          typeof admin.permissions === 'string' ? JSON.parse(admin.permissions) : admin.permissions
       } catch (parseError) {
         console.error('[adminAuth] 解析权限数据失败:', parseError)
         permissions = {} // 解析失败时使用空权限
@@ -93,10 +92,21 @@ async function adminAuth(req, res, next) {
     // 超级管理员权限硬编码
     if (isSuper) {
       const allModules = [
-        'dashboard', 'questions', 'subjects', 'grades-classes', 'user-stats', 
-        'recent-records', 'user-management', 'data-analysis', 'ai-chat', 
-        'ai-models', 'basic-settings', 'database', 'security', 
-        'admin-users', 'admin-roles'
+        'dashboard',
+        'questions',
+        'subjects',
+        'grades-classes',
+        'user-stats',
+        'recent-records',
+        'user-management',
+        'data-analysis',
+        'ai-chat',
+        'ai-models',
+        'basic-settings',
+        'database',
+        'security',
+        'admin-users',
+        'admin-roles'
       ]
       permissions = {}
       allModules.forEach(module => {
@@ -125,24 +135,23 @@ async function adminAuth(req, res, next) {
     }
 
     next()
-
   } catch (err) {
     console.error('[adminAuth] 权限验证失败:', err)
-    
+
     // 区分不同类型的错误
     if (err.name === 'TokenExpiredError') {
       return res.status(401).json({ error: '登录已过期，请重新登录' })
     }
-    
+
     if (err.name === 'JsonWebTokenError') {
       return res.status(401).json({ error: '无效的登录凭证' })
     }
-    
+
     if (err.code === 'ECONNREFUSED' || err.code === 'ETIMEDOUT') {
       console.error('[adminAuth] 数据库连接失败:', err.code)
       return res.status(503).json({ error: '服务暂时不可用，请稍后重试' })
     }
-    
+
     // 其他未知错误
     return res.status(500).json({ error: '权限验证失败，请稍后重试' })
   }

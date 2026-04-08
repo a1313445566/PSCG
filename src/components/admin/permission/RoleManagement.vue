@@ -21,7 +21,7 @@ const fetchRoles = async () => {
     console.log('[RoleManagement] 没有角色查看权限，跳过加载')
     return
   }
-  
+
   loading.value = true
   try {
     const res = await api.get('/admin/permissions/roles')
@@ -40,20 +40,20 @@ const handleCreate = () => {
   dialogVisible.value = true
 }
 
-const handleEdit = (role) => {
+const handleEdit = role => {
   currentRole.value = { ...role }
   isEdit.value = true
   dialogVisible.value = true
 }
 
-const handleDelete = async (id) => {
+const handleDelete = async id => {
   try {
     await ElMessageBox.confirm('确定要删除该角色吗？', '确认删除', {
       confirmButtonText: '确定',
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
+
     await api.delete(`/admin/permissions/roles/${id}`)
     showMessage('角色删除成功', 'success')
     await fetchRoles()
@@ -83,7 +83,7 @@ onMounted(() => {
       </el-button>
     </div>
 
-    <el-table :data="roles" v-loading="loading" stripe style="width: 100%">
+    <el-table v-loading="loading" :data="roles" stripe style="width: 100%">
       <el-table-column prop="name" label="角色名称" min-width="150" />
       <el-table-column prop="description" label="描述" min-width="200" />
       <el-table-column prop="is_preset" label="类型" width="120">
@@ -100,11 +100,11 @@ onMounted(() => {
       </el-table-column>
       <el-table-column label="操作" width="180" fixed="right">
         <template #default="{ row }">
-          <el-button link @click="handleEdit(row)" :disabled="!!row.is_preset">
+          <el-button link :disabled="!!row.is_preset" @click="handleEdit(row)">
             <el-icon><Edit /></el-icon>
             编辑
           </el-button>
-          <el-button link @click="handleDelete(row.id)" :disabled="!!row.is_preset" type="danger">
+          <el-button link :disabled="!!row.is_preset" type="danger" @click="handleDelete(row.id)">
             <el-icon><Delete /></el-icon>
             删除
           </el-button>
@@ -124,7 +124,7 @@ onMounted(() => {
 <style scoped lang="scss">
 .role-management {
   padding: $spacing-lg;
-  
+
   .toolbar {
     margin-bottom: $spacing-md;
   }

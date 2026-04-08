@@ -36,9 +36,10 @@ const resetForm = () => {
     form.value = {
       name: props.role.name,
       description: props.role.description || '',
-      permissions: typeof props.role.permissions === 'string' 
-        ? JSON.parse(props.role.permissions) 
-        : props.role.permissions || {}
+      permissions:
+        typeof props.role.permissions === 'string'
+          ? JSON.parse(props.role.permissions)
+          : props.role.permissions || {}
     }
   } else {
     form.value = {
@@ -79,19 +80,22 @@ const handleSubmit = async () => {
   }
 }
 
-watch(() => props.visible, (val) => {
-  if (val) {
-    resetForm()
+watch(
+  () => props.visible,
+  val => {
+    if (val) {
+      resetForm()
+    }
   }
-})
+)
 </script>
 
 <template>
   <el-dialog
     :title="isEdit ? '编辑角色' : '新建角色'"
     :model-value="visible"
-    @update:model-value="(val) => emit('update:visible', val)"
     width="600px"
+    @update:model-value="val => emit('update:visible', val)"
     @close="handleClose"
   >
     <el-form ref="formRef" :model="form" label-width="80px">
@@ -112,9 +116,7 @@ watch(() => props.visible, (val) => {
     </el-form>
     <template #footer>
       <el-button @click="handleClose">取消</el-button>
-      <el-button type="primary" :loading="loading" @click="handleSubmit">
-        确定
-      </el-button>
+      <el-button type="primary" :loading="loading" @click="handleSubmit">确定</el-button>
     </template>
   </el-dialog>
 </template>

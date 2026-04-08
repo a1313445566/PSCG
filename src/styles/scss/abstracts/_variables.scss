@@ -22,7 +22,9 @@ $sidebar-background: #292f36;
 // ============================================
 $text-primary: #1e293b;
 $text-secondary: #64748b;
+$text-title: #1f2329;
 $text-tertiary: #94a3b8;
+$icon-n1: #2b2f36;
 $text-light: #848484;
 $text-white: #ffffff;
 
@@ -352,6 +354,8 @@ $avatar-planet: #a6e191;
   --card-background: #{$card-background};
   --text-primary: #{$text-primary};
   --text-secondary: #{$text-secondary};
+  --text-title: #{$text-title};
+  --icon-n1: #{$icon-n1};
   --text-light: #{$text-light};
   --border-color: #{$border-color};
   --border-radius: #{$border-radius};
@@ -449,3 +453,67 @@ $avatar-planet: #a6e191;
   --avatar-burger: #{$avatar-burger};
   --avatar-planet: #{$avatar-planet};
 }
+
+// ============================================
+// 新首页 - 蓝色系设计 Token（独立门户页面）
+// ============================================
+
+// 主色调系列
+$new-primary: #3b82f6;
+$new-primary-light: #60a5fa;
+$new-primary-dark: #2563eb;
+$new-primary-hover: #1d4ed8;
+
+// 背景色
+$new-bg-primary: #f8fafc;
+$new-bg-secondary: #f1f5f9;
+$new-bg-card: #ffffff;
+$new-bg-hover: #eff6ff;
+
+// 文字颜色
+$new-text-primary: #1e293b;
+$new-text-secondary: #64748b;
+$new-text-tertiary: #94a3b8;
+$new-text-white: #ffffff;
+
+// 边框
+$new-border-color: #e2e8f0;
+$new-border-hover: #cbd5e1;
+
+// 阴影
+$new-shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.1);
+$new-shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
+$new-shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
+$new-shadow-card: 0 2px 8px rgba(0, 0, 0, 0.06);
+$new-shadow-card-hover: 0 8px 24px rgba(59, 130, 246, 0.15);
+
+// 渐变
+$new-gradient-primary: linear-gradient(135deg, #{$new-primary} 0%, #{$new-primary-dark} 100%);
+$new-gradient-bg: linear-gradient(180deg, #{$new-bg-primary} 0%, #{$new-bg-secondary} 100%);
+$new-gradient-card: linear-gradient(135deg, #{$new-bg-card} 0%, #{$new-bg-hover} 100%);
+
+// 状态颜色
+$new-status-dev: #f59e0b;
+$new-status-dev-bg: #fef3c7;
+$new-status-active: #10b981;
+$new-status-active-bg: #d1fae5;
+
+// 卡片圆角
+$new-card-radius: 16px;
+$new-card-radius-sm: 12px;
+$new-card-radius-lg: 20px;
+
+// 卡片间距
+$new-card-padding: 24px;
+$new-card-padding-sm: 16px;
+$new-card-padding-lg: 32px;
+
+// 卡片网格间距
+$new-card-gap: 20px;
+$new-card-gap-sm: 16px;
+$new-card-gap-lg: 24px;
+
+// 区域间距
+$new-section-gap: 40px;
+$new-section-gap-sm: 32px;
+$new-section-gap-lg: 48px;

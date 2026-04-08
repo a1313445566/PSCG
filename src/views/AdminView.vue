@@ -7,12 +7,14 @@
   >
     <!-- 内容管理系统视图 -->
     <template v-if="isContentManagement">
+      <!-- 导航菜单管理 -->
+      <NavigationManagement v-if="activeMenu === 'navigation-management'" />
       <!-- 角色管理 -->
-      <RoleManagement v-if="activeMenu === 'role-management'" />
+      <RoleManagement v-else-if="activeMenu === 'role-management'" />
       <!-- 管理员用户 -->
       <AdminUserManagement v-else-if="activeMenu === 'admin-user-management'" />
-      <!-- 默认显示角色管理 -->
-      <RoleManagement v-else />
+      <!-- 默认显示导航菜单管理 -->
+      <NavigationManagement v-else />
     </template>
 
     <!-- 管理后台视图 -->
@@ -147,6 +149,7 @@ import InterfaceNameSetting from '../components/admin/basic-settings/InterfaceNa
 import AnswerSetting from '../components/admin/basic-settings/AnswerSetting.vue'
 import SubjectManagement from '../components/admin/basic-settings/SubjectManagement.vue'
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
+import NavigationManagement from '../components/admin/navigation/NavigationManagement.vue'
 
 // 异步组件
 const QuestionList = defineAsyncComponent(

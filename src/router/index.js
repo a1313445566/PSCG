@@ -41,7 +41,7 @@ const lazyLoad = viewName => {
 const routes = [
   {
     path: '/',
-    redirect: '/login'
+    redirect: '/new'
   },
   {
     path: '/login',
@@ -109,7 +109,12 @@ const routes = [
     name: 'Docs',
     component: lazyLoad('DocsView')
   },
-  // 全局 404 页面
+  {
+    path: '/new',
+    name: 'NewHome',
+    component: lazyLoad('NewHomeView'),
+    meta: { title: 'PSCG 智能学习' }
+  },
   {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
@@ -138,8 +143,8 @@ router.beforeEach((to, from, next) => {
   // 检查用户是否已登录
   const isLoggedIn = !!localStorage.getItem('studentId')
 
-  // 允许访问后台管理页面和文档中心，不需要学生登录
-  if (to.path === '/admin' || to.path === '/docs') {
+  // 允许访问后台管理页面、文档中心和新首页，不需要学生登录
+  if (to.path === '/admin' || to.path === '/docs' || to.path === '/new') {
     next()
   }
   // 如果用户已登录

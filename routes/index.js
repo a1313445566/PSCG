@@ -29,6 +29,7 @@ const chatRoutes = require('./chat')
 const healthRoutes = require('./health')
 const toolsRoutes = require('./tools')
 const adminPermissionsRoutes = require('./admin-permissions')
+const adminNavigationRoutes = require('./admin-navigation')
 
 const routes = [
   { path: '/data', handler: dataRoutes },
@@ -46,6 +47,7 @@ const routes = [
   { path: '/error-collection', handler: errorCollectionRoutes },
   { path: '/admin', handler: adminRoutes },
   { path: '/admin/permissions', handler: adminPermissionsRoutes },
+  { path: '/admin', handler: adminNavigationRoutes },
   { path: '/upload', handler: uploadRoutes },
   { path: '/dashboard', handler: dashboardRoutes },
   { path: '/answer-behavior', handler: answerBehaviorRoutes },
