@@ -49,11 +49,7 @@
 
           <!-- 文章标签 -->
           <div v-if="article.tags && article.tags.length > 0" class="article-tags">
-            <span
-              v-for="tag in article.tags"
-              :key="tag.id"
-              class="tag-item"
-            >
+            <span v-for="tag in article.tags" :key="tag.id" class="tag-item">
               {{ tag.name }}
             </span>
           </div>
@@ -247,7 +243,7 @@ onMounted(() => {
   font-size: $font-size-xl;
   font-weight: 330;
   color: rgba(0, 0, 0, 0.65);
-  line-height: 1.40;
+  line-height: 1.4;
   letter-spacing: -0.14px;
   margin-bottom: $spacing-xl;
   padding: $spacing-lg;

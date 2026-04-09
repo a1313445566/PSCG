@@ -37,7 +37,7 @@ const getRandomPlaceholder = () => {
 }
 
 // 从HTML内容中提取第一张图片作为封面图
-const extractFirstImage = (content) => {
+const extractFirstImage = content => {
   if (!content) return null
 
   // 匹配img标签的src属性

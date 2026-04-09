@@ -14,7 +14,7 @@ import { User } from '@element-plus/icons-vue'
 const router = useRouter()
 
 const handleLogin = () => {
-  router.push('/admin')
+  router.push('/admin-login')
 }
 </script>
 

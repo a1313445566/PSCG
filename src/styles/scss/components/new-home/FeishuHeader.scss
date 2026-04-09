@@ -13,17 +13,19 @@
   position: sticky;
   top: 0;
   z-index: 1000;
- // border-bottom: 1px solid rgba(226, 232, 240, 0.6); // 精致分隔线
+  // border-bottom: 1px solid rgba(226, 232, 240, 0.6); // 精致分隔线
   transition: box-shadow 0.3s ease;
 
   &.is-scrolled {
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08), 0 1px 4px rgba(0, 0, 0, 0.04);
+    box-shadow:
+      0 2px 12px rgba(0, 0, 0, 0.08),
+      0 1px 4px rgba(0, 0, 0, 0.04);
   }
 
   .header-container {
-      width: 100%;
-      height: 100%;
-      margin: 0 auto;
+    width: 100%;
+    height: 100%;
+    margin: 0 auto;
     display: flex;
     align-items: center;
     padding: 0 $spacing-xl 0 0;
@@ -170,7 +172,11 @@
         font-weight: 500;
         letter-spacing: 0.3px;
         text-align: justify;
-        background: linear-gradient(135deg, #{$new-primary} 0%, #{$new-primary-dark} 100%); // 渐变背景
+        background: linear-gradient(
+          135deg,
+          #{$new-primary} 0%,
+          #{$new-primary-dark} 100%
+        ); // 渐变背景
         border: none; // 移除边框
         box-shadow: 0 2px 8px rgba(59, 130, 246, 0.25); // 柔和阴影
         transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -178,7 +184,11 @@
         &:hover {
           transform: translateY(-1px); // 上浮效果
           box-shadow: 0 4px 12px rgba(59, 130, 246, 0.35); // 加深阴影
-          background: linear-gradient(135deg, #{$new-primary-hover} 0%, #{$new-primary} 100%); // 渐变变化
+          background: linear-gradient(
+            135deg,
+            #{$new-primary-hover} 0%,
+            #{$new-primary} 100%
+          ); // 渐变变化
         }
 
         &:active {

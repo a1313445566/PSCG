@@ -15,7 +15,9 @@
   border: $border-width solid $border-slate-200;
   box-shadow: $shadow-sm;
   background: $card-background;
-  transition: box-shadow 0.25s ease, border-color 0.25s ease;
+  transition:
+    box-shadow 0.25s ease,
+    border-color 0.25s ease;
 
   &:hover {
     border-color: $border-slate-300;
@@ -187,8 +189,12 @@
     transition: background 0.15s;
     white-space: nowrap;
 
-    &:hover { background: rgba($text-slate-800, 0.85); }
-    &:active { background: rgba($text-slate-800, 0.95); }
+    &:hover {
+      background: rgba($text-slate-800, 0.85);
+    }
+    &:active {
+      background: rgba($text-slate-800, 0.95);
+    }
 
     svg {
       width: $font-size-xs; // 14px
@@ -203,18 +209,45 @@
 }
 
 /* CSS 变量 */
-.tc { --c-a: #dbeafe; --c-b: #93c5fd; } // SVG 渐变色例外
+.tc {
+  --c-a: #dbeafe;
+  --c-b: #93c5fd;
+} // SVG 渐变色例外
 
 /* 响应式 */
 @media (max-width: $breakpoint-md) {
   .tc {
-    &__upper { padding: 12px 12px 6px; gap: 8px; } // 响应式特殊值保留
-    &__dot { width: 15px; height: 15px; } // 响应式特殊值保留
-    &__author { font-size: $font-size-xs; }
-    &__views { font-size: 11px; } // 响应式特殊值保留
-    &__name { font-size: $font-size-base; }
-    &__cover { width: 60%; border-radius: $border-radius-sm $border-radius-sm 0 0; }
-    &__bar { bottom: 10px; gap: 6px; } // 响应式特殊值保留
-    &__btn { padding: 6px 10px; font-size: 11px; &--sm { padding: 6px; } } // 响应式特殊值保留
+    &__upper {
+      padding: 12px 12px 6px;
+      gap: 8px;
+    } // 响应式特殊值保留
+    &__dot {
+      width: 15px;
+      height: 15px;
+    } // 响应式特殊值保留
+    &__author {
+      font-size: $font-size-xs;
+    }
+    &__views {
+      font-size: 11px;
+    } // 响应式特殊值保留
+    &__name {
+      font-size: $font-size-base;
+    }
+    &__cover {
+      width: 60%;
+      border-radius: $border-radius-sm $border-radius-sm 0 0;
+    }
+    &__bar {
+      bottom: 10px;
+      gap: 6px;
+    } // 响应式特殊值保留
+    &__btn {
+      padding: 6px 10px;
+      font-size: 11px;
+      &--sm {
+        padding: 6px;
+      }
+    } // 响应式特殊值保留
   }
 }

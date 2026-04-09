@@ -38,6 +38,15 @@ const lazyLoad = viewName => {
     })
 }
 
+// 管理员登录页面（支持子目录）
+const lazyLoadAdmin = viewName => {
+  return () =>
+    import(`../views/admin/${viewName}.vue`).catch(error => {
+      console.error(`[路由加载失败] admin/${viewName}:`, error)
+      return { default: RouteErrorComponent }
+    })
+}
+
 const routes = [
   {
     path: '/',
@@ -69,6 +78,11 @@ const routes = [
     component: lazyLoad('ResultView')
   },
 
+  {
+    path: '/admin-login',
+    name: 'AdminLogin',
+    component: lazyLoadAdmin('AdminLoginView')
+  },
   {
     path: '/admin',
     name: 'Admin',
@@ -154,13 +168,32 @@ router.onError(error => {
 router.beforeEach((to, from, next) => {
   // 检查用户是否已登录
   const isLoggedIn = !!localStorage.getItem('studentId')
+  const isAdminAuthenticated = !!sessionStorage.getItem('adminAuthenticated')
 
-  // 允许访问后台管理页面、文档中心、新首页和文章中心，不需要学生登录
-  if (to.path === '/admin' || to.path === '/docs' || to.path === '/new' || to.path.startsWith('/articles')) {
-    next()
+  // 管理员路由保护
+  if (to.path === '/admin') {
+    if (isAdminAuthenticated) {
+      next()
+    } else {
+      next('/admin-login')
+    }
+    return
   }
+
+  // 允许访问后台管理登录页面，不需要学生登录
+  if (to.path === '/admin-login') {
+    next()
+    return
+  }
+
+  // 允许访问文档中心、新首页和文章中心，不需要学生登录
+  if (to.path === '/docs' || to.path === '/new' || to.path.startsWith('/articles')) {
+    next()
+    return
+  }
+
   // 如果用户已登录
-  else if (isLoggedIn) {
+  if (isLoggedIn) {
     // 检查token是否过期
     const tokenExpiresAt = localStorage.getItem('tokenExpiresAt')
     if (tokenExpiresAt && Date.now() > parseInt(tokenExpiresAt)) {

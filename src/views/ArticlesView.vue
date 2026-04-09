@@ -29,7 +29,7 @@
             <p class="empty-subtitle">文章正在准备中，敬请期待</p>
           </div>
 
-          <div v-if="hasMore && !loading" class="infinite-scroll-trigger" ref="loadMoreRef">
+          <div v-if="hasMore && !loading" ref="loadMoreRef" class="infinite-scroll-trigger">
             <div class="infinite-scroll-loading">
               <span class="loading-text">加载中...</span>
             </div>
@@ -57,7 +57,7 @@ const pageSize = 12
 
 const loadArticles = async () => {
   if (!hasMore.value && articles.value.length > 0) return
-  
+
   loading.value = true
   try {
     const res = await api.get('/articles', {
@@ -66,11 +66,11 @@ const loadArticles = async () => {
         pageSize: pageSize
       }
     })
-    
+
     const newArticles = res.data.articles
     articles.value = [...articles.value, ...newArticles]
     hasMore.value = res.data.pagination.total > articles.value.length
-    
+
     if (newArticles.length > 0) {
       page++
     }
@@ -92,7 +92,7 @@ const handleIntersect = entries => {
 
 onMounted(() => {
   loadArticles()
-  
+
   if (loadMoreRef.value) {
     const observer = new IntersectionObserver(handleIntersect, {
       root: null,
@@ -157,7 +157,7 @@ onUnmounted(() => {
     font-size: 20px;
     font-weight: 330;
     color: rgba(0, 0, 0, 0.65);
-    line-height: 1.40;
+    line-height: 1.4;
     letter-spacing: -0.14px;
     margin: 0;
 

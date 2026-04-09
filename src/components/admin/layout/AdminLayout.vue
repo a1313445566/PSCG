@@ -64,6 +64,7 @@ import {
   onErrorCaptured,
   provide
 } from 'vue'
+import { useRouter, onBeforeRouteLeave } from 'vue-router'
 import { useQuestionStore, useSettingsStore } from '../../../stores/questionStore'
 import message from '../../../utils/message'
 import { useLoading } from '../../../composables/useLoading'
@@ -72,6 +73,7 @@ import AdminSidebar from './AdminSidebar.vue'
 import AdminHeader from './AdminHeader.vue'
 import PasswordDialog from '../auth/PasswordDialog.vue'
 
+const router = useRouter()
 const questionStore = useQuestionStore()
 const settingsStore = useSettingsStore()
 const { cleanup: cleanupLoading } = useLoading()
@@ -167,6 +169,11 @@ const handleLogout = () => {
   sessionStorage.removeItem('adminToken')
   sessionStorage.removeItem('adminUsername')
   sessionStorage.removeItem('dataManagementAuthenticated')
+  sessionStorage.setItem('showPasswordDialog', 'true')
+
+  setTimeout(() => {
+    router.push('/admin-login')
+  }, 300)
 }
 
 // 菜单选择
@@ -288,10 +295,15 @@ const loadPageData = async () => {
 
 // 初始化
 onMounted(async () => {
+  const showPasswordDialog = sessionStorage.getItem('showPasswordDialog') === 'true'
+
   if (sessionStorage.getItem('adminAuthenticated') === 'true') {
     isAuthenticated.value = true
     passwordDialogVisible.value = false
     adminUsername.value = sessionStorage.getItem('adminUsername') || '管理员'
+
+    // 清除标记
+    sessionStorage.removeItem('showPasswordDialog')
 
     await nextTick()
     await nextTick()
@@ -300,8 +312,13 @@ onMounted(async () => {
       await loadPageData()
     }
   } else {
-    passwordDialogVisible.value = true
+    passwordDialogVisible.value = showPasswordDialog
     isAuthenticated.value = false
+
+    // 未认证时重定向到登录页
+    if (isComponentMounted) {
+      router.push('/admin-login')
+    }
   }
 })
 
@@ -311,6 +328,14 @@ onUnmounted(() => {
   cleanupLoading()
   timeoutIds.forEach(id => clearTimeout(id))
   timeoutIds.length = 0
+})
+
+// 退出登录时重定向到登录页
+onBeforeRouteLeave((to, from, next) => {
+  if (to.path !== '/admin-login') {
+    sessionStorage.setItem('showPasswordDialog', 'false')
+  }
+  next()
 })
 
 // 错误捕获

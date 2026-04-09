@@ -188,18 +188,33 @@
   }
 
   @keyframes float-1 {
-    0%, 100% { transform: translateY(0) rotate(-1deg); }
-    50% { transform: translateY(-12px) rotate(1deg); }
+    0%,
+    100% {
+      transform: translateY(0) rotate(-1deg);
+    }
+    50% {
+      transform: translateY(-12px) rotate(1deg);
+    }
   }
 
   @keyframes float-2 {
-    0%, 100% { transform: translateY(0) rotate(0.5deg); }
-    50% { transform: translateY(-10px) rotate(-0.5deg); }
+    0%,
+    100% {
+      transform: translateY(0) rotate(0.5deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(-0.5deg);
+    }
   }
 
   @keyframes float-3 {
-    0%, 100% { transform: translateY(0) rotate(-0.5deg); }
-    50% { transform: translateY(-8px) rotate(0.5deg); }
+    0%,
+    100% {
+      transform: translateY(0) rotate(-0.5deg);
+    }
+    50% {
+      transform: translateY(-8px) rotate(0.5deg);
+    }
   }
 
   // ==================== 容器布局 ====================

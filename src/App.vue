@@ -25,7 +25,7 @@ const questionStore = useQuestionStore()
 
 // 判断是否为后台管理页面或登录页面
 const isAdminPage = computed(() => route.path === '/admin')
-const isLoginPage = computed(() => route.path === '/login')
+const isLoginPage = computed(() => route.path === '/login' || route.path === '/admin-login')
 
 // 应用初始化：预加载 CSRF Token
 onMounted(async () => {

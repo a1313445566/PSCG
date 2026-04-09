@@ -45,7 +45,7 @@ async function scanDocsDir(dir, basePath = '', marked) {
       const titleMatch = content.match(/^#\s+(.+)/m)
       const title = titleMatch ? titleMatch[1] : entry.name.replace('.md', '')
 
-      // 使用 marked 预渲染 HTML
+      // 使用 marked 实例解析（v12+ 构造器方式）
       const html = marked.parse(content)
 
       // 获取文件真实的时间戳
@@ -109,11 +109,9 @@ export default function docsGeneratorPlugin() {
   async function generateDocsData() {
     if (cachedDocsData) return cachedDocsData
 
-    const { marked } = await import('marked')
-    marked.setOptions({
-      gfm: true,
-      breaks: true
-    })
+    const { Marked } = await import('marked')
+    // marked v12+：使用构造器替代已废弃的 setOptions
+    const marked = new Marked({ gfm: true, breaks: true })
 
     const docsTree = await scanDocsDir(DOCS_DIR, '', marked)
     const stats = generateStats(docsTree)

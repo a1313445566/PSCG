@@ -98,7 +98,12 @@
           </el-col>
           <el-col :span="8">
             <el-form-item label="标签" prop="tag_ids">
-              <el-select v-model="form.tag_ids" multiple placeholder="请选择标签" style="width: 100%">
+              <el-select
+                v-model="form.tag_ids"
+                multiple
+                placeholder="请选择标签"
+                style="width: 100%"
+              >
                 <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
               </el-select>
             </el-form-item>
@@ -113,7 +118,12 @@
         <el-row :gutter="20">
           <el-col :span="16">
             <el-form-item label="摘要">
-              <el-input v-model="form.summary" type="textarea" :rows="3" placeholder="请输入文章摘要，不输入将自动从内容中提取" />
+              <el-input
+                v-model="form.summary"
+                type="textarea"
+                :rows="3"
+                placeholder="请输入文章摘要，不输入将自动从内容中提取"
+              />
               <div class="field-tip">不输入摘要将自动从文章内容中提取前200字</div>
             </el-form-item>
           </el-col>
@@ -138,7 +148,11 @@
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="内容">
-              <EditableContent v-model="form.content" placeholder="请输入文章内容..." :toolbarMode="'full'" />
+              <EditableContent
+                v-model="form.content"
+                placeholder="请输入文章内容..."
+                :toolbar-mode="'full'"
+              />
             </el-form-item>
           </el-col>
         </el-row>
