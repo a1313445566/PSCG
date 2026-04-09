@@ -7,8 +7,18 @@
 
     <!-- 工具栏 -->
     <div class="toolbar">
-      <el-button type="primary" icon="Plus" @click="handleAdd">新增文章</el-button>
-      <el-button icon="Refresh" @click="handleRefresh">刷新</el-button>
+      <el-button type="primary" @click="handleAdd">
+        <template #icon>
+          <el-icon><Plus /></el-icon>
+        </template>
+        新增文章
+      </el-button>
+      <el-button @click="handleRefresh">
+        <template #icon>
+          <el-icon><Refresh /></el-icon>
+        </template>
+        刷新
+      </el-button>
     </div>
 
     <!-- 文章表格 -->
@@ -63,58 +73,83 @@
     </div>
 
     <!-- 编辑对话框 -->
-    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="800px" destroy-on-close>
-      <el-form ref="formRef" :model="form" :rules="rules" label-width="100px">
-        <el-form-item label="标题" prop="title">
-          <el-input v-model="form.title" placeholder="请输入文章标题" />
-        </el-form-item>
+    <el-dialog v-model="dialogVisible" :title="dialogTitle" width="950px" destroy-on-close>
+      <el-form ref="formRef" :model="form" :rules="rules" label-width="80px">
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="标题" prop="title">
+              <el-input v-model="form.title" placeholder="请输入文章标题" />
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-        <el-form-item label="分类" prop="category_id">
-          <el-select v-model="form.category_id" placeholder="请选择分类">
-            <el-option
-              v-for="category in categories"
-              :key="category.id"
-              :label="category.name"
-              :value="category.id"
-            />
-          </el-select>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="8">
+            <el-form-item label="分类" prop="category_id">
+              <el-select v-model="form.category_id" placeholder="请选择分类" style="width: 100%">
+                <el-option
+                  v-for="category in categories"
+                  :key="category.id"
+                  :label="category.name"
+                  :value="category.id"
+                />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="标签" prop="tag_ids">
+              <el-select v-model="form.tag_ids" multiple placeholder="请选择标签" style="width: 100%">
+                <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="作者">
+              <el-input v-model="form.author" placeholder="请输入作者" />
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-        <el-form-item label="标签" prop="tag_ids">
-          <el-select v-model="form.tag_ids" multiple placeholder="请选择标签" style="width: 100%">
-            <el-option v-for="tag in tags" :key="tag.id" :label="tag.name" :value="tag.id" />
-          </el-select>
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="16">
+            <el-form-item label="摘要">
+              <el-input v-model="form.summary" type="textarea" :rows="3" placeholder="请输入文章摘要，不输入将自动从内容中提取" />
+              <div class="field-tip">不输入摘要将自动从文章内容中提取前200字</div>
+            </el-form-item>
+          </el-col>
+          <el-col :span="8">
+            <el-form-item label="封面图">
+              <el-upload
+                class="avatar-uploader"
+                :action="uploadUrl"
+                :show-file-list="false"
+                :on-success="handleUploadSuccess"
+                :before-upload="handleBeforeUpload"
+              >
+                <img v-if="form.thumbnail" :src="form.thumbnail" class="avatar" alt="封面图" />
+                <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
+              </el-upload>
+              <div class="upload-tip">点击上传封面图（建议尺寸：800x450）</div>
+              <div class="field-tip">不上传将自动使用文章中的第一张图片</div>
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-        <el-form-item label="作者">
-          <el-input v-model="form.author" placeholder="请输入作者" />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="内容">
+              <QuillEditor v-model="form.content" :options="editorOptions" />
+            </el-form-item>
+          </el-col>
+        </el-row>
 
-        <el-form-item label="摘要">
-          <el-input v-model="form.summary" type="textarea" rows="3" placeholder="请输入文章摘要" />
-        </el-form-item>
-
-        <el-form-item label="封面图">
-          <el-upload
-            class="avatar-uploader"
-            :action="uploadUrl"
-            :show-file-list="false"
-            :on-success="handleUploadSuccess"
-            :before-upload="handleBeforeUpload"
-          >
-            <img v-if="form.thumbnail" :src="form.thumbnail" class="avatar" alt="封面图" />
-            <el-icon v-else class="avatar-uploader-icon"><Plus /></el-icon>
-          </el-upload>
-          <div class="upload-tip">点击上传封面图（建议尺寸：800x450）</div>
-        </el-form-item>
-
-        <el-form-item label="内容">
-          <QuillEditor v-model="form.content" :options="editorOptions" />
-        </el-form-item>
-
-        <el-form-item label="状态">
-          <el-switch v-model="form.is_published" active-text="已发布" inactive-text="草稿" />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="24">
+            <el-form-item label="状态">
+              <el-switch v-model="form.is_published" active-text="已发布" inactive-text="草稿" />
+            </el-form-item>
+          </el-col>
+        </el-row>
       </el-form>
 
       <template #footer>
@@ -129,11 +164,11 @@
 
 <script setup>
 import { ref, onMounted } from 'vue'
-import { Plus } from '@element-plus/icons-vue'
+import { Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import QuillEditor from '@/components/common/QuillEditor.vue'
 import api from '@/utils/api'
-import showMessage from '@/utils/message'
+import { showMessage } from '@/utils/message'
 
 // 状态
 const loading = ref(false)
@@ -170,24 +205,7 @@ const rules = {
 
 // 富文本编辑器配置
 const editorOptions = {
-  modules: {
-    toolbar: [
-      ['bold', 'italic', 'underline', 'strike'],
-      ['blockquote', 'code-block'],
-      [{ header: 1 }, { header: 2 }],
-      [{ list: 'ordered' }, { list: 'bullet' }],
-      [{ script: 'sub' }, { script: 'super' }],
-      [{ indent: '-1' }, { indent: '+1' }],
-      [{ direction: 'rtl' }],
-      [{ size: ['small', false, 'large', 'huge'] }],
-      [{ header: [1, 2, 3, 4, 5, 6, false] }],
-      [{ color: [] }, { background: [] }],
-      [{ font: [] }],
-      [{ align: [] }],
-      ['clean'],
-      ['link', 'image', 'video']
-    ]
-  }
+  placeholder: '请输入文章内容...'
 }
 
 // 上传URL
@@ -438,8 +456,30 @@ onMounted(() => {
     margin-top: $spacing-xs;
   }
 
+  .field-tip {
+    font-size: $font-size-sm;
+    color: $text-tertiary;
+    margin-top: $spacing-xs;
+    font-style: italic;
+  }
+
   .dialog-footer {
     text-align: right;
+  }
+
+  // 表单间距优化
+  :deep(.el-form-item) {
+    margin-bottom: $spacing-md;
+  }
+
+  // 表单区域内边距
+  :deep(.el-dialog__body) {
+    padding: $spacing-lg $spacing-xl;
+  }
+
+  // 封面图上传区域居右对齐
+  .avatar-uploader {
+    text-align: center;
   }
 }
 </style>

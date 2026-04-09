@@ -4,6 +4,35 @@ const xssFilter = require('../utils/xss-filter')
 const categoryService = require('./categoryService')
 const tagService = require('./tagService')
 
+// 从HTML内容中提取纯文本摘要
+const extractSummary = (content, maxLength = 200) => {
+  if (!content) return ''
+
+  // 移除HTML标签
+  let text = content.replace(/<[^>]*>/g, '')
+
+  // 移除多余的空白字符
+  text = text.replace(/\s+/g, ' ').trim()
+
+  // 截取指定长度
+  if (text.length > maxLength) {
+    text = text.substring(0, maxLength) + '...'
+  }
+
+  return text
+}
+
+// 从HTML内容中提取第一张图片作为封面图
+const extractFirstImage = (content) => {
+  if (!content) return null
+
+  // 匹配img标签的src属性
+  const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
+  const match = content.match(imgRegex)
+
+  return match ? match[1] : null
+}
+
 // 文章数据验证 schema
 const articleSchema = z.object({
   title: z.string().min(1).max(200),
@@ -11,9 +40,9 @@ const articleSchema = z.object({
   content: z.string().optional(),
   thumbnail: z.string().max(255).optional(),
   author: z.string().max(50).optional(),
-  category_id: z.number().optional(),
+  category_id: z.union([z.number(), z.null()]).optional(),
   tag_ids: z.array(z.number()).optional(),
-  is_published: z.boolean().default(false),
+  is_published: z.union([z.boolean(), z.number()]).transform(val => Boolean(val)),
   published_at: z.date().optional()
 })
 
@@ -24,8 +53,8 @@ class ArticleService {
       const offset = (page - 1) * pageSize
 
       let query = `
-        SELECT a.*, c.name as category_name 
-        FROM cms_articles a 
+        SELECT a.*, c.name as category_name
+        FROM cms_articles a
         LEFT JOIN cms_categories c ON a.category_id = c.id
       `
 
@@ -73,8 +102,8 @@ class ArticleService {
     try {
       const [rows] = await db.pool.execute(
         `
-          SELECT a.*, c.name as category_name 
-          FROM cms_articles a 
+          SELECT a.*, c.name as category_name
+          FROM cms_articles a
           LEFT JOIN cms_categories c ON a.category_id = c.id
           WHERE a.id = ?
         `,
@@ -112,7 +141,19 @@ class ArticleService {
       const validatedData = articleSchema.parse(articleData)
 
       // XSS 过滤
-      const safeContent = validatedData.content ? xssFilter.filter(validatedData.content) : null
+      const safeContent = validatedData.content ? xssFilter.sanitize(validatedData.content) : null
+
+      // 自动提取摘要（如果用户没有输入）
+      let summary = validatedData.summary
+      if (!summary && safeContent) {
+        summary = extractSummary(safeContent)
+      }
+
+      // 自动提取封面图（如果用户没有输入）
+      let thumbnail = validatedData.thumbnail
+      if (!thumbnail && safeContent) {
+        thumbnail = extractFirstImage(safeContent)
+      }
 
       // 处理发布时间
       let publishedAt = validatedData.published_at
@@ -129,15 +170,15 @@ class ArticleService {
         // 插入文章
         const [result] = await connection.execute(
           `
-            INSERT INTO cms_articles 
+            INSERT INTO cms_articles
             (title, summary, content, thumbnail, author, category_id, is_published, published_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
           `,
           [
             validatedData.title,
-            validatedData.summary || null,
+            summary || null,
             safeContent,
-            validatedData.thumbnail || null,
+            thumbnail || null,
             validatedData.author || null,
             validatedData.category_id || null,
             validatedData.is_published ? 1 : 0,
@@ -174,7 +215,19 @@ class ArticleService {
       const validatedData = articleSchema.parse(articleData)
 
       // XSS 过滤
-      const safeContent = validatedData.content ? xssFilter.filter(validatedData.content) : null
+      const safeContent = validatedData.content ? xssFilter.sanitize(validatedData.content) : null
+
+      // 自动提取摘要（如果用户没有输入）
+      let summary = validatedData.summary
+      if (!summary && safeContent) {
+        summary = extractSummary(safeContent)
+      }
+
+      // 自动提取封面图（如果用户没有输入）
+      let thumbnail = validatedData.thumbnail
+      if (!thumbnail && safeContent) {
+        thumbnail = extractFirstImage(safeContent)
+      }
 
       // 处理发布时间
       let publishedAt = validatedData.published_at
@@ -198,16 +251,16 @@ class ArticleService {
         // 更新文章
         await connection.execute(
           `
-            UPDATE cms_articles 
-            SET title = ?, summary = ?, content = ?, thumbnail = ?, author = ?, 
+            UPDATE cms_articles
+            SET title = ?, summary = ?, content = ?, thumbnail = ?, author = ?,
                 category_id = ?, is_published = ?, published_at = ?
             WHERE id = ?
           `,
           [
             validatedData.title,
-            validatedData.summary || null,
+            summary || null,
             safeContent,
-            validatedData.thumbnail || null,
+            thumbnail || null,
             validatedData.author || null,
             validatedData.category_id || null,
             validatedData.is_published ? 1 : 0,
@@ -252,7 +305,7 @@ class ArticleService {
     try {
       const [rows] = await db.pool.execute(
         `
-          SELECT t.* 
+          SELECT t.*
           FROM cms_tags t
           JOIN cms_article_tags at ON t.id = at.tag_id
           WHERE at.article_id = ?
@@ -297,8 +350,8 @@ class ArticleService {
 
       const rows = await db.query(
         `
-          SELECT a.*, c.name as category_name 
-          FROM cms_articles a 
+          SELECT a.*, c.name as category_name
+          FROM cms_articles a
           LEFT JOIN cms_categories c ON a.category_id = c.id
           WHERE a.category_id = ${parseInt(categoryId)} AND a.is_published = 1
           ORDER BY a.published_at DESC, a.created_at DESC

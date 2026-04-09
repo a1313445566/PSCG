@@ -11,7 +11,7 @@ const checkPermission = (module, action) => {
     // 这里简化处理，实际应该从权限系统获取
     if (
       req.admin &&
-      (req.admin.role_id === 1 || req.admin.permissions.includes(`${module}:${action}`))
+      (req.admin.isSuper || (req.admin.permissions[module] && req.admin.permissions[module][action]))
     ) {
       next()
     } else {

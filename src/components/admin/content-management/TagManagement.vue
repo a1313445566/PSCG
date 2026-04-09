@@ -7,8 +7,18 @@
 
     <!-- 工具栏 -->
     <div class="toolbar">
-      <el-button type="primary" icon="Plus" @click="handleAdd">新增标签</el-button>
-      <el-button icon="Refresh" @click="handleRefresh">刷新</el-button>
+      <el-button type="primary" @click="handleAdd">
+        <template #icon>
+          <el-icon><Plus /></el-icon>
+        </template>
+        新增标签
+      </el-button>
+      <el-button @click="handleRefresh">
+        <template #icon>
+          <el-icon><Refresh /></el-icon>
+        </template>
+        刷新
+      </el-button>
     </div>
 
     <!-- 标签表格 -->
@@ -65,7 +75,7 @@ import { ref, onMounted } from 'vue'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
 import api from '@/utils/api'
-import showMessage from '@/utils/message'
+import { showMessage } from '@/utils/message'
 
 // 状态
 const loading = ref(false)
