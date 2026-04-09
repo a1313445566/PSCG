@@ -27,7 +27,7 @@ router.get('/', adminAuth, checkPermission('content-management', 'view'), async 
     const pageSize = parseInt(req.query.pageSize) || 12
     const isPublished = req.query.isPublished === 'true'
 
-    const result = await articleService.getArticles(page, pageSize, !isPublished)
+    const result = await articleService.getArticles(page, pageSize, isPublished)
     response.success(res, result, '获取文章列表成功')
   } catch (error) {
     response.error(res, error.message, 500)
@@ -51,9 +51,12 @@ router.get('/:id', adminAuth, checkPermission('content-management', 'view'), asy
 // 创建文章
 router.post('/', adminAuth, checkPermission('content-management', 'edit'), async (req, res) => {
   try {
+    console.log('[admin-articles] POST / - 请求数据:', req.body)
     const article = await articleService.createArticle(req.body)
+    console.log('[admin-articles] 创建成功:', article)
     response.success(res, article, '创建文章成功')
   } catch (error) {
+    console.error('[admin-articles] 创建文章失败:', error)
     response.error(res, error.message, 500)
   }
 })

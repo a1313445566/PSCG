@@ -19,16 +19,38 @@
       </nav>
 
       <div class="header-actions">
-        <button class="login-btn" @click="handleLogin">登录</button>
+        <button
+          v-if="isAdminAuthenticated"
+          class="admin-menu-btn"
+          @click="toggleAdminMenu"
+        >
+          <User />
+          <span class="admin-username">{{ adminUsername }}</span>
+          <ArrowDown />
+        </button>
+
+        <div v-if="isAdminAuthenticated" class="admin-menu-dropdown" :class="{ 'show': showAdminMenu }">
+          <button class="admin-menu-item" @click="goToAdmin">
+            <Setting />
+            <span>后台管理</span>
+          </button>
+          <button class="admin-menu-item" @click="handleLogout">
+            <SwitchButton />
+            <span>退出登录</span>
+          </button>
+        </div>
+
+        <button v-else class="login-btn" @click="handleLogin">登录</button>
       </div>
     </div>
   </header>
 </template>
 
 <script setup>
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useNavigationMenus } from '@/composables/useNavigationMenus'
+import { User, ArrowDown, Setting, SwitchButton } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -36,6 +58,15 @@ const { fetchVisibleMenus } = useNavigationMenus()
 
 const navigationMenus = ref([])
 const isScrolled = ref(false)
+const showAdminMenu = ref(false)
+
+const isAdminAuthenticated = computed(() => {
+  return sessionStorage.getItem('adminAuthenticated') === 'true'
+})
+
+const adminUsername = computed(() => {
+  return sessionStorage.getItem('adminUsername') || '管理员'
+})
 
 const loadNavigationMenus = async () => {
   try {
@@ -70,17 +101,40 @@ const handleLogin = () => {
   router.push('/admin')
 }
 
+const toggleAdminMenu = () => {
+  showAdminMenu.value = !showAdminMenu.value
+}
+
+const goToAdmin = () => {
+  showAdminMenu.value = false
+  router.push('/admin')
+}
+
+const handleLogout = () => {
+  sessionStorage.removeItem('adminToken')
+  sessionStorage.removeItem('adminUsername')
+  sessionStorage.removeItem('adminAuthenticated')
+  showAdminMenu.value = false
+  router.push('/new')
+}
+
 const handleScroll = () => {
   isScrolled.value = window.scrollY > 10
+}
+
+const closeAdminMenu = () => {
+  showAdminMenu.value = false
 }
 
 onMounted(() => {
   loadNavigationMenus()
   window.addEventListener('scroll', handleScroll, { passive: true })
+  document.addEventListener('click', closeAdminMenu)
 })
 
 onUnmounted(() => {
   window.removeEventListener('scroll', handleScroll)
+  document.removeEventListener('click', closeAdminMenu)
 })
 </script>
 

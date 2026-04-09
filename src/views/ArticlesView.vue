@@ -1,71 +1,79 @@
 <template>
   <div class="articles-view">
-    <div class="container">
-      <!-- 页面标题 -->
-      <div class="page-header">
-        <h1 class="page-title">文章中心</h1>
-        <p class="page-subtitle">探索学习技巧、考试攻略和教育资讯</p>
-      </div>
+    <FigmaHeader />
 
-      <!-- 文章列表 -->
-      <div v-if="!loading" class="articles-grid">
-        <CmsArticleCard v-for="article in articles" :key="article.id" :article="article" />
-      </div>
+    <main class="articles-main">
+      <div class="articles-container">
+        <section class="articles-hero">
+          <h1 class="hero-title">文章中心</h1>
+          <p class="hero-subtitle">探索学习技巧、考试攻略和教育资讯</p>
+        </section>
 
-      <!-- 加载状态 -->
-      <div v-else class="loading-container">
-        <SkeletonLoader :count="12" />
-      </div>
+        <section class="articles-content">
+          <div v-if="!loading" class="articles-grid">
+            <CmsArticleCard
+              v-for="(article, index) in articles"
+              :key="article.id"
+              :article="article"
+              :style="{ transitionDelay: `${index * 30}ms` }"
+            />
+          </div>
 
-      <!-- 空状态 -->
-      <div v-if="!loading && articles.length === 0" class="empty-state">
-        <div class="empty-icon">📄</div>
-        <h3>暂无文章</h3>
-        <p>文章正在准备中，敬请期待</p>
-      </div>
+          <div v-else class="loading-container">
+            <SkeletonLoader :count="12" />
+          </div>
 
-      <!-- 分页 -->
-      <div v-if="!loading && articles.length > 0" class="pagination-container">
-        <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
-          :page-sizes="[12, 24, 36]"
-          layout="total, sizes, prev, pager, next, jumper"
-          :total="total"
-          @size-change="handleSizeChange"
-          @current-change="handleCurrentChange"
-        />
+          <div v-if="!loading && articles.length === 0" class="empty-state">
+            <div class="empty-icon">📄</div>
+            <h3 class="empty-title">暂无文章</h3>
+            <p class="empty-subtitle">文章正在准备中，敬请期待</p>
+          </div>
+
+          <div v-if="hasMore && !loading" class="infinite-scroll-trigger" ref="loadMoreRef">
+            <div class="infinite-scroll-loading">
+              <span class="loading-text">加载中...</span>
+            </div>
+          </div>
+        </section>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import CmsArticleCard from '@/components/new-home/CmsArticleCard.vue'
 import SkeletonLoader from '@/components/common/SkeletonLoader.vue'
+import FigmaHeader from '@/components/new-home/FigmaHeader.vue'
 import api from '@/utils/api'
 import showMessage from '@/utils/message'
 
-// 状态
 const articles = ref([])
 const loading = ref(true)
-const currentPage = ref(1)
-const pageSize = ref(12)
-const total = ref(0)
+const hasMore = ref(true)
+const loadMoreRef = ref(null)
+let page = 1
+const pageSize = 12
 
-// 加载文章列表
 const loadArticles = async () => {
+  if (!hasMore.value && articles.value.length > 0) return
+  
   loading.value = true
   try {
     const res = await api.get('/articles', {
       params: {
-        page: currentPage.value,
-        pageSize: pageSize.value
+        page: page,
+        pageSize: pageSize
       }
     })
-    articles.value = res.data.articles
-    total.value = res.data.pagination.total
+    
+    const newArticles = res.data.articles
+    articles.value = [...articles.value, ...newArticles]
+    hasMore.value = res.data.pagination.total > articles.value.length
+    
+    if (newArticles.length > 0) {
+      page++
+    }
   } catch (error) {
     console.error('获取文章列表失败:', error)
     showMessage('获取文章列表失败', 'error')
@@ -74,65 +82,100 @@ const loadArticles = async () => {
   }
 }
 
-// 分页处理
-const handleSizeChange = size => {
-  pageSize.value = size
-  currentPage.value = 1
-  loadArticles()
+const handleIntersect = entries => {
+  entries.forEach(entry => {
+    if (entry.isIntersecting) {
+      loadArticles()
+    }
+  })
 }
 
-const handleCurrentChange = page => {
-  currentPage.value = page
-  loadArticles()
-}
-
-// 页面挂载时加载数据
 onMounted(() => {
   loadArticles()
+  
+  if (loadMoreRef.value) {
+    const observer = new IntersectionObserver(handleIntersect, {
+      root: null,
+      rootMargin: '200px',
+      threshold: 0
+    })
+    observer.observe(loadMoreRef.value)
+  }
+})
+
+onUnmounted(() => {
+  if (loadMoreRef.value) {
+    const observer = new IntersectionObserver(handleIntersect)
+    observer.unobserve(loadMoreRef.value)
+  }
 })
 </script>
 
 <style scoped lang="scss">
 .articles-view {
+  display: flex;
+  flex-direction: column;
   min-height: 100vh;
-  padding: $spacing-lg 0;
-  background: $bg-gradient-page;
 }
 
-.container {
+.articles-main {
+  flex: 1;
+  margin-top: 64px;
+  background: #ffffff;
+}
+
+.articles-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 0 $spacing-md;
+  padding: $spacing-2xl $spacing-xl;
 }
 
-.page-header {
+.articles-hero {
   text-align: center;
-  margin-bottom: $spacing-xl;
+  margin-bottom: $spacing-3xl;
 
-  .page-title {
-    font-size: $font-size-2xl;
-    font-weight: 540;
-    color: $text-primary;
-    margin-bottom: $spacing-sm;
-    letter-spacing: -0.5px;
+  .hero-title {
+    font-size: 64px;
+    font-weight: 400;
+    color: #000000;
+    line-height: 1.1;
+    letter-spacing: -0.96px;
+    margin: 0 0 $spacing-xl;
+
+    @media (max-width: $breakpoint-lg) {
+      font-size: 48px;
+      letter-spacing: -0.72px;
+    }
+
+    @media (max-width: $breakpoint-md) {
+      font-size: 36px;
+      letter-spacing: -0.54px;
+    }
   }
 
-  .page-subtitle {
-    font-size: $font-size-base;
-    color: $text-secondary;
+  .hero-subtitle {
+    font-size: 20px;
+    font-weight: 330;
+    color: rgba(0, 0, 0, 0.65);
+    line-height: 1.40;
+    letter-spacing: -0.14px;
     margin: 0;
+
+    @media (max-width: $breakpoint-md) {
+      font-size: 18px;
+    }
   }
+}
+
+.articles-content {
+  margin-bottom: $spacing-2xl;
 }
 
 .articles-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-  gap: $spacing-lg;
-  margin-bottom: $spacing-xl;
-
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-  }
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: $spacing-xl;
+  margin-bottom: $spacing-2xl;
 }
 
 .loading-container {
@@ -141,34 +184,105 @@ onMounted(() => {
 
 .empty-state {
   text-align: center;
-  padding: $spacing-2xl 0;
+  padding: $spacing-3xl 0;
 
   .empty-icon {
     font-size: 4rem;
-    margin-bottom: $spacing-md;
+    margin-bottom: $spacing-lg;
   }
 
-  h3 {
-    font-size: $font-size-lg;
-    color: $text-primary;
+  .empty-title {
+    font-size: 24px;
+    font-weight: 700;
+    color: #000000;
     margin-bottom: $spacing-sm;
+    letter-spacing: -0.24px;
   }
 
-  p {
-    color: $text-secondary;
+  .empty-subtitle {
+    font-size: 16px;
+    font-weight: 330;
+    color: rgba(0, 0, 0, 0.55);
     margin: 0;
+    letter-spacing: -0.14px;
   }
 }
 
-.pagination-container {
+.infinite-scroll-trigger {
+  width: 100%;
+  height: 1px;
+}
+
+.infinite-scroll-loading {
   display: flex;
   justify-content: center;
-  margin-top: $spacing-xl;
+  padding: $spacing-xl 0;
 
-  :deep(.el-pagination) {
-    .el-pagination__sizes {
-      margin-right: $spacing-md;
+  .loading-text {
+    font-size: 16px;
+    font-weight: 330;
+    color: rgba(0, 0, 0, 0.45);
+    letter-spacing: -0.14px;
+  }
+}
+
+@media (max-width: $breakpoint-xl) {
+  .articles-container {
+    max-width: 960px;
+    padding: $spacing-xl $spacing-lg;
+  }
+}
+
+@media (max-width: $breakpoint-lg) {
+  .articles-container {
+    max-width: 720px;
+    padding: $spacing-xl $spacing-md;
+  }
+
+  .articles-hero {
+    margin-bottom: $spacing-2xl;
+
+    .hero-title {
+      font-size: 48px;
+      letter-spacing: -0.72px;
     }
+
+    .hero-subtitle {
+      font-size: 18px;
+    }
+  }
+
+  .articles-grid {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: $spacing-lg;
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .articles-container {
+    padding: $spacing-lg $spacing-md;
+  }
+
+  .articles-hero {
+    margin-bottom: $spacing-xl;
+
+    .hero-title {
+      font-size: 36px;
+      letter-spacing: -0.54px;
+    }
+
+    .hero-subtitle {
+      font-size: 16px;
+    }
+  }
+
+  .articles-grid {
+    grid-template-columns: 1fr;
+    gap: $spacing-md;
+  }
+
+  .empty-state {
+    padding: $spacing-2xl 0;
   }
 }
 </style>

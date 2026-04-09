@@ -138,7 +138,7 @@
         <el-row :gutter="20">
           <el-col :span="24">
             <el-form-item label="内容">
-              <QuillEditor v-model="form.content" :options="editorOptions" />
+              <EditableContent v-model="form.content" placeholder="请输入文章内容..." :toolbarMode="'full'" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -166,7 +166,7 @@
 import { ref, onMounted } from 'vue'
 import { Plus, Refresh } from '@element-plus/icons-vue'
 import { ElMessageBox } from 'element-plus'
-import QuillEditor from '@/components/common/QuillEditor.vue'
+import EditableContent from '@/components/common/EditableContent.vue'
 import api from '@/utils/api'
 import { showMessage } from '@/utils/message'
 
@@ -187,7 +187,7 @@ const form = ref({
   title: '',
   summary: '',
   content: '',
-  thumbnail: '',
+  thumbnail: null,
   author: '',
   category_id: null,
   tag_ids: [],
@@ -201,11 +201,6 @@ const rules = {
     { required: true, message: '请输入文章标题', trigger: 'blur' },
     { max: 200, message: '标题不能超过200个字符', trigger: 'blur' }
   ]
-}
-
-// 富文本编辑器配置
-const editorOptions = {
-  placeholder: '请输入文章内容...'
 }
 
 // 上传URL
@@ -228,10 +223,9 @@ const loadArticles = async () => {
         pageSize: pageSize.value
       }
     })
-    articles.value = res.data.articles
-    total.value = res.data.pagination.total
+    articles.value = res.data?.articles || []
+    total.value = res.data?.pagination?.total || 0
   } catch (error) {
-    console.error('获取文章列表失败:', error)
     showMessage('获取文章列表失败', 'error')
   } finally {
     loading.value = false
@@ -297,7 +291,6 @@ const handleEdit = async row => {
     }
     dialogVisible.value = true
   } catch (error) {
-    console.error('获取文章详情失败:', error)
     showMessage('获取文章详情失败', 'error')
   }
 }
@@ -349,7 +342,6 @@ const handleSubmit = async () => {
     dialogVisible.value = false
     loadArticles()
   } catch (error) {
-    console.error('保存文章失败:', error)
     showMessage('保存文章失败', 'error')
   }
 }

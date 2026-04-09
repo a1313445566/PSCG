@@ -10,7 +10,6 @@ export default defineConfig({
   css: {
     preprocessorOptions: {
       scss: {
-        silenceDeprecations: ['legacy-js-api'],
         additionalData: `@use "@/styles/scss/abstracts/_variables.scss" as *;\n`
       }
     }
@@ -22,8 +21,8 @@ export default defineConfig({
   },
   build: {
     chunkSizeWarningLimit: 1000,
-    minify: 'esbuild',
-    rollupOptions: {
+    // minify: 'esbuild', // Vite 6 默认使用 'oxc'，可移除此行
+    rolldownOptions: {
       output: {
         manualChunks: {
           'vue-vendor': ['vue', 'vue-router', 'pinia'],

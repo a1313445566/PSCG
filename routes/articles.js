@@ -9,7 +9,7 @@ router.get('/', async (req, res) => {
     const page = parseInt(req.query.page) || 1
     const pageSize = parseInt(req.query.pageSize) || 12
 
-    const result = await articleService.getArticles(page, pageSize, true)
+    const result = await articleService.getArticles(page, pageSize, false)
     response.success(res, result, '获取文章列表成功')
   } catch (error) {
     response.error(res, error.message, 500)

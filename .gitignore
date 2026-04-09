@@ -17,8 +17,8 @@ electron-dist
 win32-x64-template-x1jNEe
 
 # User-uploaded files
-audio/
-images/
+/audio/
+/images/
 
 # Database files
 # quiz.db

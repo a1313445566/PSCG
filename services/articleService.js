@@ -22,6 +22,20 @@ const extractSummary = (content, maxLength = 200) => {
   return text
 }
 
+// 封面图占位符列表
+const placeholderImages = [
+  '/src/assets/images/backgrounds/article-placeholder-1.png',
+  '/src/assets/images/backgrounds/article-placeholder-2.png',
+  '/src/assets/images/backgrounds/article-placeholder-3.png',
+  '/src/assets/images/backgrounds/article-placeholder-4.png'
+]
+
+// 获取随机占位符图片
+const getRandomPlaceholder = () => {
+  const randomIndex = Math.floor(Math.random() * placeholderImages.length)
+  return placeholderImages[randomIndex]
+}
+
 // 从HTML内容中提取第一张图片作为封面图
 const extractFirstImage = (content) => {
   if (!content) return null
@@ -30,25 +44,52 @@ const extractFirstImage = (content) => {
   const imgRegex = /<img[^>]+src=["']([^"']+)["']/i
   const match = content.match(imgRegex)
 
-  return match ? match[1] : null
+  if (!match) return null
+
+  const url = match[1]
+
+  // 过滤掉 base64 格式的图片
+  if (url && url.startsWith('data:image/')) {
+    return null
+  }
+
+  return url
+}
+
+// 获取封面图(优先从内容提取,其次使用占位符)
+const getThumbnail = (content, providedThumbnail) => {
+  // 如果用户提供了封面图,优先使用
+  if (providedThumbnail && providedThumbnail.trim() !== '') {
+    return providedThumbnail
+  }
+
+  // 从内容中提取封面图
+  if (content) {
+    const extracted = extractFirstImage(content)
+    if (extracted) return extracted
+  }
+
+  // 使用占位符
+  return getRandomPlaceholder()
 }
 
 // 文章数据验证 schema
 const articleSchema = z.object({
   title: z.string().min(1).max(200),
-  summary: z.string().max(500).optional(),
-  content: z.string().optional(),
-  thumbnail: z.string().max(255).optional(),
-  author: z.string().max(50).optional(),
-  category_id: z.union([z.number(), z.null()]).optional(),
+  summary: z.string().max(500).optional().nullable(),
+  content: z.string().optional().nullable(),
+  thumbnail: z.string().max(255).optional().nullable(),
+  author: z.string().max(50).optional().nullable(),
+  category_id: z.union([z.number(), z.null()]).optional().nullable(),
   tag_ids: z.array(z.number()).optional(),
   is_published: z.union([z.boolean(), z.number()]).transform(val => Boolean(val)),
-  published_at: z.date().optional()
+  published_at: z.date().optional().nullable()
 })
 
 class ArticleService {
   // 获取文章列表（分页）
-  async getArticles(page = 1, pageSize = 12, isPublished = true) {
+  // isPublished: true=只查已发布, false=查所有(包括草稿)
+  async getArticles(page = 1, pageSize = 12, isPublished = false) {
     try {
       const offset = (page - 1) * pageSize
 
@@ -154,12 +195,22 @@ class ArticleService {
       if (!thumbnail && safeContent) {
         thumbnail = extractFirstImage(safeContent)
       }
+      // 如果还是没有封面图,使用占位符
+      if (!thumbnail) {
+        thumbnail = getRandomPlaceholder()
+      }
+      // 确保 thumbnail 不超过 255 字符
+      if (thumbnail && thumbnail.length > 255) {
+        thumbnail = null
+      }
 
       // 处理发布时间
       let publishedAt = validatedData.published_at
       if (validatedData.is_published && !publishedAt) {
         publishedAt = new Date()
       }
+      // 确保 publishedAt 是 null 而不是 undefined
+      publishedAt = publishedAt || null
 
       // 开始事务
       const connection = await db.pool.getConnection()
@@ -228,6 +279,14 @@ class ArticleService {
       if (!thumbnail && safeContent) {
         thumbnail = extractFirstImage(safeContent)
       }
+      // 如果还是没有封面图,使用占位符
+      if (!thumbnail) {
+        thumbnail = getRandomPlaceholder()
+      }
+      // 确保 thumbnail 不超过 255 字符
+      if (thumbnail && thumbnail.length > 255) {
+        thumbnail = null
+      }
 
       // 处理发布时间
       let publishedAt = validatedData.published_at
@@ -241,6 +300,9 @@ class ArticleService {
       if (validatedData.is_published && !currentArticle.is_published && !publishedAt) {
         publishedAt = new Date()
       }
+
+      // 确保 publishedAt 是 null 而不是 undefined
+      publishedAt = publishedAt || null
 
       // 开始事务
       const connection = await db.pool.getConnection()

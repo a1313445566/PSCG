@@ -44,7 +44,7 @@ import { useRouter } from 'vue-router'
 
 const router = useRouter()
 
-defineProps({
+const props = defineProps({
   article: {
     type: Object,
     required: true,
@@ -60,6 +60,8 @@ defineProps({
     })
   }
 })
+
+const { article } = props
 
 // 格式化日期
 const formatDate = dateString => {

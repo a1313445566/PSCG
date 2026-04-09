@@ -84,6 +84,7 @@
     flex-shrink: 0;
     display: flex;
     align-items: center;
+    position: relative;
 
     .login-btn {
       background: #000000;
@@ -108,6 +109,93 @@
       &:focus-visible {
         outline: dashed 2px #000000;
         outline-offset: 3px;
+      }
+    }
+
+    .admin-menu-btn {
+      display: flex;
+      align-items: center;
+      gap: $spacing-xs;
+      background: transparent;
+      border: none;
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 500;
+      color: #000000;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      &:focus-visible {
+        outline: dashed 2px #000000;
+        outline-offset: 2px;
+      }
+
+      .admin-username {
+        font-size: 14px;
+        font-weight: 500;
+      }
+
+      svg {
+        flex-shrink: 0;
+        width: 16px;
+        height: 16px;
+      }
+    }
+
+    .admin-menu-dropdown {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      min-width: 180px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      padding: $spacing-sm 0;
+      opacity: 0;
+      visibility: hidden;
+      transform: translateY(-10px);
+      transition: opacity 0.2s ease, transform 0.2s ease, visibility 0.2s;
+
+      &.show {
+        opacity: 1;
+        visibility: visible;
+        transform: translateY(0);
+      }
+
+      .admin-menu-item {
+        display: flex;
+        align-items: center;
+        gap: $spacing-sm;
+        width: 100%;
+        padding: $spacing-sm $spacing-lg;
+        border: none;
+        background: transparent;
+        font-size: 14px;
+        font-weight: 500;
+        color: #000000;
+        cursor: pointer;
+        transition: background-color 0.2s ease;
+
+        &:hover {
+          background-color: rgba(0, 0, 0, 0.05);
+        }
+
+        svg {
+          flex-shrink: 0;
+          width: 16px;
+          height: 16px;
+          opacity: 0.7;
+        }
+
+        span {
+          font-size: 14px;
+        }
       }
     }
   }

@@ -3,7 +3,7 @@
     <QuillEditor
       ref="quillRef"
       v-model="localValue"
-      toolbar-mode="basic"
+      :toolbar-mode="toolbarMode"
       :options="{
         placeholder: placeholder
       }"
@@ -27,6 +27,11 @@ const props = defineProps({
   placeholder: {
     type: String,
     default: '输入内容...'
+  },
+  // 工具栏模式：'full' 完整版 | 'basic' 基础版 | 'minimal' 精简版 | 'none' 无工具栏
+  toolbarMode: {
+    type: String,
+    default: 'basic'
   }
 })
 
