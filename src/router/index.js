@@ -116,6 +116,18 @@ const routes = [
     meta: { title: 'PSCG 智能学习' }
   },
   {
+    path: '/articles',
+    name: 'Articles',
+    component: lazyLoad('ArticlesView'),
+    meta: { title: '文章中心' }
+  },
+  {
+    path: '/articles/:id',
+    name: 'ArticleDetail',
+    component: lazyLoad('ArticleDetailView'),
+    meta: { title: '文章详情' }
+  },
+  {
     path: '/:pathMatch(.*)*',
     name: 'NotFound',
     component: NotFoundComponent
@@ -143,8 +155,8 @@ router.beforeEach((to, from, next) => {
   // 检查用户是否已登录
   const isLoggedIn = !!localStorage.getItem('studentId')
 
-  // 允许访问后台管理页面、文档中心和新首页，不需要学生登录
-  if (to.path === '/admin' || to.path === '/docs' || to.path === '/new') {
+  // 允许访问后台管理页面、文档中心、新首页和文章中心，不需要学生登录
+  if (to.path === '/admin' || to.path === '/docs' || to.path === '/new' || to.path.startsWith('/articles')) {
     next()
   }
   // 如果用户已登录

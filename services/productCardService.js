@@ -185,14 +185,15 @@ class ProductCardService {
       ]
     )
 
-    const [newCard] = await db.pool.execute(`
+    const [newCard] = await db.pool.execute(
+      `
       SELECT id, title, description, icon_type, icon_name, icon_url, icon_class,
              link_type, link_value, tag, sort_order,
              CAST(is_visible AS SIGNED) as is_visible,
              created_at, updated_at
-      FROM product_cards WHERE id = ?`, [
-      result.insertId
-    ])
+      FROM product_cards WHERE id = ?`,
+      [result.insertId]
+    )
 
     return newCard[0]
   }
@@ -261,12 +262,15 @@ class ProductCardService {
     values.push(id)
     await db.pool.execute(`UPDATE product_cards SET ${fields.join(', ')} WHERE id = ?`, values)
 
-    const [updatedCard] = await db.pool.execute(`
+    const [updatedCard] = await db.pool.execute(
+      `
       SELECT id, title, description, icon_type, icon_name, icon_url, icon_class,
              link_type, link_value, tag, sort_order,
              CAST(is_visible AS SIGNED) as is_visible,
              created_at, updated_at
-      FROM product_cards WHERE id = ?`, [id])
+      FROM product_cards WHERE id = ?`,
+      [id]
+    )
 
     return updatedCard[0]
   }

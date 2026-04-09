@@ -1,3 +1,38 @@
-node_modules
-dist
-build
+# 依赖目录
+node_modules/
+# 构建输出
+dist/
+build/
+# 版本控制
+.git/
+# 日志
+*.log
+logs/
+# 临时文件
+*.tmp
+*.temp
+# 系统文件
+.DS_Store
+Thumbs.db
+# 环境变量
+.env.local
+.env.*.local
+# 其他大文件/无关目录
+*.zip
+*.rar
+*.7z
+*.mp4
+*.mov
+# 静态文件
+
+.arts/
+.codebuddy/
+.husky/
+.trae/
+.vscode/
+.workbuddy/
+audio/
+images/
+DOCS/
+dist/
+backups/

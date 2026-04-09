@@ -31,6 +31,10 @@ const toolsRoutes = require('./tools')
 const adminPermissionsRoutes = require('./admin-permissions')
 const adminNavigationRoutes = require('./admin-navigation')
 const adminProductCardsRoutes = require('./admin-product-cards')
+const articlesRoutes = require('./articles')
+const adminArticlesRoutes = require('./admin-articles')
+const adminCategoriesRoutes = require('./admin-categories')
+const adminTagsRoutes = require('./admin-tags')
 
 const routes = [
   { path: '/data', handler: dataRoutes },
@@ -58,7 +62,11 @@ const routes = [
   { path: '/user-stats', handler: userStatsRoutes },
   { path: '/chat', handler: chatRoutes },
   { path: '/health', handler: healthRoutes },
-  { path: '/tools', handler: toolsRoutes }
+  { path: '/tools', handler: toolsRoutes },
+  { path: '/articles', handler: articlesRoutes, comment: '前台公开文章接口' },
+  { path: '/admin/articles', handler: adminArticlesRoutes, comment: '后台文章管理接口' },
+  { path: '/admin/categories', handler: adminCategoriesRoutes, comment: '后台分类管理接口' },
+  { path: '/admin/tags', handler: adminTagsRoutes, comment: '后台标签管理接口' }
 ]
 
 routes.forEach(({ path, handler }) => {

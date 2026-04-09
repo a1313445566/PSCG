@@ -1,0 +1,338 @@
+const db = require('./database')
+const { z } = require('zod')
+const xssFilter = require('../utils/xss-filter')
+const categoryService = require('./categoryService')
+const tagService = require('./tagService')
+
+// 文章数据验证 schema
+const articleSchema = z.object({
+  title: z.string().min(1).max(200),
+  summary: z.string().max(500).optional(),
+  content: z.string().optional(),
+  thumbnail: z.string().max(255).optional(),
+  author: z.string().max(50).optional(),
+  category_id: z.number().optional(),
+  tag_ids: z.array(z.number()).optional(),
+  is_published: z.boolean().default(false),
+  published_at: z.date().optional()
+})
+
+class ArticleService {
+  // 获取文章列表（分页）
+  async getArticles(page = 1, pageSize = 12, isPublished = true) {
+    try {
+      const offset = (page - 1) * pageSize
+
+      let query = `
+        SELECT a.*, c.name as category_name 
+        FROM cms_articles a 
+        LEFT JOIN cms_categories c ON a.category_id = c.id
+      `
+
+      if (isPublished) {
+        query += ' WHERE a.is_published = 1'
+      }
+
+      query += ' ORDER BY a.published_at DESC, a.created_at DESC'
+      query += ` LIMIT ${parseInt(pageSize)} OFFSET ${parseInt(offset)}`
+
+      const rows = await db.query(query)
+
+      // 获取文章总数
+      const countResult = await db.query(
+        isPublished
+          ? 'SELECT COUNT(*) as total FROM cms_articles WHERE is_published = 1'
+          : 'SELECT COUNT(*) as total FROM cms_articles'
+      )
+
+      // 为每篇文章获取标签
+      const articlesWithTags = await Promise.all(
+        rows.map(async article => {
+          const tags = await this.getArticleTags(article.id)
+          return { ...article, tags }
+        })
+      )
+
+      return {
+        articles: articlesWithTags,
+        pagination: {
+          page,
+          pageSize,
+          total: countResult[0].total,
+          totalPages: Math.ceil(countResult[0].total / pageSize)
+        }
+      }
+    } catch (error) {
+      console.error('获取文章列表失败:', error)
+      throw error
+    }
+  }
+
+  // 根据 ID 获取文章详情
+  async getArticleById(id, incrementView = false) {
+    try {
+      const [rows] = await db.pool.execute(
+        `
+          SELECT a.*, c.name as category_name 
+          FROM cms_articles a 
+          LEFT JOIN cms_categories c ON a.category_id = c.id
+          WHERE a.id = ?
+        `,
+        [id]
+      )
+
+      if (!rows[0]) {
+        return null
+      }
+
+      const article = rows[0]
+
+      // 获取文章标签
+      article.tags = await this.getArticleTags(id)
+
+      // 增加浏览次数
+      if (incrementView && article.is_published) {
+        await db.pool.execute('UPDATE cms_articles SET view_count = view_count + 1 WHERE id = ?', [
+          id
+        ])
+        article.view_count += 1
+      }
+
+      return article
+    } catch (error) {
+      console.error('获取文章详情失败:', error)
+      throw error
+    }
+  }
+
+  // 创建文章
+  async createArticle(articleData) {
+    try {
+      // 验证数据
+      const validatedData = articleSchema.parse(articleData)
+
+      // XSS 过滤
+      const safeContent = validatedData.content ? xssFilter.filter(validatedData.content) : null
+
+      // 处理发布时间
+      let publishedAt = validatedData.published_at
+      if (validatedData.is_published && !publishedAt) {
+        publishedAt = new Date()
+      }
+
+      // 开始事务
+      const connection = await db.pool.getConnection()
+
+      try {
+        await connection.beginTransaction()
+
+        // 插入文章
+        const [result] = await connection.execute(
+          `
+            INSERT INTO cms_articles 
+            (title, summary, content, thumbnail, author, category_id, is_published, published_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+          `,
+          [
+            validatedData.title,
+            validatedData.summary || null,
+            safeContent,
+            validatedData.thumbnail || null,
+            validatedData.author || null,
+            validatedData.category_id || null,
+            validatedData.is_published ? 1 : 0,
+            publishedAt
+          ]
+        )
+
+        const articleId = result.insertId
+
+        // 处理标签关联
+        if (validatedData.tag_ids && validatedData.tag_ids.length > 0) {
+          await this.setArticleTags(connection, articleId, validatedData.tag_ids)
+        }
+
+        await connection.commit()
+
+        return await this.getArticleById(articleId)
+      } catch (error) {
+        await connection.rollback()
+        throw error
+      } finally {
+        connection.release()
+      }
+    } catch (error) {
+      console.error('创建文章失败:', error)
+      throw error
+    }
+  }
+
+  // 更新文章
+  async updateArticle(id, articleData) {
+    try {
+      // 验证数据
+      const validatedData = articleSchema.parse(articleData)
+
+      // XSS 过滤
+      const safeContent = validatedData.content ? xssFilter.filter(validatedData.content) : null
+
+      // 处理发布时间
+      let publishedAt = validatedData.published_at
+
+      // 检查是否需要更新发布时间
+      const currentArticle = await this.getArticleById(id)
+      if (!currentArticle) {
+        throw new Error('文章不存在')
+      }
+
+      if (validatedData.is_published && !currentArticle.is_published && !publishedAt) {
+        publishedAt = new Date()
+      }
+
+      // 开始事务
+      const connection = await db.pool.getConnection()
+
+      try {
+        await connection.beginTransaction()
+
+        // 更新文章
+        await connection.execute(
+          `
+            UPDATE cms_articles 
+            SET title = ?, summary = ?, content = ?, thumbnail = ?, author = ?, 
+                category_id = ?, is_published = ?, published_at = ?
+            WHERE id = ?
+          `,
+          [
+            validatedData.title,
+            validatedData.summary || null,
+            safeContent,
+            validatedData.thumbnail || null,
+            validatedData.author || null,
+            validatedData.category_id || null,
+            validatedData.is_published ? 1 : 0,
+            publishedAt,
+            id
+          ]
+        )
+
+        // 处理标签关联
+        if (validatedData.tag_ids !== undefined) {
+          await this.setArticleTags(connection, id, validatedData.tag_ids)
+        }
+
+        await connection.commit()
+
+        return await this.getArticleById(id)
+      } catch (error) {
+        await connection.rollback()
+        throw error
+      } finally {
+        connection.release()
+      }
+    } catch (error) {
+      console.error('更新文章失败:', error)
+      throw error
+    }
+  }
+
+  // 删除文章
+  async deleteArticle(id) {
+    try {
+      const [result] = await db.pool.execute('DELETE FROM cms_articles WHERE id = ?', [id])
+      return result.affectedRows > 0
+    } catch (error) {
+      console.error('删除文章失败:', error)
+      throw error
+    }
+  }
+
+  // 获取文章标签
+  async getArticleTags(articleId) {
+    try {
+      const [rows] = await db.pool.execute(
+        `
+          SELECT t.* 
+          FROM cms_tags t
+          JOIN cms_article_tags at ON t.id = at.tag_id
+          WHERE at.article_id = ?
+          ORDER BY t.id ASC
+        `,
+        [articleId]
+      )
+      return rows
+    } catch (error) {
+      console.error('获取文章标签失败:', error)
+      throw error
+    }
+  }
+
+  // 设置文章标签
+  async setArticleTags(connection, articleId, tagIds) {
+    try {
+      // 删除现有标签关联
+      await connection.execute('DELETE FROM cms_article_tags WHERE article_id = ?', [articleId])
+
+      // 添加新标签关联
+      if (tagIds && tagIds.length > 0) {
+        const values = tagIds.map(tagId => [articleId, tagId])
+        const placeholders = values.map(() => '(?, ?)').join(',')
+        const params = values.flat()
+
+        await connection.execute(
+          `INSERT INTO cms_article_tags (article_id, tag_id) VALUES ${placeholders}`,
+          params
+        )
+      }
+    } catch (error) {
+      console.error('设置文章标签失败:', error)
+      throw error
+    }
+  }
+
+  // 根据分类获取文章
+  async getArticlesByCategory(categoryId, page = 1, pageSize = 12) {
+    try {
+      const offset = (page - 1) * pageSize
+
+      const rows = await db.query(
+        `
+          SELECT a.*, c.name as category_name 
+          FROM cms_articles a 
+          LEFT JOIN cms_categories c ON a.category_id = c.id
+          WHERE a.category_id = ${parseInt(categoryId)} AND a.is_published = 1
+          ORDER BY a.published_at DESC, a.created_at DESC
+          LIMIT ${parseInt(pageSize)} OFFSET ${parseInt(offset)}
+        `
+      )
+
+      // 获取文章总数
+      const countResult = await db.query(
+        `SELECT COUNT(*) as total FROM cms_articles WHERE category_id = ${parseInt(categoryId)} AND is_published = 1`
+      )
+
+      // 为每篇文章获取标签
+      const articlesWithTags = await Promise.all(
+        rows.map(async article => {
+          const tags = await this.getArticleTags(article.id)
+          return { ...article, tags }
+        })
+      )
+
+      return {
+        articles: articlesWithTags,
+        pagination: {
+          page,
+          pageSize,
+          total: countResult[0].total,
+          totalPages: Math.ceil(countResult[0].total / pageSize)
+        }
+      }
+    } catch (error) {
+      console.error('根据分类获取文章失败:', error)
+      throw error
+    }
+  }
+}
+
+module.exports = new ArticleService()

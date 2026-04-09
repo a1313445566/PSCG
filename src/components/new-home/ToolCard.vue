@@ -1,5 +1,5 @@
 <template>
-  <div class="tool-card" @click="handleClick" tabindex="0">
+  <div class="tool-card" tabindex="0" @click="handleClick">
     <div class="tool-visual">
       <div class="visual-gradient" :style="coverStyle"></div>
       <div class="visual-icon-wrap">
@@ -16,13 +16,27 @@
         <button class="tool-btn" @click.stop="handlePreview">
           预览
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-            <path d="M12 8C12 10.21 10.21 12 8 12C5.79 12 4 10.21 4 8C4 5.79 5.79 4 8 4C10.21 4 12 5.79 12 8Z" stroke="currentColor" stroke-width="1.3"/>
-            <path d="M2 8C2 8 4.68629 4 8 4C11.3137 4 14 8 14 8C14 8 11.3137 12 8 12C4.68629 12 2 8 2 8Z" stroke="currentColor" stroke-width="1.3"/>
+            <path
+              d="M12 8C12 10.21 10.21 12 8 12C5.79 12 4 10.21 4 8C4 5.79 5.79 4 8 4C10.21 4 12 5.79 12 8Z"
+              stroke="currentColor"
+              stroke-width="1.3"
+            />
+            <path
+              d="M2 8C2 8 4.68629 4 8 4C11.3137 4 14 8 14 8C14 8 11.3137 12 8 12C4.68629 12 2 8 2 8Z"
+              stroke="currentColor"
+              stroke-width="1.3"
+            />
           </svg>
         </button>
         <button class="tool-btn tool-btn--icon" @click.stop="handleUse">
           <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-            <path d="m12.6667 7.33333-5.33334-4v2.66667c-3.33333 0-5.999996 2.13333-5.999996 5.3333 0.666666-1.3333 2.666666-2.4 5.999996-2.4V11.3333l5.33334-4Z" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="m12.6667 7.33333-5.33334-4v2.66667c-3.33333 0-5.999996 2.13333-5.999996 5.3333 0.666666-1.3333 2.666666-2.4 5.999996-2.4V11.3333l5.33334-4Z"
+              stroke="currentColor"
+              stroke-width="1.3"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
         </button>
       </div>

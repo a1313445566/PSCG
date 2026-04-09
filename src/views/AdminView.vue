@@ -11,6 +11,12 @@
       <NavigationManagement v-if="activeMenu === 'navigation-management'" />
       <!-- 产品卡片管理 -->
       <ProductCardManagement v-else-if="activeMenu === 'product-card-management'" />
+      <!-- 文章管理 -->
+      <ArticleManagement v-else-if="activeMenu === 'article-management'" />
+      <!-- 分类管理 -->
+      <CategoryManagement v-else-if="activeMenu === 'category-management'" />
+      <!-- 标签管理 -->
+      <TagManagement v-else-if="activeMenu === 'tag-management'" />
       <!-- 角色管理 -->
       <RoleManagement v-else-if="activeMenu === 'role-management'" />
       <!-- 管理员用户 -->
@@ -153,6 +159,9 @@ import SubjectManagement from '../components/admin/basic-settings/SubjectManagem
 import GradeClassManagement from '../components/admin/basic-settings/GradeClassManagement.vue'
 import NavigationManagement from '../components/admin/navigation/NavigationManagement.vue'
 import ProductCardManagement from '../components/admin/content-management/ProductCardManagement.vue'
+import ArticleManagement from '../components/admin/content-management/ArticleManagement.vue'
+import CategoryManagement from '../components/admin/content-management/CategoryManagement.vue'
+import TagManagement from '../components/admin/content-management/TagManagement.vue'
 
 // 异步组件
 const QuestionList = defineAsyncComponent(

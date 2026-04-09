@@ -55,7 +55,7 @@
         <template #default="{ row }">
           <el-switch
             :model-value="Number(row.is_visible) === 1"
-            @change="(val) => handleToggleVisibility(row, val ? 1 : 0)"
+            @change="val => handleToggleVisibility(row, val ? 1 : 0)"
           />
         </template>
       </el-table-column>
@@ -180,7 +180,10 @@
           </el-radio-group>
         </el-form-item>
 
-        <el-form-item :label="formData.link_type === 'route' ? '跳转地址' : '外部URL'" prop="link_value">
+        <el-form-item
+          :label="formData.link_type === 'route' ? '跳转地址' : '外部URL'"
+          prop="link_value"
+        >
           <el-select
             v-if="formData.link_type === 'route'"
             v-model="formData.link_value"
@@ -326,7 +329,10 @@ const handleRouteChange = value => {
     }
 
     // 自动填充图标（仅当用户未选择过时）
-    if (formData.value.icon_type === 'element-plus' && (!formData.value.icon_name || formData.value.icon_name.trim() === '')) {
+    if (
+      formData.value.icon_type === 'element-plus' &&
+      (!formData.value.icon_name || formData.value.icon_name.trim() === '')
+    ) {
       formData.value.icon_name = selectedPage.icon
     }
   }

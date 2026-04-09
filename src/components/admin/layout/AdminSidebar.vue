@@ -106,7 +106,8 @@ import {
   Close,
   Menu,
   Setting,
-  UserFilled as UserFilledIcon
+  PriceTag,
+  Postcard
 } from '@element-plus/icons-vue'
 
 const {
@@ -198,7 +199,8 @@ const iconMap = {
   ChatDotRound,
   Cpu,
   Setting,
-  UserFilled: UserFilledIcon
+  PriceTag,
+  Postcard
 }
 
 // 获取图标组件
@@ -282,6 +284,26 @@ const menuTreeData = computed(() => {
         id: 'product-card-management',
         label: '产品卡片管理',
         icon: 'Postcard',
+        isMenu: true
+      })
+
+      // CMS 内容管理
+      topLevelMenus.push({
+        id: 'article-management',
+        label: '文章管理',
+        icon: 'Document',
+        isMenu: true
+      })
+      topLevelMenus.push({
+        id: 'category-management',
+        label: '分类管理',
+        icon: 'FolderOpened',
+        isMenu: true
+      })
+      topLevelMenus.push({
+        id: 'tag-management',
+        label: '标签管理',
+        icon: 'PriceTag',
         isMenu: true
       })
     }

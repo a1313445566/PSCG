@@ -309,7 +309,8 @@ const learningPages = [
   { name: '📈 学习进度', path: '/learning-progress', icon: 'DataLine' },
   { name: '🏆 排行榜', path: '/leaderboard', icon: 'Trophy' },
   { name: '❌ 错题本', path: '/error-book', icon: 'DocumentDelete' },
-  { name: '📝 答题记录', path: '/answer-history', icon: 'Clock' }
+  { name: '📝 答题记录', path: '/answer-history', icon: 'Clock' },
+  { name: '📚 文章中心', path: '/articles', icon: 'Reading' }
 ]
 
 const userPages = [

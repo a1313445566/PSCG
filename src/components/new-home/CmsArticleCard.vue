@@ -1,28 +1,48 @@
 <template>
-  <div class="cms-article-card" @click="handleClick" tabindex="0">
+  <div class="cms-article-card" tabindex="0" @click="handleClick">
     <div class="article-visual">
-      <div class="article-gradient"></div>
-      <span class="article-tag">PSCG</span>
+      <img
+        v-if="article.thumbnail"
+        :src="article.thumbnail"
+        :alt="article.title"
+        class="article-image"
+      />
+      <div v-else class="article-gradient"></div>
+      <span class="article-tag">{{ article.category_name || '文章' }}</span>
     </div>
     <div class="article-body">
       <h3 class="article-title">{{ article.title }}</h3>
       <div class="article-meta">
         <span class="meta-item">
           <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
-            <path d="M2.66667 2.66667H13.3333C14.0667 2.66667 14.6667 3.26667 14.6667 4V12C14.6667 12.7333 14.0667 13.3333 13.3333 13.3333H2.66667C1.93333 13.3333 1.33333 12.7333 1.33333 12V4C1.33333 3.26667 1.93333 2.66667 2.66667 2.66667Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M14.6667 4L8 8.66667L1.33334 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path
+              d="M2.66667 2.66667H13.3333C14.0667 2.66667 14.6667 3.26667 14.6667 4V12C14.6667 12.7333 14.0667 13.3333 13.3333 13.3333H2.66667C1.93333 13.3333 1.33333 12.7333 1.33333 12V4C1.33333 3.26667 1.93333 2.66667 2.66667 2.66667Z"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+            <path
+              d="M14.6667 4L8 8.66667L1.33334 4"
+              stroke="currentColor"
+              stroke-width="1.2"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
           </svg>
-          文章
+          {{ article.view_count || 0 }} 浏览
         </span>
         <span class="meta-divider"></span>
-        <span class="meta-item">{{ article.date }}</span>
+        <span class="meta-item">{{ formatDate(article.published_at || article.created_at) }}</span>
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { showMessage } from '@/utils/message'
+import { useRouter } from 'vue-router'
+
+const router = useRouter()
 
 defineProps({
   article: {
@@ -32,14 +52,29 @@ defineProps({
       id: 0,
       title: '',
       summary: '',
-      date: '',
-      thumbnail: null
+      view_count: 0,
+      published_at: null,
+      created_at: null,
+      thumbnail: null,
+      category_name: null
     })
   }
 })
 
+// 格式化日期
+const formatDate = dateString => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit'
+  })
+}
+
+// 点击跳转到详情页
 const handleClick = () => {
-  showMessage('文章详情功能开发中', 'info')
+  router.push(`/articles/${article.id}`)
 }
 </script>
 
@@ -70,15 +105,16 @@ const handleClick = () => {
     height: 160px;
     overflow: hidden;
 
+    .article-image {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
     .article-gradient {
       position: absolute;
       inset: 0;
-      background: linear-gradient(
-        135deg,
-        #a855f7 0%,
-        #ec4899 50%,
-        #f43f5e 100%
-      );
+      background: linear-gradient(135deg, #a855f7 0%, #ec4899 50%, #f43f5e 100%);
       opacity: 0.85;
     }
 

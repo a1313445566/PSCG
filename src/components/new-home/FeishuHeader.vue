@@ -37,7 +37,7 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useNavigationMenus } from '@/composables/useNavigationMenus'
 import { getIconComponent as getConfigIconComponent } from '@/config/elementIconsConfig'
-import logoImg from '../../../public/images/logo.png'
+import logoImg from '@/assets/images/logo.svg'
 
 const router = useRouter()
 const route = useRoute()

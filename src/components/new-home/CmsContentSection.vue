@@ -11,7 +11,13 @@
       <button class="view-more-button" @click="handleViewMore">
         查看更多
         <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
-          <path d="M3.33334 8H12.6667M12.6667 8L8.00001 3.33333M12.6667 8L8.00001 12.6667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+          <path
+            d="M3.33334 8H12.6667M12.6667 8L8.00001 3.33333M12.6667 8L8.00001 12.6667"
+            stroke="currentColor"
+            stroke-width="1.5"
+            stroke-linecap="round"
+            stroke-linejoin="round"
+          />
         </svg>
       </button>
     </div>
@@ -19,16 +25,40 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { showMessage } from '@/utils/message'
+import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import CmsArticleCard from './CmsArticleCard.vue'
-import { cmsArticles } from '@/config/mockCmsData'
+import api from '@/utils/api'
+import { showMessage } from '@/utils/message'
 
-const articles = ref(cmsArticles)
+const router = useRouter()
+const articles = ref([])
 
-const handleViewMore = () => {
-  showMessage('更多文章功能开发中', 'info')
+// 加载最新文章
+const loadLatestArticles = async () => {
+  try {
+    const res = await api.get('/articles', {
+      params: {
+        page: 1,
+        pageSize: 4
+      }
+    })
+    articles.value = res.data.articles
+  } catch (error) {
+    console.error('获取最新文章失败:', error)
+    showMessage('获取最新文章失败', 'error')
+  }
 }
+
+// 查看更多
+const handleViewMore = () => {
+  router.push('/articles')
+}
+
+// 页面挂载时加载数据
+onMounted(() => {
+  loadLatestArticles()
+})
 </script>
 
 <style scoped lang="scss">

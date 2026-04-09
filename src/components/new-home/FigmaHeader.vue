@@ -9,7 +9,7 @@
         <a
           v-for="menu in navigationMenus"
           :key="menu.id"
-          :href="getMenuLink(menu)"
+          :href="menu.path"
           class="nav-link"
           :class="{ 'is-active': isActive(menu) }"
           @click.prevent="handleMenuClick(menu)"
@@ -19,9 +19,7 @@
       </nav>
 
       <div class="header-actions">
-        <button class="login-btn" @click="handleLogin">
-          登录
-        </button>
+        <button class="login-btn" @click="handleLogin">登录</button>
       </div>
     </div>
   </header>
@@ -58,10 +56,6 @@ const isActive = menu => {
     return route.path === menu.path
   }
   return false
-}
-
-const getMenuLink = menu => {
-  return menu.type === 'route' ? menu.path : menu.path
 }
 
 const handleMenuClick = menu => {

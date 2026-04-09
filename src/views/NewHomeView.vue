@@ -9,20 +9,26 @@
       <div class="hero-container">
         <div class="hero-content">
           <p class="hero-label">LEARNING PLATFORM</p>
-          <h1 class="hero-title">智能学习，<br />触手可及</h1>
-          <p class="hero-subtitle">
-            全场景学习工具集 — 从练习到分析，一站式提升学习效率
-          </p>
+          <h1 class="hero-title">
+            智能学习，
+            <br />
+            触手可及
+          </h1>
+          <p class="hero-subtitle">全场景学习工具集 — 从练习到分析，一站式提升学习效率</p>
           <div class="hero-actions">
             <button class="hero-cta hero-cta--primary" @click="handleStartLearning">
               开始学习
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                <path d="M3.33334 8H12.6667M12.6667 8L8.00001 3.33333M12.6667 8L8.00001 12.6667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                <path
+                  d="M3.33334 8H12.6667M12.6667 8L8.00001 3.33333M12.6667 8L8.00001 12.6667"
+                  stroke="currentColor"
+                  stroke-width="1.5"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                />
               </svg>
             </button>
-            <button class="hero-cta hero-cta--secondary" @click="handleExplore">
-              探索功能
-            </button>
+            <button class="hero-cta hero-cta--secondary" @click="handleExplore">探索功能</button>
           </div>
         </div>
         <div class="hero-visual">
@@ -49,9 +55,9 @@
               :key="card.id || card.title"
               class="product-card"
               :class="{ 'is-active': activeCard === index }"
+              tabindex="0"
               @mouseenter="activeCard = index"
               @click="handleCardClick(card)"
-              tabindex="0"
             >
               <div class="card-icon-wrap">
                 <el-icon v-if="card.icon" :size="28">
@@ -70,7 +76,13 @@
               </div>
               <div class="card-arrow">
                 <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
-                  <path d="M3.33334 8H12.6667M12.6667 8L8.00001 3.33333M12.6667 8L8.00001 12.6667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                  <path
+                    d="M3.33334 8H12.6667M12.6667 8L8.00001 3.33333M12.6667 8L8.00001 12.6667"
+                    stroke="currentColor"
+                    stroke-width="1.5"
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                  />
                 </svg>
               </div>
               <span v-if="card.tag" class="card-tag" :class="'card-tag--' + card.tag">
