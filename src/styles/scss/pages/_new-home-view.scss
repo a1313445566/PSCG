@@ -1,240 +1,509 @@
 /* ============================================
-   首页视图 - NewHomeView 样式（独立抽离）
-   路径: src/styles/scss/pages/_new-home-view.scss
-   设计语言: 飞书风格产品卡片
+   首页视图 - NewHomeView 样式
+   设计语言: Figma Design System (DESIGN.md)
+   - 纯黑白界面 + 渐变 Hero
+   - 负字间距排版
+   - Pill / Circle 几何按钮
+   - 虚线焦点轮廓
    ============================================ */
 
 .new-home-view {
   min-height: 100vh;
   background: #ffffff;
-  font-family: 'PingFang SC', sans-serif;
+  color: #000000;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 
-  // ==================== 产品卡片区域 ====================
-  .product-cards {
-    margin-bottom: $new-section-gap-lg;
-    padding: $spacing-lg 0;
-    width: 100%;
+  // ==================== Hero 区域 ====================
+  .hero-section {
+    position: relative;
+    min-height: 680px;
+    display: flex;
+    align-items: center;
+    overflow: hidden;
+    padding-top: 64px;
 
-    .card-grid {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 0;
+    .hero-gradient-bg {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        #22c55e 0%,
+        #84cc16 15%,
+        #eab308 30%,
+        #a855f7 55%,
+        #ec4899 75%,
+        #f43f5e 100%
+      );
+      opacity: 1;
     }
 
-    .product-card {
+    .hero-container {
       position: relative;
-      background: #ffffff;
-      border-right: 1px solid $border-slate-200;
-      border-bottom: 1px solid $border-slate-200;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: $spacing-3xl $spacing-xl;
+      display: flex;
+      align-items: center;
+      gap: $spacing-3xl;
+      width: 100%;
+    }
+
+    .hero-content {
+      flex: 1;
+      max-width: 560px;
+    }
+
+    .hero-label {
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 2.4px;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.75);
+      margin-bottom: $spacing-lg;
+      line-height: 1;
+    }
+
+    .hero-title {
+      font-size: clamp(48px, 5.5vw, 80px);
+      font-weight: 700;
+      line-height: 1.05;
+      letter-spacing: -1.72px;
+      color: #ffffff;
+      margin: 0 0 $spacing-lg;
+    }
+
+    .hero-subtitle {
+      font-size: 18px;
+      font-weight: 340;
+      line-height: 1.55;
+      letter-spacing: -0.18px;
+      color: rgba(255, 255, 255, 0.8);
+      margin: 0 0 $spacing-xl;
+      max-width: 440px;
+    }
+
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+    }
+
+    .hero-cta {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 28px;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 500;
+      letter-spacing: -0.14px;
       cursor: pointer;
-      transition: all 0.3s ease;
-      padding: $spacing-lg $spacing-md;
+      transition: all 0.25s ease;
+      border: none;
+      white-space: nowrap;
 
-      &:first-child {
-        border-top: 1px solid $border-slate-200;
-        border-left: 1px solid $border-slate-200;
+      &:focus-visible {
+        outline: dashed 2px #ffffff;
+        outline-offset: 3px;
       }
 
-      @for $i from 2 through 6 {
-        &:nth-child(#{$i}) {
-          border-top: 1px solid $border-slate-200;
-          @if $i % 6 != 1 {
-            border-left: none;
-          } @else {
-            border-left: 1px solid $border-slate-200;
-          }
+      &--primary {
+        background: #ffffff;
+        color: #000000;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 16px rgba(0, 0, 0, 0.18);
+        }
+
+        &:active {
+          transform: translateY(0);
         }
       }
 
-      // ==================== 6张卡片独立渐变（鼠标移入后保留）====================
-      &:nth-child(1).is-active {
-        background: linear-gradient(135deg, rgba(79, 70, 229, 0.08) 0%, rgba(79, 70, 229, 0.02) 100%);
-        .card-arrow { opacity: 1; transform: translateX(2px); }
-        .card-icon-wrap { color: #3730a3; }
-      }
+      &--secondary {
+        background: rgba(255, 255, 255, 0.16);
+        color: #ffffff;
+        backdrop-filter: blur(8px);
 
-      &:nth-child(2).is-active {
-        background: linear-gradient(135deg, rgba(147, 51, 234, 0.08) 0%, rgba(147, 51, 234, 0.02) 100%);
-        .card-arrow { opacity: 1; transform: translateX(2px); }
-        .card-icon-wrap { color: #6d28d9; }
-      }
-
-      &:nth-child(3).is-active {
-        background: linear-gradient(135deg, rgba(219, 39, 119, 0.08) 0%, rgba(219, 39, 119, 0.02) 100%);
-        .card-arrow { opacity: 1; transform: translateX(2px); }
-        .card-icon-wrap { color: #be185d; }
-      }
-
-      &:nth-child(4).is-active {
-        background: linear-gradient(135deg, rgba(5, 150, 105, 0.08) 0%, rgba(5, 150, 105, 0.02) 100%);
-        .card-arrow { opacity: 1; transform: translateX(2px); }
-        .card-icon-wrap { color: #047857; }
-      }
-
-      &:nth-child(5).is-active {
-        background: linear-gradient(135deg, rgba(217, 119, 6, 0.08) 0%, rgba(217, 119, 6, 0.02) 100%);
-        .card-arrow { opacity: 1; transform: translateX(2px); }
-        .card-icon-wrap { color: #b45309; }
-      }
-
-      &:nth-child(6).is-active {
-        background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(99, 102, 241, 0.02) 100%);
-        .card-arrow { opacity: 1; transform: translateX(2px); }
-        .card-icon-wrap { color: #4338ca; }
-      }
-
-      // 卡片主体：左内容 + 右箭头
-      .card-body {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: $spacing-sm;
-      }
-
-      // 左侧：图标 + 文字
-      .card-main {
-        display: flex;
-        align-items: flex-start;
-        gap: $spacing-md;
-        min-width: 0;
-        flex: 1;
-        padding-left: $spacing-lg;
-        padding-right: $spacing-lg;
-        margin-top: 0;
-        margin-bottom: 0;
-        text-align: left;
-      }
-
-      // 图标容器（纯色 + 光晕层次感）
-      .card-icon-wrap {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        color: #4f46e5;
-        transition: all 0.25s ease;
-        filter: drop-shadow(0 2px 6px rgba(79, 70, 229, 0.3));
-
-        &--purple { color: #7c3aed; filter: drop-shadow(0 2px 6px rgba(124, 58, 237, 0.3)); }
-        &--pink { color: #db2777; filter: drop-shadow(0 2px 6px rgba(219, 39, 119, 0.3)); }
-        &--green { color: #059669; filter: drop-shadow(0 2px 6px rgba(5, 150, 105, 0.3)); }
-        &--orange { color: #d97706; filter: drop-shadow(0 2px 6px rgba(217, 119, 6, 0.3)); }
-        &--indigo { color: #6366f1; filter: drop-shadow(0 2px 6px rgba(99, 102, 241, 0.3)); }
-        &--blue { color: #2563eb; filter: drop-shadow(0 2px 6px rgba(37, 99, 235, 0.3)); }
-
-        .card-icon {
-          color: inherit;
-        }
-      }
-
-      // 文字区域
-      .card-text {
-        display: flex;
-        flex-direction: column;
-        gap: 4px;
-        min-width: 0;
-        flex: 1;
-      }
-
-      // 标题（飞书规范）
-      .card-title {
-        font-family: 'PingFang SC', sans-serif;
-        font-style: normal;
-        font-weight: 600;
-        font-size: $font-size-lg;
-        line-height: 1.56;
-        color: var(--text-title);
-        letter-spacing: 0.01em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      // 描述（飞书规范）
-      .card-description {
-        font-family: 'PingFang SC', sans-serif;
-        font-style: normal;
-        font-weight: 400;
-        font-size: $font-size-base;
-        line-height: 1.57;
-        color: var(--icon-n1);
-        letter-spacing: 0.01em;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
-
-      // 右箭头
-      .card-arrow {
-        color: $text-secondary;
-        opacity: 0;
-        transition: all 0.25s ease;
-        flex-shrink: 0;
-        margin-top: 10px;
-      }
-
-      // 标签（HOT / 新）
-      .card-tag {
-        position: absolute;
-        top: 8px;
-        right: 8px;
-        font-size: 10px;
-        font-weight: 600;
-        padding: 1px 6px;
-        border-radius: 4px;
-        line-height: 1.6;
-        letter-spacing: 0.02em;
-
-        &--hot {
-          background: #fef2f2;
-          color: #dc2626;
-          border: 1px solid #fecaca;
-        }
-
-        &--new {
-          background: #eff6ff;
-          color: #2563eb;
-          border: 1px solid #bfdbfe;
+        &:hover {
+          background: rgba(255, 255, 255, 0.24);
         }
       }
     }
+
+    // Hero 右侧视觉区
+    .hero-visual {
+      flex: 1;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+    }
+
+    .hero-card-stack {
+      position: relative;
+      width: 340px;
+      height: 380px;
+    }
+
+    .hero-float-card {
+      position: absolute;
+      border-radius: 8px;
+      background: #ffffff;
+      box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.08),
+        0 1px 4px rgba(0, 0, 0, 0.04);
+
+      &--1 {
+        top: 0;
+        left: 40px;
+        width: 260px;
+        height: 160px;
+        opacity: 0.95;
+        animation: float-1 6s ease-in-out infinite;
+      }
+
+      &--2 {
+        top: 140px;
+        left: 0;
+        width: 280px;
+        height: 140px;
+        opacity: 0.9;
+        animation: float-2 7s ease-in-out infinite 0.5s;
+      }
+
+      &--3 {
+        top: 220px;
+        left: 60px;
+        width: 240px;
+        height: 130px;
+        opacity: 0.85;
+        animation: float-3 5.5s ease-in-out infinite 1s;
+      }
+    }
+  }
+
+  @keyframes float-1 {
+    0%, 100% { transform: translateY(0) rotate(-1deg); }
+    50% { transform: translateY(-12px) rotate(1deg); }
+  }
+
+  @keyframes float-2 {
+    0%, 100% { transform: translateY(0) rotate(0.5deg); }
+    50% { transform: translateY(-10px) rotate(-0.5deg); }
+  }
+
+  @keyframes float-3 {
+    0%, 100% { transform: translateY(0) rotate(-0.5deg); }
+    50% { transform: translateY(-8px) rotate(0.5deg); }
   }
 
   // ==================== 容器布局 ====================
   .home-container {
-    max-width: 100%;
-    margin: 0;
-    padding: 0;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 $spacing-xl;
 
     .home-content {
-      margin-bottom: $spacing-2xl;
+      padding: $spacing-3xl 0 $spacing-2xl;
     }
   }
-}
 
-// ==================== 中屏端（< 1400px → 3列）====================
-@media (max-width: $breakpoint-xl) {
-  .new-home-view {
-    .product-cards {
-      .card-grid {
-        grid-template-columns: repeat(3, 1fr);
+  // ==================== 产品卡片区域 ====================
+  .product-cards {
+    margin-bottom: $spacing-3xl;
+
+    .section-header {
+      margin-bottom: $spacing-xl;
+
+      .section-label {
+        display: block;
+        font-size: 13px;
+        font-weight: 400;
+        letter-spacing: 2.2px;
+        text-transform: uppercase;
+        color: #000000;
+        opacity: 0.45;
+        margin-bottom: $spacing-sm;
+        line-height: 1;
       }
 
-      .product-card {
-        .card-main {
-          padding-left: $spacing-md;
-          padding-right: $spacing-md;
+      .section-heading {
+        font-size: 42px;
+        font-weight: 600;
+        letter-spacing: -0.82px;
+        line-height: 1.15;
+        color: #000000;
+        margin: 0;
+      }
+    }
+
+    .card-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 16px;
+    }
+
+    .product-card {
+      position: relative;
+      display: flex;
+      align-items: center;
+      gap: $spacing-md;
+      padding: $spacing-lg;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.07);
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+      outline: none;
+
+      &:focus-visible {
+        outline: dashed 2px #000000;
+        outline-offset: 2px;
+      }
+
+      &:hover {
+        border-color: rgba(0, 0, 0, 0.14);
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
+        transform: translateY(-2px);
+
+        .card-arrow {
+          opacity: 1;
+          transform: translateX(2px);
+        }
+      }
+
+      &.is-active {
+        border-color: rgba(0, 0, 0, 0.14);
+        background: rgba(0, 0, 0, 0.02);
+      }
+
+      .card-icon-wrap {
+        flex-shrink: 0;
+        width: 48px;
+        height: 48px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.04);
+        color: #000000;
+        transition: all 0.25s ease;
+      }
+
+      &:hover .card-icon-wrap {
+        background: #000000;
+        color: #ffffff;
+      }
+
+      .card-info {
+        flex: 1;
+        min-width: 0;
+      }
+
+      .card-title {
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.22px;
+        line-height: 1.45;
+        color: #000000;
+        margin: 0 0 4px;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .card-description {
+        font-size: 14px;
+        font-weight: 330;
+        letter-spacing: -0.12px;
+        line-height: 1.45;
+        color: rgba(0, 0, 0, 0.5);
+        margin: 0;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+      }
+
+      .card-arrow {
+        flex-shrink: 0;
+        color: rgba(0, 0, 0, 0.35);
+        opacity: 0;
+        transition: all 0.25s ease;
+      }
+
+      .card-tag {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        font-size: 10px;
+        font-weight: 600;
+        letter-spacing: 0.5px;
+        padding: 2px 8px;
+        border-radius: 50px;
+        line-height: 1.6;
+        text-transform: uppercase;
+
+        &--hot {
+          background: rgba(239, 68, 68, 0.08);
+          color: #dc2626;
+        }
+
+        &--new {
+          background: rgba(59, 130, 246, 0.08);
+          color: #2563eb;
+        }
+      }
+    }
+  }
+
+  // ==================== Footer ====================
+  .figma-footer {
+    background: #000000;
+    color: #ffffff;
+    padding: $spacing-xl 0;
+    margin-top: auto;
+
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 $spacing-xl;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .footer-brand {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+
+      .footer-logo {
+        font-size: 17px;
+        font-weight: 700;
+        letter-spacing: -0.3px;
+      }
+
+      .footer-divider {
+        opacity: 0.25;
+        font-size: 14px;
+      }
+
+      .footer-slogan {
+        font-size: 13px;
+        font-weight: 330;
+        letter-spacing: -0.1px;
+        opacity: 0.55;
+      }
+    }
+
+    .footer-links {
+      display: flex;
+      align-items: center;
+      gap: $spacing-lg;
+
+      .footer-link {
+        font-size: 13px;
+        font-weight: 330;
+        letter-spacing: -0.1px;
+        color: rgba(255, 255, 255, 0.55);
+        text-decoration: none;
+        transition: color 0.2s ease;
+
+        &:hover {
+          color: #ffffff;
         }
       }
     }
   }
 }
 
-// ==================== 平板端（< 992px → 2列）====================
+// ==================== 响应式：大屏桌面 ====================
+@media (max-width: $breakpoint-xl) {
+  .new-home-view {
+    .hero-section {
+      min-height: 600px;
+
+      .hero-container {
+        gap: $spacing-xl;
+        padding: $spacing-2xl $spacing-lg;
+      }
+
+      .hero-title {
+        letter-spacing: -1.4px;
+      }
+    }
+
+    .product-cards {
+      .card-grid {
+        grid-template-columns: repeat(3, 1fr);
+        gap: 14px;
+      }
+    }
+
+    .home-container {
+      padding: 0 $spacing-lg;
+    }
+  }
+}
+
+// ==================== 响应式：平板端 ====================
 @media (max-width: $breakpoint-lg) {
   .new-home-view {
+    .hero-section {
+      min-height: auto;
+      padding-top: 64px;
+      padding-bottom: $spacing-2xl;
+
+      .hero-gradient-bg {
+        background: linear-gradient(
+          135deg,
+          #22c55e 0%,
+          #84cc16 20%,
+          #eab308 40%,
+          #a855f7 65%,
+          #ec4899 85%,
+          #f43f5e 100%
+        );
+      }
+
+      .hero-container {
+        flex-direction: column;
+        text-align: center;
+        padding: $spacing-2xl $spacing-md;
+        gap: $spacing-xl;
+      }
+
+      .hero-content {
+        max-width: 100%;
+      }
+
+      .hero-subtitle {
+        max-width: 100%;
+        margin-left: auto;
+        margin-right: auto;
+      }
+
+      .hero-actions {
+        justify-content: center;
+      }
+
+      .hero-visual {
+        display: none;
+      }
+    }
+
     .product-cards {
-      padding: $spacing-md 0;
+      .section-header {
+        .section-heading {
+          font-size: 32px;
+          letter-spacing: -0.6px;
+        }
+      }
 
       .card-grid {
         grid-template-columns: repeat(2, 1fr);
@@ -243,69 +512,115 @@
       .product-card {
         padding: $spacing-md;
 
-        .card-main {
-          gap: $spacing-sm;
-          padding-left: $spacing-sm;
-          padding-right: $spacing-sm;
-        }
-
         .card-icon-wrap {
-          .card-icon {
-            font-size: 30px !important;
-          }
+          width: 40px;
+          height: 40px;
         }
 
         .card-title {
-          font-size: 13px;
+          font-size: 14px;
         }
 
         .card-description {
-          font-size: 11px;
+          font-size: 13px;
+        }
+      }
+    }
+
+    .figma-footer {
+      .footer-inner {
+        flex-direction: column;
+        gap: $spacing-md;
+        text-align: center;
+      }
+    }
+  }
+}
+
+// ==================== 响应式：手机端 ====================
+@media (max-width: $breakpoint-md) {
+  .new-home-view {
+    .hero-section {
+      min-height: auto;
+      padding-top: 56px;
+      padding-bottom: $spacing-xl;
+
+      .hero-container {
+        padding: $spacing-xl $spacing-sm;
+      }
+
+      .hero-label {
+        font-size: 11px;
+        letter-spacing: 2px;
+        margin-bottom: $spacing-sm;
+      }
+
+      .hero-title {
+        font-size: 36px;
+        letter-spacing: -0.96px;
+      }
+
+      .hero-subtitle {
+        font-size: 15px;
+        letter-spacing: -0.14px;
+        margin-bottom: $spacing-lg;
+      }
+
+      .hero-cta {
+        padding: 10px 22px;
+        font-size: 14px;
+
+        svg {
+          width: 14px;
+          height: 14px;
         }
       }
     }
 
     .home-container {
-      padding: $spacing-lg;
-    }
-  }
-}
+      padding: 0 $spacing-sm;
 
-// ==================== 手机端（< 768px → 1列）====================
-@media (max-width: $breakpoint-md) {
-  .new-home-view {
+      .home-content {
+        padding: $spacing-xl 0;
+      }
+    }
+
     .product-cards {
-      padding: $spacing-sm 0;
+      margin-bottom: $spacing-xl;
+
+      .section-header {
+        margin-bottom: $spacing-md;
+
+        .section-label {
+          font-size: 11px;
+          letter-spacing: 1.8px;
+        }
+
+        .section-heading {
+          font-size: 26px;
+          letter-spacing: -0.46px;
+        }
+      }
 
       .card-grid {
         grid-template-columns: 1fr;
+        gap: 12px;
       }
 
       .product-card {
-        padding: $spacing-sm $spacing-xs;
-
-        .card-main {
-          gap: $spacing-sm;
-          padding-left: $spacing-xs;
-          padding-right: $spacing-xs;
-        }
+        padding: $spacing-md $spacing-sm;
 
         .card-icon-wrap {
-          .card-icon {
-            font-size: 28px !important;
-          }
-        }
-
-        .card-text {
-          gap: 2px;
+          width: 40px;
+          height: 40px;
         }
 
         .card-title {
-          font-size: 12px;
+          font-size: 14px;
         }
 
         .card-description {
-          font-size: 11px;
+          font-size: 12px;
         }
 
         .card-arrow {
@@ -313,11 +628,30 @@
         }
 
         .card-tag {
-          top: 4px;
-          right: 4px;
+          top: 8px;
+          right: 8px;
           font-size: 9px;
-          padding: 0 4px;
+          padding: 1px 6px;
         }
+      }
+    }
+
+    .figma-footer {
+      padding: $spacing-lg 0;
+
+      .footer-inner {
+        padding: 0 $spacing-sm;
+      }
+
+      .footer-brand {
+        flex-direction: column;
+        gap: 4px;
+      }
+
+      .footer-links {
+        gap: $spacing-md;
+        flex-wrap: wrap;
+        justify-content: center;
       }
     }
   }

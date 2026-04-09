@@ -1,0 +1,158 @@
+/* ============================================
+   Figma 风格导航栏
+   设计规范: DESIGN.md (Figma Design System)
+   - 纯黑白配色
+   - 虚线焦点轮廓
+   - Pill 按钮几何
+   ============================================ */
+
+.figma-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+  transition: box-shadow 0.3s ease;
+
+  &.is-scrolled {
+    box-shadow: 0 1px 8px rgba(0, 0, 0, 0.06);
+  }
+
+  .header-container {
+    max-width: 1400px;
+    margin: 0 auto;
+    height: 64px;
+    display: flex;
+    align-items: center;
+    padding: 0 $spacing-xl;
+  }
+
+  .header-logo {
+    flex-shrink: 0;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+
+    .logo-text {
+      font-size: 20px;
+      font-weight: 700;
+      color: #000000;
+      letter-spacing: -0.5px;
+      line-height: 1;
+    }
+  }
+
+  .header-nav {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+
+    .nav-link {
+      font-size: 15px;
+      font-weight: 400;
+      color: #000000;
+      text-decoration: none;
+      padding: 8px 18px;
+      border-radius: 50px;
+      letter-spacing: -0.14px;
+      transition: background-color 0.2s ease, color 0.2s ease;
+      white-space: nowrap;
+
+      &:hover {
+        background-color: rgba(0, 0, 0, 0.05);
+      }
+
+      &.is-active {
+        background-color: #000000;
+        color: #ffffff;
+        font-weight: 500;
+      }
+
+      &:focus-visible {
+        outline: dashed 2px #000000;
+        outline-offset: 2px;
+      }
+    }
+  }
+
+  .header-actions {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+
+    .login-btn {
+      background: #000000;
+      color: #ffffff;
+      border: none;
+      padding: 8px 24px;
+      border-radius: 50px;
+      font-size: 14px;
+      font-weight: 500;
+      letter-spacing: -0.12px;
+      cursor: pointer;
+      transition: opacity 0.2s ease, transform 0.15s ease;
+
+      &:hover {
+        opacity: 0.85;
+      }
+
+      &:active {
+        transform: scale(0.97);
+      }
+
+      &:focus-visible {
+        outline: dashed 2px #000000;
+        outline-offset: 3px;
+      }
+    }
+  }
+}
+
+@media (max-width: $breakpoint-lg) {
+  .figma-header {
+    .header-container {
+      padding: 0 $spacing-lg;
+    }
+
+    .header-nav {
+      gap: 2px;
+
+      .nav-link {
+        padding: 7px 14px;
+        font-size: 14px;
+      }
+    }
+
+    .login-btn {
+      padding: 7px 18px;
+      font-size: 13px;
+    }
+  }
+}
+
+@media (max-width: $breakpoint-md) {
+  .figma-header {
+    .header-container {
+      padding: 0 $spacing-md;
+      height: 56px;
+    }
+
+    .header-nav {
+      display: none;
+    }
+
+    .logo-text {
+      font-size: 18px;
+    }
+
+    .login-btn {
+      padding: 6px 16px;
+      font-size: 13px;
+    }
+  }
+}

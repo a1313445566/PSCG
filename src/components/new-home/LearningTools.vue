@@ -1,6 +1,9 @@
 <template>
   <section class="learning-tools-section">
-    <h2 class="section-title">学习工具</h2>
+    <div class="section-header">
+      <span class="section-label">TOOLS</span>
+      <h2 class="section-heading">学习工具</h2>
+    </div>
     <div class="tools-grid">
       <ToolCard v-for="tool in tools" :key="tool.id" :tool="tool" />
     </div>
@@ -17,68 +20,85 @@ const tools = ref(teachingTools)
 
 <style scoped lang="scss">
 .learning-tools-section {
-  margin-bottom: $new-section-gap;
+  margin-bottom: $spacing-3xl;
   width: 100%;
-  min-width: 848px;
-  max-width: 1184px;
-  position: relative;
-  margin: 0 auto;
-  padding: 0 $spacing-lg;
 
-  .section-title {
-    font-size: 45px;
-    font-weight: 600;
-    color: $new-text-primary;
-    margin-bottom: $spacing-lg;
-    text-align: center;
-    border-left: none;
-    padding-left: 0;
+  .section-header {
+    margin-bottom: $spacing-xl;
+
+    .section-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      color: #000000;
+      opacity: 0.45;
+      margin-bottom: $spacing-sm;
+      line-height: 1;
+    }
+
+    .section-heading {
+      font-size: 42px;
+      font-weight: 600;
+      letter-spacing: -0.82px;
+      line-height: 1.15;
+      color: #000000;
+      margin: 0;
+    }
   }
 
   .tools-grid {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: $new-card-gap-lg;
+    gap: 16px;
   }
 }
 
 @media (max-width: $breakpoint-xl) {
   .learning-tools-section {
-    min-width: auto;
-    padding: 0 $spacing-md;
+    .tools-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
   }
 }
 
 @media (max-width: $breakpoint-lg) {
   .learning-tools-section {
-    max-width: 100%;
-    margin-bottom: $new-section-gap-sm;
-    padding: 0 $spacing-md;
-
-    .section-title {
-      font-size: $font-size-xl;
-      margin-bottom: $spacing-md;
+    .section-header {
+      .section-heading {
+        font-size: 32px;
+        letter-spacing: -0.6px;
+      }
     }
 
     .tools-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: $new-card-gap;
+      gap: 14px;
     }
   }
 }
 
 @media (max-width: $breakpoint-md) {
   .learning-tools-section {
-    padding: 0 $spacing-sm;
+    .section-header {
+      margin-bottom: $spacing-md;
 
-    .section-title {
-      font-size: $font-size-lg;
-      margin-bottom: $spacing-sm;
+      .section-label {
+        font-size: 11px;
+        letter-spacing: 1.8px;
+      }
+
+      .section-heading {
+        font-size: 26px;
+        letter-spacing: -0.46px;
+      }
     }
 
     .tools-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: $new-card-gap-sm;
+      gap: 12px;
     }
   }
 }

@@ -1,16 +1,21 @@
 <template>
-  <div class="cms-article-card" @click="handleClick">
-    <div class="article-thumbnail">
-      <div class="article-tag">PSCG</div>
+  <div class="cms-article-card" @click="handleClick" tabindex="0">
+    <div class="article-visual">
+      <div class="article-gradient"></div>
+      <span class="article-tag">PSCG</span>
     </div>
-    <div class="article-content">
+    <div class="article-body">
       <h3 class="article-title">{{ article.title }}</h3>
-      <div class="article-footer">
-        <span class="article-meta-item">
-          <span class="meta-icon">📚</span>
-          <span>1 篇文章</span>
+      <div class="article-meta">
+        <span class="meta-item">
+          <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
+            <path d="M2.66667 2.66667H13.3333C14.0667 2.66667 14.6667 3.26667 14.6667 4V12C14.6667 12.7333 14.0667 13.3333 13.3333 13.3333H2.66667C1.93333 13.3333 1.33333 12.7333 1.33333 12V4C1.33333 3.26667 1.93333 2.66667 2.66667 2.66667Z" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M14.6667 4L8 8.66667L1.33334 4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          文章
         </span>
-        <span class="article-meta-item">{{ article.date }}</span>
+        <span class="meta-divider"></span>
+        <span class="meta-item">{{ article.date }}</span>
       </div>
     </div>
   </div>
@@ -42,51 +47,67 @@ const handleClick = () => {
 .cms-article-card {
   background: #ffffff;
   border-radius: 8px;
-  padding: 0;
-  box-shadow: none;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  border: 1px solid #e5e6eb;
   overflow: hidden;
+  cursor: pointer;
+  border: 1px solid rgba(0, 0, 0, 0.07);
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  outline: none;
 
   &:hover {
-    box-shadow: none;
-    transform: none;
-    border-color: $new-primary-light;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+    border-color: rgba(0, 0, 0, 0.12);
   }
 
-  .article-thumbnail {
-    width: 100%;
-    height: 180px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  &:focus-visible {
+    outline: dashed 2px #000000;
+    outline-offset: 2px;
+  }
+
+  .article-visual {
     position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    width: 100%;
+    height: 160px;
+    overflow: hidden;
+
+    .article-gradient {
+      position: absolute;
+      inset: 0;
+      background: linear-gradient(
+        135deg,
+        #a855f7 0%,
+        #ec4899 50%,
+        #f43f5e 100%
+      );
+      opacity: 0.85;
+    }
 
     .article-tag {
       position: absolute;
-      top: 16px;
-      left: 16px;
-      background: rgba(255, 255, 255, 0.2);
-      backdrop-filter: blur(10px);
+      top: 12px;
+      left: 12px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.6px;
+      padding: 3px 10px;
+      border-radius: 50px;
       color: #ffffff;
-      padding: 4px 12px;
-      border-radius: 4px;
-      font-size: 12px;
-      font-weight: 500;
+      background: rgba(0, 0, 0, 0.25);
+      backdrop-filter: blur(8px);
+      line-height: 1.4;
     }
   }
 
-  .article-content {
-    padding: 16px;
+  .article-body {
+    padding: $spacing-md;
 
     .article-title {
-      font-size: $font-size-lg;
+      font-size: 15px;
       font-weight: 600;
+      letter-spacing: -0.18px;
+      line-height: 1.45;
       color: #000000;
-      margin-bottom: 12px;
-      line-height: 1.4;
+      margin: 0 0 $spacing-sm;
       overflow: hidden;
       text-overflow: ellipsis;
       display: -webkit-box;
@@ -94,21 +115,31 @@ const handleClick = () => {
       -webkit-box-orient: vertical;
     }
 
-    .article-footer {
+    .article-meta {
       display: flex;
       align-items: center;
-      justify-content: space-between;
+      gap: 8px;
 
-      .article-meta-item {
+      .meta-item {
         display: flex;
         align-items: center;
-        gap: 6px;
-        font-size: $font-size-sm;
-        color: $new-text-tertiary;
+        gap: 4px;
+        font-size: 12px;
+        font-weight: 330;
+        letter-spacing: -0.08px;
+        color: rgba(0, 0, 0, 0.45);
 
-        .meta-icon {
-          font-size: 14px;
+        svg {
+          flex-shrink: 0;
+          opacity: 0.55;
         }
+      }
+
+      .meta-divider {
+        width: 3px;
+        height: 3px;
+        border-radius: 50%;
+        background: rgba(0, 0, 0, 0.2);
       }
     }
   }
@@ -116,21 +147,21 @@ const handleClick = () => {
 
 @media (max-width: $breakpoint-md) {
   .cms-article-card {
-    .article-thumbnail {
-      height: 140px;
+    .article-visual {
+      height: 130px;
     }
 
-    .article-content {
+    .article-body {
       padding: 12px;
 
       .article-title {
-        font-size: $font-size-base;
+        font-size: 14px;
         margin-bottom: 8px;
       }
 
-      .article-footer {
-        .article-meta-item {
-          font-size: 12px;
+      .article-meta {
+        .meta-item {
+          font-size: 11px;
         }
       }
     }

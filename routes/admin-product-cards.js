@@ -39,7 +39,9 @@ function checkPermission(module, action) {
   return (req, res, next) => {
     try {
       if (req.admin.isSuper) return next()
-      next()
+      const hasPerm = req.admin.permissions?.[module]?.[action]
+      if (hasPerm) return next()
+      return response.error(res, '权限不足', 403)
     } catch (err) {
       console.error('权限验证失败:', err)
       response.error(res, '权限验证失败', 500)

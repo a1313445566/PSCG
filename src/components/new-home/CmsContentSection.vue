@@ -1,14 +1,19 @@
 <template>
   <section class="cms-content-section">
-    <h2 class="section-title">最新动态</h2>
+    <div class="section-header">
+      <span class="section-label">LATEST</span>
+      <h2 class="section-heading">最新动态</h2>
+    </div>
     <div class="articles-grid">
       <CmsArticleCard v-for="article in articles" :key="article.id" :article="article" />
     </div>
     <div class="view-more-wrapper">
-      <el-button class="view-more-button" @click="handleViewMore">
+      <button class="view-more-button" @click="handleViewMore">
         查看更多
-        <span class="arrow-icon">→</span>
-      </el-button>
+        <svg width="14" height="14" viewBox="0 0 16 16" fill="none">
+          <path d="M3.33334 8H12.6667M12.6667 8L8.00001 3.33333M12.6667 8L8.00001 12.6667" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+      </button>
     </div>
   </section>
 </template>
@@ -28,28 +33,38 @@ const handleViewMore = () => {
 
 <style scoped lang="scss">
 .cms-content-section {
-  margin-bottom: $new-section-gap;
+  margin-bottom: $spacing-3xl;
   width: 100%;
-  min-width: 848px;
-  max-width: 1184px;
-  position: relative;
-  margin: 0 auto;
-  padding: 0 $spacing-lg;
 
-  .section-title {
-    font-size: 45px;
-    font-weight: 600;
-    color: $new-text-primary;
-    margin-bottom: $spacing-lg;
-    text-align: center;
-    border-left: none;
-    padding-left: 0;
+  .section-header {
+    margin-bottom: $spacing-xl;
+
+    .section-label {
+      display: block;
+      font-size: 13px;
+      font-weight: 400;
+      letter-spacing: 2.2px;
+      text-transform: uppercase;
+      color: #000000;
+      opacity: 0.45;
+      margin-bottom: $spacing-sm;
+      line-height: 1;
+    }
+
+    .section-heading {
+      font-size: 42px;
+      font-weight: 600;
+      letter-spacing: -0.82px;
+      line-height: 1.15;
+      color: #000000;
+      margin: 0;
+    }
   }
 
   .articles-grid {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: $new-card-gap;
+    gap: 16px;
   }
 
   .view-more-wrapper {
@@ -60,75 +75,89 @@ const handleViewMore = () => {
 
   .view-more-button {
     background: transparent;
-    border: 2px solid #e5e6eb;
-    color: $new-text-primary;
-    padding: $spacing-md $spacing-xl;
-    font-size: $font-size-base;
+    border: 1px solid rgba(0, 0, 0, 0.15);
+    color: #000000;
+    padding: 10px 28px;
+    font-size: 14px;
     font-weight: 500;
-    border-radius: 9999px;
+    letter-spacing: -0.1px;
+    border-radius: 50px;
     cursor: pointer;
-    transition: all 0.3s ease;
-    display: flex;
+    transition: all 0.25s ease;
+    display: inline-flex;
     align-items: center;
-    gap: $spacing-sm;
+    gap: 8px;
 
     &:hover {
-      border-color: $new-primary;
-      color: $new-primary;
-      transform: translateY(-2px);
-      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+      border-color: #000000;
+      transform: translateY(-1px);
     }
 
     &:active {
       transform: translateY(0);
     }
 
-    .arrow-icon {
-      transition: transform 0.3s ease;
-    }
-
-    &:hover .arrow-icon {
-      transform: translateX(4px);
+    &:focus-visible {
+      outline: dashed 2px #000000;
+      outline-offset: 3px;
     }
   }
 }
 
 @media (max-width: $breakpoint-xl) {
   .cms-content-section {
-    min-width: auto;
-    padding: 0 $spacing-md;
+    .articles-grid {
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+    }
   }
 }
 
 @media (max-width: $breakpoint-lg) {
   .cms-content-section {
-    max-width: 100%;
-    margin-bottom: $new-section-gap-sm;
-    padding: 0 $spacing-md;
-
-    .section-title {
-      font-size: $font-size-xl;
-      margin-bottom: $spacing-md;
+    .section-header {
+      .section-heading {
+        font-size: 32px;
+        letter-spacing: -0.6px;
+      }
     }
 
     .articles-grid {
       grid-template-columns: repeat(2, 1fr);
-      gap: $new-card-gap-sm;
+      gap: 14px;
     }
 
     .view-more-button {
-      padding: $spacing-sm $spacing-lg;
-      font-size: $font-size-sm;
+      padding: 9px 24px;
+      font-size: 13px;
     }
   }
 }
 
 @media (max-width: $breakpoint-md) {
   .cms-content-section {
-    padding: 0 $spacing-sm;
+    .section-header {
+      margin-bottom: $spacing-md;
+
+      .section-label {
+        font-size: 11px;
+        letter-spacing: 1.8px;
+      }
+
+      .section-heading {
+        font-size: 26px;
+        letter-spacing: -0.46px;
+      }
+    }
 
     .articles-grid {
       grid-template-columns: repeat(2, 1fr);
+      gap: 12px;
+    }
+
+    .view-more-button {
+      padding: 8px 20px;
+      font-size: 13px;
     }
   }
 }
